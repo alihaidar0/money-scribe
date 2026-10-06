@@ -1,0 +1,62 @@
+# .github/workflows/setup-flutter-test.yml
+#
+# Smoke test for the local setup-flutter action: it installs Flutter on the
+# runners the workflows use (Linux for CI and builds, macOS for the opt-in iOS
+# job) and checks that the installed version matches the request.
+#
+# It runs only when the action or this file changes, plus on demand, so it is
+# not a required check and is not part of "CI passed" (a path-filtered workflow
+# does not report when it is not triggered).
+name: Setup Flutter action
+
+on:
+  pull_request:
+    paths:
+      - ".github/actions/setup-flutter/**"
+      - ".github/workflows/setup-flutter-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  smoke:
+    name: ${{ matrix.os }} / ${{ matrix.version == '' && 'newest' || matrix.version }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, version: "" }
+          - { os: ubuntu-24.04, version: "3.x" }
+          - { os: ubuntu-24.04, version: "3.35.4" }
+          - { os: macos-15, version: "" }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ matrix.version }}
+
+      - name: The tool runs and matches the request
+        env:
+          REQUESTED: ${{ matrix.version }}
+        run: |
+          set -euo pipefail
+          installed="$(flutter --version --machine | jq -r .frameworkVersion)"
+          echo "Installed Flutter $installed"
+          requested="${REQUESTED%.x}"
+          if [[ -n "$requested" && "$installed" != "$requested".* && "$installed" != "$requested" ]]; then
+            echo "::error::Requested '$REQUESTED' but got $installed."
+            exit 1
+          fi

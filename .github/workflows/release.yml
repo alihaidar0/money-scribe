@@ -1,0 +1,122 @@
+# .github/workflows/release.yml
+#
+# Publishes a GitHub Release with automatically generated release notes (grouped
+# by pull-request label, see .github/release.yml) when a promotion lands on main.
+# The Releases page is the changelog; nothing is committed back to a protected
+# branch, so no bot, token or extra pull request is involved.
+#
+#   template repository   calendar versions (vYYYY.MM.DD, then vYYYY.MM.DD.1, ...);
+#                         documentation-only promotions do not release. The tag
+#                         tells a project which state of the template it was
+#                         created from.
+#   generated project     the version in pubspec.yaml (version: 1.4.0+7 -> v1.4.0).
+#                         Raise it in the develop -> main release pull request;
+#                         a release is published once per version and skipped
+#                         while the tag already exists.
+#
+# Tags matching v* are immutable (see the tags-protect ruleset).
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/CODEOWNERS"
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    if: github.event.repository.is_template
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          base="v$(date -u +%Y.%m.%d)"
+          tag="$base"
+          n=1
+          while gh release view "$tag" > /dev/null 2>&1 || git rev-parse -q --verify "refs/tags/$tag" > /dev/null; do
+            tag="$base.$n"
+            n=$((n + 1))
+          done
+          gh release create "$tag" \
+            --target "$TARGET_SHA" \
+            --title "$tag" \
+            --generate-notes \
+            --latest
+          echo "Published release $tag" >> "$GITHUB_STEP_SUMMARY"
+
+  # The application's own releases. Inert in the template (no pubspec.yaml) and
+  # until the project has a version to release.
+  app-release:
+    name: Publish app release
+    if: '!github.event.repository.is_template'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create release for the pubspec.yaml version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          if [[ ! -f "pubspec.yaml" ]]; then
+            echo "No pubspec.yaml yet — nothing to release."
+            exit 0
+          fi
+
+          version="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          version="${version%%+*}" # drop the build number: 1.4.0+7 -> 1.4.0
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::pubspec.yaml needs a semantic 'version:' such as 1.0.0+1 (found '${version:-none}')."
+            exit 1
+          fi
+
+          tag="v${version}"
+          if gh release view "$tag" > /dev/null 2>&1 || git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "Release $tag already exists — raise the version in pubspec.yaml to publish a new one."
+            echo "Release $tag already exists; nothing published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          flags=(--latest)
+          if [[ "$version" == *-* ]]; then
+            flags=(--prerelease)
+          fi
+          gh release create "$tag" \
+            --target "$TARGET_SHA" \
+            --title "$tag" \
+            --generate-notes \
+            "${flags[@]}"
+          echo "Published release $tag" >> "$GITHUB_STEP_SUMMARY"

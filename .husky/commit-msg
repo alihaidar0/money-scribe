@@ -1,0 +1,8 @@
+# The toolchain (Node, pnpm, Flutter) lives in the dev container. When git runs
+# on the host (terminal or GUI) this hook is skipped; CI runs the same check.
+if [ ! -f /.dockerenv ] && [ ! -f /run/.containerenv ] && [ -z "${REMOTE_CONTAINERS:-}" ] && [ -z "${CODESPACES:-}" ]; then
+  echo "ℹ️  Not inside the dev container — commit message check skipped (CI still enforces it)"
+  exit 0
+fi
+
+pnpm exec commitlint --edit "$1"

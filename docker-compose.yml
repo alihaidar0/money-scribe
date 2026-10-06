@@ -1,0 +1,72 @@
+services:
+  app:
+    # The template follows the newest image. In a project created from it, run
+    # scripts/pin-image.sh once to freeze this line to an exact build (tag and
+    # digest), so the toolchain only changes when you change it on purpose.
+    image: alihaidar199527/flutter-devcontainer:latest
+    # Reaps zombie processes (adb, Gradle daemons, dart) so they do not pile up.
+    init: true
+    entrypoint: ["/workspace/scripts/entrypoint.dev.sh"]
+    volumes:
+      # ── Project files ──────────────────────────────────────────────────────
+      - .:/workspace
+
+      # No ~/.gitconfig or ~/.ssh mounts: VS Code Dev Containers copies your
+      # Git identity into the container and forwards your host ssh-agent, so
+      # private keys never enter it (see README → Git and SSH).
+
+      # ── Dart / Flutter caches ──────────────────────────────────────────────
+      # Persisted as named volumes so pub packages and Gradle artifacts survive
+      # container rebuilds. Without these, every restart re-downloads all deps.
+      # A named volume is filled from the image only the first time it is
+      # created, so after pulling a newer image run `docker compose down -v`
+      # (see README → Updating the dev image). The Android SDK is deliberately
+      # not a volume: it ships in the image and a volume would hide updates.
+      - pub-cache:/home/developer/.pub-cache
+      - gradle-cache:/home/developer/.gradle
+
+      # ── node_modules ───────────────────────────────────────────────────────
+      # Husky and commitlint live in node_modules. On a Windows or macOS bind
+      # mount, reading its thousands of small files is about 17x slower (measured:
+      # 9 s per commit-msg check versus 0.5 s), so it gets a named volume instead.
+      - node-modules:/workspace/node_modules
+
+      # ── Shell history ─────────────────────────────────────────────────────
+      - shell-history:/home/developer/.shell_history
+
+    environment:
+      GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=accept-new"
+
+      # NOTE: no ADB_SERVER_SOCKET here — see "Host emulator (ADB)" below.
+
+    # Port 8080 (flutter run -d web-server) is forwarded by VS Code through
+    # `forwardPorts` in .devcontainer/devcontainer.json, so it is not published
+    # here as well.
+
+    # ── Host emulator (ADB) ─────────────────────────────────────────────────
+    # The container runs its OWN local adb server (the default — no
+    # ADB_SERVER_SOCKET override) and connects OUT to the emulator running on
+    # the host via `adb connect host.docker.internal:5555`.
+    #
+    # Pointing the container's adb CLIENT at the host's adb SERVER instead
+    # (ADB_SERVER_SOCKET=tcp:host.docker.internal:5037) relays every adb command
+    # to the host, but every `adb forward` — which is how Flutter's VM Service
+    # (hot reload / hot restart) connection is established — would then be bound
+    # on the HOST's loopback, out of reach of `flutter run` inside the
+    # container, so hot reload would hang on "Connecting to the VM Service...".
+    #
+    # With the adb server local to the container, forwarded ports are on the
+    # container's own localhost. See "Connecting to a Host Emulator" in
+    # README.md for the setup steps.
+    #
+    # host.docker.internal is resolved via the extra_hosts entry below.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    working_dir: /workspace
+
+volumes:
+  pub-cache:
+  gradle-cache:
+  node-modules:
+  shell-history:

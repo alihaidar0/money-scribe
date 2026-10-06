@@ -1,0 +1,245 @@
+# .github/workflows/build.yml
+#
+# Builds the app artifacts (Android APK, Android App Bundle, Web) for the two
+# environments of the branching model:
+#
+#   pull request into develop   staging      (APP_ENV=staging)
+#   pull request into main      production   (APP_ENV=production, the release PR)
+#   push to main                production   (the merged release)
+#   manual run                  staging or production, your choice
+#
+# Every build passes --dart-define=APP_ENV=<environment>; if the project has an
+# env/<environment>.json file it is passed as --dart-define-from-file as well.
+# Read the value in Dart with String.fromEnvironment('APP_ENV'). Flavors are
+# per project: README section 7.5 explains how to add `--flavor <environment>`.
+#
+# Nothing is signed or deployed: release signing keys and targets (Play Store,
+# Firebase, a web host) are added per project (docs/android-signing.md). Release
+# builds without a signing configuration use the debug key, so these artifacts
+# are for testing. An unsigned iOS compile check is available as an opt-in job
+# (repository variable BUILD_IOS=true).
+#
+# Copied into every generated project, so it skips cleanly until the project has
+# a pubspec.yaml and a pubspec.lock; nothing here needs editing in a project.
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "env/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "android/**"
+      - "ios/**"
+      - "web/**"
+      - ".github/workflows/build.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "env/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "android/**"
+      - "ios/**"
+      - "web/**"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to build for"
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Guard and environment ────────────────────────────────────────────────
+  detect:
+    name: Detect project
+    # Draft pull requests are not built until they are marked ready.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      environment: ${{ steps.environment.outputs.environment }}
+      flutter_version: ${{ steps.flutter-version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            pubspec.yaml
+            pubspec.lock
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Check for pubspec.yaml and pubspec.lock
+        id: check
+        run: |
+          if [[ -f "pubspec.yaml" && -f "pubspec.lock" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Project initialised — builds will run"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "No pubspec.yaml / pubspec.lock — skipping all builds"
+          fi
+
+      - name: Resolve the build environment
+        id: environment
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          case "$EVENT_NAME" in
+            pull_request)
+              if [[ "$BASE_REF" == "main" ]]; then target="production"; else target="staging"; fi ;;
+            workflow_dispatch)
+              target="$INPUT_ENVIRONMENT" ;;
+            *)
+              target="production" ;; # push to main
+          esac
+          case "$target" in staging|production) ;; *) target="staging" ;; esac
+          echo "environment=$target" >> "$GITHUB_OUTPUT"
+          echo "Building for: $target"
+
+      # A project pins its Flutter version in pubspec.yaml (environment: flutter:
+      # 3.x.y), so CI keeps building with it. Without a pin, the newest stable
+      # is used. The value only reaches `with:`, never a shell.
+      - name: Read the pinned Flutter version
+        id: flutter-version
+        run: |
+          version=""
+          if [[ -f "pubspec.yaml" ]]; then
+            version="$(awk '
+              /^environment:/ { in_env = 1; next }
+              in_env && /^[^[:space:]#]/ { in_env = 0 }
+              in_env && /^[[:space:]]+flutter:/ {
+                sub(/^[[:space:]]+flutter:[[:space:]]*/, ""); sub(/[[:space:]]*#.*/, ""); gsub(/["'"'"'[:space:]]/, ""); print; exit
+              }' pubspec.yaml)"
+          fi
+          if [[ "$version" =~ ^[0-9]+(\.[0-9x]+){0,2}$ ]]; then
+            echo "Flutter pinned to $version in pubspec.yaml"
+          else
+            version=""
+            echo "No exact Flutter pin in pubspec.yaml - using the latest stable"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  # ── Android APK, Android App Bundle, Web ─────────────────────────────────
+  build:
+    name: ${{ matrix.name }} (${{ needs.detect.outputs.environment }})
+    needs: detect
+    if: needs.detect.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Android APK
+            target: apk
+            artifact: android-apk
+            path: build/app/outputs/flutter-apk/app-release.apk
+          - name: Android AAB
+            target: appbundle
+            artifact: android-aab
+            path: build/app/outputs/bundle/release/app-release.aab
+          - name: Web
+            target: web
+            artifact: web-build
+            path: build/web/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ needs.detect.outputs.flutter_version }}
+
+      # Fails if pubspec.lock does not match pubspec.yaml, so a build never
+      # silently resolves different package versions than the ones committed.
+      - run: flutter pub get --enforce-lockfile
+
+      - name: Build release
+        env:
+          TARGET: ${{ matrix.target }}
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+        run: |
+          args=(--release "--dart-define=APP_ENV=${APP_ENV}")
+          if [[ -f "env/${APP_ENV}.json" ]]; then
+            args+=("--dart-define-from-file=env/${APP_ENV}.json")
+          fi
+          flutter build "$TARGET" "${args[@]}"
+
+      - name: Upload ${{ matrix.name }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.artifact }}-${{ needs.detect.outputs.environment }}
+          path: ${{ matrix.path }}
+          if-no-files-found: error
+          retention-days: ${{ needs.detect.outputs.environment == 'production' && 30 || 14 }}
+
+  # ── iOS (opt-in) ─────────────────────────────────────────────────────────
+  # An unsigned compile check of the iOS app on a macOS runner. macOS minutes
+  # cost more than Linux ones on private repositories, so it is off until you
+  # set the repository variable BUILD_IOS to "true" (Settings → Secrets and
+  # variables → Actions → Variables). The result is not installable: signing
+  # and App Store upload are added per project.
+  build-ios:
+    name: iOS (${{ needs.detect.outputs.environment }})
+    needs: detect
+    if: needs.detect.outputs.ready == 'true' && vars.BUILD_IOS == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ needs.detect.outputs.flutter_version }}
+
+      - run: flutter pub get --enforce-lockfile
+
+      - name: Build iOS (no code signing)
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+        run: |
+          args=(--release --no-codesign "--dart-define=APP_ENV=${APP_ENV}")
+          if [[ -f "env/${APP_ENV}.json" ]]; then
+            args+=("--dart-define-from-file=env/${APP_ENV}.json")
+          fi
+          flutter build ios "${args[@]}"
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-app-${{ needs.detect.outputs.environment }}
+          path: build/ios/iphoneos/Runner.app
+          if-no-files-found: error
+          retention-days: ${{ needs.detect.outputs.environment == 'production' && 30 || 14 }}

@@ -1,0 +1,82 @@
+{
+  "name": "Flutter App",
+
+  // ── Image ──────────────────────────────────────────────────────────────────
+  // Pulls the pre-built dev image from Docker Hub — no local Dockerfile build.
+  // Image source: github.com/alihaidar0/flutter-devcontainer
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+
+  // ── Host requirements ─────────────────────────────────────────────────────
+  // Lets Codespaces pick a machine that can build Android; ignored locally.
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  // ── VS Code customisations ────────────────────────────────────────────────
+  // Extensions are installed inside the container. The image's own metadata
+  // already adds the Dart and Flutter extensions, dart.flutterSdkPath and the
+  // `developer` user. Shared editor settings live in .vscode/settings.json
+  // (applied here too); only container-specific settings are set below.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Flutter & Dart (the Dart/Flutter extensions come from the image)
+        "pflannery.vscode-versionlens",
+
+        // Git & GitHub
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "GitHub.vscode-pull-request-github",
+        "github.vscode-github-actions",
+
+        // Config, shell & containers
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "mikestead.dotenv",
+        "timonwong.shellcheck",
+
+        // Code quality & docs
+        "EditorConfig.EditorConfig",
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker",
+        "davidanson.vscode-markdownlint",
+        "bierner.markdown-mermaid",
+
+        // AI
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "anthropic.claude-code",
+        "DorianMassoulier.repomix-runner"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  // ── Port forwarding ───────────────────────────────────────────────────────
+  // 8080 — flutter run -d web-server binds here inside the container.
+  // Opened as URL so the developer sees the web build immediately.
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Flutter Web",
+      "onAutoForward": "openBrowser"
+    }
+  },
+
+  // ── Lifecycle hooks ───────────────────────────────────────────────────────
+  // postCreateCommand (once, on creation): installs Husky + commitlint and
+  // registers the git hooks. Corepack and pnpm come prepared in the image at
+  // the version pinned by `packageManager`; Flutter is NOT initialised here —
+  // the developer runs `flutter create` manually.
+  // postStartCommand (every start): the tiered welcome banner and the adb
+  // auto-connect to a host emulator.
+  "postCreateCommand": "pnpm install",
+  "postStartCommand": "bash /workspace/scripts/welcome.sh"
+}

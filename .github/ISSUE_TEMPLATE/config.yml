@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: flutter-devcontainer issues
+    url: https://github.com/alihaidar0/flutter-devcontainer/issues
+    about: Report issues with the base Docker image (Flutter/Android/Java/Node versions, image build) here instead.

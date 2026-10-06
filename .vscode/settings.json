@@ -1,0 +1,56 @@
+{
+  // Shared workspace settings. They apply on the host and inside the dev
+  // container (workspace settings win over the container's own settings).
+  // Indentation, line endings and whitespace come from .editorconfig, and the
+  // Dart formatter width from the project's analysis_options.yaml, so neither
+  // is repeated here. Container-only settings live in devcontainer.json.
+
+  // ── Editor ────────────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "editor.rulers": [80, 120],
+
+  // ── Files ─────────────────────────────────────────────────────────────────
+  "files.associations": {
+    "**/*.env*": "dotenv",
+    "*.arb": "json"
+  },
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/build": true
+  },
+  "files.watcherExclude": {
+    "**/.dart_tool/**": true,
+    "**/build/**": true
+  },
+  "search.exclude": {
+    "**/coverage": true
+  },
+
+  // ── Explorer ──────────────────────────────────────────────────────────────
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "pubspec.yaml": "pubspec.lock, .flutter-plugins-dependencies, .metadata, analysis_options.yaml",
+    ".env": ".env.*, .envrc",
+    "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE"
+  },
+
+  // ── Languages ─────────────────────────────────────────────────────────────
+  "[markdown]": {
+    "editor.wordWrap": "on"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+
+  // ── Spell checker ─────────────────────────────────────────────────────────
+  "cSpell.words": [
+    "commitlint",
+    "corepack",
+    "devcontainer",
+    "flutterfire",
+    "husky",
+    "pnpm",
+    "pubspec"
+  ]
+}

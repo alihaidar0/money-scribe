@@ -1,0 +1,139 @@
+# .github/actions/setup-flutter/action.yml
+#
+# Installs the Flutter SDK for the CI and build workflows. It replaces a
+# third-party setup action on purpose: the repository setting "Require actions
+# to be pinned to a full-length commit SHA" also applies to the actions called
+# inside a composite action, and the popular setup action calls actions/cache
+# by tag, so job setup fails with that setting on. Here every action is pinned,
+# the SDK archive is checked against the SHA-256 in Google's release manifest
+# (this catches a corrupted or truncated download; the manifest and the archive
+# come from the same host, so it does not defend against a compromised host),
+# and nothing else is downloaded.
+#
+# Linux and macOS runners only. Dependabot keeps the pinned action below up to
+# date (dependabot.yml lists this folder).
+name: Set up Flutter
+description: Install a stable Flutter SDK (checksum verified) and cache the SDK and the pub cache.
+
+inputs:
+  flutter-version:
+    description: >-
+      Stable version to install: exact (3.35.4), a line (3.35 or 3.x), or empty
+      for the newest stable release.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # ── Pick the release ──────────────────────────────────────────────────
+    - name: Resolve the Flutter release
+      id: resolve
+      shell: bash
+      env:
+        REQUESTED: ${{ inputs.flutter-version }}
+      run: |
+        set -euo pipefail
+
+        case "$RUNNER_OS" in
+          Linux) os=linux ;;
+          macOS) os=macos ;;
+          *) echo "::error::setup-flutter supports Linux and macOS runners, not $RUNNER_OS."; exit 1 ;;
+        esac
+        case "$RUNNER_ARCH" in
+          X64) arch=x64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "::error::setup-flutter supports x64 and arm64 runners, not $RUNNER_ARCH."; exit 1 ;;
+        esac
+
+        # "3.x" and "3.35" select the newest stable release of that line.
+        requested="${REQUESTED//[[:space:]]/}"
+        while [[ "$requested" == *.x ]]; do requested="${requested%.x}"; done
+        if [[ -n "$requested" && ! "$requested" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+          echo "::error::Unsupported flutter-version '$REQUESTED' (use 3.35.4, 3.35, 3.x or leave it empty)."
+          exit 1
+        fi
+
+        manifest="$RUNNER_TEMP/flutter-releases.json"
+        curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+          --proto '=https' --proto-redir '=https' --max-time 60 \
+          --output "$manifest" \
+          "https://storage.googleapis.com/flutter_infra_release/releases/releases_${os}.json"
+
+        # The manifest lists newest first, so the first match is the newest one.
+        release="$(jq -c --arg requested "$requested" --arg arch "$arch" '
+          .current_release.stable as $newest
+          | [ .releases[]
+              | select(.channel == "stable" and ((.dart_sdk_arch // "x64") == $arch))
+              | select(
+                  if $requested == "" then .hash == $newest
+                  else .version == $requested or (.version | startswith($requested + "."))
+                  end
+                ) ]
+          | first // empty' "$manifest")"
+        if [[ -z "$release" ]]; then
+          echo "::error::No stable Flutter release matches '${REQUESTED:-latest}' for $os/$arch."
+          exit 1
+        fi
+
+        base_url="$(jq -r '.base_url' "$manifest")"
+        version="$(jq -r '.version' <<<"$release")"
+        {
+          echo "version=$version"
+          echo "sha256=$(jq -r '.sha256' <<<"$release")"
+          echo "url=$base_url/$(jq -r '.archive' <<<"$release")"
+        } >> "$GITHUB_OUTPUT"
+        echo "Flutter $version ($os/$arch)"
+
+    # ── Flutter SDK ───────────────────────────────────────────────────────
+    - name: Restore the Flutter SDK cache
+      id: sdk-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/flutter
+        key: flutter-sdk-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve.outputs.version }}
+
+    - name: Download the Flutter SDK
+      if: steps.sdk-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        ARCHIVE_URL: ${{ steps.resolve.outputs.url }}
+        ARCHIVE_SHA256: ${{ steps.resolve.outputs.sha256 }}
+      run: |
+        set -euo pipefail
+        archive="$RUNNER_TEMP/flutter-sdk-archive"
+        curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+          --proto '=https' --proto-redir '=https' --max-time 900 \
+          --output "$archive" "$ARCHIVE_URL"
+
+        # Refuse an archive that does not match the published checksum.
+        echo "$ARCHIVE_SHA256  $archive" | shasum -a 256 -c -
+
+        case "$ARCHIVE_URL" in
+          *.zip) unzip -q "$archive" -d "$RUNNER_TEMP" ;;
+          *) tar -xJf "$archive" -C "$RUNNER_TEMP" ;;
+        esac
+        rm -f "$archive"
+
+    - name: Add Flutter to the PATH
+      shell: bash
+      run: |
+        {
+          echo "$RUNNER_TEMP/flutter/bin"
+          echo "$HOME/.pub-cache/bin"
+        } >> "$GITHUB_PATH"
+
+    # Downloads the Dart SDK and the tool artifacts once, so the SDK cache saved
+    # at the end of the job already contains them.
+    - name: Prepare the Flutter tool
+      shell: bash
+      run: flutter --version
+
+    # ── Dart packages ─────────────────────────────────────────────────────
+    - name: Restore the pub cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.pub-cache
+        key: pub-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          pub-${{ runner.os }}-${{ runner.arch }}-

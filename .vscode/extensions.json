@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    // The only host-side requirement: it offers "Reopen in Container".
+    // Every other extension is installed inside the container from
+    // .devcontainer/devcontainer.json, so nothing is listed twice.
+    "ms-vscode-remote.remote-containers"
+  ]
+}

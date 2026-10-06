@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Runs in the container before every Android launch configuration, so
+      // pressing F5 connects to the host emulator even if it was started after
+      // the container (waits up to 30 s while the emulator boots).
+      "label": "Connect host emulator",
+      "type": "shell",
+      "command": "bash",
+      "args": ["${workspaceFolder}/scripts/connect-emulator.sh", "--wait", "30"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

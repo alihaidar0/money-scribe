@@ -1,0 +1,91 @@
+# Repository labels — synced automatically by .github/workflows/labels.yml.
+# Edit here, never directly on GitHub.
+
+# ── Dependency management ─────────────────────────────────────
+- name: "dependencies"
+  color: "0075ca"
+  description: "Automated dependency update opened by Dependabot"
+
+- name: "github-actions"
+  color: "e4e669"
+  description: "Updates to GitHub Actions versions in workflow files"
+
+- name: "flutter"
+  color: "54c5f8"
+  description: "Updates to Flutter SDK, Dart packages, or pubspec"
+
+- name: "ci"
+  color: "ededed"
+  description: "Changes to CI, release, or other repository automation"
+
+- name: "security"
+  color: "b60205"
+  description: "Relates to a security vulnerability or hardening improvement"
+
+# ── Change type ───────────────────────────────────────────────
+- name: "breaking change"
+  color: "d73a4a"
+  description: "Introduces a breaking change that requires attention before merging"
+
+- name: "bug"
+  color: "ee0701"
+  description: "Something is broken or behaving incorrectly"
+
+- name: "enhancement"
+  color: "84b6eb"
+  description: "Improvement to an existing feature or behaviour"
+
+- name: "feature"
+  color: "0e8a16"
+  description: "Adds new functionality to the app or developer environment"
+
+- name: "chore"
+  color: "fef2c0"
+  description: "Maintenance task with no functional impact — cleanup, rename, reorder"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Changes to README, comments, or other documentation only"
+
+- name: "skip-changelog"
+  color: "ededed"
+  description: "Exclude this PR from the auto-generated release notes"
+
+# ── PR state ──────────────────────────────────────────────────
+- name: "ready for review"
+  color: "0e8a16"
+  description: "PR is complete and ready for a review pass"
+
+- name: "work in progress"
+  color: "e99695"
+  description: "PR is open for early feedback but is not ready to merge"
+
+- name: "blocked"
+  color: "d73a4a"
+  description: "Blocked by another PR, issue, or external dependency"
+
+- name: "on hold"
+  color: "f9d0c4"
+  description: "Deliberately paused — not blocked, not abandoned, not yet ready"
+
+# ── Priority ──────────────────────────────────────────────────
+- name: "priority: high"
+  color: "d73a4a"
+  description: "Should be reviewed and merged within the current week"
+
+- name: "priority: low"
+  color: "c2e0c6"
+  description: "No urgency — can be picked up when convenient"
+
+# ── Housekeeping ──────────────────────────────────────────────
+- name: "duplicate"
+  color: "cccccc"
+  description: "This issue or PR already exists elsewhere — see linked item"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "Acknowledged but intentionally out of scope for this repo"
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Suitable for a first contribution — well scoped and documented"

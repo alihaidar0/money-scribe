@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an improvement to the template or its tooling
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is deliberately small: it ships a toolchain, not Flutter code. Proposals that add application code, deployment targets or anything that belongs in the base image will be redirected.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and this has not been proposed yet.
+          required: true
+        - label: This is about the template's tooling, CI or governance, not application code.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Dev container / compose / VS Code
+        - GitHub Actions
+        - Husky / commitlint
+        - Dependabot
+        - Repository rulesets / settings guide
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

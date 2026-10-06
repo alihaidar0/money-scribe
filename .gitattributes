@@ -1,0 +1,43 @@
+# ── Default: normalise all text files to LF on commit ────────────────────────
+# This prevents CRLF line endings from breaking shell scripts when the repo is
+# cloned on Windows and the files are mounted into the Linux container.
+* text=auto eol=lf
+
+# ── Shell scripts: always LF, never CRLF ─────────────────────────────────────
+# entrypoint.dev.sh and welcome.sh will fail with "\r: command not found" if
+# stored with Windows CRLF endings.
+*.sh text eol=lf
+
+# ── Config / data formats ─────────────────────────────────────────────────────
+*.json    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
+*.txt     text eol=lf
+*.mjs     text eol=lf
+*.cjs     text eol=lf
+*.js      text eol=lf
+*.ts      text eol=lf
+
+# ── Dart / Flutter ────────────────────────────────────────────────────────────
+*.dart    text eol=lf
+
+# ── Binary files: do not diff or modify ──────────────────────────────────────
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+*.eot     binary
+*.aab     binary
+*.apk     binary
+*.ipa     binary
+*.jks     binary
+*.keystore binary
+*.zip     binary
+*.tar.gz  binary

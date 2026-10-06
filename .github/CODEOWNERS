@@ -1,0 +1,12 @@
+# Default owner — requested for review on every pull request.
+# Replace @alihaidar0 with your own username in a project generated from this
+# template.
+*                          @alihaidar0
+
+# Everything that decides how the project is built, checked and released.
+/.github/                  @alihaidar0
+/.devcontainer/            @alihaidar0
+/.husky/                   @alihaidar0
+/scripts/                  @alihaidar0
+/docker-compose.yml        @alihaidar0
+/docs/                     @alihaidar0

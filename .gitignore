@@ -1,0 +1,69 @@
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.packages
+build/
+
+# ── Android ───────────────────────────────────────────────────────────────────
+**/android/local.properties
+**/android/.gradle/
+**/android/key.properties
+**/android/app/upload-keystore.jks
+**/android/app/google-services.json
+
+# ── iOS ───────────────────────────────────────────────────────────────────────
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/GoogleService-Info.plist
+
+# ── Web ───────────────────────────────────────────────────────────────────────
+lib/generated_plugin_registrant.dart
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+**/assets/secrets/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+# .vscode/settings.json, extensions.json, launch.json and tasks.json are committed as
+# shared team defaults. Personal overrides go in .vscode/*.local.json instead.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.vscode/*.local.json
+.idea/
+*.iml
+*.swp
+*~
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+coverage/
+
+# ── Repomix ───────────────────────────────────────────────────────────────────
+flutter-template-code.xml
+
+# ── Local tooling ─────────────────────────────────────────────────────────────
+.claude/
+CLAUDE.md

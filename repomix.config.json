@@ -1,0 +1,59 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": {
+    "maxFileSize": 5000000
+  },
+  "output": {
+    "filePath": "flutter-template-code.xml",
+    "style": "xml",
+    "parsableStyle": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false,
+    "copyToClipboard": false,
+    "headerText": "flutter-template — GitHub Template repository for new Flutter projects.",
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100
+    }
+  },
+  "include": [
+    ".devcontainer/**",
+    ".github/**",
+    ".husky/**",
+    ".vscode/**",
+    "scripts/**",
+    ".editorconfig",
+    ".env.example",
+    ".gitattributes",
+    ".gitignore",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md",
+    "commitlint.config.mjs",
+    "docker-compose.yml",
+    "package.json",
+    "pnpm-workspace.yaml"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": false,
+    "customPatterns": [
+      "flutter-template-code.xml",
+      "*.png",
+      "*.jpg",
+      "*.jpeg",
+      "*.svg",
+      "*.ico",
+      "node_modules/**",
+      ".git/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}
