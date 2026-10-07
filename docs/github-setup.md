@@ -124,8 +124,8 @@ done
 3. Open the first pull request into `develop` and let CI run, so the **CI passed** check has reported once.
 4. Apply sections 1, 2 and 4.
 5. Import the three rulesets (section 5).
-6. Optional: set the repository variable `BUILD_IOS` to `true` to add an unsigned iOS compile check to `build.yml`.
-7. Before the first store release, follow [`android-signing.md`](android-signing.md) to sign the production Android build (section 3).
+6. Later, optional: **Settings → Secrets and variables → Actions → Variables**, add `BUILD_IOS` = `true` to add an unsigned iOS compile check to `build.yml`. It is only worth it once you want iOS verified in CI.
+7. Before the first store release: **Settings → Environments → New environment**, create `production` and restrict it to `main` under **Deployment branches and tags**. It holds the Android signing secrets (section 3). Then follow [`android-signing.md`](android-signing.md) to sign the production Android build.
 8. Verify (next section).
 
 ## 7. Verify the protection works
