@@ -4,7 +4,7 @@
     "maxFileSize": 5000000
   },
   "output": {
-    "filePath": "flutter-template-code.xml",
+    "filePath": "money-scribe-code.xml",
     "style": "xml",
     "parsableStyle": true,
     "fileSummary": true,
@@ -13,7 +13,7 @@
     "removeEmptyLines": false,
     "showLineNumbers": false,
     "copyToClipboard": false,
-    "headerText": "flutter-template — GitHub Template repository for new Flutter projects.",
+    "headerText": "Money Scribe — offline-first personal finance tracker built with Flutter.",
     "git": {
       "sortByChanges": true,
       "sortByChangesMaxCommits": 100
@@ -25,25 +25,31 @@
     ".husky/**",
     ".vscode/**",
     "scripts/**",
+    "docs/**",
+    "lib/**",
+    "test/**",
+    ".cspell/**",
     ".editorconfig",
     ".env.example",
     ".gitattributes",
     ".gitignore",
-    "CHANGELOG.md",
     "CONTRIBUTING.md",
     "LICENSE",
     "README.md",
     "SECURITY.md",
+    "analysis_options.yaml",
     "commitlint.config.mjs",
+    "cspell.json",
     "docker-compose.yml",
     "package.json",
-    "pnpm-workspace.yaml"
+    "pnpm-workspace.yaml",
+    "pubspec.yaml"
   ],
   "ignore": {
     "useGitignore": true,
     "useDefaultPatterns": false,
     "customPatterns": [
-      "flutter-template-code.xml",
+      "money-scribe-code.xml",
       "*.png",
       "*.jpg",
       "*.jpeg",

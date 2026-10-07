@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en,en-GB",
+  "useGitignore": true,
+  "dictionaries": [
+    "dart",
+    "flutter",
+    "softwareTerms",
+    "project-words"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./.cspell/project-words.txt",
+      "addWords": true
+    }
+  ],
+  "ignorePaths": [
+    ".cspell/project-words.txt",
+    ".dart_tool/**",
+    ".git/**",
+    "android/**",
+    "build/**",
+    "coverage/**",
+    "ios/**",
+    "node_modules/**",
+    "pnpm-lock.yaml",
+    "pubspec.lock",
+    "web/icons/**"
+  ],
+  "ignoreRegExpList": [
+    "/sha256:[0-9a-f]{64}/",
+    "/\\b[0-9a-f]{40}\\b/"
+  ]
+}

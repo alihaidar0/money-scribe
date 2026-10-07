@@ -1,24 +1,80 @@
+# Every commit runs the same checks as CI, so a commit that would fail CI never
+# leaves the machine. Order: cheap file checks first, then format, analyze and
+# test. Fix the reported problem, stage it, and commit again.
+#
 # The toolchain (Node, pnpm, Flutter) lives in the dev container. When git runs
-# on the host (terminal or GUI) this hook is skipped; CI runs the same check.
+# on the host (terminal or GUI) this hook is skipped; CI runs the same checks.
 if [ ! -f /.dockerenv ] && [ ! -f /run/.containerenv ] && [ -z "${REMOTE_CONTAINERS:-}" ] && [ -z "${CODESPACES:-}" ]; then
-  echo "ℹ️  Not inside the dev container — format check skipped (CI still enforces it)"
+  echo "ℹ️  Not inside the dev container — pre-commit checks skipped (CI still enforces them)"
   exit 0
 fi
 
-# Skip all checks if Flutter has not been initialised yet.
-# Run `flutter create .` first, then `flutter pub get` to activate these hooks.
 if [ ! -f "pubspec.yaml" ]; then
-  echo "ℹ️  No pubspec.yaml found — pre-commit checks skipped (run flutter create . first)"
-  exit 0
-fi
-
-# ── Dart format check (staged files only) ─────────────────────────────────────
-# Kept light on purpose: only the Dart files in this commit are checked, so the
-# hook stays fast on large projects. Full analysis runs before every push and
-# in CI. Fix with: dart format <file>   (or: dart format .)
-if ! git diff --cached --name-only -z --diff-filter=ACMR -- '*.dart' \
-  | xargs -0 --no-run-if-empty dart format --set-exit-if-changed; then
-  echo ""
-  echo "✖ Some staged Dart files are not formatted. Run: dart format ."
+  echo "✖ pubspec.yaml not found — run the hook from the repository root."
   exit 1
 fi
+
+fail() {
+  echo ""
+  echo "✖ $1"
+  exit 1
+}
+
+# ── 1. Staged files: LF line endings, no trailing whitespace, final newline ───
+# Mirrors the Format job in ci.yml: Markdown may keep trailing spaces, and the
+# folders written by `flutter create` are only checked for line endings.
+cr="$(printf '\r')"
+problems=""
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+while IFS= read -r file; do
+  [ -n "$file" ] && [ -f "$file" ] || continue
+  grep -Iq . "$file" || continue # binary or empty
+  if grep -q "$cr" "$file"; then
+    problems="${problems}  CRLF line endings: $file
+"
+  fi
+  case "$file" in
+    android/* | ios/* | web/* | macos/* | linux/* | windows/*) continue ;;
+  esac
+  case "$file" in
+    *.md) ;;
+    *)
+      if grep -qE '[[:space:]]+$' "$file"; then
+        problems="${problems}  trailing whitespace: $file
+"
+      fi
+      ;;
+  esac
+  if [ "$(tail -c1 "$file" | wc -l)" -eq 0 ]; then
+    problems="${problems}  missing final newline: $file
+"
+  fi
+done <<EOF
+$staged
+EOF
+if [ -n "$problems" ]; then
+  printf '%s' "$problems"
+  fail "Fix the files above (LF endings, no trailing whitespace, final newline)."
+fi
+
+# ── 2. Scripts and hooks are executable in Git ────────────────────────────────
+not_executable="$(git ls-files -s scripts .husky | awk '$1 != "100755" { print $4 }')"
+if [ -n "$not_executable" ]; then
+  echo "$not_executable"
+  fail "Not executable in Git. Run: git update-index --chmod=+x <file>"
+fi
+
+# ── 3. Dart format (whole project, nothing is rewritten) ──────────────────────
+echo "▸ dart format"
+dart format --output=none --set-exit-if-changed . >/dev/null \
+  || fail "Dart files are not formatted. Run: dart format ."
+
+# ── 4. Static analysis (infos are errors, as in CI) ───────────────────────────
+echo "▸ flutter analyze --fatal-infos"
+flutter analyze --fatal-infos || fail "flutter analyze reported issues."
+
+# ── 5. Tests ──────────────────────────────────────────────────────────────────
+echo "▸ flutter test"
+flutter test || fail "Tests failed."
+
+echo "✔ pre-commit checks passed"

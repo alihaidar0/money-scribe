@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in the template's tooling, CI, or dev container is broken
+description: Something in Money Scribe does not work as expected
 title: "bug: "
 labels:
   - bug
@@ -9,6 +9,8 @@ body:
       value: |
         Thanks for taking the time to report a problem. Please do **not** use this form for security vulnerabilities; use the **Security** tab → **Report a vulnerability** instead.
 
+        **Never include real financial data** (amounts, account names, balances, people's names). Use invented numbers that reproduce the problem.
+
   - type: checkboxes
     id: preflight
     attributes:
@@ -16,7 +18,7 @@ body:
       options:
         - label: I searched the existing issues and this has not been reported yet.
           required: true
-        - label: The problem is in this repository, not in the base image (those go to `flutter-devcontainer`).
+        - label: This report contains no real financial or personal data.
           required: true
 
   - type: textarea
@@ -31,10 +33,10 @@ body:
     id: reproduce
     attributes:
       label: Steps to reproduce
-      description: The smallest sequence of steps that triggers it.
+      description: The smallest sequence of steps that triggers it, with invented values.
       placeholder: |
-        1. Use this template and open the project in the dev container
-        2. Run ...
+        1. Open ...
+        2. Enter ...
         3. See the error
     validations:
       required: true
@@ -51,38 +53,46 @@ body:
     attributes:
       label: Area
       options:
-        - Dev container / compose / VS Code
-        - GitHub Actions (ci.yml / build.yml / release.yml / labels.yml)
-        - Husky / commitlint
-        - Dependabot
-        - Repository rulesets / settings guide
+        - Salary calculator
+        - Recurring income and expenses
+        - Transactions and purchases
+        - Debts
+        - Overview and reports
+        - Import and export
+        - Settings, app lock and appearance
+        - Build, CI or dev container
         - Documentation
         - Other
     validations:
       required: true
 
-  - type: input
-    id: image-tag
-    attributes:
-      label: Dev image tag
-      description: The flutter-devcontainer tag the container runs, e.g. `latest` or `flutter-X.Y.Z.R`.
-      placeholder: latest
-
   - type: dropdown
-    id: host-os
+    id: platform
     attributes:
-      label: Host OS
+      label: Platform
       options:
-        - Windows
-        - macOS (Apple Silicon)
-        - macOS (Intel)
-        - Linux
+        - Android
+        - iOS
+        - Web
+        - Not platform-specific
     validations:
       required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The release (e.g. `v1.0.0`) or the commit you built from.
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version
+      placeholder: e.g. Pixel 8, Android 16 / Chrome 140 on Windows
 
   - type: textarea
     id: logs
     attributes:
       label: Relevant logs
-      description: Paste the output as text, not a screenshot. Remove tokens, keys and personal paths first.
+      description: Paste the output as text, not a screenshot. Remove tokens, keys, personal paths and any financial data first.
       render: shell

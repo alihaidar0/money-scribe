@@ -22,7 +22,7 @@ while read -r _ local_sha remote_ref _; do
 done
 
 # ── Static analysis before commits leave the machine ──────────────────────────
-# Skipped on a fresh template (no pubspec.yaml), when only deleting branches, and
+# Skipped without a Flutter project (no pubspec.yaml), when only deleting branches, and
 # outside the dev container (Flutter lives there; CI runs the analysis too).
 # --fatal-infos matches the CI analyze job, so info-level lints fail here first.
 in_container=0

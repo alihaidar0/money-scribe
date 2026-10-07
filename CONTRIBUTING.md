@@ -1,34 +1,40 @@
 # Contributing
 
-Thanks for improving `flutter-template`. This repository provides the developer toolchain and CI/CD scaffolding that every new Flutter project starts from, so a change here reaches every project generated from it. Changes are kept small and verified.
+Thanks for improving **Money Scribe**, an offline-first personal finance tracker built with Flutter. The app handles people's money, so changes are kept small, tested and reviewed.
 
 ## Scope
 
-In scope: the dev container and compose setup, the git hooks, the CI and build workflows, repository governance (rulesets, labels, templates, Dependabot) and the documentation.
+In scope: the app (`lib/`, `test/`, the platform folders), its documentation, and the tooling that builds and checks it (dev container, git hooks, workflows, repository governance).
 
 Out of scope:
 
-- Flutter application code, `lib/`, `pubspec.yaml`, `pubspec.lock`, `android/`, `ios/`, `web/` or `test/`. This template must stay a zero-code starting point; `flutter create` makes them per project.
 - Anything that belongs in the dev image (SDKs, system packages, shell aliases, the prompt). That is [`flutter-devcontainer`](https://github.com/alihaidar0/flutter-devcontainer).
-- Deployment workflows and secrets. Targets differ per project (release signing is documented in [`docs/android-signing.md`](docs/android-signing.md), not configured).
+- Cloud services, analytics or tracking. The app is offline-first and keeps the user's data on the device.
 
 ## Branching and pull requests
 
-- `main` is the stable, released state; `develop` is the integration branch, the default branch (what "Use this template" copies) and where Dependabot pull requests land. Neither branch accepts direct pushes.
-- Work on a topic branch (`feat/…`, `fix/…`, `docs/…`, `ci/…`, `chore/…`, `deps/…`) and open the pull request against **`develop`**.
-- Only a `develop` → `main` pull request may target `main`.
+- `main` is the stable, released state; `develop` is the integration branch, the default branch and where Dependabot pull requests land. Neither branch accepts direct pushes.
+- Work on a topic branch off `develop` (`feat/…`, `fix/…`, `docs/…`, `ci/…`, `chore/…`, `deps/…`, `refactor/…`, `test/…`) and open the pull request against **`develop`**.
+- Only a `develop` → `main` release pull request may target `main`.
 - Merge with a **merge commit**. Squash and rebase merging are disabled.
 - Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) and use a Conventional Commit title: labels (they drive the release notes) are added automatically from it, and you can add more by hand.
 - The **CI passed** check must be green before merging.
+- One concern per pull request. The build plan is tracked in [`docs/steps.md`](docs/steps.md); tick a step in the pull request that completes it.
 
-The full branch model, repository settings and rulesets are described in [`docs/github-setup.md`](docs/github-setup.md).
+The branch model, repository settings and rulesets are described in [`docs/github-setup.md`](docs/github-setup.md).
 
 ## Before you start
 
-Husky hooks activate when the dev container is created (`postCreateCommand` runs `pnpm install`). To register them again:
+Open the repository in the dev container (**Dev Containers: Reopen in Container**). Flutter, Dart, the Android SDK, Node and pnpm come from the image, pinned in `docker-compose.yml`. The Husky hooks activate when the container is created (`postCreateCommand` runs `pnpm install`):
+
+- `pre-commit` runs the same checks as CI on every commit: line endings, trailing whitespace and final newlines of the staged files, executable scripts, `dart format`, `flutter analyze --fatal-infos` and `flutter test`.
+- `commit-msg` checks the Conventional Commit message.
+- `pre-push` blocks direct pushes to `main` and `develop` and runs `flutter analyze --fatal-infos` again.
+
+To register them again:
 
 ```bash
-pnpm install
+pnpm run prepare
 ```
 
 ## Commit messages
@@ -36,27 +42,42 @@ pnpm install
 [Conventional Commits](https://www.conventionalcommits.org/), enforced locally by commitlint and Husky's `commit-msg` hook and again in CI for every commit of a pull request:
 
 ```text
-feat(ci): add coverage upload to the test job
-fix(devcontainer): correct flutterSdkPath
-docs(readme): clarify emulator setup
+feat(transactions): add the transaction list screen
+fix(money): keep the currency when negating an amount
+docs(readme): describe the supported platforms
 build(deps): bump the commitlint group
 ```
 
-Valid types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert` `wip`. The type is lower-case, the subject is not sentence-, start-, Pascal- or upper-case and has no trailing period. A change that forces already-generated projects to adapt is breaking: `feat!:` with a `BREAKING CHANGE:` footer.
+Valid types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `chore` `revert` `wip`. The type is lower-case, the subject is not sentence-, start-, Pascal- or upper-case and has no trailing period. A breaking change (for example a database change without a migration path) uses `feat!:` with a `BREAKING CHANGE:` footer.
 
 ## Making changes
 
-- **Dev container, compose, VS Code config** — edit `.devcontainer/devcontainer.json`, `docker-compose.yml` or `.vscode/*`, and test with **Dev Containers: Rebuild Container**. Anything the image already provides (user, paths, aliases, pnpm, Chrome) is not repeated here.
-- **Workflows** — edit `.github/workflows/*.yml`. The template must pass on a fresh checkout (Tier 1, no `pubspec.yaml`) and on an initialised project (Tier 3); every new job needs a tier condition and a place in the `ci-passed` job's `needs:`. `build.yml` is not a required check: it must skip cleanly until `pubspec.yaml` and `pubspec.lock` exist, then build **staging** for pull requests into `develop` and **production** for pull requests into and merges to `main`, with no edit needed in a generated project. `release.yml` publishes calendar-versioned releases here and `pubspec.yaml`-versioned ones in a project.
-- **Git hooks** — edit `.husky/*`. They must never block a commit or push when `pubspec.yaml` is absent (see the Tier-1 guard in `.husky/pre-commit`).
-- **Template follows the newest, projects freeze** — the template stays on `:latest` and the newest stable Flutter; a project runs `scripts/pin-image.sh` to freeze the dev image (the newest permanent `flutter-X.Y.Z.R` tag plus its digest) and its Flutter version. Do not pin the template itself.
-- **Pinned versions** — GitHub Actions are pinned to a full commit SHA with a `# vX.Y.Z` comment, and `packageManager` (pnpm) equals the version the image pre-caches. Verify a version on its official channel before changing it, and name the bump in the pull request title.
+- **Structure** — feature-first and layered: `lib/app/` (app shell, theme, router), `lib/core/` (shared code), `lib/features/<name>/{data,domain,application,presentation}`. `test/` mirrors `lib/`.
+- **Money** — never use `double` for amounts. Amounts are integer minor units with an ISO 4217 currency code, wrapped in the `Money` value object; rounding happens in one place only. Amounts in different currencies are never added without an explicit conversion.
+- **Dates** — timestamps are stored in UTC and converted to local time only for display. Periods (months, reports) define their boundaries explicitly.
+- **Data** — transactions are the source of truth; balances are derived, never edited directly. Deleting a financial record is explicit and confirmed. Database changes ship with a versioned migration and a migration test. CSV export and import must round-trip without loss.
+- **Privacy** — no amounts, account names or personal data in logs, crash reports or test fixtures; tests use invented numbers. Secrets only through `--dart-define` or a local `.env` (see `.env.example`), never in source.
+- **Text and formatting** — user-facing strings live in ARB files; currency and dates are formatted with `intl`, never by hand.
+- **Accessibility** — semantic labels, sufficient contrast, scalable text, and no meaning carried by colour alone (income and expense also differ by sign or icon).
+- **Dependencies** — pin every package version in `pubspec.yaml` and commit `pubspec.lock`. GitHub Actions are pinned to a full commit SHA with a `# vX.Y.Z` comment.
+- **Toolchain** — the dev image and Flutter are frozen by `scripts/pin-image.sh` (`docker-compose.yml` and `environment: flutter:` in `pubspec.yaml`). Move to a newer toolchain only through a reviewed pull request, and update the Stack table in `README.md` in the same change.
 - **Node stays on 24**, matching the image. `engines.node` and the Dependabot ignore rule must agree.
 - **Shell scripts and hooks use LF line endings** and are executable in Git; a CRLF script fails inside the container.
 - **Workflow hygiene** — least-privilege `permissions:`, `persist-credentials: false` on checkout, `timeout-minutes` on every job, and `${{ }}` values reach `run:` scripts through `env:`, never inline.
-- **Keep the documentation true** — update `README.md` and `CHANGELOG.md` in the same pull request.
+- **Spelling** — `cspell.json` configures the spell checker (VS Code runs it through the Code Spell Checker extension). British and American English are both accepted. Add a genuine project word (a name, a tool, a technical term; never a typo) to `.cspell/project-words.txt`, lowercase and in alphabetical order. The generated `android/` and `ios/` folders are not checked. To check the whole project: `pnpm dlx cspell --no-progress "**"`.
+- **Keep the documentation true** — update `README.md` and `docs/` in the same pull request as the code.
 
 ## Checking your change locally
+
+The same checks CI runs on every pull request (the `pre-commit` hook runs them too):
+
+```bash
+dart format --set-exit-if-changed .
+flutter analyze --fatal-infos
+flutter test
+```
+
+For changes to scripts, hooks or workflows:
 
 ```bash
 bash -n scripts/*.sh
@@ -64,17 +85,12 @@ docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable scripts/*.sh
 docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable --shell=sh .husky/commit-msg .husky/pre-commit .husky/pre-push
 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest -no-color
 docker run --rm -v "$PWD:/repo:ro" -w /repo ghcr.io/zizmorcore/zizmor:latest --no-progress --offline .
-docker compose config --quiet
-echo "chore: example" | pnpm exec commitlint     # must pass
-echo "bad message" | pnpm exec commitlint        # must fail
-git ls-files -s scripts .husky .github/scripts   # every mode must be 100755 (new files: git add --chmod=+x <file>)
+git ls-files -s scripts .husky   # every mode must be 100755 (new files: git add --chmod=+x <file>)
 ```
-
-CI runs the same checks and more.
 
 ## Bugs and feature requests
 
-Use the issue templates under **New issue**. Problems with the base Docker image itself belong in [`flutter-devcontainer`](https://github.com/alihaidar0/flutter-devcontainer/issues).
+Use the issue forms under **New issue**. Never paste real financial data (amounts, account names, balances) into an issue; use invented numbers. Problems with the base Docker image itself belong in [`flutter-devcontainer`](https://github.com/alihaidar0/flutter-devcontainer/issues).
 
 ## Security issues
 
