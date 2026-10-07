@@ -77,7 +77,7 @@ flutter analyze --fatal-infos
 flutter test
 ```
 
-For changes to scripts, hooks or workflows:
+For changes to scripts, hooks or workflows, CI runs ShellCheck, actionlint and zizmor. The commands below use Docker; the dev container has none, so inside it run ShellCheck with `pnpm dlx shellcheck@latest --shell=sh .husky/commit-msg .husky/pre-commit .husky/pre-push` (and without `--shell=sh` on `scripts/*.sh`), and download the actionlint and zizmor release binaries from their GitHub releases pages.
 
 ```bash
 bash -n scripts/*.sh

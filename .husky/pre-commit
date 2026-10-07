@@ -27,7 +27,8 @@ cr="$(printf '\r')"
 problems=""
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
 while IFS= read -r file; do
-  [ -n "$file" ] && [ -f "$file" ] || continue
+  [ -n "$file" ] || continue
+  [ -f "$file" ] || continue # deleted in this commit
   grep -Iq . "$file" || continue # binary or empty
   if grep -q "$cr" "$file"; then
     problems="${problems}  CRLF line endings: $file
