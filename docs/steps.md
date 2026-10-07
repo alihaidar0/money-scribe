@@ -14,7 +14,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Make the repository describe the app: README, contributing, security, forms, workflows, docs
 - [x] List the app's keys in `.env.example` (names only)
 - [x] Commit the scaffold and open the first pull request into `develop`
-- [ ] Apply the repository settings and import the rulesets ([`github-setup.md`](github-setup.md))
+- [x] Apply the repository settings and import the rulesets ([`github-setup.md`](github-setup.md))
 
 ## 2. Quality baseline
 
@@ -46,7 +46,9 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 ## 5. Release
 
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
+- [ ] Create the `production` environment, restricted to `main`, for the signing secrets ([`github-setup.md`](github-setup.md))
 - [ ] Android release signing ([`android-signing.md`](android-signing.md))
+- [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI
 - [ ] Raise the version and open the `develop` → `main` release pull request
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
