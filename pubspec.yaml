@@ -1,0 +1,20 @@
+name: money_scribe
+description: "Money Scribe: Budget & Expense Tracker"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  flutter: 3.47.6
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

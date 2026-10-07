@@ -1,9 +1,9 @@
 services:
   app:
-    # The template follows the newest image. In a project created from it, run
-    # scripts/pin-image.sh once to freeze this line to an exact build (tag and
-    # digest), so the toolchain only changes when you change it on purpose.
-    image: alihaidar199527/flutter-devcontainer:latest
+    # Frozen to an exact build (tag and digest) by scripts/pin-image.sh, so the
+    # toolchain only changes on purpose: through a Dependabot pull request or
+    # by running the script again.
+    image: alihaidar199527/flutter-devcontainer:flutter-3.47.6.4@sha256:4bd7f4f74133fc9dd85e346b73be3aa451fa95a545d88ac26c10e2f3af0c3d9d
     # Reaps zombie processes (adb, Gradle daemons, dart) so they do not pile up.
     init: true
     entrypoint: ["/workspace/scripts/entrypoint.dev.sh"]

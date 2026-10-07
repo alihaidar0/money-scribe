@@ -5,14 +5,10 @@
 # The Releases page is the changelog; nothing is committed back to a protected
 # branch, so no bot, token or extra pull request is involved.
 #
-#   template repository   calendar versions (vYYYY.MM.DD, then vYYYY.MM.DD.1, ...);
-#                         documentation-only promotions do not release. The tag
-#                         tells a project which state of the template it was
-#                         created from.
-#   generated project     the version in pubspec.yaml (version: 1.4.0+7 -> v1.4.0).
-#                         Raise it in the develop -> main release pull request;
-#                         a release is published once per version and skipped
-#                         while the tag already exists.
+# The tag is the version in pubspec.yaml (version: 1.4.0+7 -> v1.4.0). Raise it
+# in the develop -> main release pull request; a release is published once per
+# version and skipped while the tag already exists. Documentation-only
+# promotions do not release.
 #
 # Tags matching v* are immutable (see the tags-protect ruleset).
 name: Release
@@ -35,45 +31,8 @@ concurrency:
 permissions: {}
 
 jobs:
-  release:
-    name: Publish GitHub Release
-    if: github.event.repository.is_template
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          TARGET_SHA: ${{ github.sha }}
-        run: |
-          base="v$(date -u +%Y.%m.%d)"
-          tag="$base"
-          n=1
-          while gh release view "$tag" > /dev/null 2>&1 || git rev-parse -q --verify "refs/tags/$tag" > /dev/null; do
-            tag="$base.$n"
-            n=$((n + 1))
-          done
-          gh release create "$tag" \
-            --target "$TARGET_SHA" \
-            --title "$tag" \
-            --generate-notes \
-            --latest
-          echo "Published release $tag" >> "$GITHUB_STEP_SUMMARY"
-
-  # The application's own releases. Inert in the template (no pubspec.yaml) and
-  # until the project has a version to release.
   app-release:
     name: Publish app release
-    if: '!github.event.repository.is_template'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

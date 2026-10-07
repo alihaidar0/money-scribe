@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement to the template or its tooling
+description: Suggest a new feature or an improvement to Money Scribe
 title: "feat: "
 labels:
   - enhancement
@@ -7,7 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        This template is deliberately small: it ships a toolchain, not Flutter code. Proposals that add application code, deployment targets or anything that belongs in the base image will be redirected.
+        Money Scribe is an offline-first personal finance tracker: the user's data stays on the device. Proposals that need cloud services, accounts or tracking are out of scope.
+
+        **Never include real financial data** in a proposal; use invented numbers in examples.
 
   - type: checkboxes
     id: preflight
@@ -16,7 +18,7 @@ body:
       options:
         - label: I searched the existing issues and this has not been proposed yet.
           required: true
-        - label: This is about the template's tooling, CI or governance, not application code.
+        - label: This proposal contains no real financial or personal data.
           required: true
 
   - type: textarea
@@ -38,11 +40,14 @@ body:
     attributes:
       label: Area
       options:
-        - Dev container / compose / VS Code
-        - GitHub Actions
-        - Husky / commitlint
-        - Dependabot
-        - Repository rulesets / settings guide
+        - Salary calculator
+        - Recurring income and expenses
+        - Transactions and purchases
+        - Debts
+        - Overview and reports
+        - Import and export
+        - Settings, app lock and appearance
+        - Build, CI or dev container
         - Documentation
         - Other
     validations:

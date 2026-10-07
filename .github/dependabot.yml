@@ -38,74 +38,58 @@ updates:
     open-pull-requests-limit: 5
 
   # ── Dart / Flutter pub packages ─────────────────────────────────────────
-  # DISABLED on flutter-template itself. This ecosystem requires pubspec.yaml
-  # to exist at the repo root, which this template intentionally does not ship
-  # (see README: "Blank canvas. No lib/, no pubspec.yaml"). Left enabled,
-  # Dependabot hard-fails every run with "dependency_file_not_found" because it
-  # has no graceful-skip behaviour like ci.yml's tier detection.
-  #
-  # ACTION REQUIRED once you run `flutter create` in a project generated from
-  # this template: uncomment the block below so dependency updates actually
-  # run. See README → Dependabot.
-  #
-  # - package-ecosystem: "pub"
-  #   directory: "/"
-  #   schedule:
-  #     interval: "weekly"
-  #     day: "monday"
-  #     time: "09:00"
-  #     timezone: "UTC"
-  #   target-branch: "develop"
-  #   rebase-strategy: "auto"
-  #   cooldown:
-  #     default-days: 7
-  #   assignees:
-  #     - "alihaidar0"
-  #   commit-message:
-  #     prefix: "chore"
-  #     include: "scope"
-  #   labels:
-  #     - "dependencies"
-  #     - "flutter"
-  #   open-pull-requests-limit: 5
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    target-branch: "develop"
+    rebase-strategy: "auto"
+    cooldown:
+      default-days: 7
+    assignees:
+      - "alihaidar0"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "flutter"
+    open-pull-requests-limit: 5
 
   # ── Dev image (docker-compose.yml) ──────────────────────────────────────
-  # DISABLED on flutter-template itself, which follows `:latest` on purpose (a
-  # tag without a version gives Dependabot nothing to bump).
-  #
-  # ACTION REQUIRED in a project created from this template: run
-  # scripts/pin-image.sh once so docker-compose.yml names an exact build
-  # (flutter-X.Y.Z.R@sha256:<digest>), then uncomment the block below. The
-  # dotted tag lets Dependabot order and bump it, so the toolchain only changes
-  # through a reviewed pull request (run CI before merging: a new Flutter can
-  # change the Dart and Android toolchain; also update `environment: flutter:`
-  # in pubspec.yaml in that pull request), never silently.
-  #
-  # - package-ecosystem: "docker-compose"
-  #   directory: "/"
-  #   schedule:
-  #     interval: "weekly"
-  #     day: "monday"
-  #     time: "09:00"
-  #     timezone: "UTC"
-  #   target-branch: "develop"
-  #   cooldown:
-  #     default-days: 7
-  #   assignees:
-  #     - "alihaidar0"
-  #   commit-message:
-  #     prefix: "build"
-  #     include: "scope"
-  #   labels:
-  #     - "dependencies"
-  #   open-pull-requests-limit: 5
+  # docker-compose.yml names an exact build (flutter-X.Y.Z.R@sha256:<digest>,
+  # written by scripts/pin-image.sh). The dotted tag lets Dependabot order and
+  # bump it, so the toolchain only changes through a reviewed pull request (run
+  # CI before merging: a new Flutter can change the Dart and Android toolchain;
+  # also update `environment: flutter:` in pubspec.yaml in that pull request),
+  # never silently.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    target-branch: "develop"
+    cooldown:
+      default-days: 7
+    assignees:
+      - "alihaidar0"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 5
 
   # ── npm (husky + commitlint only) ───────────────────────────────────────
   # Node is intentionally frozen at v24 LTS, matching NODE_VERSION in
   # flutter-devcontainer's Dockerfile.dev. All other npm packages are updated
-  # automatically. Bump Node manually (in both repos) when the image moves on.
-  # packageManager (pnpm) is kept equal to the version the image pre-caches; see
-  # .github/workflows/image-contract.yml.
+  # automatically. Bump Node manually when the image moves on. Keep
+  # packageManager (pnpm) equal to the version the dev image pre-caches.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:

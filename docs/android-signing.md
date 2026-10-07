@@ -2,14 +2,13 @@
 
 `build.yml` builds the APK and the App Bundle without a signing key: a release build
 with no signing configuration is signed with the **debug key**, which is fine for
-testing and not accepted by the Play Store. This guide adds real signing to a project
-created from the template. It is a per-project step because the key, the Play
-Console and the Gradle files belong to the app, not to the template.
+testing and not accepted by the Play Store. This guide adds real signing to Money
+Scribe before its first store release.
 
 The snippets are adapted from the official
 [Flutter Android deployment guide](https://docs.flutter.dev/deployment/android) and
-have not been run in this template; check them against the guide for your Flutter
-version.
+have not been applied to this project yet; check them against the guide for the
+pinned Flutter version.
 
 The plan: sign **only** the production build that runs when `main` is updated, keep the
 key in a GitHub **environment** that only `main` can use, and leave staging and pull

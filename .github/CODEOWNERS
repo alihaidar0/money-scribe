@@ -1,6 +1,4 @@
 # Default owner — requested for review on every pull request.
-# Replace @alihaidar0 with your own username in a project generated from this
-# template.
 *                          @alihaidar0
 
 # Everything that decides how the project is built, checked and released.
