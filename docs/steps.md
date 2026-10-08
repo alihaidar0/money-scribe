@@ -21,7 +21,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Pre-commit hook runs every CI check (format, analyze, tests, file hygiene)
 - [x] First smoke test in `test/`
 - [x] Spell checker configured (`cspell.json`, shared project word list)
-- [ ] Strict lints in `analysis_options.yaml`
+- [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
 - [ ] Feature-first folders: `app/`, `core/`, `features/<name>/{data,domain,application,presentation}`
 - [ ] Riverpod, `go_router`, `drift` and `freezed`
 - [ ] Material 3 theme with light and dark modes

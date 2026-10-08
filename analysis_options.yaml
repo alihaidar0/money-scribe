@@ -1,4 +1,4 @@
-include: package:flutter_lints/flutter.yaml
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   exclude:
@@ -6,3 +6,8 @@ analyzer:
     - android/**
     - ios/**
     - web/**
+
+linter:
+  rules:
+    # An application, not a published package: no dartdoc required on every public member.
+    public_member_api_docs: false
