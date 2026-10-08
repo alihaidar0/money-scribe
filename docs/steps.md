@@ -24,6 +24,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
 - [ ] Feature-first folders: `app/`, `core/`, `features/<name>/{data,domain,application,presentation}`
 - [ ] Riverpod, `go_router`, `drift` and `freezed`
+- [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
 - [ ] Material 3 theme with light and dark modes
 - [ ] Localization-ready strings (ARB files)
 

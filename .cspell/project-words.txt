@@ -29,6 +29,7 @@ sshkey
 storetype
 tolower
 uspto
+wcag
 xcassets
 xcodeproj
 zizmor
