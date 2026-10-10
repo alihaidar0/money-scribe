@@ -11,8 +11,10 @@ amount and name below is invented sample data.
 person managing their own money. It replaces a monthly salary spreadsheet and adds
 what a spreadsheet handles poorly: everyday purchases and debts.
 
-- **Offline-first:** no account, no sign-in, no ads. All data stays on the device;
-  backup is an explicit export.
+- **Server-backed, usable offline:** the server is the source of truth and the
+  device keeps a local copy, so the app opens fast and stays usable without a
+  connection. No ads. Sign-in will be needed once the backend exists; the backend
+  is not chosen yet.
 - **Precise:** amounts are exact to the minor unit (kopecks, cents), and the user
   must be able to trust every number on screen.
 - **Private:** an optional app lock protects the data.
@@ -133,7 +135,7 @@ lead the user to enter their first salary month.
 - **Numbers:** use tabular (fixed-width) figures for amounts so columns line up.
 - **Language:** English first. Other languages follow later, including right-to-left
   ones, so layouts must mirror cleanly and allow text about 40% longer than English.
-- **No sign-in, sync or social features** in the design for now.
+- **Sign-in and sync screens are not designed yet** (the backend is not chosen); no social features.
 
 ## 5. Accessibility
 

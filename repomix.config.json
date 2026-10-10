@@ -13,7 +13,7 @@
     "removeEmptyLines": false,
     "showLineNumbers": false,
     "copyToClipboard": false,
-    "headerText": "Money Scribe — offline-first personal finance tracker built with Flutter.",
+    "headerText": "Money Scribe — personal finance tracker built with Flutter.",
     "git": {
       "sortByChanges": true,
       "sortByChangesMaxCommits": 100

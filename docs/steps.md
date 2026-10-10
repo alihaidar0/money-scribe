@@ -24,7 +24,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
 - [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
 - [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
-- [ ] Material 3 theme with light and dark modes
+- [x] Material 3 theme with light and dark modes
 - [ ] Localization-ready strings (ARB files)
 - [ ] Local database base with `drift`: versioned migrations, a migration test, encryption decision
 - [ ] Immutable models with `freezed`, added with the first model that needs it
@@ -36,6 +36,8 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
 - [ ] Debts: borrowed and lent, partial repayments, settled status
+- [ ] Backend, sign-in and sync, with the server as the source of truth (provider chosen when needed)
+- [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
 
 ## 4. Insight and polish
 

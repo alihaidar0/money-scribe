@@ -1,0 +1,78 @@
+import 'package:flutter/material.dart';
+
+/// The Material 3 colour schemes of `docs/DESIGN.md` (section 2), brand seed
+/// `#0F3D73`. The values are exact; do not derive them from the seed.
+///
+/// `surfaceVariant` is left out because Flutter has deprecated it in favour of
+/// the surface container roles.
+abstract final class AppColorSchemes {
+  static const light = ColorScheme(
+    brightness: Brightness.light,
+    primary: Color(0xFF1D477D),
+    onPrimary: Color(0xFFFFFFFF),
+    primaryContainer: Color(0xFFD6E3FF),
+    onPrimaryContainer: Color(0xFF001B3C),
+    secondary: Color(0xFF555F71),
+    onSecondary: Color(0xFFFFFFFF),
+    secondaryContainer: Color(0xFFD9E3F8),
+    onSecondaryContainer: Color(0xFF121C2B),
+    tertiary: Color(0xFF6F5675),
+    onTertiary: Color(0xFFFFFFFF),
+    tertiaryContainer: Color(0xFFF9D8FE),
+    onTertiaryContainer: Color(0xFF28132F),
+    error: Color(0xFFBA1A1A),
+    onError: Color(0xFFFFFFFF),
+    errorContainer: Color(0xFFFFDAD6),
+    onErrorContainer: Color(0xFF410002),
+    surface: Color(0xFFFAF9FD),
+    onSurface: Color(0xFF1A1C1E),
+    onSurfaceVariant: Color(0xFF43474E),
+    outline: Color(0xFF74777F),
+    outlineVariant: Color(0xFFC4C6CF),
+    surfaceDim: Color(0xFFDAD9DD),
+    surfaceBright: Color(0xFFFAF9FD),
+    surfaceContainerLowest: Color(0xFFFFFFFF),
+    surfaceContainerLow: Color(0xFFF4F3F7),
+    surfaceContainer: Color(0xFFEEEDF1),
+    surfaceContainerHigh: Color(0xFFE9E7EB),
+    surfaceContainerHighest: Color(0xFFE3E2E6),
+    inverseSurface: Color(0xFF2F3033),
+    onInverseSurface: Color(0xFFF1F0F4),
+    inversePrimary: Color(0xFFA8C8FF),
+  );
+
+  static const dark = ColorScheme(
+    brightness: Brightness.dark,
+    primary: Color(0xFFA8C8FF),
+    onPrimary: Color(0xFF003062),
+    primaryContainer: Color(0xFF1D477D),
+    onPrimaryContainer: Color(0xFFD6E3FF),
+    secondary: Color(0xFFBDC7DC),
+    onSecondary: Color(0xFF273141),
+    secondaryContainer: Color(0xFF3E4758),
+    onSecondaryContainer: Color(0xFFD9E3F8),
+    tertiary: Color(0xFFDBBCE1),
+    onTertiary: Color(0xFF3E2845),
+    tertiaryContainer: Color(0xFF563E5D),
+    onTertiaryContainer: Color(0xFFF9D8FE),
+    error: Color(0xFFFFB4AB),
+    onError: Color(0xFF690005),
+    errorContainer: Color(0xFF93000A),
+    onErrorContainer: Color(0xFFFFDAD6),
+    surface: Color(0xFF121316),
+    onSurface: Color(0xFFE3E2E6),
+    onSurfaceVariant: Color(0xFFC4C6CF),
+    outline: Color(0xFF8E9099),
+    outlineVariant: Color(0xFF43474E),
+    surfaceDim: Color(0xFF121316),
+    surfaceBright: Color(0xFF38393C),
+    surfaceContainerLowest: Color(0xFF0D0E11),
+    surfaceContainerLow: Color(0xFF1A1C1E),
+    surfaceContainer: Color(0xFF1E2023),
+    surfaceContainerHigh: Color(0xFF292A2D),
+    surfaceContainerHighest: Color(0xFF343538),
+    inverseSurface: Color(0xFFE3E2E6),
+    onInverseSurface: Color(0xFF2F3033),
+    inversePrimary: Color(0xFF395F97),
+  );
+}
