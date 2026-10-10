@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for improving **Money Scribe**, an offline-first personal finance tracker built with Flutter. The app handles people's money, so changes are kept small, tested and reviewed.
+Thanks for improving **Money Scribe**, a personal finance tracker built with Flutter. The app handles people's money, so changes are kept small, tested and reviewed.
 
 ## Scope
 
@@ -9,7 +9,7 @@ In scope: the app (`lib/`, `test/`, the platform folders), its documentation, an
 Out of scope:
 
 - Anything that belongs in the dev image (SDKs, system packages, shell aliases, the prompt). That is [`flutter-devcontainer`](https://github.com/alihaidar0/flutter-devcontainer).
-- Cloud services, analytics or tracking. The app is offline-first and keeps the user's data on the device.
+- Analytics, crash reporting or tracking of what users do, for now; this is revisited when the backend is chosen. A backend with sign-in and synchronization is planned, but its provider is not chosen yet, so discuss backend work in an issue before starting it.
 
 ## Branching and pull requests
 
@@ -55,8 +55,8 @@ Valid types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `
 - **Structure** — feature-first and layered: `lib/app/` (app shell, theme, router), `lib/core/` (shared code), `lib/features/<name>/{data,domain,application,presentation}`. `test/` mirrors `lib/`.
 - **Money** — never use `double` for amounts. Amounts are integer minor units with an ISO 4217 currency code, wrapped in the `Money` value object; rounding happens in one place only. Amounts in different currencies are never added without an explicit conversion.
 - **Dates** — timestamps are stored in UTC and converted to local time only for display. Periods (months, reports) define their boundaries explicitly.
-- **Data** — transactions are the source of truth; balances are derived, never edited directly. Deleting a financial record is explicit and confirmed. Database changes ship with a versioned migration and a migration test. CSV export and import must round-trip without loss.
-- **Privacy** — no amounts, account names or personal data in logs, crash reports or test fixtures; tests use invented numbers. Secrets only through `--dart-define` or a local `.env` (see `.env.example`), never in source.
+- **Data** — the server is the source of truth and the device keeps a local copy that stays usable without a connection (the backend is not chosen yet, so for now the local database holds everything). All remote access sits behind repository interfaces. Transactions are the record; balances are derived, never edited directly. Deleting a financial record is explicit and confirmed. Database changes ship with a versioned migration and a migration test. CSV export and import must round-trip without loss.
+- **Privacy** — no amounts, account names or personal data in logs, crash reports or test fixtures; tests use invented numbers. Secrets only through `--dart-define` or a local `.env` (see `.env.example`), never in source; server credentials and admin keys never belong in the app or the repository.
 - **Text and formatting** — user-facing strings live in ARB files; currency and dates are formatted with `intl`, never by hand.
 - **Accessibility** — semantic labels, sufficient contrast, scalable text, and no meaning carried by colour alone (income and expense also differ by sign or icon).
 - **Dependencies** — pin every package version in `pubspec.yaml` and commit `pubspec.lock`. GitHub Actions are pinned to a full commit SHA with a `# vX.Y.Z` comment.

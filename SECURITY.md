@@ -2,9 +2,10 @@
 
 ## Scope
 
-Money Scribe is an offline-first personal finance tracker. It stores the
-user's financial records (salary, income, expenses, purchases and debts) on
-the device, so protecting that data is the main security concern.
+Money Scribe is a personal finance tracker. It stores the user's financial
+records (salary, income, expenses, purchases and debts) on the device and,
+once the backend exists, on a server that is the source of truth, so
+protecting that data is the main security concern.
 
 In scope:
 
@@ -12,6 +13,8 @@ In scope:
   output, exported files, platform backups, or another app on the device
 - Weaknesses in local storage, app lock or data import (for example a
   crafted CSV file that corrupts data or causes unintended behaviour)
+- Weaknesses in how data is sent to, stored on or synchronized with the
+  server (authentication, authorization, transport), once a backend exists
 - Secrets or credentials committed to the repository history
 - A GitHub Actions workflow that could allow unauthorized code execution or
   exfiltration of secrets (e.g. via script injection through untrusted
@@ -25,12 +28,14 @@ Only the latest release (the newest tag on `main`) receives security fixes.
 
 ## Data handling
 
-- Financial data stays on the device; the app sends no analytics or
+- Financial data lives on the device and, with the backend, on the server;
+  it is sent only over encrypted connections. The app sends no analytics or
   tracking data.
 - Amounts, account names and other personal data are never written to logs
   or crash reports.
 - Secrets are passed at build time (`--dart-define`) or kept in a local,
-  gitignored `.env`; none are stored in the source.
+  gitignored `.env`; none are stored in the source. Server credentials and
+  admin keys are never part of the app.
 
 ## Supply chain
 

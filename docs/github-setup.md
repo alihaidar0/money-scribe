@@ -40,7 +40,7 @@ A pull request into `main` from any branch other than `develop` fails the **Veri
 | Pull Requests → Automatically delete head branches | On |
 | Releases → Enable release immutability (if offered) | On |
 
-Also set the description ("Money Scribe: Budget & Expense Tracker") and these topics: `flutter`, `dart`, `android`, `ios`, `personal-finance`, `budget`, `expense-tracker`, `offline-first`.
+Also set the description ("Money Scribe: Budget & Expense Tracker") and these topics: `flutter`, `dart`, `android`, `ios`, `personal-finance`, `budget`, `expense-tracker`.
 
 The default branch is `develop`, the integration branch, so every automatic pull request (Dependabot *version* and *security* updates) and every new pull request targets it by default, and `main` is reached only through the `develop` → `main` release pull request. Set it under Settings → General → Default branch.
 
