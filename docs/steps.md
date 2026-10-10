@@ -50,6 +50,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 
 ## 5. Release
 
+- [x] App name "Money Scribe" and launcher icons for Android, iOS and web (`flutter_launcher_icons`, sources in `assets/icon/`)
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
 - [ ] Create the `production` environment, restricted to `main`, for the signing secrets ([`github-setup.md`](github-setup.md))
 - [ ] Android release signing ([`android-signing.md`](android-signing.md))
