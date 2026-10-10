@@ -63,11 +63,11 @@ To do, in this order, one step at a time:
 - [x] Create the `staging` GitHub environment, restricted to `develop`
 - [x] Add the four staging secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`) and the variable `ANDROID_CERT_SHA256`
 - [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
-- [ ] Merge the environments pull request; check the first staging build and the "Staging" draft release
+- [x] Merge the environments pull request; check the first staging build and the "Staging" draft release
 - [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
-- [ ] Create the upload signing key and back it up
-- [ ] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
-- [ ] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
+- [x] Create the upload signing key and back it up
+- [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
+- [x] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
 - [ ] Raise the version, open the `develop` → `main` release pull request, test its files, merge, check the signed production build, publish the release
 - [ ] Create one Google Cloud project per environment (staging and production)
 - [ ] Register the staging and production Android apps in their projects (no SDK or keys in the app yet)
