@@ -39,6 +39,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Debts: borrowed and lent, partial repayments, settled status
 - [ ] Backend and sign-in, with the server as the only place the data is stored (provider chosen when needed)
 - [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
+- [ ] Notifications: local reminders first (for example debts due), push once the backend is chosen
 
 ## 4. Insight and polish
 
@@ -50,11 +51,30 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 
 ## 5. Release
 
+Done in the repository:
+
 - [x] App name "Money Scribe" and launcher icons for Android, iOS and web (`flutter_launcher_icons`, sources in `assets/icon/`)
+- [x] Staging and production flavors with their own app IDs, icons and signing keys ([`environments.md`](environments.md))
+- [x] Signed builds and draft GitHub Releases for staging and production in the build workflow ([`android-signing.md`](android-signing.md))
+
+To do, in this order, one step at a time:
+
+- [x] Create the staging signing key and back it up
+- [x] Create the `staging` GitHub environment, restricted to `develop`
+- [x] Add the four staging secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`) and the variable `ANDROID_CERT_SHA256`
+- [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
+- [ ] Merge the environments pull request; check the first staging build and the "Staging" draft release
+- [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
+- [ ] Create the upload signing key and back it up
+- [ ] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
+- [ ] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
+- [ ] Raise the version, open the `develop` → `main` release pull request, test its files, merge, check the signed production build, publish the release
+- [ ] Create one Google Cloud project per environment (staging and production)
+- [ ] Register the staging and production Android apps in their projects (no SDK or keys in the app yet)
+- [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
+- [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
+- [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)
+- [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI (after the iOS flavors)
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
-- [ ] Create the `production` environment, restricted to `main`, for the signing secrets ([`github-setup.md`](github-setup.md))
-- [ ] Android release signing ([`android-signing.md`](android-signing.md))
-- [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI
-- [ ] Raise the version and open the `develop` → `main` release pull request
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

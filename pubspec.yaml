@@ -28,6 +28,9 @@ flutter:
   uses-material-design: true
   # Generates the localization code from `l10n.yaml` (see `lib/core/l10n/`).
   generate: true
+  # The flavor used when none is given: `flutter run` starts the staging app.
+  # See docs/environments.md.
+  default-flavor: staging
 
   fonts:
     - family: Inter

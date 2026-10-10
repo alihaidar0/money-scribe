@@ -1,4 +1,5 @@
 alihaidar
+apksigner
 appbundle
 appiconset
 commitlint
@@ -15,6 +16,7 @@ ftest
 genkey
 haidar
 husky
+jarfile
 keyalg
 keygen
 keysize
@@ -25,6 +27,7 @@ ntfs
 passwordless
 pbxproj
 pnpm
+printcert
 pubspec
 rhysd
 shellcheck

@@ -10,6 +10,18 @@
       "program": "lib/main.dart",
       "flutterMode": "debug",
       "deviceId": "host.docker.internal:5555",
+      "args": ["--flavor", "staging"],
+      "preLaunchTask": "Connect host emulator"
+    },
+    {
+      // The production app (application ID without a suffix) next to the staging one.
+      "name": "Flutter (Android — host emulator, production)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "host.docker.internal:5555",
+      "args": ["--flavor", "production"],
       "preLaunchTask": "Connect host emulator"
     },
     {

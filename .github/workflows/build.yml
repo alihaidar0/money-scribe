@@ -1,23 +1,40 @@
 # .github/workflows/build.yml
 #
-# Builds the app artifacts (Android APK, Android App Bundle, Web) for the two
-# environments of the branching model:
+# Builds the app artifacts (Android APKs, Android App Bundle, Web) for the two
+# environments of the branching model (docs/environments.md):
 #
-#   pull request into develop   staging      (APP_ENV=staging)
-#   pull request into main      production   (APP_ENV=production, the release PR)
-#   push to main                production   (the merged release)
-#   manual run                  staging or production, your choice
+#   pull request into develop   staging      test build, debug key
+#   pull request into main      production   test build, debug key (the release PR)
+#   push to develop             staging      signed build + the rolling "Staging" draft release
+#   push to main                production   signed build + the draft release of the version
+#   manual run                  staging or production, your choice (signed)
 #
-# Every build passes --dart-define=APP_ENV=<environment>; if the project has an
-# env/<environment>.json file it is passed as --dart-define-from-file as well.
-# Read the value in Dart with String.fromEnvironment('APP_ENV'). Flavors are
-# per project: README section 7.5 explains how to add `--flavor <environment>`.
+# The environment names are also the Android flavors, the GitHub environments and
+# the APP_ENV value: every build passes --dart-define=APP_ENV=<environment> (web
+# builds have no flavors); if the project has an env/<environment>.json file it is
+# passed as --dart-define-from-file as well. Read it in Dart with AppEnvironment.
 #
-# Nothing is signed or deployed: release signing keys and targets (Play Store,
-# Firebase, a web host) are added per project (docs/android-signing.md). Release
-# builds without a signing configuration use the debug key, so these artifacts
-# are for testing. An unsigned iOS compile check is available as an opt-in job
-# (repository variable BUILD_IOS=true).
+# Signing:
+#   - Pull request builds are test builds signed with the debug key; they never
+#     see a secret.
+#   - Signed builds (a push, or a manual run) use the key of their GitHub
+#     environment (docs/android-signing.md). The `staging` environment is
+#     restricted to develop and the `production` one to main, so no other branch
+#     can read the keys. Each build is obfuscated and gives one APK per CPU type
+#     plus the App Bundle; the job checks the signature of every file. The build
+#     number is the run number of this workflow, so it only ever increases.
+#   - The files go into a draft GitHub Release: "Staging" (tag staging, replaced
+#     by every build on develop, never published) or v<version> from pubspec.yaml
+#     (1.4.0+7 -> v1.4.0; a new build of the same version replaces its files; you
+#     publish it when it is final). A published release is immutable, so it is
+#     left alone (the build warns) and the next release needs a higher version.
+#   - The debug symbols of the obfuscated build are kept as a workflow artifact,
+#     never in a release, because the repository is public.
+#
+# An unsigned iOS compile check is available as an opt-in job (repository
+# variable BUILD_IOS=true). It cannot run until the iOS flavors (Xcode schemes)
+# exist, because pubspec.yaml sets a default flavor; iOS signing and App Store
+# upload are not set up.
 #
 # Copied into every generated project, so it skips cleanly until the project has
 # a pubspec.yaml and a pubspec.lock; nothing here needs editing in a project.
@@ -42,6 +59,7 @@ on:
   push:
     branches:
       - main
+      - develop
     paths:
       - "lib/**"
       - "assets/**"
@@ -107,6 +125,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
+          REF_NAME: ${{ github.ref_name }}
           INPUT_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           case "$EVENT_NAME" in
@@ -115,7 +134,7 @@ jobs:
             workflow_dispatch)
               target="$INPUT_ENVIRONMENT" ;;
             *)
-              target="production" ;; # push to main
+              if [[ "$REF_NAME" == "main" ]]; then target="production"; else target="staging"; fi ;;
           esac
           case "$target" in staging|production) ;; *) target="staging" ;; esac
           echo "environment=$target" >> "$GITHUB_OUTPUT"
@@ -144,29 +163,13 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-  # ── Android APK, Android App Bundle, Web ─────────────────────────────────
-  build:
-    name: ${{ matrix.name }} (${{ needs.detect.outputs.environment }})
+  # ── Web ──────────────────────────────────────────────────────────────────
+  build-web:
+    name: Web (${{ needs.detect.outputs.environment }})
     needs: detect
     if: needs.detect.outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Android APK
-            target: apk
-            artifact: android-apk
-            path: build/app/outputs/flutter-apk/app-release.apk
-          - name: Android AAB
-            target: appbundle
-            artifact: android-aab
-            path: build/app/outputs/bundle/release/app-release.aab
-          - name: Web
-            target: web
-            artifact: web-build
-            path: build/web/
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -184,10 +187,62 @@ jobs:
 
       - name: Build release
         env:
-          TARGET: ${{ matrix.target }}
           APP_ENV: ${{ needs.detect.outputs.environment }}
         run: |
           args=(--release "--dart-define=APP_ENV=${APP_ENV}")
+          if [[ -f "env/${APP_ENV}.json" ]]; then
+            args+=("--dart-define-from-file=env/${APP_ENV}.json")
+          fi
+          flutter build web "${args[@]}"
+
+      - name: Upload Web
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-build-${{ needs.detect.outputs.environment }}
+          path: build/web/
+          if-no-files-found: error
+          retention-days: ${{ needs.detect.outputs.environment == 'production' && 30 || 14 }}
+
+  # ── Android test builds (debug key) ──────────────────────────────────────
+  # Pull requests only. Signed with the debug key, so they are for testing and
+  # need no secret. Signed builds run on pushes and manual runs (below).
+  build-android-test:
+    name: ${{ matrix.name }} (${{ needs.detect.outputs.environment }}, debug key)
+    needs: detect
+    if: needs.detect.outputs.ready == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Android APK
+            target: apk
+            artifact: android-apk
+            path: build/app/outputs/flutter-apk/app-*-release.apk
+          - name: Android AAB
+            target: appbundle
+            artifact: android-aab
+            path: build/app/outputs/bundle/*Release/*.aab
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ needs.detect.outputs.flutter_version }}
+
+      - run: flutter pub get --enforce-lockfile
+
+      - name: Build release
+        env:
+          TARGET: ${{ matrix.target }}
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+        run: |
+          args=(--release --flavor "$APP_ENV" "--dart-define=APP_ENV=${APP_ENV}")
           if [[ -f "env/${APP_ENV}.json" ]]; then
             args+=("--dart-define-from-file=env/${APP_ENV}.json")
           fi
@@ -199,9 +254,285 @@ jobs:
           name: ${{ matrix.artifact }}-${{ needs.detect.outputs.environment }}
           path: ${{ matrix.path }}
           if-no-files-found: error
-          retention-days: ${{ needs.detect.outputs.environment == 'production' && 30 || 14 }}
+          retention-days: 14
+
+  # ── Android signed build ─────────────────────────────────────────────────
+  # The only job that reads the signing secrets. It runs in the GitHub
+  # environment named after the build environment (staging or production); each
+  # environment is restricted to one branch, so a pull request or another branch
+  # never gets the keys.
+  build-android-signed:
+    name: Android signed (${{ needs.detect.outputs.environment }})
+    needs: detect
+    if: needs.detect.outputs.ready == 'true' && github.event_name != 'pull_request'
+    environment: ${{ needs.detect.outputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ needs.detect.outputs.flutter_version }}
+
+      - run: flutter pub get --enforce-lockfile
+
+      # Writes the keystore and android/key.<environment>.properties (both ignored
+      # by Git) on this one-off runner. They are removed again in the last step.
+      - name: Prepare signing
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          for name in KEYSTORE_BASE64 STORE_PASSWORD KEY_PASSWORD KEY_ALIAS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::The ${APP_ENV} environment secret for ${name} is missing (see docs/android-signing.md)."
+              exit 1
+            fi
+          done
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/signing-keystore.jks"
+          {
+            echo "storePassword=${STORE_PASSWORD}"
+            echo "keyPassword=${KEY_PASSWORD}"
+            echo "keyAlias=${KEY_ALIAS}"
+            echo "storeFile=${RUNNER_TEMP}/signing-keystore.jks"
+          } > "android/key.${APP_ENV}.properties"
+
+      # One APK per CPU type and the App Bundle, obfuscated. The symbol files in
+      # build/symbols turn an obfuscated stack trace back into readable names.
+      - name: Build signed release
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          args=(--release --flavor "$APP_ENV" "--build-number=${BUILD_NUMBER}" "--dart-define=APP_ENV=${APP_ENV}" --obfuscate --split-debug-info=build/symbols)
+          if [[ -f "env/${APP_ENV}.json" ]]; then
+            args+=("--dart-define-from-file=env/${APP_ENV}.json")
+          fi
+          flutter build apk --split-per-abi "${args[@]}"
+          flutter build appbundle "${args[@]}"
+
+      # Fails the build if a file is signed with the debug key, or, when the
+      # environment variable ANDROID_CERT_SHA256 is set, with any other key than
+      # the expected one. The fingerprint is public information.
+      - name: Verify the signature
+        env:
+          EXPECTED_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          if [[ -z "$apksigner" ]]; then
+            echo "::error::apksigner was not found in the Android build tools."
+            exit 1
+          fi
+          normalise() { tr -d ': \n' | tr 'A-F' 'a-f'; }
+          expected="$(printf '%s' "${EXPECTED_SHA256:-}" | normalise)"
+
+          check() { # <file> <owner> <fingerprint>
+            if [[ "$2" == *"Android Debug"* ]]; then
+              echo "::error::$1 is signed with the debug key."
+              exit 1
+            fi
+            if [[ -n "$expected" && "$3" != "$expected" ]]; then
+              echo "::error::$1 is signed with an unexpected key (SHA-256 ${3})."
+              exit 1
+            fi
+            echo "$1: signed by ${3}"
+            echo "- \`$1\`: SHA-256 \`${3}\`" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          mapfile -t apks < <(find build/app/outputs/flutter-apk -name 'app-*-release.apk' | sort)
+          if [[ "${#apks[@]}" -ne 3 ]]; then
+            echo "::error::Expected 3 APKs (one per CPU type), found ${#apks[@]}."
+            exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            out="$("$apksigner" verify --print-certs "$apk")"
+            owner="$(grep -m1 'certificate DN:' <<< "$out")"
+            fingerprint="$(grep -m1 'certificate SHA-256 digest:' <<< "$out" | awk '{print $NF}' | normalise)"
+            check "$apk" "$owner" "$fingerprint"
+          done
+
+          mapfile -t aabs < <(find build/app/outputs/bundle -name '*.aab')
+          if [[ "${#aabs[@]}" -ne 1 ]]; then
+            echo "::error::Expected 1 App Bundle, found ${#aabs[@]}."
+            exit 1
+          fi
+          out="$(keytool -printcert -jarfile "${aabs[0]}")"
+          owner="$(grep -m1 'Owner:' <<< "$out")"
+          fingerprint="$(grep -m1 'SHA256:' <<< "$out" | awk '{print $NF}' | normalise)"
+          check "${aabs[0]}" "$owner" "$fingerprint"
+
+          if [[ -z "$expected" ]]; then
+            echo "::notice::Set the environment variable ANDROID_CERT_SHA256 to the fingerprint above so every build is checked against it."
+          fi
+
+      # Re-use the version of pubspec.yaml in the file names. The draft release
+      # replaces all its old files, so the names can carry the version.
+      - name: Collect the release files
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+        run: |
+          set -euo pipefail
+          full="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          version="${full%%+*}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::pubspec.yaml needs a semantic 'version:' such as 1.0.0+1 (found '${full:-none}')."
+            exit 1
+          fi
+          prefix="money-scribe-${version}"
+          if [[ "$APP_ENV" != "production" ]]; then prefix="money-scribe-${APP_ENV}-${version}"; fi
+          mkdir dist
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            apk="$(find build/app/outputs/flutter-apk -name "app-*${abi}*-release.apk" | head -n 1)"
+            if [[ -z "$apk" ]]; then
+              echo "::error::No APK found for ${abi}."
+              exit 1
+            fi
+            cp "$apk" "dist/${prefix}-${abi}.apk"
+          done
+          aab="$(find build/app/outputs/bundle -name '*.aab' | head -n 1)"
+          cp "$aab" "dist/${prefix}.aab"
+          (cd dist && sha256sum -- * > SHA256SUMS.txt)
+
+      - name: Upload the signed files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-release-signed-${{ needs.detect.outputs.environment }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload the debug symbols
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android-debug-symbols-${{ needs.detect.outputs.environment }}
+          path: |
+            build/symbols/
+            build/app/outputs/mapping/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Remove the signing files
+        if: always()
+        run: rm -f android/key.*.properties "$RUNNER_TEMP/signing-keystore.jks"
+
+  # ── Draft GitHub Release ─────────────────────────────────────────────────
+  # Staging: the single draft "Staging" (tag staging), refreshed by every build on
+  # develop and never published. Production: the draft v<version>. Either way it
+  # gets the signed APKs, the App Bundle, the checksums and the web build. This job
+  # has no access to the signing secrets. Publishing the production draft is a
+  # manual click on the Releases page; a published release is immutable and is
+  # never touched here.
+  release-draft:
+    name: Draft GitHub Release (${{ needs.detect.outputs.environment }})
+    needs: [detect, build-web, build-android-signed]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: pubspec.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Download the signed files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: android-release-signed-${{ needs.detect.outputs.environment }}
+          path: dist
+
+      - name: Download the web build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: web-build-${{ needs.detect.outputs.environment }}
+          path: web-build
+
+      - name: Create or refresh the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          full="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          version="${full%%+*}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::pubspec.yaml needs a semantic 'version:' such as 1.0.0+1 (found '${full:-none}')."
+            exit 1
+          fi
+
+          prefix="money-scribe-${version}"
+          if [[ "$APP_ENV" != "production" ]]; then prefix="money-scribe-${APP_ENV}-${version}"; fi
+          (cd web-build && zip -qr "../dist/${prefix}-web.zip" .)
+
+          if [[ "$APP_ENV" == "production" ]]; then
+            tag="v${version}"
+            title="$tag"
+            prerelease=false
+            if [[ "$version" == *-* ]]; then prerelease=true; fi
+            generated="$(gh api -X POST "repos/${GH_REPO}/releases/generate-notes" \
+              -f tag_name="$tag" -f target_commitish="$TARGET_SHA" --jq .body)"
+            body="$(printf 'Build %s of version %s, built from commit %s.\n\n%s\n' \
+              "$BUILD_NUMBER" "$version" "$TARGET_SHA" "$generated")"
+          else
+            tag="staging"
+            title="Staging"
+            prerelease=true
+            body="$(printf 'Staging build %s of version %s, built from commit %s on the develop branch.\n\nEvery merge into develop replaces the files of this draft. Do not publish it.\n' \
+              "$BUILD_NUMBER" "$version" "$TARGET_SHA")"
+          fi
+
+          # Drafts have no tag yet, so they are found by listing the releases.
+          existing="$(gh api --paginate "repos/${GH_REPO}/releases" \
+            | jq -r --arg tag "$tag" '.[] | select(.tag_name == $tag) | "\(.id) \(.draft)"' \
+            | head -n 1)"
+
+          if [[ -z "$existing" ]]; then
+            id="$(gh api -X POST "repos/${GH_REPO}/releases" \
+              -f tag_name="$tag" -f target_commitish="$TARGET_SHA" -f name="$title" \
+              -f body="$body" -F draft=true -F prerelease="$prerelease" --jq .id)"
+            action="created"
+          else
+            id="${existing% *}"
+            if [[ "${existing#* }" != "true" ]]; then
+              echo "::warning::Release ${tag} is already published and cannot be changed. For production, raise the version in pubspec.yaml to build a new release; the signed files of this build are in the workflow artifacts."
+              echo "Release ${tag} is already published; its files were not replaced." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            gh api -X PATCH "repos/${GH_REPO}/releases/${id}" \
+              -f target_commitish="$TARGET_SHA" -f body="$body" -F prerelease="$prerelease" > /dev/null
+            # Replace the files: remove the old ones, then upload the new ones.
+            for asset in $(gh api --paginate "repos/${GH_REPO}/releases/${id}/assets" --jq '.[].id'); do
+              gh api -X DELETE "repos/${GH_REPO}/releases/assets/${asset}"
+            done
+            action="refreshed"
+          fi
+
+          for file in dist/*; do
+            gh api -X POST \
+              "https://uploads.github.com/repos/${GH_REPO}/releases/${id}/assets?name=$(basename "$file")" \
+              -H "Content-Type: application/octet-stream" --input "$file" > /dev/null
+          done
+
+          echo "Draft release ${title} ${action} (build ${BUILD_NUMBER}). The production draft is published from the Releases page when the version is final." >> "$GITHUB_STEP_SUMMARY"
 
   # ── iOS (opt-in) ─────────────────────────────────────────────────────────
+  # Needs the iOS flavors (Xcode schemes named staging and production) first,
+  # because pubspec.yaml sets a default flavor; add them with the iOS work.
   # An unsigned compile check of the iOS app on a macOS runner. macOS minutes
   # cost more than Linux ones on private repositories, so it is off until you
   # set the repository variable BUILD_IOS to "true" (Settings → Secrets and

@@ -1,5 +1,5 @@
 # Release-notes categories for auto-generated GitHub Releases
-# (consumed by .github/workflows/release.yml).
+# (consumed by the release-draft job of .github/workflows/build.yml).
 changelog:
   exclude:
     labels:

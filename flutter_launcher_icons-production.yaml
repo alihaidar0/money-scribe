@@ -1,0 +1,25 @@
+# Launcher icons of the production flavor and the web icons, generated with
+# `dart run flutter_launcher_icons` (see `assets/icon/README.md`). The tool reads
+# every `flutter_launcher_icons-<flavor>.yaml` file and ignores a plain
+# `flutter_launcher_icons.yaml` as soon as one exists.
+flutter_launcher_icons:
+  # Written to android/app/src/production/res.
+  android: true
+  # The iOS icons are not generated here: iOS flavors need Xcode on a Mac, and the
+  # tool rewrites project settings it should not touch.
+  ios: false
+  # The full-colour square icon: the legacy Android icon for devices without
+  # adaptive icons, and the web icons.
+  image_path: assets/icon/ios_icon_1024.png
+  min_sdk_android: 21
+  # Android adaptive icon. The foreground is already drawn inside the 66 dp safe
+  # zone of the 108 dp canvas, so the tool must not shrink it further.
+  adaptive_icon_background: assets/icon/ic_launcher_background.png
+  adaptive_icon_foreground: assets/icon/ic_launcher_foreground.png
+  adaptive_icon_monochrome: assets/icon/ic_launcher_monochrome.png
+  adaptive_icon_foreground_inset: 0
+  web:
+    generate: true
+    image_path: assets/icon/ios_icon_1024.png
+    background_color: "#0F3D73"
+    theme_color: "#0F3D73"
