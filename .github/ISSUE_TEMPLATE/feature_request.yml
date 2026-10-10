@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Money Scribe is a personal finance tracker. A backend with sign-in and synchronization is planned but not chosen yet, so discuss backend proposals here first. Proposals that add analytics, crash reporting or tracking of users are out of scope for now.
+        Money Scribe is a personal finance tracker. A backend with sign-in is planned but not chosen yet, so discuss backend proposals here first. Proposals that add analytics, crash reporting or tracking of users are out of scope for now.
 
         **Never include real financial data** in a proposal; use invented numbers in examples.
 

@@ -3,18 +3,20 @@
 ## Scope
 
 Money Scribe is a personal finance tracker. It stores the user's financial
-records (salary, income, expenses, purchases and debts) on the device and,
-once the backend exists, on a server that is the source of truth, so
-protecting that data is the main security concern.
+records (salary, income, expenses, purchases and debts). Once the backend
+exists, they live only on the server; the device keeps simple settings, such
+as the language, and nothing else, so protecting that data is the main
+security concern.
 
 In scope:
 
 - Exposure of the user's financial or personal data: through logs, crash
   output, exported files, platform backups, or another app on the device
-- Weaknesses in local storage, app lock or data import (for example a
+- Weaknesses in what the device stores (settings, sign-in credentials), app
+  lock or data import (for example a
   crafted CSV file that corrupts data or causes unintended behaviour)
-- Weaknesses in how data is sent to, stored on or synchronized with the
-  server (authentication, authorization, transport), once a backend exists
+- Weaknesses in how data is sent to or stored on the server
+  (authentication, authorization, transport), once a backend exists
 - Secrets or credentials committed to the repository history
 - A GitHub Actions workflow that could allow unauthorized code execution or
   exfiltration of secrets (e.g. via script injection through untrusted
@@ -28,9 +30,10 @@ Only the latest release (the newest tag on `main`) receives security fixes.
 
 ## Data handling
 
-- Financial data lives on the device and, with the backend, on the server;
-  it is sent only over encrypted connections. The app sends no analytics or
-  tracking data.
+- Financial data lives on the server, not on the device; it is sent only over
+  encrypted connections. The device keeps only non-financial settings and,
+  after sign-in, the session credentials in the platform's secure storage.
+  The app sends no analytics or tracking data.
 - Amounts, account names and other personal data are never written to logs
   or crash reports.
 - Secrets are passed at build time (`--dart-define`) or kept in a local,
