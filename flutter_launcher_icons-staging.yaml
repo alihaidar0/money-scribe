@@ -1,0 +1,13 @@
+# Launcher icons of the staging flavor: the production icon with an amber badge
+# (assets/icon/staging), so both apps can be told apart on one phone. Generated
+# with `dart run flutter_launcher_icons`; see `assets/icon/README.md`.
+flutter_launcher_icons:
+  # Written to android/app/src/staging/res.
+  android: true
+  ios: false
+  image_path: assets/icon/staging/ios_icon_1024.png
+  min_sdk_android: 21
+  adaptive_icon_background: assets/icon/staging/ic_launcher_background.png
+  adaptive_icon_foreground: assets/icon/staging/ic_launcher_foreground.png
+  adaptive_icon_monochrome: assets/icon/staging/ic_launcher_monochrome.png
+  adaptive_icon_foreground_inset: 0

@@ -12,9 +12,9 @@ feat/*  fix/*  docs/*  ci/*  chore/*  deps/*
         │  pull request, merge commit, source must be `develop`
         ▼
        main    ← stable branch, protected
-        │  push
-        ▼
-  build.yml (APK, AAB, web artifacts) + release.yml (GitHub Release)
+
+  A push to develop (staging) or main (production) runs build.yml: signed APKs and
+  AAB, web build, draft GitHub Release (docs/environments.md)
 ```
 
 - Nobody pushes to `develop` or `main` directly (rulesets enforce it; the `pre-push` hook blocks both locally as a convenience).
@@ -59,15 +59,15 @@ The default branch is `develop`, the integration branch, so every automatic pull
 | Workflow permissions | **Read repository contents and packages permissions** |
 | Allow GitHub Actions to create and approve pull requests | Off |
 
-Every workflow also declares its own top-level `permissions:` block (`contents: read`, or none at all for `release.yml`); the jobs that need more request it explicitly: `release.yml` (`contents: write`, to publish a release), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
+Every workflow also declares its own top-level `permissions:` block (`contents: read`); the jobs that need more request it explicitly: the `release-draft` job of `build.yml` (`contents: write`, to create the draft release and attach the signed files), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
 
 Workflows run on an explicit runner image (`ubuntu-24.04`) rather than `ubuntu-latest`. GitHub moves `ubuntu-latest` to a new Ubuntu release on its own schedule, which changes the toolchain under every job at once. Moving to a newer image is a deliberate edit of the `runs-on:` lines once the build has been verified on it.
 
 ## 3. Environments and secrets
 
-CI and the build workflow need **no secrets and no environments**: they only use the automatic `GITHUB_TOKEN`. Add them when release signing or a deployment workflow is added:
+CI and the pull-request builds need **no secrets and no environments**: they only use the automatic `GITHUB_TOKEN`. The signed builds need two environments, `staging` (restricted to `develop`) and `production` (restricted to `main`), each with its own Android signing secrets and one variable ([`android-signing.md`](android-signing.md) section 3). The same rules apply to any later deployment target:
 
-- Create an environment per deployment target (for example `production`), restrict it to `main` under **Deployment branches and tags**, and put the target's credentials there as environment secrets rather than repository secrets (a repository secret stays readable from any branch).
+- Create an environment per deployment target, restrict it to its branch under **Deployment branches and tags**, and put the target's credentials there as environment secrets rather than repository secrets (a repository secret stays readable from any branch).
 - Optionally require a reviewer on the environment for production deployments.
 - Never commit a keystore, signing password or service-account key; any file in the repository is readable by everyone who can read the repository, so secrets belong in environment secrets.
 
@@ -124,8 +124,8 @@ done
 3. Open the first pull request into `develop` and let CI run, so the **CI passed** check has reported once.
 4. Apply sections 1, 2 and 4.
 5. Import the three rulesets (section 5).
-6. Later, optional: **Settings → Secrets and variables → Actions → Variables**, add `BUILD_IOS` = `true` to add an unsigned iOS compile check to `build.yml`. It is only worth it once you want iOS verified in CI.
-7. Before the first store release: **Settings → Environments → New environment**, create `production` and restrict it to `main` under **Deployment branches and tags**. It holds the Android signing secrets (section 3). Then follow [`android-signing.md`](android-signing.md) to sign the production Android build.
+6. Later, optional: **Settings → Secrets and variables → Actions → Variables**, add `BUILD_IOS` = `true` to add an unsigned iOS compile check to `build.yml`. It is only worth it once you want iOS verified in CI, and it needs the iOS flavors first (see [`environments.md`](environments.md)).
+7. Before the first signed build: **Settings → Environments → New environment**, create `staging` (restricted to `develop`) and `production` (restricted to `main`) under **Deployment branches and tags**. They hold the Android signing secrets (section 3). Then follow [`android-signing.md`](android-signing.md) to create the two keys and fill the environments.
 8. Verify (next section).
 
 ## 7. Verify the protection works
@@ -133,7 +133,7 @@ done
 - `git push origin main` and `git push origin develop` are rejected by the rulesets.
 - A pull request from a topic branch into `main` fails **Verify source branch**, so **CI passed** is red and the pull request cannot merge.
 - A pull request from `develop` into `main` offers only **Create a merge commit**.
-- A pull request runs **Lint**, **Format**, **Commit messages** and **Node dependency audit**, and **Flutter format**, **Flutter analyze**, **Flutter test**, **Dependency audit** and **Flutter doctor**, and `build.yml` builds the APK, AAB and web app: a pull request into `develop` produces the `*-staging` artifacts, one into `main` the `*-production` artifacts.
+- A pull request runs **Lint**, **Format**, **Commit messages** and **Node dependency audit**, and **Flutter format**, **Flutter analyze**, **Flutter test**, **Dependency audit** and **Flutter doctor**, and `build.yml` builds the APK, AAB and web app: a pull request into `develop` produces the `*-staging` artifacts, one into `main` the `*-production` artifacts. Both are test builds signed with the debug key. The signed builds run after a merge: into `develop` (staging key, the rolling "Staging" draft release) and into `main` (upload key, the draft release of the version).
 - A commit message such as `Fixed stuff` fails **Commit messages**.
 
 ## 8. Everyday workflow
@@ -164,4 +164,4 @@ If the email is not the one you want on this repository, set it for this reposit
 
 If you use several GitHub accounts, give each one its own SSH host alias in `~/.ssh/config` (`Host github.com-<account>` with `HostName github.com`, `User git`, its own `IdentityFile` and `IdentitiesOnly yes`) and keep `origin` on that alias, for example `git@github.com-<account>:OWNER/REPO.git`. Do not rewrite it to `github.com` or `https://`, or the wrong key and account get used. The container never receives your private keys: VS Code forwards your host ssh-agent, and `welcome.sh` maps a `github.com-<account>` alias in the `origin` URL to `github.com` inside the container. Load only that account's key into the agent (`ssh-add -D`, then `ssh-add <key>`), because GitHub accepts the first key the agent offers.
 
-Promotion: open a pull request `develop` → `main` (title `release: <summary>`) and merge it with a merge commit. That push runs **Build** (production APK, AAB and web artifacts) and **Release**, which publishes a GitHub Release for the version in `pubspec.yaml` (`1.4.0+7` → `v1.4.0`) with notes grouped by pull request label. Raise the version in this pull request, otherwise nothing is published; a promotion that only changes documentation produces none.
+Every merge into `develop` runs **Build** for staging: signed Android files in the rolling "Staging" draft release, which every merge replaces and which is never published. Promotion: open a pull request `develop` → `main` (title `release: <summary>`); it builds the production files for you to test. Merge it with a merge commit: **Build** then signs the production files with the upload key and attaches them, with the web build, to a **draft** GitHub Release for the version in `pubspec.yaml` (`1.4.0+7` → `v1.4.0`), with notes grouped by pull request label. A new build of the same version replaces the files of its draft. Publish the draft on the Releases page when the version is final; a published release is immutable, so raise the version in the next promotion to get a new one. A change that only touches documentation builds nothing. The whole flow is described in [`environments.md`](environments.md).
