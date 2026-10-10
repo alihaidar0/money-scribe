@@ -25,7 +25,8 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
 - [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
 - [x] Material 3 theme with light and dark modes
-- [ ] Localization-ready strings (ARB files)
+- [ ] Localization with ARB files: English and Arabic, with the language following the system and a setting
+- [ ] Arabic font and right-to-left layout, added to the design system and checked on every screen
 - [ ] Local database base with `drift`: versioned migrations, a migration test, encryption decision
 - [ ] Immutable models with `freezed`, added with the first model that needs it
 
