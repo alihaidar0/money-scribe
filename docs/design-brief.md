@@ -133,8 +133,9 @@ lead the user to enter their first salary month.
   come before or after the number. Layouts must fit long amounts such as
   1,234,567.89 ₽ without truncation.
 - **Numbers:** use tabular (fixed-width) figures for amounts so columns line up.
-- **Language:** English first. Other languages follow later, including right-to-left
-  ones, so layouts must mirror cleanly and allow text about 40% longer than English.
+- **Language:** English and Arabic. Arabic is right-to-left, so layouts must mirror
+  cleanly (including icons that show direction), and text can be about 40% longer
+  than English. Other languages may follow.
 - **Sign-in and sync screens are not designed yet** (the backend is not chosen); no social features.
 
 ## 5. Accessibility
@@ -155,7 +156,7 @@ lead the user to enter their first salary month.
    income, expense, borrowed, lent, overdue/warning.
 3. **Typography:** a font family with an open licence (for example from Google Fonts)
    and any changes to the Material 3 type scale; confirm it has tabular figures and
-   Cyrillic support.
+   Cyrillic support, and name a matching font for Arabic.
 4. **Shape and elevation:** corner radii for cards, dialogs, buttons and input fields.
 5. **Icons:** a Material Symbols style (outlined, rounded or sharp) and an icon per
    default category.

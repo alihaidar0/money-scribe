@@ -94,7 +94,7 @@ WCAG 2.2 contrast ratios of the values above. Body text on `surface`: 16.3:1 lig
 
 ## 3. Typography
 
-Font family: **Inter** (SIL Open Font License). Supports tabular figures, full Cyrillic, ₽ and the true minus sign −. Always use tabular (fixed-width) figures for every amount, and the true minus "−", never a hyphen. The font files (weights 400, 500 and 600) are bundled with the app, so text renders the same on first launch and without a connection, and no font request leaves the device.
+Font family: **Inter** (SIL Open Font License). Supports tabular figures, full Cyrillic, ₽ and the true minus sign −. Always use tabular (fixed-width) figures for every amount, and the true minus "−", never a hyphen. Inter has no Arabic glyphs, so Arabic text needs its own font (see 3.1). The font files (weights 400, 500 and 600) are bundled with the app, so text renders the same on first launch and without a connection, and no font request leaves the device.
 
 | Style | Font | Size / line | Weight | Use |
 | --- | --- | --- | --- | --- |
@@ -107,7 +107,16 @@ Font family: **Inter** (SIL Open Font License). Supports tabular figures, full C
 | Label large | Inter | 14 / 20 | 600 | Buttons |
 | Label medium | Inter | 12 / 16 | 500 | Chips, captions, day headers |
 
-Text must scale to 200% without clipping. Never truncate amounts: allow a long amount such as 1,234,567.89 ₽ to wrap. Allow labels about 40% longer than English (other languages, right-to-left, will follow).
+Text must scale to 200% without clipping. Never truncate amounts: allow a long amount such as 1,234,567.89 ₽ to wrap. Allow labels about 40% longer than English (Arabic is right-to-left; see section 3.1).
+
+### 3.1 Arabic (right-to-left)
+
+Arabic is the second language. Layouts mirror in right-to-left mode, and icons that show direction mirror with them (arrows, back, chevrons); amounts keep their own left-to-right order inside Arabic text.
+
+Open decisions, to be settled in the localization step and then written here:
+
+- The Arabic font: open licence, Arabic glyphs with Latin and ₽ support, bundled like Inter, and weights that match the 400, 500 and 600 used above.
+- Arabic-Indic (٠١٢) or Western (012) digits for amounts and dates.
 
 ## 4. Shape and elevation
 
@@ -155,7 +164,7 @@ Material 3 window size classes: compact < 600 dp, medium 600 to 839 dp, expanded
 ## 8. Do and don't
 
 - Do keep every amount with ₽, a sign and an icon; do keep tabular figures.
-- Do mirror layouts for right-to-left languages.
+- Do mirror layouts for Arabic (right-to-left), including icons that show direction.
 - Don't use brown, orange or bright green except as the specified money colours.
 - Don't use pure white (`#FFFFFF`) or pure black backgrounds.
 - Don't add gradients, photography or decoration inside data areas.
