@@ -1,9 +1,11 @@
 alihaidar
 appbundle
+appiconset
 commitlint
 corepack
 devcontainer
 eacces
+evenodd
 exfiltration
 fanalyze
 fdoctor
@@ -21,6 +23,7 @@ koalaman
 moneyscribe
 ntfs
 passwordless
+pbxproj
 pnpm
 pubspec
 rhysd
@@ -32,5 +35,6 @@ uspto
 wcag
 xcassets
 xcodeproj
+xxxhdpi
 zizmor
 zizmorcore

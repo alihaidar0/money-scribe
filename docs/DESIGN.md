@@ -138,6 +138,8 @@ Flat by default. Cards use `surfaceContainerLow` on `surface`, no shadow. Hierar
 
 Material Symbols Outlined, weight 400, size 24; filled for the selected navigation item. Touch targets at least 48 × 48 dp. Navigation: Overview `dashboard`, Salary `payments`, Transactions `receipt_long`, Debts `handshake`, Reports `bar_chart`, Settings `settings`. Categories: Groceries `shopping_basket`, Dining `restaurant`, Transport `directions_bus`, Housing `home`, Utilities `bolt`, Health `health_and_safety`, Entertainment `movie`, Shopping `shopping_bag`, Education `school`, Travel `flight`, Gifts `redeem`, Subscriptions `autorenew`, Salary `payments`, Scholarship `workspace_premium`, Other `category`.
 
+App icon: a fountain-pen nib (the scribe) in a light circle on a blue background cut by two diagonal facets. Colours: background `#0F3D73` with facets `#0B3264` and `#154983`; circle `#D6E3FF`; nib `#0F3D73` and `#1D477D`. The Android adaptive icon keeps the mark inside the 66 dp safe zone and has a one-colour version for themed icons. The SVG sources are in `assets/icon/`.
+
 ## 6. Components
 
 - Navigation: bottom navigation bar on phones with five items (Overview, Salary, Transactions, Debts, Reports); navigation rail on tablet and web; selected item has a filled icon in a `secondaryContainer` pill. Settings is an icon in the top app bar.

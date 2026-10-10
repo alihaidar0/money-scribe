@@ -1,0 +1,24 @@
+# App icons for Android, iOS and web, generated from `assets/icon/` with
+# `dart run flutter_launcher_icons` (see `assets/icon/README.md`).
+flutter_launcher_icons:
+  # Replaces the default launcher icon (`ic_launcher`).
+  android: true
+  ios: true
+  # The full-colour square icon: the iOS icon, and the legacy Android icon for
+  # devices without adaptive icons.
+  image_path: assets/icon/ios_icon_1024.png
+  min_sdk_android: 21
+  # Android adaptive icon. The foreground is already drawn inside the 66 dp
+  # safe zone of the 108 dp canvas, so the tool must not shrink it further.
+  adaptive_icon_background: assets/icon/ic_launcher_background.png
+  adaptive_icon_foreground: assets/icon/ic_launcher_foreground.png
+  adaptive_icon_monochrome: assets/icon/ic_launcher_monochrome.png
+  adaptive_icon_foreground_inset: 0
+  # iOS rejects icons with transparency.
+  remove_alpha_ios: true
+  background_color_ios: "#0F3D73"
+  web:
+    generate: true
+    image_path: assets/icon/ios_icon_1024.png
+    background_color: "#0F3D73"
+    theme_color: "#0F3D73"
