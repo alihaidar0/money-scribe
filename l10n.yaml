@@ -1,0 +1,18 @@
+# Localization code generation (`flutter gen-l10n`). It also runs on every
+# `flutter pub get`, `flutter run` and `flutter build` because `pubspec.yaml`
+# sets `flutter: generate: true`. The generated code is not committed.
+arb-dir: lib/core/l10n/arb
+template-arb-file: app_en.arb
+output-dir: lib/core/l10n/generated
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+preferred-supported-locales:
+  - en
+# `AppLocalizations.of(context)` returns a non-null value.
+nullable-getter: false
+# Every message needs a description for translators.
+required-resource-attributes: true
+# A single quote escapes special characters in messages (ICU style).
+use-escaping: true
+use-named-parameters: true
+format: true

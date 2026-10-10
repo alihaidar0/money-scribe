@@ -1,0 +1,35 @@
+{
+  "@@locale": "en",
+  "appTitle": "Money Scribe",
+  "@appTitle": {
+    "description": "The name of the app, shown in the task switcher. A brand name: it stays in Latin letters in every language."
+  },
+  "overviewTitle": "Overview",
+  "@overviewTitle": {
+    "description": "Title of the Overview screen, the first screen of the app."
+  },
+  "overviewEmpty": "Nothing here yet",
+  "@overviewEmpty": {
+    "description": "Placeholder text on the Overview screen while it has no content."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the Settings screen, and the label of the button that opens it."
+  },
+  "languageSectionTitle": "Language",
+  "@languageSectionTitle": {
+    "description": "Heading of the list of app languages on the Settings screen."
+  },
+  "languageSystem": "System default",
+  "@languageSystem": {
+    "description": "Language option: use the language of the device, falling back to English when the app does not support it."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Language option for English. Written in the language itself in every translation, so a reader can always find it."
+  },
+  "languageArabic": "العربية",
+  "@languageArabic": {
+    "description": "Language option for Arabic. Written in the language itself in every translation, so a reader can always find it."
+  }
+}

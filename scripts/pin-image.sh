@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Freezes the toolchain of THIS project to the versions you are running now.
 #
-# The template follows the newest flutter-devcontainer image (`:latest`). A
-# project created from it should not change under you, so run this once after
-# `flutter create`:
+# The project must not change under you, so docker-compose.yml names an exact
+# flutter-devcontainer build. Run this once after `flutter create`, and again to
+# move to a newer image on purpose:
 #   1. docker-compose.yml: the `image:` line becomes <repo>:<tag>@sha256:<digest>,
 #      so Docker pulls exactly that build until you run the script again (or
 #      merge a Dependabot pull request, once its docker-compose block is enabled).

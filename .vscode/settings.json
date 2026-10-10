@@ -32,7 +32,7 @@
   "explorer.fileNesting.patterns": {
     "pubspec.yaml": "pubspec.lock, .flutter-plugins-dependencies, .metadata, analysis_options.yaml",
     ".env": ".env.*, .envrc",
-    "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE"
+    "README.md": "CONTRIBUTING.md, SECURITY.md, LICENSE"
   },
 
   // ── Languages ─────────────────────────────────────────────────────────────
@@ -41,16 +41,5 @@
   },
   "[yaml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
-  },
-
-  // ── Spell checker ─────────────────────────────────────────────────────────
-  "cSpell.words": [
-    "commitlint",
-    "corepack",
-    "devcontainer",
-    "flutterfire",
-    "husky",
-    "pnpm",
-    "pubspec"
-  ]
+  }
 }

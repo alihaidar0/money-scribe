@@ -2,9 +2,8 @@
 #
 # Keeps the repository's labels identical to .github/labels.yml (labels as code).
 # Runs when that file changes on develop (the default branch) or main, which
-# includes the first commit of a repository created from the template, so the
-# labels exist before the first pull requests. Run it on demand only if they
-# are missing.
+# includes the repository's first commit, so the labels exist before the first
+# pull requests. Run it on demand only if they are missing.
 # Labels not listed in the file are left alone.
 name: Labels
 

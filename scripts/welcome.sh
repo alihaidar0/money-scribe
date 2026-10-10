@@ -40,7 +40,7 @@ ADB_PORTS=5555 bash "$WORKSPACE/scripts/connect-emulator.sh" --quiet || true
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🐦  flutter-template — dev container ready"
+echo "  🐦  Money Scribe — dev container ready"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ -f "$WORKSPACE/pubspec.yaml" ] && [ -f "$WORKSPACE/pubspec.lock" ]; then
@@ -58,7 +58,7 @@ if [ -f "$WORKSPACE/pubspec.yaml" ] && [ -f "$WORKSPACE/pubspec.lock" ]; then
   echo "  ❯ fdoctor       flutter doctor -v"
   echo ""
   echo "  ❯ Git aliases:  gs · ga · gc · gp · gl"
-  echo "  📖  https://github.com/alihaidar0/flutter-template"
+  echo "  📖  https://github.com/alihaidar0/money-scribe"
 
 elif [ -f "$WORKSPACE/pubspec.yaml" ]; then
   # ── Tier 2: initialised but no lockfile ─────────────────────────────────────
@@ -70,33 +70,14 @@ elif [ -f "$WORKSPACE/pubspec.yaml" ]; then
   echo "  └──────────────────────────────────────────────────────────────────┘"
   echo ""
   echo "  ❯ Git aliases:  gs · ga · gc · gp · gl"
-  echo "  📖  https://github.com/alihaidar0/flutter-template"
+  echo "  📖  https://github.com/alihaidar0/money-scribe"
 
 else
-  # ── Tier 1: fresh template ──────────────────────────────────────────────────
+  # ── No Flutter project (pubspec.yaml is missing) ───────────────────────────
   echo ""
-  echo "  👋  Fresh template — Flutter not yet initialised"
+  echo "  ⚠️   pubspec.yaml not found — is this the money-scribe checkout?"
   echo ""
-  echo "  ┌─ Step 1: Initialise Flutter project ─────────────────────────────┐"
-  echo "  │  flutter create --org com.example .                              │"
-  echo "  │  (replaces '.' with your own org and app name as needed)         │"
-  echo "  └──────────────────────────────────────────────────────────────────┘"
-  echo ""
-  echo "  ┌─ Step 2: Freeze the toolchain for this project ──────────────────┐"
-  echo "  │  scripts/pin-image.sh                                            │"
-  echo "  └──────────────────────────────────────────────────────────────────┘"
-  echo ""
-  echo "  ┌─ Step 3: Write this app's README ────────────────────────────────┐"
-  echo "  │  scripts/init-readme.sh --description \"What it does\"             │"
-  echo "  └──────────────────────────────────────────────────────────────────┘"
-  echo ""
-  echo "  ┌─ Step 4: Start developing ───────────────────────────────────────┐"
-  echo "  │  F5      → \"Flutter (Emulator + Browser)\" on your host           │"
-  echo "  │  frunw   → run on web (port 8080)                                │"
-  echo "  │  fdoctor → check environment                                     │"
-  echo "  └──────────────────────────────────────────────────────────────────┘"
-  echo ""
-  echo "  📖  https://github.com/alihaidar0/flutter-template"
+  echo "  📖  https://github.com/alihaidar0/money-scribe"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

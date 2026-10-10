@@ -1,148 +1,166 @@
-# Android release signing
+# Android signing
 
-`build.yml` builds the APK and the App Bundle without a signing key: a release build
-with no signing configuration is signed with the **debug key**, which is fine for
-testing and not accepted by the Play Store. This guide adds real signing to a project
-created from the template. It is a per-project step because the key, the Play
-Console and the Gradle files belong to the app, not to the template.
+Money Scribe builds its Android release files in GitHub Actions and signs them with a key
+that belongs to the environment: the **staging key** for the staging app and the **upload
+key** for the production app ([`environments.md`](environments.md)). Nothing needs to be
+uploaded to Google Play for this to work; the production key can be used for Play later
+(section 7).
 
-The snippets are adapted from the official
-[Flutter Android deployment guide](https://docs.flutter.dev/deployment/android) and
-have not been run in this template; check them against the guide for your Flutter
-version.
+| Build | Signed with | Produces |
+| --- | --- | --- |
+| Pull request | the debug key (test build, no secret) | one APK and one App Bundle, kept 14 days |
+| Push to `develop`, or manual staging run | the staging key | signed APKs and App Bundle in the draft release "Staging" |
+| Push to `main`, or manual production run | the upload key | signed APKs and App Bundle in the draft release `v<version>` |
 
-The plan: sign **only** the production build that runs when `main` is updated, keep the
-key in a GitHub **environment** that only `main` can use, and leave staging and pull
-request builds debug-signed so they never touch a secret.
+Only the signing job reads the secrets. Each GitHub environment is restricted to one
+branch, so a pull request or another branch can never read a key. Keeping two keys means a
+leak of the staging key cannot sign a production build.
 
-## 1. Create the upload keystore (once, on your machine)
+## 1. Create the two keystores (once, on your machine)
 
 ```bash
 keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
-        -storetype JKS -keysize 2048 -validity 10000 -alias upload
+        -storetype JKS -keysize 2048 -validity 10000 -alias moneyscribe-upload
+
+keytool -genkey -v -keystore ~/staging-keystore.jks -keyalg RSA \
+        -storetype JKS -keysize 2048 -validity 10000 -alias staging
 ```
 
-Back the file and its passwords up somewhere safe (a password manager). With **Play App
-Signing** (the default for new apps) this is only the *upload* key, and Google can reset
-it if you lose it. The repository ignores `*.jks`, `*.keystore` and
-`android/key.properties`; never commit them.
+Keep the files outside the repository, or in the folder `.signing/` of the workspace, which
+Git ignores and which survives a rebuild of the dev container (use
+`.signing/upload-keystore.jks` instead of `~/upload-keystore.jks` in the commands). Use a
+different password for each, without a backslash.
 
-## 2. Teach Gradle to read the key, without requiring it
+Give the upload key a distinctive alias such as `moneyscribe-upload` rather than the common
+`upload`: GitHub hides the value of every secret in its logs, so an alias that is an everyday
+word blanks that word wherever it appears in the build output (the staging alias hides the
+word "staging" there, which is harmless but untidy).
 
-Create `android/key.properties` locally (it is ignored by Git) for signed local builds:
+Back up both `.jks` files and all
+passwords in a password manager straight away: the dev container's home folder is lost when
+the container is rebuilt, and without a key no later build can carry the same signature. The
+repository ignores `*.jks`, `*.keystore` and `android/key.*.properties`; never commit them.
+
+Print the certificate fingerprint (SHA-256) of each key. It is public information and is
+used in section 4:
+
+```bash
+keytool -list -v -keystore ~/upload-keystore.jks -alias moneyscribe-upload | grep "SHA256:"
+keytool -list -v -keystore ~/staging-keystore.jks -alias staging | grep "SHA256:"
+```
+
+## 2. Sign a build locally (optional check)
+
+Create `android/key.production.properties` (and `android/key.staging.properties` the same
+way, with its own passwords, alias and file); both are ignored by Git:
 
 ```properties
 storePassword=<password>
 keyPassword=<password>
-keyAlias=upload
+keyAlias=moneyscribe-upload
 storeFile=/absolute/path/to/upload-keystore.jks
 ```
 
-In `android/app/build.gradle.kts`, load it and fall back to the debug key when the file
-is absent, so builds without the secret (pull requests, staging, a fresh clone) keep
-working:
+`android/app/build.gradle.kts` signs the release build of a flavor with its key when the file
+exists, and with the debug key when it does not, so builds without the file keep working.
+After changing the Gradle file or a key, run `flutter clean`. Then build and check which key
+signed the files:
 
-```kotlin
-import java.util.Properties
-import java.io.FileInputStream
-
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
-
-android {
-    // ...
-    signingConfigs {
-        if (keystorePropertiesFile.exists()) {
-            create("release") {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
-                storePassword = keystoreProperties.getProperty("storePassword")
-            }
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
-        }
-    }
-}
+```bash
+flutter build apk --release --flavor production --split-per-abi
+flutter build appbundle --release --flavor production
+"$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs build/app/outputs/flutter-apk/app-*arm64-v8a*-release.apk
+keytool -printcert -jarfile build/app/outputs/bundle/productionRelease/app-production-release.aab
 ```
 
-## 3. Store the key in a protected environment
+The certificate must be yours, not `CN=Android Debug`.
 
-1. **Settings → Environments → New environment** named `production`.
-2. Under **Deployment branches and tags**, allow only `main` (see
-   [`github-setup.md`](github-setup.md) §3). Optionally require a reviewer.
-3. Add environment secrets:
+## 3. Prepare GitHub (once)
 
-   | Secret | Value |
-   | --- | --- |
-   | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 ~/upload-keystore.jks` (on macOS: `base64 -i ~/upload-keystore.jks`) |
-   | `ANDROID_STORE_PASSWORD` | the keystore password |
-   | `ANDROID_KEY_PASSWORD` | the key password |
-   | `ANDROID_KEY_ALIAS` | `upload` |
+Create two environments under **Settings → Environments → New environment**:
 
-Environment secrets are only handed to jobs that run on an allowed branch, so a pull
-request can never read them.
+| Environment | Deployment branches and tags |
+| --- | --- |
+| `staging` | selected branches and tags: `develop` only |
+| `production` | selected branches and tags: `main` only (optionally require a reviewer) |
 
-## 4. Add a signing job to `build.yml`
+On each environment, untick **Allow administrators to bypass configured protection rules**
+and click **Save protection rules**, so nobody can skip the branch restriction. Leave
+**Required reviewers** and **Wait timer** off for `staging` (they would hold every build on
+`develop`); for `production` a reviewer is optional.
 
-Add this job next to `build` in your project's `.github/workflows/build.yml`. It runs
-only for pushes to `main` (the merged production release), is the only job that uses the
-environment, and uploads a signed bundle next to the debug-signed one. Copy the
-`Checkout`, `Set up Flutter` and `flutter pub get` steps from the `build` job above it.
+Each environment gets the same four **secrets**, with the values of its own key
+(`base64 -w0 <file>.jks`; on macOS `base64 -i <file>.jks`):
 
-```yaml
-  build-android-signed:
-    name: Android AAB (signed)
-    needs: detect
-    if: needs.detect.outputs.ready == 'true' && github.event_name == 'push'
-    environment: production
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    steps:
-      # - Checkout, Set up Flutter and `flutter pub get --enforce-lockfile`:
-      #   copy them from the `build` job.
+| Secret | Value |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | the keystore, base64 encoded |
+| `ANDROID_STORE_PASSWORD` | the keystore password |
+| `ANDROID_KEY_PASSWORD` | the key password |
+| `ANDROID_KEY_ALIAS` | `staging` or `moneyscribe-upload` |
 
-      - name: Prepare signing
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload-keystore.jks"
-          {
-            echo "storePassword=$STORE_PASSWORD"
-            echo "keyPassword=$KEY_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "storeFile=$RUNNER_TEMP/upload-keystore.jks"
-          } > android/key.properties
+and one **variable** (not a secret):
 
-      - name: Build signed App Bundle
-        run: flutter build appbundle --release --dart-define=APP_ENV=production
+| Variable | Value |
+| --- | --- |
+| `ANDROID_CERT_SHA256` | the SHA-256 fingerprint of that environment's key (section 1) |
 
-      - name: Upload signed App Bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: android-aab-production-signed
-          path: build/app/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
-          retention-days: 30
+With the variable set, a build fails if any file is signed with another key. Without it, the
+build still fails for the debug key and prints the fingerprint in the run summary.
+
+## 4. Builds and releases
+
+[`environments.md`](environments.md) describes what each event builds and how the draft
+releases work. In short: a merge into `develop` refreshes the draft "Staging", and a merge into
+`main` refreshes the draft `v<version>`, which you publish when it is final. The first
+production build comes with the first pull request from `develop` into `main`, so set up
+section 3 before it. The signed files are also kept for 30 days as the workflow artifact
+`android-release-signed-<environment>`.
+
+Raise the version in `pubspec.yaml` for every new release. The build number needs no
+attention: CI uses its own run number.
+
+## 5. Which APK to install
+
+| Phone | File |
+| --- | --- |
+| Almost every current phone | `arm64-v8a` |
+| Older 32-bit phones | `armeabi-v7a` |
+| Emulators on a PC | `x86_64` |
+
+Install with `adb install <file>.apk` or copy the file to the phone and open it. The staging
+and production apps can be installed together. Signed with a stable key, each one updates in
+place.
+
+## 6. Debug symbols
+
+The signed builds are obfuscated, so a stack trace shows meaningless names. The symbol files
+that translate it back are kept as the workflow artifact
+`android-debug-symbols-<environment>` for 30 days (the repository's artifact retention). They
+are not attached to a release, because the repository is public and they would undo the
+obfuscation. To read a trace:
+
+```bash
+flutter symbolize -i stack-trace.txt -d build/symbols/app.android-arm64.symbols
 ```
 
-Keep the `uses:` SHA the same as in the other jobs (Dependabot updates them together).
-If you use `env/production.json`, add `--dart-define-from-file=env/production.json` to
-the build command as the `build` job does.
+Download the artifact into `build/symbols/` first. The app sends no crash reports, so this
+only matters for traces you collect yourself.
 
-Uploading the signed bundle to the Play Console (for example with the Play Developer API
-or Fastlane) is a deployment step and is added per project, in this job or a separate
-workflow.
+## 7. Google Play (later)
+
+The production key works as the Play **upload key**. With Play App Signing (the default), you
+upload the `.aab` signed with it and Google re-signs what users receive with its own key. Two
+consequences:
+
+- The first release of a new app is set up in the Play Console by hand; automating uploads
+  comes afterwards (for example with fastlane `supply` and a service-account key stored as an
+  environment secret).
+- An APK installed from Play carries Google's signature, so it cannot be updated over an APK
+  installed from GitHub (and the other way round); uninstall one before installing the other.
+  Play can also accept your own key as the app signing key, but only when the app is first
+  set up; check the Play Console help before relying on it.
+
+The application ID `com.alihaidar.moneyscribe` cannot be changed after the first upload. The
+staging app has its own ID, so it can get its own Play listing or internal track later without
+touching the production app.

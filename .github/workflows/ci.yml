@@ -4,11 +4,10 @@
 # protection is the aggregate job "CI passed" at the bottom of this file.
 #
 # Repository checks (every tier): source branch, lint (ShellCheck, actionlint,
-# zizmor), format, commit messages, Node dependency audit, template guard.
+# zizmor), format, commit messages, Node dependency audit.
 #
-# This workflow is copied into every project created from the template, so every
-# job has to pass on a fresh checkout that has no Flutter project yet. The
-# Flutter jobs switch on in tiers:
+# The Flutter jobs switch on in tiers, so every job also passes on a checkout
+# that has no Flutter project:
 #
 #   Tier 1  no pubspec.yaml               all Flutter jobs are skipped
 #   Tier 2  pubspec.yaml, no lock file    flutter doctor only
@@ -197,6 +196,17 @@ jobs:
 
           exit "$status"
 
+      # The compose entrypoint and the Husky hooks are executed directly, so on
+      # Linux and macOS they must carry the executable bit in Git.
+      - name: Scripts and hooks are executable in Git
+        run: |
+          not_executable=$(git ls-files -s scripts .husky | awk '$1 != "100755" { print $4 }')
+          if [ -n "$not_executable" ]; then
+            echo "::error::Not executable in Git (run: git update-index --chmod=+x <file>):"
+            echo "$not_executable"
+            exit 1
+          fi
+
   # Every commit of a pull request must follow Conventional Commits. The Husky
   # commit-msg hook enforces the same rule locally; this catches commits made
   # without the hooks (web editor, other machines).
@@ -256,42 +266,6 @@ jobs:
         run: |
           corepack enable
           pnpm audit --audit-level high
-
-  # The template itself must stay a blank canvas: Flutter source and the native
-  # folders are created per project by `flutter create`. Runs only in the
-  # template repository, never in a project generated from it.
-  template-guard:
-    name: Template guard
-    if: github.event.repository.is_template
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Keep the template a blank canvas
-        run: |
-          status=0
-          for path in pubspec.yaml pubspec.lock lib android ios web test; do
-            if [ -e "$path" ]; then
-              echo "::error::'$path' must not exist in the template (flutter create makes it per project)."
-              status=1
-            fi
-          done
-          exit "$status"
-
-      # The compose entrypoint and the Husky hooks are executed directly, so on
-      # Linux and macOS they must carry the executable bit in Git.
-      - name: Scripts and hooks are executable in Git
-        run: |
-          not_executable=$(git ls-files -s scripts .husky .github/scripts | awk '$1 != "100755" { print $4 }')
-          if [ -n "$not_executable" ]; then
-            echo "::error::Not executable in Git (run: git update-index --chmod=+x <file>):"
-            echo "$not_executable"
-            exit 1
-          fi
 
   # ── Flutter project checks (Tier 3 unless noted) ─────────────────────────
   flutter-format:
@@ -424,8 +398,8 @@ jobs:
 
   # The one check to require in branch protection. It always runs and fails if
   # any job above failed or was cancelled; jobs skipped by design (a Flutter job
-  # on a fresh template, the template guard in a generated project) count as
-  # passed.
+  # before its tier, the source-branch check outside pull requests into `main`)
+  # count as passed.
   ci-passed:
     name: CI passed
     if: always()
@@ -436,7 +410,6 @@ jobs:
       - format
       - commits
       - node-audit
-      - template-guard
       - flutter-format
       - flutter-analyze
       - flutter-test
