@@ -1,0 +1,11 @@
+{
+  "@@locale": "ar",
+  "appTitle": "Money Scribe",
+  "overviewTitle": "نظرة عامة",
+  "overviewEmpty": "لا يوجد شيء هنا بعد",
+  "settingsTitle": "الإعدادات",
+  "languageSectionTitle": "اللغة",
+  "languageSystem": "لغة النظام",
+  "languageEnglish": "English",
+  "languageArabic": "العربية"
+}

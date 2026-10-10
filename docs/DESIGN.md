@@ -141,6 +141,7 @@ Material Symbols Outlined, weight 400, size 24; filled for the selected navigati
 - Icon buttons: tonal `secondaryContainer` for edit and general actions; delete uses `errorContainer` with `onErrorContainer` icon. Never brown.
 - Search field: filled `surfaceContainerHigh`, 12 dp radius, leading search icon.
 - Amount row: 40 dp tonal circle with the soft container colour and on-container icon, title and note on the left, signed amount right-aligned in tabular figures, date or account as secondary text. Row sits on `surfaceContainerLow`.
+- Settings: the language is a list of radio options on the Settings screen: System default (the default), English and العربية. Each language is written in its own language, so it can be found whatever language the app shows. A choice applies at once and is remembered.
 - Forms: amount field first, large, numeric keypad, currency shown per locale; primary action pinned at the bottom for one-handed use.
 - Debt status badge: label and icon on a soft container colour (Open, Overdue, Settled; see 2.1), text in the on-container colour.
 - Progress bar: 4 dp tall, `primary` on `surfaceContainerHighest`.

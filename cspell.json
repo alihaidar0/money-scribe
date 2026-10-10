@@ -30,6 +30,7 @@
     "web/icons/**"
   ],
   "ignoreRegExpList": [
+    "/[\\u0600-\\u06FF]+/g",
     "/sha256:[0-9a-f]{64}/",
     "/\\b[0-9a-f]{40}\\b/"
   ]
