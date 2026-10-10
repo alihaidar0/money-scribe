@@ -15,7 +15,7 @@ Set these by hand if the tool does not read the whole file.
 
 ## 1. Overview
 
-Money Scribe is a calm, trustworthy personal-finance tracker for one person (salary calculator, recurring items, transactions, debts, reports). It should feel like a well-kept ledger: numbers are the content, decoration is secondary. No social features; sign-in and sync screens are not designed yet. Currency: Russian ruble (₽) by default; every amount shows its currency symbol.
+Money Scribe is a calm, trustworthy personal-finance tracker for one person (salary calculator, recurring items, transactions, debts, reports). It should feel like a well-kept ledger: numbers are the content, decoration is secondary. No social features; sign-in screens are not designed yet. Currency: Russian ruble (₽) by default; every amount shows its currency symbol.
 
 Visual character: deep navy brand colour, soft blue-tinted neutral surfaces (never pure white, never pure black), flat tonal cards, generous whitespace. Large areas stay low-chroma. Saturated colour appears only in small elements: buttons, amounts, badges. No gradients and no neon inside data screens. Do not use brown or orange anywhere except the "Overdue" warning colour.
 
@@ -151,7 +151,7 @@ Material Symbols Outlined, weight 400, size 24; filled for the selected navigati
 - Progress bar: 4 dp tall, `primary` on `surfaceContainerHighest`.
 - Destructive actions ask for confirmation in a dialog with an error-coloured confirm button.
 - Empty states: simple outlined illustration with a `primaryContainer` tint, one sentence, one primary action. First launch leads to "Enter your first salary month".
-- Loading: skeleton rows. Error: error icon, one-sentence message, "Try again" button.
+- Loading: skeleton rows. Error: error icon, one-sentence message, "Try again" button. No connection uses the same pattern with the `cloud_off` icon.
 
 ## 7. Layout
 
@@ -173,7 +173,7 @@ Material 3 window size classes: compact < 600 dp, medium 600 to 839 dp, expanded
 - Don't use brown, orange or bright green except as the specified money colours.
 - Don't use pure white (`#FFFFFF`) or pure black backgrounds.
 - Don't add gradients, photography or decoration inside data areas.
-- Don't show social elements; sign-in and sync are not designed yet.
+- Don't show social elements; sign-in is not designed yet.
 
 ## 9. Sample data for mockups
 

@@ -27,7 +27,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Material 3 theme with light and dark modes
 - [x] Localization with ARB files: English and Arabic, with the language following the system and a setting
 - [x] Arabic font and right-to-left layout, added to the design system and checked on every screen
-- [ ] Local database base with `drift`: versioned migrations, a migration test, encryption decision
+- [ ] Data layer base: repository interfaces with fake data sources (invented data), ready to be replaced by the server
 - [ ] Immutable models with `freezed`, added with the first model that needs it
 
 ## 3. Core features
@@ -37,7 +37,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
 - [ ] Debts: borrowed and lent, partial repayments, settled status
-- [ ] Backend, sign-in and sync, with the server as the source of truth (provider chosen when needed)
+- [ ] Backend and sign-in, with the server as the only place the data is stored (provider chosen when needed)
 - [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
 
 ## 4. Insight and polish

@@ -1,8 +1,8 @@
 # Money Scribe
 
 A professional personal finance tracker: monthly salary, recurring income and
-expenses, purchases and debts. The server is the source of truth; the app keeps
-a local copy so it opens fast and stays usable without a connection.
+expenses, purchases and debts. The data lives on the server and the app shows it
+online; only simple settings, such as the language, stay on the device.
 
 [![CI](https://github.com/alihaidar0/money-scribe/actions/workflows/ci.yml/badge.svg)](https://github.com/alihaidar0/money-scribe/actions/workflows/ci.yml)
 [![Build](https://github.com/alihaidar0/money-scribe/actions/workflows/build.yml/badge.svg)](https://github.com/alihaidar0/money-scribe/actions/workflows/build.yml)
