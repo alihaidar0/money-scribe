@@ -132,7 +132,7 @@ lead the user to enter their first salary month.
   amount always shows its currency. Formatting follows the locale, so the symbol may
   come before or after the number. Layouts must fit long amounts such as
   1,234,567.89 ₽ without truncation.
-- **Numbers:** use tabular (fixed-width) figures for amounts so columns line up.
+- **Numbers:** use tabular (fixed-width) figures for amounts so columns line up. Digits are always Western (0–9), also in Arabic.
 - **Language:** English and Arabic. Arabic is right-to-left, so layouts must mirror
   cleanly (including icons that show direction), and text can be about 40% longer
   than English. Other languages may follow.

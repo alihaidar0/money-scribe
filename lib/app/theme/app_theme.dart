@@ -12,6 +12,18 @@ abstract final class AppTheme {
 
   static final ThemeData dark = _build(AppColorSchemes.dark, MoneyColors.dark);
 
+  /// [theme] for the language shown: Arabic switches the type scale to the
+  /// Arabic font, every other language keeps [theme] unchanged.
+  static ThemeData forLocale(ThemeData theme, Locale locale) {
+    if (locale.languageCode != 'ar') {
+      return theme;
+    }
+    return theme.copyWith(
+      textTheme: theme.textTheme.arabic,
+      primaryTextTheme: theme.primaryTextTheme.arabic,
+    );
+  }
+
   static ThemeData _build(ColorScheme scheme, MoneyColors moneyColors) {
     const pill = StadiumBorder();
     const card = RoundedRectangleBorder(
@@ -39,6 +51,7 @@ abstract final class AppTheme {
     return ThemeData(
       colorScheme: scheme,
       fontFamily: AppTypography.fontFamily,
+      fontFamilyFallback: AppTypography.fontFamilyFallback,
       textTheme: AppTypography.textTheme,
       scaffoldBackgroundColor: scheme.surface,
       visualDensity: VisualDensity.standard,
