@@ -20,7 +20,7 @@ leak of the staging key cannot sign a production build.
 
 ```bash
 keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
-        -storetype JKS -keysize 2048 -validity 10000 -alias upload
+        -storetype JKS -keysize 2048 -validity 10000 -alias moneyscribe-upload
 
 keytool -genkey -v -keystore ~/staging-keystore.jks -keyalg RSA \
         -storetype JKS -keysize 2048 -validity 10000 -alias staging
@@ -29,7 +29,14 @@ keytool -genkey -v -keystore ~/staging-keystore.jks -keyalg RSA \
 Keep the files outside the repository, or in the folder `.signing/` of the workspace, which
 Git ignores and which survives a rebuild of the dev container (use
 `.signing/upload-keystore.jks` instead of `~/upload-keystore.jks` in the commands). Use a
-different password for each, without a backslash. Back up both `.jks` files and all
+different password for each, without a backslash.
+
+Give the upload key a distinctive alias such as `moneyscribe-upload` rather than the common
+`upload`: GitHub hides the value of every secret in its logs, so an alias that is an everyday
+word blanks that word wherever it appears in the build output (the staging alias hides the
+word "staging" there, which is harmless but untidy).
+
+Back up both `.jks` files and all
 passwords in a password manager straight away: the dev container's home folder is lost when
 the container is rebuilt, and without a key no later build can carry the same signature. The
 repository ignores `*.jks`, `*.keystore` and `android/key.*.properties`; never commit them.
@@ -38,7 +45,7 @@ Print the certificate fingerprint (SHA-256) of each key. It is public informatio
 used in section 4:
 
 ```bash
-keytool -list -v -keystore ~/upload-keystore.jks -alias upload | grep "SHA256:"
+keytool -list -v -keystore ~/upload-keystore.jks -alias moneyscribe-upload | grep "SHA256:"
 keytool -list -v -keystore ~/staging-keystore.jks -alias staging | grep "SHA256:"
 ```
 
@@ -50,7 +57,7 @@ way, with its own passwords, alias and file); both are ignored by Git:
 ```properties
 storePassword=<password>
 keyPassword=<password>
-keyAlias=upload
+keyAlias=moneyscribe-upload
 storeFile=/absolute/path/to/upload-keystore.jks
 ```
 
@@ -90,7 +97,7 @@ Each environment gets the same four **secrets**, with the values of its own key
 | `ANDROID_KEYSTORE_BASE64` | the keystore, base64 encoded |
 | `ANDROID_STORE_PASSWORD` | the keystore password |
 | `ANDROID_KEY_PASSWORD` | the key password |
-| `ANDROID_KEY_ALIAS` | `staging` or `upload` |
+| `ANDROID_KEY_ALIAS` | `staging` or `moneyscribe-upload` |
 
 and one **variable** (not a secret):
 
