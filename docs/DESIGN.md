@@ -94,7 +94,7 @@ WCAG 2.2 contrast ratios of the values above. Body text on `surface`: 16.3:1 lig
 
 ## 3. Typography
 
-Font family: **Inter** (SIL Open Font License). Supports tabular figures, full Cyrillic, ₽ and the true minus sign −. Always use tabular (fixed-width) figures for every amount, and the true minus "−", never a hyphen. Inter has no Arabic glyphs, so Arabic text needs its own font (see 3.1). The font files (weights 400, 500 and 600) are bundled with the app, so text renders the same on first launch and without a connection, and no font request leaves the device.
+Font family: **Inter** (SIL Open Font License). Supports tabular figures, full Cyrillic, ₽ and the true minus sign −. Always use tabular (fixed-width) figures for every amount, and the true minus "−", never a hyphen. Inter has no Arabic glyphs, so Arabic text uses its own font, IBM Plex Sans Arabic (see 3.1). The font files (weights 400, 500 and 600 of each font) are bundled with the app, so text renders the same on first launch and without a connection, and no font request leaves the device.
 
 | Style | Font | Size / line | Weight | Use |
 | --- | --- | --- | --- | --- |
@@ -107,16 +107,20 @@ Font family: **Inter** (SIL Open Font License). Supports tabular figures, full C
 | Label large | Inter | 14 / 20 | 600 | Buttons |
 | Label medium | Inter | 12 / 16 | 500 | Chips, captions, day headers |
 
+The table shows the English type scale; Arabic uses the same sizes, lines and weights in IBM Plex Sans Arabic (see 3.1).
+
 Text must scale to 200% without clipping. Never truncate amounts: allow a long amount such as 1,234,567.89 ₽ to wrap. Allow labels about 40% longer than English (Arabic is right-to-left; see section 3.1).
 
 ### 3.1 Arabic (right-to-left)
 
 Arabic is the second language. Layouts mirror in right-to-left mode, and icons that show direction mirror with them (arrows, back, chevrons); amounts keep their own left-to-right order inside Arabic text.
 
-Open decisions, to be settled in the localization step and then written here:
+- **Font:** IBM Plex Sans Arabic (SIL Open Font License), weights 400, 500 and 600, bundled like Inter. It has Arabic and Latin letters, digits, ₽ and the true minus −, but no Cyrillic.
+- **Where it applies:** the whole UI uses it while the language shown is Arabic, with the same sizes, lines and weights as the table in section 3. Inter is its fallback, so Cyrillic text (for example a person's name) still shows. In the English UI, Inter stays the font and IBM Plex Sans Arabic is the fallback, so Arabic text typed by the user (for example a name) shows in it.
+- **Digits:** always Western (0123456789), in every language and for every number: amounts, dates, counts and percentages. Arabic-Indic digits (٠١٢) are never used. IBM Plex Sans Arabic has fixed-width digits by default, so amounts line up in columns without extra settings.
+- **Mirroring:** use start and end values (`EdgeInsetsDirectional`, `AlignmentDirectional`), never left and right. The back arrow sits at the start (on the right in Arabic) and the Settings icon at the end (on the left).
 
-- The Arabic font: open licence, Arabic glyphs with Latin and ₽ support, bundled like Inter, and weights that match the 400, 500 and 600 used above.
-- Arabic-Indic (٠١٢) or Western (012) digits for amounts and dates.
+Open decision, to be settled with the `Money` formatting: how an amount is isolated from the surrounding Arabic text so its sign, number and currency keep their order.
 
 ## 4. Shape and elevation
 

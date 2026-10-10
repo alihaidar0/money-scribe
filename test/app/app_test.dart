@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
+import 'package:money_scribe/app/theme/app_typography.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
@@ -51,6 +52,23 @@ void main() {
 
       expect(find.text('نظرة عامة'), findsOneWidget);
       expect(_direction(tester), TextDirection.rtl);
+    });
+
+    testWidgets('shows Arabic in the Arabic font and English in Inter', (
+      tester,
+    ) async {
+      String? fontOf(String text) {
+        final context = tester.element(find.text(text));
+        return DefaultTextStyle.of(context).style.fontFamily;
+      }
+
+      _setDeviceLanguage(tester, 'ar');
+      await tester.pumpWidget(buildApp());
+      expect(fontOf('نظرة عامة'), AppTypography.arabicFontFamily);
+
+      _setDeviceLanguage(tester, 'en');
+      await tester.pumpAndSettle();
+      expect(fontOf('Overview'), AppTypography.fontFamily);
     });
 
     testWidgets('falls back to English on an unsupported device language', (

@@ -26,13 +26,13 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
 - [x] Material 3 theme with light and dark modes
 - [x] Localization with ARB files: English and Arabic, with the language following the system and a setting
-- [ ] Arabic font and right-to-left layout, added to the design system and checked on every screen
+- [x] Arabic font and right-to-left layout, added to the design system and checked on every screen
 - [ ] Local database base with `drift`: versioned migrations, a migration test, encryption decision
 - [ ] Immutable models with `freezed`, added with the first model that needs it
 
 ## 3. Core features
 
-- [ ] `Money` value object: integer minor units, currency code, one place for rounding
+- [ ] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
 - [ ] Monthly salary calculator, with every month saved
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
