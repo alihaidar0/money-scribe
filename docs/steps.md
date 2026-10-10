@@ -22,11 +22,12 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] First smoke test in `test/`
 - [x] Spell checker configured (`cspell.json`, shared project word list)
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
-- [ ] Feature-first folders: `app/`, `core/`, `features/<name>/{data,domain,application,presentation}`
-- [ ] Riverpod, `go_router`, `drift` and `freezed`
 - [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
+- [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
 - [ ] Material 3 theme with light and dark modes
 - [ ] Localization-ready strings (ARB files)
+- [ ] Local database base with `drift`: versioned migrations, a migration test, encryption decision
+- [ ] Immutable models with `freezed`, added with the first model that needs it
 
 ## 3. Core features
 
