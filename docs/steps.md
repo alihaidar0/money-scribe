@@ -33,7 +33,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 
 ## 3. Core features
 
-- [ ] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
+- [x] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
 - [ ] Monthly salary calculator, with every month saved
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases

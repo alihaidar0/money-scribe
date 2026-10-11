@@ -120,7 +120,7 @@ Arabic is the second language. Layouts mirror in right-to-left mode, and icons t
 - **Digits:** always Western (0123456789), in every language and for every number: amounts, dates, counts and percentages. Arabic-Indic digits (٠١٢) are never used. IBM Plex Sans Arabic has fixed-width digits by default, so amounts line up in columns without extra settings.
 - **Mirroring:** use start and end values (`EdgeInsetsDirectional`, `AlignmentDirectional`), never left and right. The back arrow sits at the start (on the right in Arabic) and the Settings icon at the end (on the left).
 
-Open decision, to be settled with the `Money` formatting: how an amount is isolated from the surrounding Arabic text so its sign, number and currency keep their order.
+Amounts: the number comes first and the currency symbol after it (`60,650.00 ₽`) in every language, always with the kopecks. In Arabic text each amount is wrapped in Unicode left-to-right isolates by `MoneyFormatter`, so its sign, number and symbol keep their order.
 
 ## 4. Shape and elevation
 

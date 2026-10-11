@@ -11,8 +11,8 @@ The code is split by feature, and each feature by layer:
 lib/
   main.dart                  # start-up only: observer, preferences, Firebase, runApp
   app/                       # MoneyScribeApp, theme, router, BlocObserver (wires everything)
-  core/                      # shared and feature-independent: environment, routing paths,
-                             # l10n, clipboard, formatting, widgets
+  core/                      # shared and feature-independent: money, environment, routing
+                             # paths, l10n, clipboard, formatting, widgets
   features/<feature>/
     domain/                  # entities, value objects, repository interfaces (plain Dart)
     data/                    # repository implementations, data sources
