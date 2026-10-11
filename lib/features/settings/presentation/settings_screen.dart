@@ -1,19 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/features/notifications/presentation/notifications_settings_section.dart';
-import 'package:money_scribe/features/settings/application/language_controller.dart';
+import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final language = ref.watch(languageControllerProvider);
+    final language = context.select<LanguageBloc, AppLanguage>(
+      (bloc) => bloc.state.language,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -29,9 +29,7 @@ class SettingsScreen extends ConsumerWidget {
             groupValue: language,
             onChanged: (value) {
               if (value != null) {
-                unawaited(
-                  ref.read(languageControllerProvider.notifier).select(value),
-                );
+                context.read<LanguageBloc>().add(LanguageSelected(value));
               }
             },
             child: Column(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/router/app_router.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
@@ -35,24 +35,18 @@ Future<void> _openScreen(
       pushMessaging: FakePushMessagingRepository(),
     ),
   );
-  final container = ProviderScope.containerOf(
-    tester.element(find.byType(MaterialApp)),
-  );
-  container.read(appRouterProvider).go(route);
+  GoRouter.of(tester.element(find.byType(Scaffold))).go(route);
   await tester.pumpAndSettle();
 }
 
 void main() {
   test('this list covers every route of the app', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+    final router = createAppRouter();
+    addTearDown(router.dispose);
 
-    final routes = container
-        .read(appRouterProvider)
-        .configuration
-        .routes
-        .whereType<GoRoute>()
-        .map((route) => route.path);
+    final routes = router.configuration.routes.whereType<GoRoute>().map(
+      (route) => route.path,
+    );
 
     expect(_screens, unorderedEquals(routes));
   });

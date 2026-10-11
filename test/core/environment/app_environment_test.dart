@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:money_scribe/app/environment/app_environment.dart';
+import 'package:money_scribe/core/environment/app_environment.dart';
 
 void main() {
   group('resolve', () {

@@ -18,5 +18,6 @@
   "pushTokenCopy": "نسخ رمز الإشعارات",
   "pushTokenCopyHint": "لإرسال رسائل تجريبية من وحدة تحكم Firebase. في إصدارات الاختبار فقط.",
   "pushTokenCopied": "تم نسخ رمز الإشعارات",
-  "pushTokenMissing": "لا يوجد رمز إشعارات بعد"
+  "pushTokenMissing": "لا يوجد رمز إشعارات بعد",
+  "pushTokenCopyFailed": "تعذّر نسخ رمز الإشعارات"
 }

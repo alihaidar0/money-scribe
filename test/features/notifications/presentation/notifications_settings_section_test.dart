@@ -1,23 +1,25 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:money_scribe/app/environment/app_environment.dart';
+import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/features/notifications/domain/notification_permission.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
 import '../../../support/fake_push_messaging_repository.dart';
+import '../../../support/fake_text_clipboard.dart';
 
 Future<void> _openSettings(
   WidgetTester tester, {
   FakePushMessagingRepository? pushMessaging,
-  AppEnvironment? environment,
+  FakeTextClipboard? clipboard,
+  AppEnvironment environment = AppEnvironment.staging,
   AppLanguage language = AppLanguage.english,
 }) async {
   await tester.pumpWidget(
     buildApp(
       languageRepository: FakeLanguageRepository(language),
       pushMessaging: pushMessaging,
+      clipboard: clipboard,
       environment: environment,
     ),
   );
@@ -25,27 +27,6 @@ Future<void> _openSettings(
     find.byTooltip(language == AppLanguage.arabic ? 'الإعدادات' : 'Settings'),
   );
   await tester.pumpAndSettle();
-}
-
-/// Records what the app copies to the clipboard.
-List<String> _recordClipboard(WidgetTester tester) {
-  final copied = <String>[];
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    SystemChannels.platform,
-    (call) async {
-      if (call.method == 'Clipboard.setData') {
-        copied.add((call.arguments as Map)['text'] as String);
-      }
-      return null;
-    },
-  );
-  addTearDown(
-    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      null,
-    ),
-  );
-  return copied;
 }
 
 void main() {
@@ -103,32 +84,32 @@ void main() {
 
   group('push token', () {
     testWidgets('staging copies the token for test messages', (tester) async {
-      final copied = _recordClipboard(tester);
+      final clipboard = FakeTextClipboard();
       await _openSettings(
         tester,
         pushMessaging: FakePushMessagingRepository(),
-        environment: AppEnvironment.staging,
+        clipboard: clipboard,
       );
 
       await tester.tap(find.text('Copy push token'));
       await tester.pumpAndSettle();
 
-      expect(copied, ['test-token']);
+      expect(clipboard.copied, ['test-token']);
       expect(find.text('Push token copied'), findsOneWidget);
     });
 
     testWidgets('says so when the device has no token', (tester) async {
-      final copied = _recordClipboard(tester);
+      final clipboard = FakeTextClipboard();
       await _openSettings(
         tester,
         pushMessaging: FakePushMessagingRepository(pushToken: null),
-        environment: AppEnvironment.staging,
+        clipboard: clipboard,
       );
 
       await tester.tap(find.text('Copy push token'));
       await tester.pumpAndSettle();
 
-      expect(copied, isEmpty);
+      expect(clipboard.copied, isEmpty);
       expect(find.text('No push token yet'), findsOneWidget);
     });
 

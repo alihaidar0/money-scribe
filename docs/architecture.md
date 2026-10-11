@@ -1,0 +1,80 @@
+# Architecture
+
+How the app is organised and how state is managed. The rules here are checked in review;
+the lints in `analysis_options.yaml` and the tests in `test/` enforce what they can.
+
+## Layers
+
+The code is split by feature, and each feature by layer:
+
+```text
+lib/
+  main.dart                  # start-up only: observer, preferences, Firebase, runApp
+  app/                       # MoneyScribeApp, theme, router, BlocObserver (wires everything)
+  core/                      # shared and feature-independent: environment, routing paths,
+                             # l10n, clipboard, formatting, widgets
+  features/<feature>/
+    domain/                  # entities, value objects, repository interfaces (plain Dart)
+    data/                    # repository implementations, data sources
+    bloc/                    # <name>_bloc.dart, <name>_event.dart, <name>_state.dart
+    presentation/            # screens and widgets
+```
+
+Dependencies point inward:
+
+- `app/` may import anything; it is the only place that knows every feature.
+- `core/` imports neither `app/` nor a feature.
+- A feature imports `core/` and itself, never `app/`. Inside a feature, `domain/` imports
+  nothing else (and no Flutter), `data/` implements `domain/`, a Bloc depends on `domain/`
+  only (no Flutter, no `data/`, no `presentation/`), and `presentation/` uses the Bloc.
+- A feature reaches another one only through its screens (for example Settings shows the
+  Notifications section); never through its Bloc, data or domain.
+
+`test/architecture_test.dart` checks these rules on every import, so a violation fails CI.
+Route paths live in `core/routing/` and the build environment in `core/environment/`, which
+is how a screen can link to another and read the environment without importing `app/`.
+
+## State management: Bloc
+
+State is managed with [`flutter_bloc`](https://bloclibrary.dev), one `Bloc` per feature,
+with **events everywhere**: even a simple feature has event and state classes (no `Cubit`).
+
+- **Events** are a `sealed` class with `final` subclasses, named in the past tense for what
+  happened (`LanguageSelected`, `NotificationPermissionRequested`).
+- **States** are immutable and extend `Equatable`, so a Bloc only emits real changes. A state
+  with several phases uses a status enum and `copyWith`.
+- **Parts.** A Bloc, its events and its states live in three files linked with `part` and
+  `part of`, so they stay together in the feature's `bloc/` folder.
+- **Handlers** are registered with `on<Event>`. Each one picks a transformer from
+  `bloc_concurrency`: `droppable()` for actions that must not run twice at once (asking for a
+  permission), `sequential()` where order matters (saving a setting), `restartable()` for
+  searches. A failure is caught in the handler, reported with `addError` and turned into a
+  failure state; the app never relies on an uncaught exception.
+- **Dependencies** come in through the constructor, as interfaces. A Bloc has no static
+  access and no service locator.
+- **Providing.** `main` creates the repositories and passes them to `MoneyScribeApp`, which
+  provides them with `RepositoryProvider.value`. A Bloc is created with `BlocProvider` where
+  its screen lives (the language Bloc, which the whole app needs, at the root). The build
+  environment is read with `AppEnvironmentScope.of(context)`; a Bloc never reads it, it is
+  given the plain values it needs (for example `canCopyPushToken`).
+- **Reading.** Widgets rebuild on the smallest slice they need (`BlocSelector`,
+  `context.select`, `buildWhen`) and send events with `context.read<Bloc>().add(...)`.
+  One-time effects, such as a snackbar or navigation, belong in a `BlocListener`, not in
+  `build`.
+- **Observing.** `AppBlocObserver` logs the type of each event and error in debug builds,
+  never their contents, because they can hold personal or financial data.
+
+## Testing
+
+- Every Bloc has a `bloc_test` file that asserts the exact sequence of states for each event,
+  including failures and ignored events.
+- Repositories are faked with small in-memory classes in `test/support/`, not mocked.
+- Screens have widget tests; `test/app/layout_test.dart` opens every route in English and
+  Arabic at 200% text size.
+- `test/architecture_test.dart` enforces the dependency rules above.
+
+## Data
+
+The data lives only on the server. Until the backend exists, repository interfaces have fake
+implementations with invented data; the device keeps only simple settings in
+`shared_preferences`. See [`environments.md`](environments.md) for the build environments.
