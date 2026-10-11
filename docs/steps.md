@@ -72,7 +72,7 @@ To do, in this order, one step at a time:
 - [x] Create one Google Cloud project per environment (staging and production)
 - [x] Add Firebase to both projects (Analytics off) and register the staging and production Android apps; keep `google-services.json` out of Git
 - [x] Store each environment's `google-services.json` (base64) as the secret `GOOGLE_SERVICES_JSON_BASE64` of its GitHub environment
-- [ ] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
+- [x] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
 - [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)

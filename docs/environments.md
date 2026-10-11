@@ -89,3 +89,8 @@ write access to the repository only.
   environment; test builds of pull requests have no secrets and use a placeholder file with
   invented values. Until the backend can send messages, push messages are tested from the
   Firebase console. A notification never contains amounts, names or other financial data.
+
+  To build an Android flavor on your own machine, download its file from the Firebase
+  console (Project settings → General → Your apps) and save it as
+  `android/app/src/<flavor>/google-services.json`. Without it the build stops with a message
+  from the Google services plugin; only the flavor being built needs its file.

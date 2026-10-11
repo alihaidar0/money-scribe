@@ -5,6 +5,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Needs android/app/src/<flavor>/google-services.json for the flavor being built
+    // (gitignored; CI writes it from the environment's secret). See docs/environments.md.
+    id("com.google.gms.google-services")
 }
 
 // Release signing, one key per environment: `android/key.staging.properties` and

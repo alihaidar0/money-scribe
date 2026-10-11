@@ -7,5 +7,16 @@
   "languageSectionTitle": "اللغة",
   "languageSystem": "لغة النظام",
   "languageEnglish": "English",
-  "languageArabic": "العربية"
+  "languageArabic": "العربية",
+  "notificationsSectionTitle": "الإشعارات",
+  "notificationsPermissionTitle": "عرض الإشعارات",
+  "notificationsStatusGranted": "مسموح بها",
+  "notificationsStatusNotGranted": "غير مسموح بها بعد",
+  "notificationsStatusBlocked": "محظورة. فعّل الإشعارات من إعدادات النظام.",
+  "notificationsStatusError": "تعذّر التحقق من إعداد الإشعارات.",
+  "notificationsAllow": "السماح",
+  "pushTokenCopy": "نسخ رمز الإشعارات",
+  "pushTokenCopyHint": "لإرسال رسائل تجريبية من وحدة تحكم Firebase. في إصدارات الاختبار فقط.",
+  "pushTokenCopied": "تم نسخ رمز الإشعارات",
+  "pushTokenMissing": "لا يوجد رمز إشعارات بعد"
 }
