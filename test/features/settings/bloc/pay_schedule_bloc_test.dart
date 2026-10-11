@@ -84,6 +84,15 @@ void main() {
   );
 
   blocTest<PayScheduleBloc, PayScheduleState>(
+    'the saved mode becomes the mode of the fake account',
+    build: build,
+    act: (bloc) => bloc
+      ..add(const PaymentModeSelected(PaymentMode.twoPayments))
+      ..add(const PayScheduleConfirmed()),
+    verify: (_) => expect(demo.settings.paymentMode, PaymentMode.twoPayments),
+  );
+
+  blocTest<PayScheduleBloc, PayScheduleState>(
     'reports no connection',
     setUp: () =>
         demo.update(const DemoSettings(scenario: DemoScenario.noConnection)),

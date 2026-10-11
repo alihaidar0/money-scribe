@@ -96,6 +96,47 @@ void main() {
     });
   });
 
+  group('formatSigned', () {
+    test('puts a plus before income and a true minus before expenses', () {
+      final formatter = MoneyFormatter(const Locale('en'));
+
+      expect(
+        formatter.formatSigned(const Money(10440000, Currency.rub)),
+        '+104,400.00$noBreakSpace₽',
+      );
+      expect(
+        formatter.formatSigned(const Money(-5275000, Currency.rub)),
+        '\u2212'
+        '52,750.00$noBreakSpace₽',
+      );
+    });
+
+    test('zero has a plus', () {
+      expect(
+        MoneyFormatter(const Locale('en'))
+            .formatSigned(const Money(0, Currency.rub)),
+        '+0.00$noBreakSpace₽',
+      );
+    });
+
+    test('never uses a hyphen', () {
+      final text = MoneyFormatter(const Locale('en'))
+          .formatSigned(const Money(-100, Currency.rub));
+
+      expect(text, isNot(contains('-')));
+    });
+
+    test('in Arabic the sign stays with the digits inside the isolates', () {
+      final text = MoneyFormatter(const Locale('ar'))
+          .formatSigned(const Money(-5275000, Currency.rub));
+
+      expect(text.runes.first, 0x2066);
+      expect(text.runes.last, 0x2069);
+      expect(text.substring(1, 2), '\u2212');
+      expect(text, contains('52,750.00'));
+    });
+  });
+
   group('formatAmount', () {
     test('shows the number without the currency', () {
       expect(

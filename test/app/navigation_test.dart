@@ -121,6 +121,8 @@ void main() {
 
       expect(find.byType(OverviewScreen), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
+      // An existing account has data.
+      expect(find.text('Balance'), findsOneWidget);
     });
 
     testWidgets('the Overview cannot be left with the back button to sign in', (
@@ -300,6 +302,27 @@ void main() {
 
       await _tapText(tester, 'Continue');
       expect(find.byType(OverviewScreen), findsOneWidget);
+      // A new account has no data: the first-launch Overview.
+      expect(find.text('Welcome to Money Scribe'), findsOneWidget);
+    });
+
+    testWidgets('two payments chosen in the setup show the parts', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+      await fillAndSubmit(tester);
+      await _typeCode(tester, '4817');
+      await _tapText(tester, 'Continue');
+      await _tapText(tester, 'Two payments a month');
+      await _tapText(tester, 'Continue');
+      expect(find.text('Welcome to Money Scribe'), findsOneWidget);
+
+      _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Part 1'), findsOneWidget);
+      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
     });
 
     testWidgets('the setup offers two payments with pay days', (tester) async {

@@ -7,6 +7,7 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
+import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_language_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
       authRepository: FakeAuthRepository(demo: demo),
       appLockRepository: FakeAppLockRepository(),
       payScheduleRepository: FakePayScheduleRepository(demo: demo),
+      overviewRepository: FakeOverviewRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,
     ),

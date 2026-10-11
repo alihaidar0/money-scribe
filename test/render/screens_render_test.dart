@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
@@ -34,6 +36,20 @@ class _Scene {
   final bool signedIn;
   final _Setup? setup;
   final Size size;
+}
+
+Future<void> _useScenario(
+  WidgetTester tester,
+  DemoController demo,
+  DemoScenario scenario,
+) async {
+  demo.update(demo.settings.copyWith(scenario: scenario));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _useTwoPayments(WidgetTester tester, DemoController demo) async {
+  demo.update(demo.settings.copyWith(paymentMode: PaymentMode.twoPayments));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _typeCode(WidgetTester tester, String code) async {
@@ -188,13 +204,84 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: (tester, demo) => _tapKeys(tester, [3]),
   ),
-  const _Scene('shell-overview', AppRoutes.overview, signedIn: true),
+  const _Scene('ov-1-overview', AppRoutes.overview, signedIn: true),
+  _Scene(
+    'ov-1b-overview-previous-month',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.chevron_left).first);
+      await tester.pumpAndSettle();
+    },
+  ),
   const _Scene(
-    'shell-overview-wide',
+    'ov-2-overview-two-payments',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'ov-2b-overview-first-part',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(SegmentedButton<PeriodScope>),
+              matching: find.byType(Text),
+            )
+            .at(1),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'ov-3-first-launch',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'ov-4-choose-debt',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FilledButton).at(1));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'ov-5-loading',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'ov-6-error',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'ov-7-no-connection',
+    AppRoutes.overview,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  const _Scene(
+    'ov-wide-two-payments',
     AppRoutes.overview,
     signedIn: true,
     size: Size(1280, 800),
+    setup: _useTwoPayments,
   ),
+  const _Scene('tab-salary', AppRoutes.salary, signedIn: true),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),
 ];
@@ -245,6 +332,10 @@ void main() {
 
           expect(tester.takeException(), isNull);
           await saveScreenshot(tester, key, name);
+          // Let any pending fake answer (the slow "loading" one takes eight
+          // seconds) finish before the test ends.
+          await tester.pump(const Duration(seconds: 10));
+          await tester.pumpAndSettle();
         });
       }
     }

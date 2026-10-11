@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/payments/payment_mode.dart';
 
 /// What the fake data sources pretend the server is doing. It lets every
 /// loading, empty, error and "no connection" screen be tried without a server.
@@ -24,6 +25,7 @@ final class DemoSettings extends Equatable {
     this.signIn = DemoSignIn.accepted,
     this.registration = DemoRegistration.accepted,
     this.code = DemoCode.accepted,
+    this.paymentMode = PaymentMode.onePayment,
   });
 
   final DemoScenario scenario;
@@ -31,22 +33,27 @@ final class DemoSettings extends Equatable {
   final DemoRegistration registration;
   final DemoCode code;
 
+  /// How the fake account is paid: one payment or two a month.
+  final PaymentMode paymentMode;
+
   DemoSettings copyWith({
     DemoScenario? scenario,
     DemoSignIn? signIn,
     DemoRegistration? registration,
     DemoCode? code,
+    PaymentMode? paymentMode,
   }) {
     return DemoSettings(
       scenario: scenario ?? this.scenario,
       signIn: signIn ?? this.signIn,
       registration: registration ?? this.registration,
       code: code ?? this.code,
+      paymentMode: paymentMode ?? this.paymentMode,
     );
   }
 
   @override
-  List<Object> get props => [scenario, signIn, registration, code];
+  List<Object> get props => [scenario, signIn, registration, code, paymentMode];
 }
 
 /// Holds the [DemoSettings] and tells whoever is listening when they change.

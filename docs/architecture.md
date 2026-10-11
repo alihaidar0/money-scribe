@@ -96,6 +96,13 @@ implementations with invented data; the device keeps only simple settings in
   end edge of the screen that opens the demo panel (`app/demo/`), where these are changed, the
   language is switched and the screens no button leads to can be opened. The panel and the
   controller go away with the fake data.
+- A repository can tell its screens that its data may have changed (`Stream<void> changes`, for
+  example `OverviewRepository`), and the Bloc loads again. The fake one follows the demo panel,
+  so switching the scenario or the payment mode refreshes the visible screen; a real one can emit
+  after the app saves something that the screen is made of.
+- The fake account has one payment mode (one or two payments a month) and one scenario. A new
+  account starts as "empty" (so the Overview shows its first-launch screen) and signing in to an
+  existing one brings the data; the first-start pay question sets the mode.
 - A repository throws a `DataException` (`core/errors/`) when the server cannot be reached or fails;
   a Bloc turns it into a state, and the screen shows the full-screen "No connection" or
   "Something went wrong" view (`FlowPage` keeps the form underneath, so nothing typed is lost).

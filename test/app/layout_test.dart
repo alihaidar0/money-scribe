@@ -33,6 +33,8 @@ const List<String> _screens = [
   AppRoutes.debts,
   AppRoutes.reports,
   AppRoutes.settings,
+  AppRoutes.addTransaction,
+  AppRoutes.fixedItems,
   AppRoutes.demo,
 ];
 

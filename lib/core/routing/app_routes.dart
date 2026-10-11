@@ -25,6 +25,8 @@ abstract final class AppRoutes {
 
   // Secondary screens.
   static const settings = '/settings';
+  static const addTransaction = '/transactions/add';
+  static const fixedItems = '/salary/fixed-items';
 
   /// The demo panel of staging builds. It goes away with the fake data.
   static const demo = '/demo';

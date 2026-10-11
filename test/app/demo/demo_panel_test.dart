@@ -5,6 +5,7 @@ import 'package:money_scribe/app/demo/demo_handle.dart';
 import 'package:money_scribe/app/demo/demo_panel_screen.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
 import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
@@ -76,6 +77,7 @@ void main() {
       await tester.tap(find.text('Wrong password (locks after 5)'));
       await tester.tap(find.text('Rejected (field errors)'));
       await tester.tap(find.text('Expired'));
+      await tester.tap(find.text('Two payments (parts)'));
       await tester.pumpAndSettle();
 
       expect(
@@ -85,6 +87,7 @@ void main() {
           signIn: DemoSignIn.wrongPassword,
           registration: DemoRegistration.rejected,
           code: DemoCode.expired,
+          paymentMode: PaymentMode.twoPayments,
         ),
       );
     });

@@ -19,9 +19,11 @@ import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
+import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
 import 'package:money_scribe/features/settings/presentation/settings_screen.dart';
+import 'package:money_scribe/features/transactions/presentation/add_transaction_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
 /// The routes of the app. The caller owns the router and disposes it.
@@ -92,6 +94,14 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.addTransaction,
+        builder: (context, state) => const AddTransactionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.fixedItems,
+        builder: (context, state) => const FixedItemsScreen(),
       ),
       GoRoute(
         path: AppRoutes.demo,

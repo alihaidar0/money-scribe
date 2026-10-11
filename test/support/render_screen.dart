@@ -60,8 +60,18 @@ Future<void> saveScreenshot(
     final image = await boundary.toImage(pixelRatio: 2);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     final file = File('$renderDirectory/$name.png');
-    await file.create(recursive: true);
-    await file.writeAsBytes(bytes!.buffer.asUint8List());
+    // On a shared or scanned drive a picture can be locked for a moment, for
+    // example while an editor shows it: try a few times.
+    for (var attempt = 1; ; attempt++) {
+      try {
+        await file.create(recursive: true);
+        await file.writeAsBytes(bytes!.buffer.asUint8List());
+        break;
+      } on FileSystemException {
+        if (attempt == 5) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    }
     image.dispose();
   });
 }

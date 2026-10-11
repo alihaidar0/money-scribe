@@ -100,6 +100,28 @@ void main() {
       expect(auth.isSignedIn, isFalse);
     });
 
+    test('a new account has no data yet', () async {
+      await auth.register(name: 'Alex', email: 'new@b.c', password: 'x');
+
+      expect(demo.settings.scenario, DemoScenario.empty);
+    });
+
+    test('signing in to an existing account brings its data', () async {
+      await auth.register(name: 'Alex', email: 'new@b.c', password: 'x');
+
+      await signIn();
+
+      expect(demo.settings.scenario, DemoScenario.normal);
+    });
+
+    test('signing in leaves a forced error or slow answer alone', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+
+      await signIn();
+
+      expect(demo.settings.scenario, DemoScenario.loading);
+    });
+
     test('can refuse the data, all the ways at once', () async {
       demo.update(const DemoSettings(registration: DemoRegistration.rejected));
 
