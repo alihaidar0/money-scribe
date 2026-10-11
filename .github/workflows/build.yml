@@ -16,7 +16,10 @@
 #
 # Signing:
 #   - Pull request builds are test builds signed with the debug key; they never
-#     see a secret.
+#     see a secret. The Android build needs a google-services.json for its flavor
+#     (Firebase Cloud Messaging), so test builds get a placeholder with invented
+#     values; signed builds write the real file from the environment's secret
+#     GOOGLE_SERVICES_JSON_BASE64 (docs/environments.md).
 #   - Signed builds (a push, or a manual run) use the key of their GitHub
 #     environment (docs/android-signing.md). The `staging` environment is
 #     restricted to develop and the `production` one to main, so no other branch
@@ -237,6 +240,34 @@ jobs:
 
       - run: flutter pub get --enforce-lockfile
 
+      # The Google services plugin fails without a google-services.json for the
+      # flavor. A test build has no secrets, so it gets a placeholder with invented
+      # values (ignored by Git); it reaches no Firebase project.
+      - name: Add a placeholder Firebase configuration
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+        run: |
+          set -euo pipefail
+          application_id="com.alihaidar.moneyscribe"
+          if [[ "$APP_ENV" != "production" ]]; then application_id="${application_id}.${APP_ENV}"; fi
+          jq -n --arg id "$application_id" '{
+            project_info: {
+              project_number: "000000000000",
+              project_id: "placeholder-project",
+              storage_bucket: "placeholder-project.appspot.com"
+            },
+            client: [{
+              client_info: {
+                mobilesdk_app_id: "1:000000000000:android:0000000000000000",
+                android_client_info: {package_name: $id}
+              },
+              oauth_client: [],
+              api_key: [{current_key: "placeholder-api-key"}],
+              services: {appinvite_service: {other_platform_oauth_client: []}}
+            }],
+            configuration_version: "1"
+          }' > "android/app/src/${APP_ENV}/google-services.json"
+
       - name: Build release
         env:
           TARGET: ${{ matrix.target }}
@@ -304,6 +335,31 @@ jobs:
             echo "keyAlias=${KEY_ALIAS}"
             echo "storeFile=${RUNNER_TEMP}/signing-keystore.jks"
           } > "android/key.${APP_ENV}.properties"
+
+      # Writes the Firebase configuration of the environment into its flavor
+      # folder (ignored by Git; removed in the last step). It must belong to this
+      # environment's Android app, so a swapped secret fails the build here.
+      - name: Prepare the Firebase configuration
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$GOOGLE_SERVICES_JSON_BASE64" ]]; then
+            echo "::error::The ${APP_ENV} environment secret GOOGLE_SERVICES_JSON_BASE64 is missing (see docs/environments.md)."
+            exit 1
+          fi
+          application_id="com.alihaidar.moneyscribe"
+          if [[ "$APP_ENV" != "production" ]]; then application_id="${application_id}.${APP_ENV}"; fi
+          target="android/app/src/${APP_ENV}/google-services.json"
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > "$target"
+          if ! jq -e --arg id "$application_id" \
+            'any(.client[]; .client_info.android_client_info.package_name == $id)' \
+            "$target" > /dev/null; then
+            rm -f "$target"
+            echo "::error::The ${APP_ENV} secret GOOGLE_SERVICES_JSON_BASE64 is not a google-services.json for ${application_id}."
+            exit 1
+          fi
 
       # One APK per CPU type and the App Bundle, obfuscated. The symbol files in
       # build/symbols turn an obfuscated stack trace back into readable names.
@@ -422,7 +478,7 @@ jobs:
 
       - name: Remove the signing files
         if: always()
-        run: rm -f android/key.*.properties "$RUNNER_TEMP/signing-keystore.jks"
+        run: rm -f android/key.*.properties "$RUNNER_TEMP/signing-keystore.jks" android/app/src/*/google-services.json
 
   # ── Draft GitHub Release ─────────────────────────────────────────────────
   # Staging: the single draft "Staging" (tag staging), refreshed by every build on

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/features/notifications/presentation/notifications_settings_section.dart';
 import 'package:money_scribe/features/settings/application/language_controller.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
@@ -43,6 +44,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const NotificationsSettingsSection(),
         ],
       ),
     );

@@ -31,5 +31,49 @@
   "languageArabic": "العربية",
   "@languageArabic": {
     "description": "Language option for Arabic. Written in the language itself in every translation, so a reader can always find it."
+  },
+  "notificationsSectionTitle": "Notifications",
+  "@notificationsSectionTitle": {
+    "description": "Heading of the notification settings on the Settings screen."
+  },
+  "notificationsPermissionTitle": "Show notifications",
+  "@notificationsPermissionTitle": {
+    "description": "Label of the setting that lets the app show notifications on the device."
+  },
+  "notificationsStatusGranted": "Allowed",
+  "@notificationsStatusGranted": {
+    "description": "Status under the notification setting: the user allowed notifications."
+  },
+  "notificationsStatusNotGranted": "Not allowed yet",
+  "@notificationsStatusNotGranted": {
+    "description": "Status under the notification setting: notifications are not allowed yet, and the Allow button next to it asks the user."
+  },
+  "notificationsStatusBlocked": "Blocked. Turn notifications on in the system settings.",
+  "@notificationsStatusBlocked": {
+    "description": "Status under the notification setting: the user refused and the system will not ask again, so notifications can only be turned on in the system settings of the device."
+  },
+  "notificationsStatusError": "Could not check the notification setting.",
+  "@notificationsStatusError": {
+    "description": "Status under the notification setting: reading the setting from the device failed."
+  },
+  "notificationsAllow": "Allow",
+  "@notificationsAllow": {
+    "description": "Button that asks the user to allow notifications."
+  },
+  "pushTokenCopy": "Copy push token",
+  "@pushTokenCopy": {
+    "description": "Label of a test-only row on the Settings screen that copies this device's push token. Shown in staging builds only."
+  },
+  "pushTokenCopyHint": "For test messages from the Firebase console. Staging builds only.",
+  "@pushTokenCopyHint": {
+    "description": "Explanation under the row that copies the push token. Firebase is a product name and stays in Latin letters."
+  },
+  "pushTokenCopied": "Push token copied",
+  "@pushTokenCopied": {
+    "description": "Message shown after the push token was copied to the clipboard."
+  },
+  "pushTokenMissing": "No push token yet",
+  "@pushTokenMissing": {
+    "description": "Message shown when the device has no push token to copy."
   }
 }

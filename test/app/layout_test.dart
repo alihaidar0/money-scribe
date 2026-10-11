@@ -7,6 +7,7 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
+import '../support/fake_push_messaging_repository.dart';
 
 /// Every screen of the app. Add a new screen here: the test below fails when a
 /// route is missing from this list.
@@ -28,7 +29,11 @@ Future<void> _openScreen(
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
-    buildApp(languageRepository: FakeLanguageRepository(language)),
+    buildApp(
+      languageRepository: FakeLanguageRepository(language),
+      // Push available and not yet allowed, so every row and button is shown.
+      pushMessaging: FakePushMessagingRepository(),
+    ),
   );
   final container = ProviderScope.containerOf(
     tester.element(find.byType(MaterialApp)),
