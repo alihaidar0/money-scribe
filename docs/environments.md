@@ -63,7 +63,10 @@ number, and the release notes show the build number and the commit.
 
 **Staging release.** One draft called "Staging" (tag `staging`) holds the files of the latest
 build on `develop`. Every merge replaces its files and notes. Never publish it: a published
-release is immutable, and the build would then leave it alone.
+release is immutable, and the build would then leave it alone. GitHub renames the tag of a
+draft once the draft has been updated (to `untagged-…`), so the build finds a draft by its tag
+or by its title. If more than one release matches, the build uses the newest and warns; delete
+the others on the Releases page.
 
 **Production release.** The draft `v0.1.0` belongs to version `0.1.0` (any build number). A
 new build of the same version replaces its files and notes. When the version is final,

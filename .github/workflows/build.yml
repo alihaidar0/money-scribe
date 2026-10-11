@@ -552,10 +552,19 @@ jobs:
               "$BUILD_NUMBER" "$version" "$TARGET_SHA")"
           fi
 
-          # Drafts have no tag yet, so they are found by listing the releases.
-          existing="$(gh api --paginate "repos/${GH_REPO}/releases" \
-            | jq -r --arg tag "$tag" '.[] | select(.tag_name == $tag) | "\(.id) \(.draft)"' \
-            | head -n 1)"
+          # A draft has no real Git tag yet, and GitHub renames its tag (to
+          # untagged-...) once the draft has been updated, so a draft is found by
+          # its tag or else by its title; a published release by its tag. The
+          # newest match comes first. `sed` (not `head`) reads the whole list, so
+          # an early exit can never break the pipe.
+          matches="$(gh api --paginate "repos/${GH_REPO}/releases?per_page=100" \
+            | jq -r --arg tag "$tag" --arg title "$title" \
+              '.[] | select(.tag_name == $tag or (.draft and .name == $title)) | "\(.id) \(.draft)"')"
+          existing="$(printf '%s\n' "$matches" | sed -n 1p)"
+          count="$(printf '%s\n' "$matches" | grep -c . || true)"
+          if [[ "$count" -gt 1 ]]; then
+            echo "::warning::${count} releases match ${title}; the newest is used. Delete the others on the Releases page."
+          fi
 
           if [[ -z "$existing" ]]; then
             id="$(gh api -X POST "repos/${GH_REPO}/releases" \
@@ -569,8 +578,13 @@ jobs:
               echo "Release ${tag} is already published; its files were not replaced." >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
-            gh api -X PATCH "repos/${GH_REPO}/releases/${id}" \
-              -f target_commitish="$TARGET_SHA" -f body="$body" -F prerelease="$prerelease" > /dev/null
+            # Sending the tag again keeps the draft under it.
+            reported="$(gh api -X PATCH "repos/${GH_REPO}/releases/${id}" \
+              -f tag_name="$tag" -f target_commitish="$TARGET_SHA" -f body="$body" \
+              -F prerelease="$prerelease" --jq .tag_name)"
+            if [[ "$reported" != "$tag" ]]; then
+              echo "::notice::GitHub now lists this draft under the tag ${reported}; it is found again by its title."
+            fi
             # Replace the files: remove the old ones, then upload the new ones.
             for asset in $(gh api --paginate "repos/${GH_REPO}/releases/${id}/assets" --jq '.[].id'); do
               gh api -X DELETE "repos/${GH_REPO}/releases/assets/${asset}"
@@ -584,7 +598,7 @@ jobs:
               -H "Content-Type: application/octet-stream" --input "$file" > /dev/null
           done
 
-          echo "Draft release ${title} ${action} (build ${BUILD_NUMBER}). The production draft is published from the Releases page when the version is final." >> "$GITHUB_STEP_SUMMARY"
+          echo "Draft release ${title} ${action} (release ${id}, build ${BUILD_NUMBER}). The production draft is published from the Releases page when the version is final." >> "$GITHUB_STEP_SUMMARY"
 
   # ── iOS (opt-in) ─────────────────────────────────────────────────────────
   # Needs the iOS flavors (Xcode schemes named staging and production) first,
