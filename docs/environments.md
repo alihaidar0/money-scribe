@@ -14,7 +14,7 @@ release.
 | Signing key | the staging key | the upload key |
 | GitHub environment | `staging`, restricted to `develop` | `production`, restricted to `main` |
 | Release | the draft "Staging" (tag `staging`) | the draft `v<version>` |
-| Firebase or Google Cloud project, later | one for staging | one for production |
+| Google Cloud and Firebase project | one for staging | one for production |
 
 The production ID has no suffix because it is the ID of the app in the stores and cannot be
 changed once published. The signing keys are described in
@@ -81,7 +81,11 @@ write access to the repository only.
   it. The iOS bundle IDs will mirror the Android IDs.
 - **Google Play.** Later, a merge into `main` can also upload the App Bundle (first to an
   internal or closed track); see the end of [`android-signing.md`](android-signing.md).
-- **Firebase and notifications.** No SDK, configuration or key is added until the backend is
-  chosen. When it is, each flavor gets its own `google-services.json` in
-  `android/app/src/<flavor>/` (the file name is ignored by Git), from one Firebase project per
-  environment, registered with the application IDs above.
+- **Firebase Cloud Messaging.** Firebase is used for push notifications only; the backend
+  (sign-in and data storage) is still undecided, and Analytics and crash reporting stay off.
+  Each flavor gets its own `google-services.json` in `android/app/src/<flavor>/` (the file
+  name is ignored by Git), from one Firebase project per environment, registered with the
+  application IDs above. The build workflow writes the file from a secret of the GitHub
+  environment; test builds of pull requests have no secrets and use a placeholder file with
+  invented values. Until the backend can send messages, push messages are tested from the
+  Firebase console. A notification never contains amounts, names or other financial data.

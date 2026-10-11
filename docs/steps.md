@@ -39,7 +39,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Debts: borrowed and lent, partial repayments, settled status
 - [ ] Backend and sign-in, with the server as the only place the data is stored (provider chosen when needed)
 - [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
-- [ ] Notifications: local reminders first (for example debts due), push once the backend is chosen
+- [ ] Notifications: local reminders first (for example debts due); push messages through Firebase Cloud Messaging are tested from the Firebase console until the backend can send them
 
 ## 4. Insight and polish
 
@@ -68,13 +68,16 @@ To do, in this order, one step at a time:
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
 - [x] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
-- [ ] Raise the version, open the `develop` → `main` release pull request, test its files, merge, check the signed production build, publish the release
-- [ ] Create one Google Cloud project per environment (staging and production)
-- [ ] Register the staging and production Android apps in their projects (no SDK or keys in the app yet)
+- [x] Open the `develop` → `main` release pull request, test its files, merge, check the signed production build and the draft release `v0.1.0` (left unpublished)
+- [x] Create one Google Cloud project per environment (staging and production)
+- [x] Add Firebase to both projects (Analytics off) and register the staging and production Android apps; keep `google-services.json` out of Git
+- [x] Store each environment's `google-services.json` (base64) as the secret `GOOGLE_SERVICES_JSON_BASE64` of its GitHub environment
+- [ ] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
 - [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)
 - [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI (after the iOS flavors)
+- [ ] Publish the first release (`v0.1.0` or higher) once the app has its first real features
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
