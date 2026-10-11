@@ -28,12 +28,13 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Localization with ARB files: English and Arabic, with the language following the system and a setting
 - [x] Arabic font and right-to-left layout, added to the design system and checked on every screen
 - [x] State management with Bloc (`flutter_bloc`, events in every feature), documented in [`architecture.md`](architecture.md)
-- [ ] Data layer base: repository interfaces with fake data sources (invented data), ready to be replaced by the server
+- [ ] Data layer base: repository interfaces with fake data sources (invented data), one feature at a time, replaced by the server later
 - [ ] Immutable models (sealed classes, `json_serializable` for DTOs), added with the first model that needs it
 
 ## 3. Core features
 
 - [x] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
+- [ ] Salary calculation: one or two payments a month, every line rounded to the kopeck (pure Dart, tests)
 - [ ] Monthly salary calculator, with every month saved
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
@@ -80,5 +81,164 @@ To do, in this order, one step at a time:
 - [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI (after the iOS flavors)
 - [ ] Publish the first release (`v0.1.0` or higher) once the app has its first real features
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
+
+## 6. Screens
+
+Every screen of the design is built with fake data, checked on the emulator, and then ticked. The IDs come from the design prompts, which are kept locally; a screen with a one-payment and a two-payment version has a line for each.
+
+### Foundations
+
+- [ ] Navigation shell: bottom bar on phones, rail on tablet and web, a route for every screen
+- [ ] Demo panel (staging only) to force loading, empty, error and no connection, and the payment mode
+- [ ] Shared screen widgets: hero card, amount row, period card, state views, code boxes
+- [ ] Screen render check: every screen drawn to an image in a test, in English and Arabic
+- [ ] Navigation test: every button leads where the design says
+
+### A. Authentication and first start
+
+- [ ] AUTH-1 Welcome
+- [ ] AUTH-2 Sign in
+- [ ] AUTH-2b Sign in, wrong password
+- [ ] AUTH-2c Sign in, too many attempts
+- [ ] AUTH-3 Register
+- [ ] AUTH-3b Register, errors
+- [ ] AUTH-4 Verify email
+- [ ] AUTH-4b Verify email, wrong code
+- [ ] AUTH-4c Verify email, code expired
+- [ ] AUTH-5 Email verified
+- [ ] AUTH-6 How are you paid?
+- [ ] AUTH-6b How are you paid? two payments
+- [ ] AUTH-7 Forgot password
+- [ ] AUTH-8 Reset code
+- [ ] AUTH-8b Reset code, wrong code
+- [ ] AUTH-9 New password
+- [ ] AUTH-10 Password changed
+- [ ] AUTH-11 App lock
+- [ ] AUTH-12 PIN entry
+- [ ] AUTH-13 Create a PIN
+
+### B. Overview
+
+- [ ] OV-1 Overview, one payment
+- [ ] OV-2 Overview, two payments
+- [ ] OV-3 Overview, first launch
+- [ ] OV-4 Choose a debt
+
+### C. Salary, fixed items and history
+
+- [ ] SAL-1 Salary, one payment
+- [ ] SAL-1b Salary, editing a saved month
+- [ ] SAL-1c Delete month
+- [ ] SAL-2 Salary, two payments
+- [ ] SAL-3 Month picker
+- [ ] SAL-4 Switch to one payment
+- [ ] SAL-5 Switch to two payments
+- [ ] SAL-6 Salary history, one payment
+- [ ] SAL-7 Salary history, two payments
+- [ ] SAL-8 Compare months
+- [ ] SAL-9 Compare parts
+- [ ] SAL-10 Month saved
+- [ ] FIX-1 Fixed items, one payment
+- [ ] FIX-2 Fixed items, two payments
+- [ ] FIX-3 Add fixed item
+- [ ] FIX-4 Edit fixed item
+- [ ] FIX-5 Delete fixed item
+
+### D. Transactions
+
+- [ ] TX-1 Transactions, one payment
+- [ ] TX-2 Transactions, two payments
+- [ ] TX-3 Filters
+- [ ] TX-3b Filters, two payments
+- [ ] TX-4 Add transaction
+- [ ] TX-5 Edit transaction
+- [ ] TX-6 Choose account
+- [ ] TX-7 Delete transaction
+- [ ] TX-8 Transactions, no results
+
+### E. Debts
+
+- [ ] DB-1 Debts
+- [ ] DB-2 Add debt
+- [ ] DB-3 Debt details
+- [ ] DB-4 Add repayment
+- [ ] DB-5 Edit repayment
+- [ ] DB-6 Delete repayment
+- [ ] DB-7 Delete debt
+- [ ] DB-8 Edit debt
+
+### F. Reports
+
+- [ ] RP-1 Reports, Categories
+- [ ] RP-2 Reports, Categories by part
+- [ ] RP-3 Reports, Month vs month
+- [ ] RP-4 Reports, Part vs part
+- [ ] RP-5 Reports, Debts
+
+### G. Settings, account and data
+
+- [ ] ST-1 Settings
+- [ ] ST-2 Account
+- [ ] ST-3 Pay schedule
+- [ ] ST-4 Categories
+- [ ] ST-4b Add or edit category
+- [ ] ST-5 Accounts
+- [ ] ST-5b Add or edit account
+- [ ] ST-6 Change password
+- [ ] ST-7 Export CSV
+- [ ] ST-8 Import CSV
+- [ ] ST-8b Import result
+- [ ] ST-9 Default currency
+- [ ] ST-10 Sign out
+- [ ] ST-11 Delete account
+
+### H. Loading, empty, error and no connection
+
+- [ ] OV-5 Overview, loading
+- [ ] OV-6 Overview, error
+- [ ] OV-7 Overview, no connection
+- [ ] SAL-11 Salary, new empty month
+- [ ] SAL-12 Salary, loading
+- [ ] SAL-13 Salary, error
+- [ ] SAL-14 Salary, no connection
+- [ ] SAL-15 Salary history, empty
+- [ ] FIX-6 Fixed items, empty
+- [ ] TX-9 Transactions, loading
+- [ ] TX-10 Transactions, empty
+- [ ] TX-11 Transactions, error
+- [ ] TX-12 Transactions, no connection
+- [ ] DB-9 Debts, loading
+- [ ] DB-10 Debts, empty
+- [ ] DB-11 Debts, error
+- [ ] DB-12 Debts, no connection
+- [ ] RP-6 Reports, loading
+- [ ] RP-7 Reports, empty
+- [ ] RP-8 Reports, error
+- [ ] RP-9 Reports, no connection
+- [ ] NC-1 No connection, full screen
+- [ ] ERR-1 Could not save
+- [ ] ERR-2 Something went wrong
+
+### I. Arabic (right-to-left) screens
+
+- [ ] AR-1 Overview (Arabic)
+- [ ] AR-2 Salary (Arabic)
+- [ ] AR-3 Transactions (Arabic)
+- [ ] AR-4 Add transaction (Arabic)
+- [ ] AR-5 Debts (Arabic)
+- [ ] AR-6 Settings (Arabic)
+- [ ] AR-7 Sign in (Arabic)
+- [ ] AR-8 Verify email (Arabic)
+
+### J. Tablet and web layouts
+
+- [ ] TB-1 Transactions, wide
+- [ ] TB-2 Overview, wide
+- [ ] TB-3 Sign in, web
+
+### K. Dark mode, app icon and fix-ups
+
+- [ ] DK-1 Dark mode: every screen checked in dark
+- [x] IC-1 App icon (already in the app)
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
