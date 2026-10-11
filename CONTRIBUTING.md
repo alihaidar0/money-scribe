@@ -20,6 +20,7 @@ Out of scope:
 - Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) and use a Conventional Commit title: labels (they drive the release notes) are added automatically from it, and you can add more by hand.
 - The **CI passed** check must be green before merging.
 - One concern per pull request. The build plan is tracked in [`docs/steps.md`](docs/steps.md); tick a step in the pull request that completes it.
+- Code follows the layers and the Bloc conventions in [`docs/architecture.md`](docs/architecture.md): every feature has its Bloc, events and states, and a `bloc_test` for each Bloc.
 
 The branch model, repository settings and rulesets are described in [`docs/github-setup.md`](docs/github-setup.md).
 

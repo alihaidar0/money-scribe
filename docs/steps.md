@@ -23,12 +23,13 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Spell checker configured (`cspell.json`, shared project word list)
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
 - [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
-- [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
+- [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Bloc and `go_router`
 - [x] Material 3 theme with light and dark modes
 - [x] Localization with ARB files: English and Arabic, with the language following the system and a setting
 - [x] Arabic font and right-to-left layout, added to the design system and checked on every screen
+- [x] State management with Bloc (`flutter_bloc`, events in every feature), documented in [`architecture.md`](architecture.md)
 - [ ] Data layer base: repository interfaces with fake data sources (invented data), ready to be replaced by the server
-- [ ] Immutable models with `freezed`, added with the first model that needs it
+- [ ] Immutable models (sealed classes, `json_serializable` for DTOs), added with the first model that needs it
 
 ## 3. Core features
 

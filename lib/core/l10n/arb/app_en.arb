@@ -75,5 +75,9 @@
   "pushTokenMissing": "No push token yet",
   "@pushTokenMissing": {
     "description": "Message shown when the device has no push token to copy."
+  },
+  "pushTokenCopyFailed": "Could not copy the push token",
+  "@pushTokenCopyFailed": {
+    "description": "Message shown when copying the push token to the clipboard failed."
   }
 }

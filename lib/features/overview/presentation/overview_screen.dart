@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 
 class OverviewScreen extends StatelessWidget {
   const new({super.key});
