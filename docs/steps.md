@@ -88,41 +88,41 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 ### Foundations
 
-- [ ] Navigation shell: bottom bar on phones, rail on tablet and web, a route for every screen
-- [ ] Demo panel (staging only) to force loading, empty, error and no connection, and the payment mode
-- [ ] Shared screen widgets: hero card, amount row, period card, state views, code boxes
-- [ ] Screen render check: every screen drawn to an image in a test, in English and Arabic
+- [x] Navigation shell: bottom bar on phones, rail on tablet and web, a route for every screen
+- [x] Demo panel (staging only) to force loading, empty, error and no connection, and the payment mode
+- [x] Shared screen widgets: hero card, amount row, period card, state views, code boxes
+- [x] Screen render check: every screen drawn to an image in a test, in English and Arabic
 - [ ] Navigation test: every button leads where the design says
 
 ### A. Authentication and first start
 
-- [ ] AUTH-1 Welcome
-- [ ] AUTH-2 Sign in
-- [ ] AUTH-2b Sign in, wrong password
-- [ ] AUTH-2c Sign in, too many attempts
-- [ ] AUTH-3 Register
-- [ ] AUTH-3b Register, errors
-- [ ] AUTH-4 Verify email
-- [ ] AUTH-4b Verify email, wrong code
-- [ ] AUTH-4c Verify email, code expired
-- [ ] AUTH-5 Email verified
-- [ ] AUTH-6 How are you paid?
-- [ ] AUTH-6b How are you paid? two payments
-- [ ] AUTH-7 Forgot password
-- [ ] AUTH-8 Reset code
-- [ ] AUTH-8b Reset code, wrong code
-- [ ] AUTH-9 New password
-- [ ] AUTH-10 Password changed
-- [ ] AUTH-11 App lock
-- [ ] AUTH-12 PIN entry
-- [ ] AUTH-13 Create a PIN
+- [x] AUTH-1 Welcome
+- [x] AUTH-2 Sign in
+- [x] AUTH-2b Sign in, wrong password
+- [x] AUTH-2c Sign in, too many attempts
+- [x] AUTH-3 Register
+- [x] AUTH-3b Register, errors
+- [x] AUTH-4 Verify email
+- [x] AUTH-4b Verify email, wrong code
+- [x] AUTH-4c Verify email, code expired
+- [x] AUTH-5 Email verified
+- [x] AUTH-6 How are you paid?
+- [x] AUTH-6b How are you paid? two payments
+- [x] AUTH-7 Forgot password
+- [x] AUTH-8 Reset code
+- [x] AUTH-8b Reset code, wrong code
+- [x] AUTH-9 New password
+- [x] AUTH-10 Password changed
+- [x] AUTH-11 App lock
+- [x] AUTH-12 PIN entry
+- [x] AUTH-13 Create a PIN
 
 ### B. Overview
 
-- [ ] OV-1 Overview, one payment
-- [ ] OV-2 Overview, two payments
-- [ ] OV-3 Overview, first launch
-- [ ] OV-4 Choose a debt
+- [x] OV-1 Overview, one payment
+- [x] OV-2 Overview, two payments
+- [x] OV-3 Overview, first launch
+- [x] OV-4 Choose a debt
 
 ### C. Salary, fixed items and history
 
@@ -194,9 +194,9 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 ### H. Loading, empty, error and no connection
 
-- [ ] OV-5 Overview, loading
-- [ ] OV-6 Overview, error
-- [ ] OV-7 Overview, no connection
+- [x] OV-5 Overview, loading
+- [x] OV-6 Overview, error
+- [x] OV-7 Overview, no connection
 - [ ] SAL-11 Salary, new empty month
 - [ ] SAL-12 Salary, loading
 - [ ] SAL-13 Salary, error

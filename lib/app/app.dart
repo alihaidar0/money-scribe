@@ -14,10 +14,12 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/environment/app_environment_scope.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
+import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
@@ -33,10 +35,12 @@ class MoneyScribeApp extends StatefulWidget {
     required this.authRepository,
     required this.appLockRepository,
     required this.payScheduleRepository,
+    required this.overviewRepository,
     required this.demo,
     required this.environment,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
+    this.clock = const SystemClock(),
     super.key,
   });
 
@@ -45,6 +49,7 @@ class MoneyScribeApp extends StatefulWidget {
   final AuthRepository authRepository;
   final AppLockRepository appLockRepository;
   final PayScheduleRepository payScheduleRepository;
+  final OverviewRepository overviewRepository;
 
   /// What the fake data pretends; changed by the demo panel.
   final DemoController demo;
@@ -52,6 +57,7 @@ class MoneyScribeApp extends StatefulWidget {
   final AppEnvironment environment;
   final TextClipboard textClipboard;
   final Ticker ticker;
+  final Clock clock;
 
   @override
   State<MoneyScribeApp> createState() => _MoneyScribeAppState();
@@ -84,6 +90,8 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.authRepository),
           RepositoryProvider.value(value: widget.appLockRepository),
           RepositoryProvider.value(value: widget.payScheduleRepository),
+          RepositoryProvider.value(value: widget.overviewRepository),
+          RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),
         ],

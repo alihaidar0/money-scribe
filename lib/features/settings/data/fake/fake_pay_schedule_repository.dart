@@ -15,5 +15,8 @@ class FakePayScheduleRepository implements PayScheduleRepository {
   Future<void> save(PaySchedule schedule) async {
     await _demo.simulateRequest();
     saved = schedule;
+    // The fake server keeps one account: its payment mode shapes the other
+    // fake screens, such as the Overview.
+    _demo.update(_demo.settings.copyWith(paymentMode: schedule.mode));
   }
 }

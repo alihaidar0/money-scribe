@@ -3,15 +3,18 @@ import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
+import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 
+import 'fake_clock.dart';
 import 'fake_language_repository.dart';
 import 'fake_text_clipboard.dart';
 import 'fake_ticker.dart';
@@ -27,6 +30,7 @@ Widget buildApp({
   AuthRepository? authRepository,
   DemoController? demo,
   Ticker? ticker,
+  Clock? clock,
   bool signedIn = false,
   AppEnvironment environment = AppEnvironment.staging,
 }) {
@@ -41,9 +45,11 @@ Widget buildApp({
         FakeAuthRepository(demo: demoController, signedIn: signedIn),
     appLockRepository: FakeAppLockRepository(),
     payScheduleRepository: FakePayScheduleRepository(demo: demoController),
+    overviewRepository: FakeOverviewRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),
     ticker: ticker ?? FakeTicker(),
+    clock: clock ?? FixedClock(DateTime(2026, 10, 11)),
     environment: environment,
   );
 }

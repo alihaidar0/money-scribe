@@ -22,6 +22,8 @@ class MoneyFormatter {
   static const _leftToRightIsolate = '\u2066';
   static const _popDirectionalIsolate = '\u2069';
   static const _noBreakSpace = '\u00a0';
+  static const _plusSign = '+';
+  static const _minusSign = '\u2212';
 
   final String _localeName;
   final bool _isolate;
@@ -30,14 +32,25 @@ class MoneyFormatter {
 
   /// The amount with its currency, such as `1,234.50 ₽`.
   String format(Money money) {
-    final digits = money.currency.fractionDigits;
-    final format = _currencyFormats[money.currency] ??= NumberFormat.currency(
+    return _render(_currencyFormat(money.currency), money);
+  }
+
+  /// The amount with its currency and an explicit sign: `+1,234.50 ₽`, or
+  /// `−1,234.50 ₽` with a true minus sign (U+2212, never a hyphen). Zero has a
+  /// plus. For income and expenses, where the sign is part of the meaning.
+  String formatSigned(Money money) {
+    final sign = money.isNegative ? _minusSign : _plusSign;
+    return _render(_currencyFormat(money.currency), money.abs(), prefix: sign);
+  }
+
+  NumberFormat _currencyFormat(Currency currency) {
+    final digits = currency.fractionDigits;
+    return _currencyFormats[currency] ??= NumberFormat.currency(
       locale: _localeName,
-      symbol: money.currency.displaySymbol,
+      symbol: currency.displaySymbol,
       decimalDigits: digits,
       customPattern: '${_numberPattern(digits)}$_noBreakSpace¤',
     );
-    return _render(format, money);
   }
 
   /// The amount alone, such as `1,234.50`, for places where the currency is
@@ -51,11 +64,11 @@ class MoneyFormatter {
     return _render(format, money);
   }
 
-  String _render(NumberFormat format, Money money) {
+  String _render(NumberFormat format, Money money, {String prefix = ''}) {
     // Fifteen digits at most (Money.maxMinorUnits), so the double is exact to
     // the last digit that is shown.
     final major = money.minorUnits / _scale(money.currency);
-    final text = WesternDigits.normalize(format.format(major));
+    final text = prefix + WesternDigits.normalize(format.format(major));
     if (!_isolate) return text;
     return '$_leftToRightIsolate$text$_popDirectionalIsolate';
   }

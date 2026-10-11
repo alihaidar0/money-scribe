@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
@@ -42,6 +43,14 @@ class DemoPanelScreen extends StatelessWidget {
                 label: _scenarioLabel,
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(scenario: value)),
+              ),
+              const _Heading('Payments per month'),
+              _Choice<PaymentMode>(
+                values: PaymentMode.values,
+                selected: settings.paymentMode,
+                label: _paymentModeLabel,
+                onSelected: (value) =>
+                    demo.update(demo.settings.copyWith(paymentMode: value)),
               ),
               const _Heading('Sign in, next attempt'),
               _Choice<DemoSignIn>(
@@ -109,6 +118,11 @@ class DemoPanelScreen extends StatelessWidget {
     DemoScenario.empty => 'Empty (no data)',
     DemoScenario.error => 'Error (server fails)',
     DemoScenario.noConnection => 'No connection',
+  };
+
+  static String _paymentModeLabel(PaymentMode value) => switch (value) {
+    PaymentMode.onePayment => 'One payment',
+    PaymentMode.twoPayments => 'Two payments (parts)',
   };
 
   static String _signInLabel(DemoSignIn value) => switch (value) {

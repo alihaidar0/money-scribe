@@ -62,6 +62,10 @@ class FakeAuthRepository implements AuthRepository {
     switch (_demo.settings.signIn) {
       case DemoSignIn.accepted:
         _wrongPasswords = 0;
+        // An existing account has data.
+        if (_demo.settings.scenario == DemoScenario.empty) {
+          _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
+        }
         _setSignedIn(value: true);
       case DemoSignIn.wrongPassword:
         _wrongPasswords++;
@@ -92,6 +96,8 @@ class FakeAuthRepository implements AuthRepository {
     }
     _pendingEmail = email;
     _wrongCodes = 0;
+    // A new account has no data yet: the app shows its first-launch screens.
+    _demo.update(_demo.settings.copyWith(scenario: DemoScenario.empty));
   }
 
   @override

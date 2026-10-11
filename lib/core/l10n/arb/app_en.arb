@@ -28,6 +28,133 @@
   "@comingSoon": {
     "description": "Text on a screen that is not built yet."
   },
+  "overviewBalance": "Balance",
+  "@overviewBalance": {
+    "description": "Label of the main figure of the Overview: what is left of the month."
+  },
+  "overviewIncome": "Income",
+  "@overviewIncome": {
+    "description": "Label of the income figure under the balance, and in a period card."
+  },
+  "overviewSpent": "Spent",
+  "@overviewSpent": {
+    "description": "Label of the spending figure under the balance, and in a period card."
+  },
+  "overviewAddPurchase": "Add purchase",
+  "@overviewAddPurchase": {
+    "description": "Button on the Overview that opens the form for a new purchase."
+  },
+  "overviewAddRepayment": "Add repayment",
+  "@overviewAddRepayment": {
+    "description": "Button on the Overview that asks which debt a repayment is for."
+  },
+  "overviewRecurringIncome": "Recurring income",
+  "@overviewRecurringIncome": {
+    "description": "Row of the Overview: income that comes every month, such as a scholarship."
+  },
+  "overviewFixedCosts": "Fixed costs",
+  "@overviewFixedCosts": {
+    "description": "Row of the Overview: costs that come every month, such as rent."
+  },
+  "overviewPurchases": "Purchases",
+  "@overviewPurchases": {
+    "description": "Row of the Overview: what was bought in the period."
+  },
+  "overviewDebtMovements": "Debt movements",
+  "@overviewDebtMovements": {
+    "description": "Row of the Overview: money that moved because of debts, such as repayments."
+  },
+  "partMonth": "Month",
+  "@partMonth": {
+    "description": "Option of the part selector: the figures of the whole month."
+  },
+  "partFirst": "Part 1",
+  "@partFirst": {
+    "description": "Option of the part selector: the first of the two payments of a month."
+  },
+  "partSecond": "Part 2",
+  "@partSecond": {
+    "description": "Option of the part selector: the second of the two payments of a month."
+  },
+  "periodFirstPart": "Part 1 · 1st–15th",
+  "@periodFirstPart": {
+    "description": "Title of the card of the first part of a month, the 1st to the 15th."
+  },
+  "periodSecondPart": "Part 2 · 16th–end",
+  "@periodSecondPart": {
+    "description": "Title of the card of the second part of a month, the 16th to the end."
+  },
+  "previousMonth": "Previous month",
+  "@previousMonth": {
+    "description": "Spoken label of the arrow that goes to the previous month."
+  },
+  "nextMonth": "Next month",
+  "@nextMonth": {
+    "description": "Spoken label of the arrow that goes to the next month."
+  },
+  "firstLaunchTitle": "Welcome to Money Scribe",
+  "@firstLaunchTitle": {
+    "description": "Title of the Overview before any data exists. Money Scribe is the app name and stays in Latin letters."
+  },
+  "firstLaunchMessage": "Add your first salary month to see your balance.",
+  "@firstLaunchMessage": {
+    "description": "Sentence under the first-launch title."
+  },
+  "firstLaunchAction": "Enter your first salary month",
+  "@firstLaunchAction": {
+    "description": "Button on the first-launch Overview that opens the salary form."
+  },
+  "chooseDebtTitle": "Choose a debt",
+  "@chooseDebtTitle": {
+    "description": "Title of the sheet that asks which debt a repayment is for."
+  },
+  "cancelAction": "Cancel",
+  "@cancelAction": {
+    "description": "Button that closes a sheet or dialog without doing anything."
+  },
+  "debtLent": "Lent",
+  "@debtLent": {
+    "description": "Badge of a debt: the person lent the money."
+  },
+  "debtBorrowed": "Borrowed",
+  "@debtBorrowed": {
+    "description": "Badge of a debt: the person borrowed the money."
+  },
+  "debtOpen": "Open",
+  "@debtOpen": {
+    "description": "Status badge of a debt that is not yet repaid."
+  },
+  "debtSettled": "Settled",
+  "@debtSettled": {
+    "description": "Status badge of a debt that is fully repaid."
+  },
+  "debtOverdue": "Overdue",
+  "@debtOverdue": {
+    "description": "Status badge of a debt past its due date."
+  },
+  "noOpenDebts": "No open debts.",
+  "@noOpenDebts": {
+    "description": "Text of the Choose a debt sheet when there is no debt to repay."
+  },
+  "fixedItemsTitle": "Fixed items",
+  "@fixedItemsTitle": {
+    "description": "Title of the screen with the recurring income and costs."
+  },
+  "addTransactionTitle": "Add transaction",
+  "@addTransactionTitle": {
+    "description": "Title of the form for a new transaction."
+  },
+  "loadingLabel": "Loading",
+  "@loadingLabel": {
+    "description": "Spoken label of a screen while its content loads."
+  },
+  "debtRemaining": "Remaining {amount}",
+  "@debtRemaining": {
+    "description": "Under the name of a debt: what is still to be repaid. The placeholder is an amount with its currency.",
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
   "tryAgain": "Try again",
   "@tryAgain": {
     "description": "Button that repeats a request that failed."
