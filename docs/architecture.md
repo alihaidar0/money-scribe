@@ -10,9 +10,11 @@ The code is split by feature, and each feature by layer:
 ```text
 lib/
   main.dart                  # start-up only: observer, preferences, Firebase, runApp
-  app/                       # MoneyScribeApp, theme, router, BlocObserver (wires everything)
+  app/                       # MoneyScribeApp, theme, router, navigation shell, demo panel,
+                             # BlocObserver (wires everything)
   core/                      # shared and feature-independent: money, environment, routing
-                             # paths, l10n, clipboard, formatting, widgets
+                             # paths, l10n, clipboard, formatting, theme extensions, errors,
+                             # demo settings, time, widgets
   features/<feature>/
     domain/                  # entities, value objects, repository interfaces (plain Dart)
     data/                    # repository implementations, data sources
@@ -88,5 +90,20 @@ implementations with invented data; the device keeps only simple settings in
 - `main` chooses the implementations. To connect the server, add `data/remote/` next to
   `data/fake/`, switch the feature in `main`, and delete its `data/fake/` folder. Nothing in
   `bloc/` or `presentation/` changes.
-- Builds that are not production show a demo panel to force those states and the payment mode;
-  it goes away with the fake data.
+- `core/demo/` holds `DemoController`, the plain-Dart switchboard the fake data sources read on every
+  request: the scenario (normal, loading, empty, error, no connection) and what the next sign-in,
+  registration and code check answer. Builds that are not production show a small handle on the
+  end edge of the screen that opens the demo panel (`app/demo/`), where these are changed, the
+  language is switched and the screens no button leads to can be opened. The panel and the
+  controller go away with the fake data.
+- A repository throws a `DataException` (`core/errors/`) when the server cannot be reached or fails;
+  a Bloc turns it into a state, and the screen shows the full-screen "No connection" or
+  "Something went wrong" view (`FlowPage` keeps the form underneath, so nothing typed is lost).
+
+## Navigation
+
+`go_router` with a `StatefulShellRoute` around the five top-level screens: a navigation bar below
+840 dp and a rail from 840 dp (`app/shell/`). Secondary screens and the whole authentication flow
+sit above the shell, so they hide the bar. A signed-out person is redirected to the Welcome screen
+and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
+and which of them need a sign-in are in `core/routing/app_routes.dart`.
