@@ -78,3 +78,15 @@ with **events everywhere**: even a simple feature has event and state classes (n
 The data lives only on the server. Until the backend exists, repository interfaces have fake
 implementations with invented data; the device keeps only simple settings in
 `shared_preferences`. See [`environments.md`](environments.md) for the build environments.
+
+### Fake data now, the server later
+
+- A feature's `domain/` holds the repository **interface**; Blocs and screens know nothing else.
+- `data/fake/` holds the in-memory implementation and its seed (invented figures only). It
+  simulates a short delay and can be told to be empty, slow, failing or offline, so every
+  loading, empty, error and no-connection state can be tried without a server.
+- `main` chooses the implementations. To connect the server, add `data/remote/` next to
+  `data/fake/`, switch the feature in `main`, and delete its `data/fake/` folder. Nothing in
+  `bloc/` or `presentation/` changes.
+- Builds that are not production show a demo panel to force those states and the payment mode;
+  it goes away with the fake data.

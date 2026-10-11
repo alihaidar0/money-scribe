@@ -69,6 +69,10 @@ coverage/
 # ── Repomix ───────────────────────────────────────────────────────────────────
 money-scribe-code.xml
 
+# ── Local design notes ───────────────────────────────
+# The prompts used to build the screens in the design tool. Kept on the owner's machine.
+docs/stitch-prompts.md
+
 # ── Local tooling ─────────────────────────────────────────────────────────────
 .claude/
 CLAUDE.md
