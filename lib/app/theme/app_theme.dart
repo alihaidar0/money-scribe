@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_scribe/app/theme/app_color_schemes.dart';
 import 'package:money_scribe/app/theme/app_typography.dart';
-import 'package:money_scribe/app/theme/money_colors.dart';
+import 'package:money_scribe/core/theme/money_colors.dart';
 
 /// The Material 3 themes of Money Scribe, built from `docs/DESIGN.md`.
 abstract final class AppTheme {

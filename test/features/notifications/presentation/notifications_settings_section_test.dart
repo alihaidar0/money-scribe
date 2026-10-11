@@ -1,39 +1,56 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/environment/app_environment_scope.dart';
+import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/notification_permission.dart';
-import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
+import 'package:money_scribe/features/notifications/presentation/notifications_settings_section.dart';
 
-import '../../../support/build_app.dart';
-import '../../../support/fake_language_repository.dart';
 import '../../../support/fake_push_messaging_repository.dart';
 import '../../../support/fake_text_clipboard.dart';
 
-Future<void> _openSettings(
+/// Shows the section on its own, as the Settings screen will.
+Future<void> _showSection(
   WidgetTester tester, {
-  FakePushMessagingRepository? pushMessaging,
+  PushMessagingRepository? pushMessaging,
   FakeTextClipboard? clipboard,
   AppEnvironment environment = AppEnvironment.staging,
-  AppLanguage language = AppLanguage.english,
+  Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
-    buildApp(
-      languageRepository: FakeLanguageRepository(language),
-      pushMessaging: pushMessaging,
-      clipboard: clipboard,
+    AppEnvironmentScope(
       environment: environment,
+      child: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<PushMessagingRepository>.value(
+            value: pushMessaging ?? const UnavailablePushMessagingRepository(),
+          ),
+          RepositoryProvider<TextClipboard>.value(
+            value: clipboard ?? FakeTextClipboard(),
+          ),
+        ],
+        child: MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(
+            body: SingleChildScrollView(child: NotificationsSettingsSection()),
+          ),
+        ),
+      ),
     ),
-  );
-  await tester.tap(
-    find.byTooltip(language == AppLanguage.arabic ? 'الإعدادات' : 'Settings'),
   );
   await tester.pumpAndSettle();
 }
 
 void main() {
   testWidgets('shows nothing where push is not available', (tester) async {
-    await _openSettings(tester);
+    await _showSection(tester);
 
-    expect(find.text('Language'), findsOneWidget);
     expect(find.text('Notifications'), findsNothing);
     expect(find.text('Copy push token'), findsNothing);
   });
@@ -42,7 +59,7 @@ void main() {
     tester,
   ) async {
     final repository = FakePushMessagingRepository();
-    await _openSettings(tester, pushMessaging: repository);
+    await _showSection(tester, pushMessaging: repository);
     expect(find.text('Not allowed yet'), findsOneWidget);
 
     await tester.tap(find.text('Allow'));
@@ -54,7 +71,7 @@ void main() {
   });
 
   testWidgets('allowed notifications have nothing left to ask', (tester) async {
-    await _openSettings(
+    await _showSection(
       tester,
       pushMessaging: FakePushMessagingRepository(
         currentPermission: NotificationPermission.granted,
@@ -68,7 +85,7 @@ void main() {
   testWidgets('blocked notifications point to the system settings', (
     tester,
   ) async {
-    await _openSettings(
+    await _showSection(
       tester,
       pushMessaging: FakePushMessagingRepository(
         currentPermission: NotificationPermission.blocked,
@@ -85,7 +102,7 @@ void main() {
   group('push token', () {
     testWidgets('staging copies the token for test messages', (tester) async {
       final clipboard = FakeTextClipboard();
-      await _openSettings(
+      await _showSection(
         tester,
         pushMessaging: FakePushMessagingRepository(),
         clipboard: clipboard,
@@ -100,7 +117,7 @@ void main() {
 
     testWidgets('says so when the device has no token', (tester) async {
       final clipboard = FakeTextClipboard();
-      await _openSettings(
+      await _showSection(
         tester,
         pushMessaging: FakePushMessagingRepository(pushToken: null),
         clipboard: clipboard,
@@ -114,7 +131,7 @@ void main() {
     });
 
     testWidgets('production never offers the token', (tester) async {
-      await _openSettings(
+      await _showSection(
         tester,
         pushMessaging: FakePushMessagingRepository(),
         environment: AppEnvironment.production,
@@ -126,10 +143,10 @@ void main() {
   });
 
   testWidgets('is translated into Arabic', (tester) async {
-    await _openSettings(
+    await _showSection(
       tester,
       pushMessaging: FakePushMessagingRepository(),
-      language: AppLanguage.arabic,
+      locale: const Locale('ar'),
     );
 
     expect(find.text('الإشعارات'), findsOneWidget);

@@ -2,8 +2,12 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/app/bloc/app_bloc_observer.dart';
+import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
+import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_language_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,10 +19,19 @@ Future<void> main() async {
   );
   final pushMessaging = await createPushMessagingRepository();
 
+  // The server does not exist yet: the account and the pay schedule are fake
+  // and live in memory. Connecting the server replaces them here and deletes
+  // their `data/fake/` folders (`docs/architecture.md`).
+  final demo = DemoController();
+
   runApp(
     MoneyScribeApp(
       languageRepository: SharedPreferencesLanguageRepository(preferences),
       pushMessagingRepository: pushMessaging,
+      authRepository: FakeAuthRepository(demo: demo),
+      appLockRepository: FakeAppLockRepository(),
+      payScheduleRepository: FakePayScheduleRepository(demo: demo),
+      demo: demo,
       environment: AppEnvironment.current,
     ),
   );

@@ -39,6 +39,10 @@ flutter:
   # See docs/environments.md.
   default-flavor: staging
 
+  assets:
+    # The app icon, shown on the Welcome screen.
+    - assets/icon/ios_icon_1024.png
+
   fonts:
     - family: Inter
       fonts:

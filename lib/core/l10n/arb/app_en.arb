@@ -8,9 +8,356 @@
   "@overviewTitle": {
     "description": "Title of the Overview screen, the first screen of the app."
   },
-  "overviewEmpty": "Nothing here yet",
-  "@overviewEmpty": {
-    "description": "Placeholder text on the Overview screen while it has no content."
+  "salaryTitle": "Salary",
+  "@salaryTitle": {
+    "description": "Title of the Salary screen and label of its tab in the navigation bar."
+  },
+  "transactionsTitle": "Transactions",
+  "@transactionsTitle": {
+    "description": "Title of the Transactions screen and label of its tab in the navigation bar."
+  },
+  "debtsTitle": "Debts",
+  "@debtsTitle": {
+    "description": "Title of the Debts screen and label of its tab in the navigation bar."
+  },
+  "reportsTitle": "Reports",
+  "@reportsTitle": {
+    "description": "Title of the Reports screen and label of its tab in the navigation bar."
+  },
+  "comingSoon": "This screen is coming soon.",
+  "@comingSoon": {
+    "description": "Text on a screen that is not built yet."
+  },
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "Button that repeats a request that failed."
+  },
+  "noConnectionTitle": "No connection",
+  "@noConnectionTitle": {
+    "description": "Title shown when the server cannot be reached."
+  },
+  "noConnectionMessage": "Check your internet connection and try again.",
+  "@noConnectionMessage": {
+    "description": "Explanation under the No connection title."
+  },
+  "errorTitle": "Something went wrong",
+  "@errorTitle": {
+    "description": "Title shown when the server fails."
+  },
+  "errorMessage": "Please try again in a moment.",
+  "@errorMessage": {
+    "description": "Explanation under the Something went wrong title."
+  },
+  "continueAction": "Continue",
+  "@continueAction": {
+    "description": "Button that moves to the next step of a flow."
+  },
+  "emailLabel": "Email",
+  "@emailLabel": {
+    "description": "Label of an email field."
+  },
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label of a password field."
+  },
+  "confirmPasswordLabel": "Confirm password",
+  "@confirmPasswordLabel": {
+    "description": "Label of the field that repeats a password."
+  },
+  "newPasswordLabel": "New password",
+  "@newPasswordLabel": {
+    "description": "Label of the field where a new password is typed."
+  },
+  "nameLabel": "Name",
+  "@nameLabel": {
+    "description": "Label of the field for the name of the account owner."
+  },
+  "showPassword": "Show password",
+  "@showPassword": {
+    "description": "Tooltip of the eye button that shows the typed password."
+  },
+  "hidePassword": "Hide password",
+  "@hidePassword": {
+    "description": "Tooltip of the eye button that hides the typed password."
+  },
+  "termsName": "Terms",
+  "@termsName": {
+    "description": "Name of the Terms document, shown as a link inside a sentence."
+  },
+  "privacyPolicyName": "Privacy Policy",
+  "@privacyPolicyName": {
+    "description": "Name of the Privacy Policy document, shown as a link inside a sentence."
+  },
+  "welcomeTagline": "Your salary, purchases and debts in one place.",
+  "@welcomeTagline": {
+    "description": "One sentence under the app name on the Welcome screen."
+  },
+  "welcomeAgreement": "By continuing you agree to the {terms} and the {privacy}.",
+  "@welcomeAgreement": {
+    "description": "Small text at the bottom of the Welcome screen. The two placeholders are the names of the Terms and the Privacy Policy, shown as links.",
+    "placeholders": {
+      "terms": {"type": "String"},
+      "privacy": {"type": "String"}
+    }
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "Title of the Sign in screen and the label of the buttons that open it or send the form."
+  },
+  "createAccount": "Create account",
+  "@createAccount": {
+    "description": "Title of the Create account screen and the label of the buttons that open it or send the form."
+  },
+  "signInWelcomeBack": "Welcome back.",
+  "@signInWelcomeBack": {
+    "description": "Sentence under the title of the Sign in screen."
+  },
+  "forgotPasswordLink": "Forgot password?",
+  "@forgotPasswordLink": {
+    "description": "Title of the Forgot password screen and the text button on the Sign in screen that opens it."
+  },
+  "newToApp": "New to Money Scribe?",
+  "@newToApp": {
+    "description": "Question at the bottom of the Sign in screen, followed by the Create account button. Money Scribe is the app name and stays in Latin letters."
+  },
+  "signInWrongCredentials": "Email or password is incorrect.",
+  "@signInWrongCredentials": {
+    "description": "Error banner on the Sign in screen after a wrong email or password."
+  },
+  "signInLocked": "Too many attempts. Try again in {time}.",
+  "@signInLocked": {
+    "description": "Banner on the Sign in screen while sign-in is locked. The placeholder is the time left as minutes and seconds, such as 4:59.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "registerSentence": "It takes a minute.",
+  "@registerSentence": {
+    "description": "Sentence under the title of the Create account screen."
+  },
+  "passwordRuleLength": "At least 8 characters",
+  "@passwordRuleLength": {
+    "description": "Rule for a new password: helper text under the password field and an item of the checklist on the New password screen."
+  },
+  "registerAgreement": "I agree to the {terms} and the {privacy}",
+  "@registerAgreement": {
+    "description": "Label of the checkbox on the Create account screen. The two placeholders are the names of the Terms and the Privacy Policy, shown as links.",
+    "placeholders": {
+      "terms": {"type": "String"},
+      "privacy": {"type": "String"}
+    }
+  },
+  "alreadyHaveAccount": "Already have an account?",
+  "@alreadyHaveAccount": {
+    "description": "Question at the bottom of the Create account screen, followed by the Sign in button."
+  },
+  "registerEmailTaken": "This email is already registered. {signIn} instead.",
+  "@registerEmailTaken": {
+    "description": "Error under the email field of the Create account screen. The placeholder is the word Sign in, shown as a link that opens the Sign in screen.",
+    "placeholders": {
+      "signIn": {"type": "String"}
+    }
+  },
+  "registerPasswordTooShort": "Use at least 8 characters.",
+  "@registerPasswordTooShort": {
+    "description": "Error under the password field of the Create account screen."
+  },
+  "registerPasswordsMismatch": "Passwords do not match.",
+  "@registerPasswordsMismatch": {
+    "description": "Error under the confirm password field of the Create account screen."
+  },
+  "verifyEmailTitle": "Verify your email",
+  "@verifyEmailTitle": {
+    "description": "Title of the screen where the code sent to a new account's email is typed."
+  },
+  "enterCodeTitle": "Enter the code",
+  "@enterCodeTitle": {
+    "description": "Title of the screen where the code sent to reset a password is typed."
+  },
+  "codeSentTo": "We sent a 4-digit code to {email}.",
+  "@codeSentTo": {
+    "description": "Text under the title of the code screens. The placeholder is the email address the code was sent to.",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "codeFieldLabel": "4-digit code",
+  "@codeFieldLabel": {
+    "description": "Spoken label of the field where the 4-digit code is typed, for screen readers."
+  },
+  "resendCodeIn": "Resend code in {time}",
+  "@resendCodeIn": {
+    "description": "Muted text under the code boxes while a new code cannot be asked for yet. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "resendCode": "Resend code",
+  "@resendCode": {
+    "description": "Button that sends a new code."
+  },
+  "verifyAction": "Verify",
+  "@verifyAction": {
+    "description": "Button that checks the code on the Verify your email screen."
+  },
+  "changeEmail": "Change email",
+  "@changeEmail": {
+    "description": "Text button that goes back to edit the email address."
+  },
+  "codeIncorrectAttemptsLeft": "The code is incorrect. {count} attempts left.",
+  "@codeIncorrectAttemptsLeft": {
+    "description": "Error under the code boxes after a wrong code, when two or more tries remain. The placeholder is the number of tries left.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "codeIncorrectLastAttempt": "The code is incorrect. 1 attempt left.",
+  "@codeIncorrectLastAttempt": {
+    "description": "Error under the code boxes after a wrong code, when one try remains."
+  },
+  "codeExpired": "This code has expired.",
+  "@codeExpired": {
+    "description": "Banner on the code screens when the code is no longer valid."
+  },
+  "emailVerifiedTitle": "Email verified",
+  "@emailVerifiedTitle": {
+    "description": "Title of the screen shown after the email address was verified."
+  },
+  "emailVerifiedMessage": "Your account is ready.",
+  "@emailVerifiedMessage": {
+    "description": "Sentence under the Email verified title."
+  },
+  "payTitle": "How are you paid?",
+  "@payTitle": {
+    "description": "Title of the first-start screen where the person chooses one or two payments a month."
+  },
+  "payHint": "You can change this later in Settings.",
+  "@payHint": {
+    "description": "Sentence under the title of the How are you paid screen."
+  },
+  "payOneTitle": "One payment a month",
+  "@payOneTitle": {
+    "description": "Option: the salary is paid once a month."
+  },
+  "payOneCaption": "One salary payment for the whole month.",
+  "@payOneCaption": {
+    "description": "Explanation under the one-payment option."
+  },
+  "payTwoTitle": "Two payments a month",
+  "@payTwoTitle": {
+    "description": "Option: the salary is paid twice a month."
+  },
+  "payTwoCaption": "One payment for the 1st–15th and one for the 16th–end of the month.",
+  "@payTwoCaption": {
+    "description": "Explanation under the two-payments option. The first payment covers the 1st to the 15th, the second the 16th to the end of the month."
+  },
+  "firstPayDay": "First payment is paid on day",
+  "@firstPayDay": {
+    "description": "Label of the stepper that sets the day of the month the first payment is paid. The number follows the label."
+  },
+  "secondPayDay": "Second payment is paid on day",
+  "@secondPayDay": {
+    "description": "Label of the stepper that sets the day the second payment is paid. The number follows the label."
+  },
+  "ofNextMonth": "of the next month",
+  "@ofNextMonth": {
+    "description": "Caption under the second pay day: the second payment is paid in the following month."
+  },
+  "increase": "Increase",
+  "@increase": {
+    "description": "Tooltip of the plus button of a number stepper."
+  },
+  "decrease": "Decrease",
+  "@decrease": {
+    "description": "Tooltip of the minus button of a number stepper."
+  },
+  "forgotPasswordMessage": "Enter your email and we will send you a 4-digit code.",
+  "@forgotPasswordMessage": {
+    "description": "Text under the title of the Forgot password screen."
+  },
+  "sendCode": "Send code",
+  "@sendCode": {
+    "description": "Button that sends the 4-digit code by email."
+  },
+  "backToSignIn": "Back to sign in",
+  "@backToSignIn": {
+    "description": "Text button that returns to the Sign in screen."
+  },
+  "newPasswordTitle": "Create a new password",
+  "@newPasswordTitle": {
+    "description": "Title of the screen where a new password is chosen."
+  },
+  "passwordRuleNumber": "One number",
+  "@passwordRuleNumber": {
+    "description": "Rule for a new password: it contains at least one digit. An item of the checklist."
+  },
+  "passwordRuleMatch": "Passwords match",
+  "@passwordRuleMatch": {
+    "description": "Rule for a new password: the two fields are equal. An item of the checklist."
+  },
+  "savePassword": "Save password",
+  "@savePassword": {
+    "description": "Button that saves the new password."
+  },
+  "passwordChangedTitle": "Password changed",
+  "@passwordChangedTitle": {
+    "description": "Title of the screen shown after the password was changed."
+  },
+  "passwordChangedMessage": "Sign in with your new password.",
+  "@passwordChangedMessage": {
+    "description": "Sentence under the Password changed title."
+  },
+  "appLockedTitle": "Money Scribe is locked",
+  "@appLockedTitle": {
+    "description": "Title of the App lock screen. Money Scribe is the app name and stays in Latin letters."
+  },
+  "appLockedHint": "Touch the sensor to unlock.",
+  "@appLockedHint": {
+    "description": "Instruction on the App lock screen."
+  },
+  "fingerprintNotRecognised": "Fingerprint not recognised. Try again or use your PIN.",
+  "@fingerprintNotRecognised": {
+    "description": "Shown on the App lock screen when the fingerprint did not match."
+  },
+  "unlockWithFingerprint": "Unlock with fingerprint",
+  "@unlockWithFingerprint": {
+    "description": "Spoken label of the large fingerprint button on the App lock screen."
+  },
+  "usePin": "Use PIN",
+  "@usePin": {
+    "description": "Text button on the App lock screen that opens the PIN pad. PIN is the 4-digit code that opens the app."
+  },
+  "enterPinTitle": "Enter your PIN",
+  "@enterPinTitle": {
+    "description": "Title of the PIN entry screen."
+  },
+  "forgotPin": "Forgot PIN?",
+  "@forgotPin": {
+    "description": "Text button under the PIN pad that signs the person out so they can sign in again."
+  },
+  "pinIncorrect": "Incorrect PIN. Try again.",
+  "@pinIncorrect": {
+    "description": "Error under the PIN dots after a wrong PIN."
+  },
+  "pinBackspace": "Delete last digit",
+  "@pinBackspace": {
+    "description": "Spoken label of the backspace key of the PIN pad."
+  },
+  "createPinTitle": "Create a 4-digit PIN",
+  "@createPinTitle": {
+    "description": "Title of the screen where a PIN for the app lock is chosen."
+  },
+  "createPinHint": "You will use it when the fingerprint is not available.",
+  "@createPinHint": {
+    "description": "Text under the title of the Create a PIN screen."
+  },
+  "repeatPinTitle": "Repeat your PIN",
+  "@repeatPinTitle": {
+    "description": "Title of the Create a PIN screen after the first entry, when the PIN is typed again to confirm it."
+  },
+  "pinMismatch": "The PINs do not match. Try again.",
+  "@pinMismatch": {
+    "description": "Error under the PIN dots when the repeated PIN differs from the first one."
   },
   "settingsTitle": "Settings",
   "@settingsTitle": {
