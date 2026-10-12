@@ -214,7 +214,11 @@ class _MonthRow extends StatelessWidget {
 
   Future<void> _choose(BuildContext context, YearMonth month) async {
     final bloc = context.read<SalaryBloc>();
-    final chosen = await showMonthPickerSheet(context, selected: month);
+    final chosen = await showMonthPickerSheet(
+      context,
+      selected: month,
+      last: YearMonth.fromDate(context.read<Clock>().now()),
+    );
     if (chosen != null && chosen != month) {
       bloc.add(SalaryMonthSelected(chosen));
     }

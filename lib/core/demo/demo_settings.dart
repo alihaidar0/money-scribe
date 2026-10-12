@@ -20,6 +20,9 @@ enum DemoCode { accepted, wrong, expired }
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
 
+/// Which colours the app is shown in: the device's choice, or one of the two.
+enum DemoTheme { system, light, dark }
+
 /// The state of the demo panel. Fake data sources read it on every call, so a
 /// change applies to the next thing the person does.
 final class DemoSettings extends Equatable {
@@ -30,6 +33,7 @@ final class DemoSettings extends Equatable {
     this.code = DemoCode.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
+    this.theme = DemoTheme.system,
   });
 
   final DemoScenario scenario;
@@ -37,6 +41,9 @@ final class DemoSettings extends Equatable {
   final DemoRegistration registration;
   final DemoCode code;
   final DemoSave save;
+
+  /// The theme of the app, for trying the screens in light and dark.
+  final DemoTheme theme;
 
   /// How the fake account is paid: one payment or two a month.
   final PaymentMode paymentMode;
@@ -48,6 +55,7 @@ final class DemoSettings extends Equatable {
     DemoCode? code,
     DemoSave? save,
     PaymentMode? paymentMode,
+    DemoTheme? theme,
   }) {
     return DemoSettings(
       scenario: scenario ?? this.scenario,
@@ -56,6 +64,7 @@ final class DemoSettings extends Equatable {
       code: code ?? this.code,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
+      theme: theme ?? this.theme,
     );
   }
 
@@ -67,6 +76,7 @@ final class DemoSettings extends Equatable {
     code,
     save,
     paymentMode,
+    theme,
   ];
 }
 

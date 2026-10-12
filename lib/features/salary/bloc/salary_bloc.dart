@@ -18,7 +18,8 @@ part 'salary_state.dart';
 /// and saving it.
 class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
   new({required this._repository, required DateTime Function() now})
-    : super(SalaryState(month: YearMonth.fromDate(now()))) {
+    : _currentMonth = YearMonth.fromDate(now()),
+      super(SalaryState(month: YearMonth.fromDate(now()))) {
     _changes = _repository.changes.listen(
       (_) => add(const SalaryDataChanged()),
     );
@@ -34,6 +35,9 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
 
   final SalaryRepository _repository;
 
+  /// The month of today: no later month is shown.
+  final YearMonth _currentMonth;
+
   late final StreamSubscription<void> _changes;
 
   Future<void> _onStarted(SalaryStarted event, Emitter<SalaryState> emit) {
@@ -44,6 +48,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     SalaryMonthSelected event,
     Emitter<SalaryState> emit,
   ) {
+    if (event.month > _currentMonth) return Future.value();
     return _load(event.month, emit);
   }
 

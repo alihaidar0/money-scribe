@@ -208,6 +208,7 @@ void main() {
                 await showMonthPickerSheet(
                   context,
                   selected: const YearMonth(2026, 10),
+                  last: const YearMonth(2026, 10),
                 ),
               ),
               child: const Text('Open'),
@@ -220,28 +221,63 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('offers the year before and after, and the 12 months', (
+    testWidgets('offers the last three years, none of them in the future', (
       tester,
     ) async {
       await open(tester, []);
 
-      for (final year in ['2025', '2026', '2027']) {
+      for (final year in ['2024', '2025', '2026']) {
         expect(find.text(year), findsOneWidget);
       }
+      expect(find.text('2027'), findsNothing);
+    });
+
+    testWidgets('stops the current year at the current month', (tester) async {
+      await open(tester, []);
+
       expect(find.text('Jan'), findsOneWidget);
+      expect(find.text('Oct'), findsOneWidget);
+      expect(find.text('Nov'), findsNothing);
+      expect(find.text('Dec'), findsNothing);
+    });
+
+    testWidgets('an earlier year has all twelve months', (tester) async {
+      await open(tester, []);
+
+      await tester.tap(find.text('2025'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nov'), findsOneWidget);
       expect(find.text('Dec'), findsOneWidget);
+    });
+
+    testWidgets('going back to the current year keeps a month that exists', (
+      tester,
+    ) async {
+      final results = <YearMonth?>[];
+      await open(tester, results);
+
+      await tester.tap(find.text('2025'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dec'));
+      await tester.tap(find.text('2026'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(results, [const YearMonth(2026, 10)]);
     });
 
     testWidgets('Done answers with the chosen year and month', (tester) async {
       final results = <YearMonth?>[];
       await open(tester, results);
 
-      await tester.tap(find.text('2027'));
+      await tester.tap(find.text('2025'));
       await tester.tap(find.text('Mar'));
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
-      expect(results, [const YearMonth(2027, 3)]);
+      expect(results, [const YearMonth(2025, 3)]);
     });
 
     testWidgets('Done without a change answers with the same month', (

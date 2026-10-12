@@ -244,12 +244,39 @@ void main() {
     blocTest<SalaryBloc, SalaryState>(
       'starts a new month when none was saved',
       build: build,
-      act: (bloc) => bloc.add(const SalaryMonthSelected(YearMonth(2026, 11))),
+      act: (bloc) => bloc.add(const SalaryMonthSelected(YearMonth(2025, 10))),
       verify: (bloc) {
+        expect(bloc.state.month, const YearMonth(2025, 10));
         expect(bloc.state.isSaved, isFalse);
         expect(bloc.state.form.baseSalary, isEmpty);
         expect(bloc.state.result, isNull);
       },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'ignores a month after the month of today',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc.add(const SalaryMonthSelected(YearMonth(2026, 11)));
+      },
+      verify: (bloc) {
+        expect(bloc.state.month, october);
+        expect(bloc.state.status, SalaryStatus.ready);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'accepts the month of today',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryMonthSelected(september));
+        await bloc.stream.firstWhere((s) => s.month == september);
+        bloc.add(const SalaryMonthSelected(october));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) => expect(bloc.state.month, october),
     );
 
     test('starts the text fields again', () async {

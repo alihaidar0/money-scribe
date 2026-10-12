@@ -5,12 +5,16 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 
 /// SAL-3: the bottom sheet that chooses a month: a row of year chips, a grid of
-/// the twelve months and a Done button. Closes with the chosen [YearMonth], or
-/// with `null` when dismissed. The years offered are the one of [selected]
-/// and the one before and after it.
+/// months and a Done button. Closes with the chosen [YearMonth], or with
+/// `null` when dismissed.
+///
+/// No future month is offered: [last], the month of today, is the latest one.
+/// The years are the last three up to the year of [last] (more when [selected]
+/// is older), and the year of [last] has only its months up to [last].
 Future<YearMonth?> showMonthPickerSheet(
   BuildContext context, {
   required YearMonth selected,
+  required YearMonth last,
 }) {
   return showModalBottomSheet<YearMonth>(
     context: context,
@@ -18,14 +22,16 @@ Future<YearMonth?> showMonthPickerSheet(
     isScrollControlled: true,
     // Over the navigation bar too, which stays dimmed and inactive.
     useRootNavigator: true,
-    builder: (sheetContext) => _MonthPickerSheet(selected: selected),
+    builder: (sheetContext) =>
+        _MonthPickerSheet(selected: selected, last: last),
   );
 }
 
 class _MonthPickerSheet extends StatefulWidget {
-  const new({required this.selected});
+  const new({required this.selected, required this.last});
 
   final YearMonth selected;
+  final YearMonth last;
 
   @override
   State<_MonthPickerSheet> createState() => _MonthPickerSheetState();
@@ -35,12 +41,27 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
   late int _year = widget.selected.year;
   late int _month = widget.selected.month;
 
+  /// The latest month of [year] that can be chosen.
+  int _lastMonthOf(int year) =>
+      year == widget.last.year ? widget.last.month : 12;
+
+  void _selectYear(int year) {
+    setState(() {
+      _year = year;
+      // The year of today stops at today's month.
+      if (_month > _lastMonthOf(year)) _month = _lastMonthOf(year);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final months = context.monthFormatter;
-    final firstYear = widget.selected.year - 1;
+    final lastYear = widget.last.year;
+    final firstYear = widget.selected.year < lastYear - 2
+        ? widget.selected.year
+        : lastYear - 2;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -61,12 +82,12 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (var year = firstYear; year <= firstYear + 2; year++)
+                for (var year = firstYear; year <= lastYear; year++)
                   ChoiceChip(
                     label: Text(WesternDigits.normalize('$year')),
                     selected: year == _year,
                     showCheckmark: false,
-                    onSelected: (_) => setState(() => _year = year),
+                    onSelected: (_) => _selectYear(year),
                   ),
               ],
             ),
@@ -79,7 +100,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                for (var month = 1; month <= 12; month++)
+                for (var month = 1; month <= _lastMonthOf(_year); month++)
                   _MonthButton(
                     label: months.shortName(month),
                     semanticLabel: months.fullName(month),

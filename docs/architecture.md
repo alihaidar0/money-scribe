@@ -94,7 +94,7 @@ implementations with invented data; the device keeps only simple settings in
   request: the scenario (normal, loading, empty, error, no connection), what the next sign-in,
   registration, code check and save answer, and how the account is paid. Builds that are not production show a small handle on the
   end edge of the screen that opens the demo panel (`app/demo/`), where these are changed, the
-  language is switched and the screens no button leads to can be opened. The panel and the
+  language and the theme (light or dark) are switched and the screens no button leads to can be opened. The panel and the
   controller go away with the fake data.
 - A repository can tell its screens that its data may have changed without the app saving it
   (`Stream<void> changes`, for example `OverviewRepository` and `SalaryRepository`), and the Bloc

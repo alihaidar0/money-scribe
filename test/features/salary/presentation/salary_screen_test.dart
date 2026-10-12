@@ -457,12 +457,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Choose month'), findsOneWidget);
-      for (final year in ['2025', '2026', '2027']) {
+      for (final year in ['2024', '2025', '2026']) {
         expect(find.text(year), findsOneWidget);
       }
-      for (final month in ['Jan', 'Jun', 'Oct', 'Dec']) {
+      for (final month in ['Jan', 'Jun', 'Oct']) {
         expect(find.text(month), findsOneWidget);
       }
+      // Nothing after the month of today.
+      expect(find.text('2027'), findsNothing);
+      expect(find.text('Nov'), findsNothing);
+      expect(find.text('Dec'), findsNothing);
       expect(find.text('Done'), findsOneWidget);
     });
 
@@ -485,11 +489,11 @@ void main() {
 
       await tester.tap(find.byType(MonthChip));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('2027'));
+      await tester.tap(find.text('2025'));
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
-      expect(find.text('October 2027'), findsOneWidget);
+      expect(find.text('October 2025'), findsOneWidget);
       expect(
         find.text('Fill in the inputs to see the results.'),
         findsOneWidget,

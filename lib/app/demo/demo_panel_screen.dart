@@ -36,6 +36,12 @@ class DemoPanelScreen extends StatelessWidget {
               ),
               const _Heading('Language'),
               const _LanguagePicker(),
+              const _Heading('Theme'),
+              _ThemePicker(
+                selected: settings.theme,
+                onSelected: (value) =>
+                    demo.update(demo.settings.copyWith(theme: value)),
+              ),
               const _Heading('Server'),
               _Choice<DemoScenario>(
                 values: DemoScenario.values,
@@ -239,6 +245,30 @@ class _LanguagePicker extends StatelessWidget {
         selected: {language},
         onSelectionChanged: (selection) =>
             context.read<LanguageBloc>().add(LanguageSelected(selection.first)),
+      ),
+    );
+  }
+}
+
+class _ThemePicker extends StatelessWidget {
+  const new({required this.selected, required this.onSelected});
+
+  final DemoTheme selected;
+  final ValueChanged<DemoTheme> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SegmentedButton<DemoTheme>(
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(value: DemoTheme.system, label: Text('System')),
+          ButtonSegment(value: DemoTheme.light, label: Text('Light')),
+          ButtonSegment(value: DemoTheme.dark, label: Text('Dark')),
+        ],
+        selected: {selected},
+        onSelectionChanged: (selection) => onSelected(selection.first),
       ),
     );
   }
