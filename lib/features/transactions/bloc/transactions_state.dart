@@ -14,6 +14,18 @@ enum TransactionsStatus {
   failure,
 }
 
+/// How deleting a transaction from the detail pane went.
+enum TransactionsDeleteStatus {
+  /// Nothing is being deleted.
+  idle,
+
+  /// The server is deleting the transaction.
+  deleting,
+
+  /// The server did not delete it.
+  failed,
+}
+
 final class TransactionsState extends Equatable {
   const new({
     this.status = TransactionsStatus.loading,
@@ -23,6 +35,9 @@ final class TransactionsState extends Equatable {
     this.twoPayments = false,
     this.filter = const TransactionFilter(),
     this.scope = PeriodScope.month,
+    this.selectedId,
+    this.deleteStatus = TransactionsDeleteStatus.idle,
+    this.deletingId,
   });
 
   final TransactionsStatus status;
@@ -40,6 +55,14 @@ final class TransactionsState extends Equatable {
 
   /// The part of the month shown; the whole month for one payment.
   final PeriodScope scope;
+
+  /// The transaction the person chose to see in the detail pane, if any.
+  final String? selectedId;
+
+  final TransactionsDeleteStatus deleteStatus;
+
+  /// The transaction of the last delete, so a failed one can be repeated.
+  final String? deletingId;
 
   /// The scope that is shown: a part only for two payments.
   PeriodScope get effectiveScope => twoPayments ? scope : PeriodScope.month;
@@ -72,6 +95,15 @@ final class TransactionsState extends Equatable {
     ];
   }
 
+  /// The transaction the detail pane shows: the chosen one while it is in the
+  /// list, otherwise the newest.
+  Transaction? get selected {
+    final list = visible;
+    final chosen = list.where((item) => item.id == selectedId).firstOrNull;
+    if (chosen != null || list.isEmpty) return chosen;
+    return list.reduce((a, b) => b.date.isAfter(a.date) ? b : a);
+  }
+
   TransactionsState copyWith({
     TransactionsStatus? status,
     List<Transaction>? transactions,
@@ -80,6 +112,9 @@ final class TransactionsState extends Equatable {
     bool? twoPayments,
     TransactionFilter? filter,
     PeriodScope? scope,
+    String? selectedId,
+    TransactionsDeleteStatus? deleteStatus,
+    String? deletingId,
   }) {
     return TransactionsState(
       status: status ?? this.status,
@@ -89,11 +124,14 @@ final class TransactionsState extends Equatable {
       twoPayments: twoPayments ?? this.twoPayments,
       filter: filter ?? this.filter,
       scope: scope ?? this.scope,
+      selectedId: selectedId ?? this.selectedId,
+      deleteStatus: deleteStatus ?? this.deleteStatus,
+      deletingId: deletingId ?? this.deletingId,
     );
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
     status,
     transactions,
     accounts,
@@ -101,5 +139,8 @@ final class TransactionsState extends Equatable {
     twoPayments,
     filter,
     scope,
+    selectedId,
+    deleteStatus,
+    deletingId,
   ];
 }

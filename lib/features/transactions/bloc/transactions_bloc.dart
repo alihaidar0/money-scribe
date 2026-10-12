@@ -42,6 +42,11 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     on<TransactionFiltersApplied>(_onFiltersApplied, transformer: sequential());
     on<TransactionFiltersCleared>(_onFiltersCleared, transformer: sequential());
     on<TransactionsScopeSelected>(_onScopeSelected, transformer: sequential());
+    on<TransactionSelected>(_onSelected, transformer: sequential());
+    on<TransactionDeleteConfirmed>(
+      _onDeleteConfirmed,
+      transformer: droppable(),
+    );
   }
 
   final TransactionsRepository _transactions;
@@ -115,6 +120,32 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     Emitter<TransactionsState> emit,
   ) {
     emit(state.copyWith(scope: event.scope));
+  }
+
+  void _onSelected(TransactionSelected event, Emitter<TransactionsState> emit) {
+    emit(state.copyWith(selectedId: event.id));
+  }
+
+  Future<void> _onDeleteConfirmed(
+    TransactionDeleteConfirmed event,
+    Emitter<TransactionsState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        deleteStatus: TransactionsDeleteStatus.deleting,
+        deletingId: event.id,
+      ),
+    );
+    try {
+      await _transactions.delete(event.id);
+    } on Exception catch (error, stackTrace) {
+      if (emit.isDone) return;
+      if (error is! NoConnectionException) addError(error, stackTrace);
+      emit(state.copyWith(deleteStatus: TransactionsDeleteStatus.failed));
+      return;
+    }
+    emit(state.copyWith(deleteStatus: TransactionsDeleteStatus.idle));
+    await _load(emit, showLoading: false);
   }
 
   @override

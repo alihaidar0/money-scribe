@@ -13,6 +13,8 @@ import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/category_icons.dart';
+import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
+import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -135,10 +137,32 @@ class _TransactionsView extends StatelessWidget {
           bloc.state.hasTransactions,
     );
 
+    return BlocListener<TransactionsBloc, TransactionsState>(
+      listenWhen: (previous, current) =>
+          previous.deleteStatus != current.deleteStatus &&
+          current.deleteStatus == TransactionsDeleteStatus.failed,
+      listener: (context, state) {
+        final id = state.deletingId;
+        if (id == null) return;
+        showFailureSnackBar(
+          context,
+          l10n.couldNotDelete,
+          onRetry: () => bloc.add(TransactionDeleteConfirmed(id)),
+        );
+      },
+      child: _screen(context, showAdd),
+    );
+  }
+
+  Widget _screen(BuildContext context, bool showAdd) {
+    final l10n = context.l10n;
+    final bloc = context.read<TransactionsBloc>();
+
     return TopLevelScreen(
       title: l10n.transactionsTitle,
       floatingActionButton: showAdd
           ? FloatingActionButton.extended(
+              heroTag: null,
               onPressed: () => _addTransaction(context),
               icon: const Icon(Icons.add),
               label: Text(l10n.addAction),
@@ -176,8 +200,44 @@ class _TransactionsView extends StatelessWidget {
 /// The widest the list grows, so a row stays readable on a wide screen.
 const _maxContentWidth = 720.0;
 
+/// The content width from which the list and the detail of the chosen
+/// transaction sit side by side (the expanded window size class).
+const _detailPaneFrom = 840.0;
+
 class _Content extends StatelessWidget {
   const new();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _detailPaneFrom) {
+          return const Row(
+            children: [
+              Expanded(flex: 5, child: _ListPane(wide: true)),
+              VerticalDivider(width: 1),
+              Expanded(flex: 4, child: _DetailPane()),
+            ],
+          );
+        }
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: const _ListPane(wide: false),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The part selector, the search, the filters and the list. With [wide], a row
+/// shows its transaction in the detail pane instead of opening it.
+class _ListPane extends StatelessWidget {
+  const new({required this.wide});
+
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
@@ -185,34 +245,181 @@ class _Content extends StatelessWidget {
       (bloc) => bloc.state.twoPayments,
     );
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: Column(
-          children: [
-            if (twoPayments)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: BlocBuilder<TransactionsBloc, TransactionsState>(
-                  buildWhen: (previous, current) =>
-                      previous.scope != current.scope,
-                  builder: (context, state) => PartSelector(
-                    selected: state.scope,
-                    onSelected: (scope) => context.read<TransactionsBloc>().add(
-                      TransactionsScopeSelected(scope),
-                    ),
-                  ),
+    return Column(
+      children: [
+        if (twoPayments)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: BlocBuilder<TransactionsBloc, TransactionsState>(
+              buildWhen: (previous, current) => previous.scope != current.scope,
+              builder: (context, state) => PartSelector(
+                selected: state.scope,
+                onSelected: (scope) => context.read<TransactionsBloc>().add(
+                  TransactionsScopeSelected(scope),
                 ),
               ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: _SearchField(),
             ),
-            const _FilterBar(),
-            const Expanded(child: _Results()),
-          ],
+          ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: _SearchField(),
         ),
+        const _FilterBar(),
+        Expanded(child: _Results(wide: wide)),
+      ],
+    );
+  }
+}
+
+/// TB-1, right pane: everything about the chosen transaction, with the buttons
+/// that edit and delete it.
+class _DetailPane extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final state = context.watch<TransactionsBloc>().state;
+    final transaction = state.selected;
+    if (transaction == null) return const SizedBox.shrink();
+
+    final colors = context.moneyColors;
+    final today = context.read<Clock>().now();
+    final category = state.categories
+        .where((item) => item.id == transaction.categoryId)
+        .firstOrNull;
+    final account = state.accounts
+        .where((item) => item.id == transaction.accountId)
+        .firstOrNull;
+    final money = transaction.kind == TransactionKind.income
+        ? colors.income
+        : colors.expense;
+    final deleting = state.deleteStatus == TransactionsDeleteStatus.deleting;
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      context.moneyFormatter.formatSigned(
+                        transaction.signedAmount,
+                      ),
+                      style: theme.textTheme.displaySmall?.amount.copyWith(
+                        color: money.color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _DetailLine(
+                    label: l10n.categoryLabel,
+                    value: category?.name ?? '',
+                    icon: categoryIcon(category?.icon ?? CategoryIcon.other),
+                  ),
+                  _DetailLine(
+                    label: l10n.dateLabel,
+                    value: context.dayFormatter.formatWithWeekday(
+                      transaction.date,
+                      today: today,
+                    ),
+                  ),
+                  _DetailLine(
+                    label: l10n.accountLabel,
+                    value: account?.name ?? '',
+                  ),
+                  if (transaction.note.isNotEmpty)
+                    _DetailLine(label: l10n.noteLabel, value: transaction.note),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: () =>
+                            _openTransaction(context, transaction.id),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(l10n.editAction),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                        ),
+                        onPressed: deleting
+                            ? null
+                            : () => _delete(context, transaction.id),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(l10n.deleteAction),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _delete(BuildContext context, String id) async {
+    final bloc = context.read<TransactionsBloc>();
+    final l10n = context.l10n;
+    final confirmed = await confirmDelete(
+      context,
+      title: l10n.deleteTransactionTitle,
+      message: l10n.deleteTransactionMessage,
+    );
+    if (confirmed) bloc.add(TransactionDeleteConfirmed(id));
+  }
+}
+
+/// A label with its value, one under the other.
+class _DetailLine extends StatelessWidget {
+  const new({required this.label, required this.value, this.icon});
+
+  final String label;
+  final String value;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            IconCircle(icon: icon!, size: 40),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(value, style: theme.textTheme.bodyLarge),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -394,7 +601,10 @@ class _FilterBar extends StatelessWidget {
 
 /// The transactions that pass the search and filters, or TX-8 when none do.
 class _Results extends StatelessWidget {
-  const new();
+  const new({required this.wide});
+
+  /// Whether the detail pane is beside the list.
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
@@ -453,6 +663,12 @@ class _Results extends StatelessWidget {
             categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
           ),
           accountName: accounts[transaction.accountId]?.name ?? '',
+          selected: wide && transaction.id == state.selected?.id,
+          onTap: wide
+              ? () => context.read<TransactionsBloc>().add(
+                  TransactionSelected(transaction.id),
+                )
+              : () => _openTransaction(context, transaction.id),
         ),
       },
     );
@@ -594,12 +810,18 @@ class _TransactionRow extends StatelessWidget {
     required this.categoryName,
     required this.icon,
     required this.accountName,
+    required this.selected,
+    required this.onTap,
   });
 
   final Transaction transaction;
   final String categoryName;
   final IconData icon;
   final String accountName;
+
+  /// Whether the detail pane shows this transaction.
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -616,12 +838,15 @@ class _TransactionRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Semantics(
         button: true,
+        selected: selected,
         child: Material(
-          color: theme.colorScheme.surfaceContainerLow,
+          color: selected
+              ? theme.colorScheme.secondaryContainer
+              : theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _openTransaction(context, transaction.id),
+            onTap: onTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 64),
               child: Padding(
