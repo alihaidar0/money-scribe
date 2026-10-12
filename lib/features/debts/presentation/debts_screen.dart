@@ -8,18 +8,23 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
+import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
+import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/debts/domain/debt.dart';
 import 'package:money_scribe/features/debts/domain/debts_repository.dart';
+import 'package:money_scribe/features/debts/presentation/widgets/debt_detail_content.dart';
 
 /// DB-1 and DB-9 to DB-12: the debts, with what is owed to the person and what
-/// they owe, filtered by lent or borrowed. A card opens the debt.
+/// they owe, filtered by lent or borrowed. A card opens the debt; on a wide
+/// window it shows the debt in a pane beside the list instead.
 class DebtsScreen extends StatelessWidget {
   const new({super.key});
 
@@ -49,6 +54,20 @@ Future<void> _openDebt(BuildContext context, String id) async {
   bloc.add(const DebtsRefreshed());
 }
 
+/// Opens the debt [id] with the sheet that adds a repayment over it.
+Future<void> _addRepayment(BuildContext context, String id) async {
+  final bloc = context.read<DebtsBloc>();
+  await context.push<void>(AppRoutes.debtDetailsPath(id, addRepayment: true));
+  bloc.add(const DebtsRefreshed());
+}
+
+/// Opens the form that changes the debt [id].
+Future<void> _editDebt(BuildContext context, String id) async {
+  final bloc = context.read<DebtsBloc>();
+  await context.push<void>(AppRoutes.editDebtPath(id));
+  bloc.add(const DebtsRefreshed());
+}
+
 class _DebtsView extends StatelessWidget {
   const new();
 
@@ -67,10 +86,37 @@ class _DebtsView extends StatelessWidget {
       (bloc) => bloc.state.debts.isEmpty,
     );
 
+    return BlocListener<DebtsBloc, DebtsState>(
+      listenWhen: (previous, current) =>
+          previous.deleteStatus != current.deleteStatus &&
+          current.deleteStatus == DebtsDeleteStatus.failed,
+      listener: (context, state) {
+        final id = state.deletingId;
+        if (id == null) return;
+        showFailureSnackBar(
+          context,
+          l10n.couldNotDelete,
+          onRetry: () => bloc.add(DebtDeleteConfirmed(id)),
+        );
+      },
+      child: _screen(context, showAdd, status, isEmpty),
+    );
+  }
+
+  Widget _screen(
+    BuildContext context,
+    bool showAdd,
+    DebtsStatus status,
+    bool isEmpty,
+  ) {
+    final l10n = context.l10n;
+    final bloc = context.read<DebtsBloc>();
+
     return TopLevelScreen(
       title: l10n.debtsTitle,
       floatingActionButton: showAdd
           ? FloatingActionButton.extended(
+              heroTag: null,
               onPressed: () => _addDebt(context),
               icon: const Icon(Icons.add),
               label: Text(l10n.addDebtAction),
@@ -100,48 +146,151 @@ class _DebtsView extends StatelessWidget {
   }
 }
 
-/// The widest the list grows, so a card stays readable on a wide screen.
-const _maxContentWidth = 720.0;
+/// The content width from which the list and the detail of the chosen debt sit
+/// side by side (the expanded window size class).
+const _detailPaneFrom = 840.0;
 
 class _Content extends StatelessWidget {
   const new();
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _detailPaneFrom) {
+          return const Row(
+            children: [
+              Expanded(flex: 5, child: _ListPane(wide: true)),
+              VerticalDivider(width: 1),
+              Expanded(flex: 4, child: _DetailPane()),
+            ],
+          );
+        }
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: FrameWidth.regular.value),
+            child: const _ListPane(wide: false),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The totals, the filter and the cards. With [wide], a card shows its debt in
+/// the detail pane instead of opening it.
+class _ListPane extends StatelessWidget {
+  const new({required this.wide});
+
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) {
     final state = context.watch<DebtsBloc>().state;
     final shown = state.shown;
+    final selectedId = wide ? state.selected?.id : null;
+
+    return ListView(
+      // Room under the last card for the button.
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      children: [
+        DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+        const SizedBox(height: 16),
+        const _FilterSwitch(),
+        const SizedBox(height: 16),
+        if (shown.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Text(
+              context.l10n.noDebtsOfKind,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          for (final debt in shown)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _DebtCard(
+                debt: debt,
+                today: state.today,
+                selected: debt.id == selectedId,
+                onTap: wide
+                    ? () => context.read<DebtsBloc>().add(DebtSelected(debt.id))
+                    : () => _openDebt(context, debt.id),
+              ),
+            ),
+      ],
+    );
+  }
+}
+
+/// DB-3 on a wide window: everything about the chosen debt, with the buttons
+/// that add a repayment, change and delete it.
+class _DetailPane extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = context.watch<DebtsBloc>().state;
+    final debt = state.selected;
+    if (debt == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final deleting = state.deleteStatus == DebtsDeleteStatus.deleting;
 
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: ListView(
-          // Room under the last card for the button.
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-          children: [
-            DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: DebtDetailContent(
+          debt: debt,
+          today: state.today,
+          onEditRepayment: (_) => _openDebt(context, debt.id),
+          footer: [
             const SizedBox(height: 16),
-            const _FilterSwitch(),
-            const SizedBox(height: 16),
-            if (shown.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Text(
-                  context.l10n.noDebtsOfKind,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                if (!debt.isSettled)
+                  FilledButton.icon(
+                    onPressed: () => _addRepayment(context, debt.id),
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.addRepaymentAction),
+                  ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _editDebt(context, debt.id),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(l10n.editAction),
                 ),
-              )
-            else
-              for (final debt in shown)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _DebtCard(debt: debt, today: state.today),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                  onPressed: deleting ? null : () => _delete(context, debt),
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(l10n.deleteAction),
                 ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _delete(BuildContext context, Debt debt) async {
+    final bloc = context.read<DebtsBloc>();
+    final l10n = context.l10n;
+    final confirmed = await confirmDelete(
+      context,
+      title: l10n.deleteDebtTitle,
+      message: l10n.deleteDebtMessage(person: debt.person),
+    );
+    if (confirmed) bloc.add(DebtDeleteConfirmed(debt.id));
   }
 }
 
@@ -177,10 +326,19 @@ class _FilterSwitch extends StatelessWidget {
 /// One debt: the person and whether it was lent or borrowed, what is left to
 /// repay, what it was, its due day and where it stands.
 class _DebtCard extends StatelessWidget {
-  const new({required this.debt, required this.today});
+  const new({
+    required this.debt,
+    required this.today,
+    required this.selected,
+    required this.onTap,
+  });
 
   final Debt debt;
   final DateTime today;
+
+  /// Whether the detail pane shows this debt.
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -203,12 +361,15 @@ class _DebtCard extends StatelessWidget {
 
     return Semantics(
       button: true,
+      selected: selected,
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: selected
+            ? theme.colorScheme.secondaryContainer
+            : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => _openDebt(context, debt.id),
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

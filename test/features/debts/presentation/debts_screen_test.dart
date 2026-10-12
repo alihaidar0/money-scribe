@@ -306,4 +306,92 @@ void main() {
       expect(find.text('لا توجد ديون بعد'), findsOneWidget);
     });
   });
+
+  group('a wide window', () {
+    const wide = Size(1280, 800);
+
+    testWidgets('shows the first debt beside the list', (tester) async {
+      await openDebts(tester, size: wide);
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.text('Remaining'), findsOneWidget);
+      expect(find.text('Repayments'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Add repayment'), findsOne);
+      expect(find.widgetWithText(OutlinedButton, 'Delete'), findsOneWidget);
+    });
+
+    testWidgets('a phone has no detail pane', (tester) async {
+      await openDebts(tester);
+
+      expect(find.text('Remaining'), findsNothing);
+    });
+
+    testWidgets('a card shows its debt instead of opening it', (tester) async {
+      await openDebts(tester, size: wide);
+
+      await tester.tap(find.text('Maria'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DebtDetailsScreen), findsNothing);
+      // The card and the pane.
+      expect(find.text('Maria'), findsNWidgets(2));
+      expect(find.text('Sam'), findsOneWidget);
+    });
+
+    testWidgets('a settled debt has no Add repayment button', (tester) async {
+      await openDebts(tester, size: wide);
+
+      await tester.tap(find.text('Anna'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FilledButton, 'Add repayment'), findsNothing);
+    });
+
+    testWidgets('Add repayment opens the debt with the sheet', (tester) async {
+      await openDebts(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Add repayment'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DebtDetailsScreen), findsOneWidget);
+      expect(find.byType(BottomSheet), findsOneWidget);
+    });
+
+    testWidgets('Edit opens the form of the shown debt', (tester) async {
+      await openDebts(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Edit'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DebtFormScreen), findsOneWidget);
+      expect(find.text('Edit debt'), findsOneWidget);
+    });
+
+    testWidgets('Delete asks first, then removes the debt', (tester) async {
+      await openDebts(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sam'), findsNothing);
+      // Maria is shown next: the card and the pane.
+      expect(find.text('Maria'), findsNWidgets(2));
+    });
+
+    testWidgets('a failed Delete says so and offers Retry', (tester) async {
+      final demo = await openDebts(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't delete. Check your connection."), findsOne);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
 }
