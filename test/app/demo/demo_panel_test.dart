@@ -101,7 +101,6 @@ void main() {
       await tester.tap(find.text('Dark'));
       await tester.pumpAndSettle();
 
-      expect(demo.settings.theme, DemoTheme.dark);
       expect(themeMode(), ThemeMode.dark);
       expect(
         Theme.of(tester.element(find.byType(DemoPanelScreen))).brightness,

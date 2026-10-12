@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/categories/category_icon.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -8,6 +12,7 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -17,29 +22,87 @@ import 'package:money_scribe/features/transactions/bloc/transactions_bloc.dart';
 import 'package:money_scribe/features/transactions/domain/accounts_repository.dart';
 import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
-import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_groups.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
-import 'package:money_scribe/features/transactions/presentation/category_icons.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/transaction_filters_sheet.dart';
 
 /// TX-1, TX-2, TX-8 to TX-12: every transaction, newest first, grouped by day
 /// (and for two payments by part of the month), with a search, filters and
 /// the button that adds one. Tapping a row opens it to be changed.
-class TransactionsScreen extends StatelessWidget {
-  const new({super.key});
+///
+/// Another screen can send the person here with one category of one [month]
+/// (and, for two payments, one [part] of it) already chosen, such as a row of
+/// the Reports. A different [requestId] asks for it again even when the
+/// request is the same.
+class TransactionsScreen extends StatefulWidget {
+  const new({
+    this.categoryId,
+    this.month,
+    this.part,
+    this.requestId,
+    super.key,
+  });
+
+  final String? categoryId;
+  final YearMonth? month;
+  final PeriodScope? part;
+  final int? requestId;
+
+  @override
+  State<TransactionsScreen> createState() => _TransactionsScreenState();
+}
+
+class _TransactionsScreenState extends State<TransactionsScreen> {
+  late final TransactionsBloc _bloc = TransactionsBloc(
+    transactions: context.read<TransactionsRepository>(),
+    accounts: context.read<AccountsRepository>(),
+    categories: context.read<CategoriesRepository>(),
+  )..add(const TransactionsStarted());
+
+  @override
+  void initState() {
+    super.initState();
+    _applyRequest();
+  }
+
+  @override
+  void didUpdateWidget(TransactionsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.categoryId != oldWidget.categoryId ||
+        widget.month != oldWidget.month ||
+        widget.part != oldWidget.part ||
+        widget.requestId != oldWidget.requestId) {
+      _applyRequest();
+    }
+  }
+
+  /// Narrows the list to the category and month of the request, if any.
+  void _applyRequest() {
+    final categoryId = widget.categoryId;
+    if (categoryId == null) return;
+    final month = widget.month;
+    _bloc.add(
+      TransactionFiltersApplied(
+        TransactionFilter(
+          categoryIds: {categoryId},
+          from: month?.firstDay,
+          to: month == null ? null : DateTime(month.year, month.month + 1, 0),
+        ),
+        widget.part ?? PeriodScope.month,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_bloc.close());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => TransactionsBloc(
-        transactions: context.read<TransactionsRepository>(),
-        accounts: context.read<AccountsRepository>(),
-        categories: context.read<CategoriesRepository>(),
-      )..add(const TransactionsStarted()),
-      child: const _TransactionsView(),
-    );
+    return BlocProvider.value(value: _bloc, child: const _TransactionsView());
   }
 }
 
@@ -146,7 +209,7 @@ class _Content extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: _SearchField(),
             ),
-            const _FilterChips(),
+            const _FilterBar(),
             const Expanded(child: _Results()),
           ],
         ),
@@ -201,50 +264,114 @@ class _SearchFieldState extends State<_SearchField> {
   }
 }
 
-/// The chips Category, Account and Date range. Each opens the Filters sheet
-/// and shows a check while its filter is on.
-class _FilterChips extends StatelessWidget {
+/// The Filters button, which opens the Filters sheet, with a count of the
+/// choices that are on, and a chip for each of them to take it off again.
+class _FilterBar extends StatelessWidget {
   const new();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final filter = context.select<TransactionsBloc, TransactionFilter>(
-      (bloc) => bloc.state.filter,
-    );
-    final hasDates = filter.from != null || filter.to != null;
-
-    String label(String name, int count) =>
-        count == 0 ? name : l10n.filterChipCount(label: name, count: count);
+    final state = context.watch<TransactionsBloc>().state;
+    final count =
+        state.filter.sheetFilterCount +
+        (state.effectiveScope == PeriodScope.month ? 0 : 1);
+    final label = count == 0
+        ? l10n.filtersTitle
+        : l10n.filterChipCount(label: l10n.filtersTitle, count: count);
+    final chips = _activeChips(context, state);
 
     return SizedBox(
       width: double.infinity,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FilterChip(
-              label: Text(label(l10n.categoryLabel, filter.categoryIds.length)),
-              selected: filter.categoryIds.isNotEmpty,
-              onSelected: (_) => _openFilters(context),
-            ),
-            const SizedBox(width: 8),
-            FilterChip(
-              label: Text(label(l10n.accountLabel, filter.accountIds.length)),
-              selected: filter.accountIds.isNotEmpty,
-              onSelected: (_) => _openFilters(context),
-            ),
-            const SizedBox(width: 8),
-            FilterChip(
-              label: Text(l10n.filterDateRange),
-              selected: hasDates,
-              onSelected: (_) => _openFilters(context),
-            ),
+            if (count == 0)
+              OutlinedButton.icon(
+                onPressed: () => _openFilters(context),
+                icon: const Icon(Icons.tune),
+                label: Text(label),
+              )
+            else
+              FilledButton.tonalIcon(
+                onPressed: () => _openFilters(context),
+                icon: const Icon(Icons.tune),
+                label: Text(label),
+              ),
+            if (chips.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, runSpacing: 4, children: chips),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// A chip for each category, each account, the days and the part of the
+  /// month that narrow the list. Its cross takes that choice off.
+  List<Widget> _activeChips(BuildContext context, TransactionsState state) {
+    final l10n = context.l10n;
+    final days = context.dayFormatter;
+    final today = context.read<Clock>().now();
+    final bloc = context.read<TransactionsBloc>();
+    final filter = state.filter;
+    final scope = state.effectiveScope;
+
+    Widget chip(String label, VoidCallback onRemove) {
+      return InputChip(
+        label: Text(label),
+        deleteButtonTooltipMessage: l10n.removeFilterTooltip(name: label),
+        onDeleted: onRemove,
+      );
+    }
+
+    void apply(TransactionFilter filter, PeriodScope scope) {
+      bloc.add(TransactionFiltersApplied(filter, scope));
+    }
+
+    final from = filter.from;
+    final to = filter.to;
+
+    return [
+      if (scope != PeriodScope.month)
+        chip(
+          scope == PeriodScope.firstPart ? l10n.partFirst : l10n.partSecond,
+          () => apply(filter, PeriodScope.month),
+        ),
+      for (final id in filter.categoryIds)
+        chip(
+          state.categories
+                  .where((category) => category.id == id)
+                  .firstOrNull
+                  ?.name ??
+              id,
+          () => apply(filter.withoutCategory(id), scope),
+        ),
+      for (final id in filter.accountIds)
+        chip(
+          state.accounts
+                  .where((account) => account.id == id)
+                  .firstOrNull
+                  ?.name ??
+              id,
+          () => apply(filter.withoutAccount(id), scope),
+        ),
+      if (from != null || to != null)
+        chip(
+          from != null && to != null
+              ? l10n.filterDatesChip(
+                  from: days.formatDate(from, today: today),
+                  to: days.formatDate(to, today: today),
+                )
+              : from != null
+              ? l10n.filterFromChip(date: days.formatDate(from, today: today))
+              : l10n.filterToChip(date: days.formatDate(to!, today: today)),
+          () => apply(filter.withoutDates(), scope),
+        ),
+    ];
   }
 
   Future<void> _openFilters(BuildContext context) async {

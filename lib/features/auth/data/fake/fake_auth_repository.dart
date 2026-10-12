@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
@@ -26,6 +27,12 @@ class FakeAuthRepository implements AuthRepository {
   // A sample address, so the code screens have one to show when they are
   // opened from the demo panel; registering or resetting replaces it.
   String? _pendingEmail = 'alex@example.com';
+  // The sample account the demo opens with; registering or signing in with
+  // another address replaces it.
+  AccountProfile _profile = const AccountProfile(
+    name: 'Alex',
+    email: 'alex@example.com',
+  );
   int _wrongPasswords = 0;
   DateTime? _lockedUntil;
   int _wrongCodes = 0;
@@ -62,6 +69,7 @@ class FakeAuthRepository implements AuthRepository {
     switch (_demo.settings.signIn) {
       case DemoSignIn.accepted:
         _wrongPasswords = 0;
+        _useAccount(email);
         // An existing account has data.
         if (_demo.settings.scenario == DemoScenario.empty) {
           _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
@@ -95,6 +103,7 @@ class FakeAuthRepository implements AuthRepository {
       });
     }
     _pendingEmail = email;
+    _profile = AccountProfile(name: name.trim(), email: email.trim());
     _wrongCodes = 0;
     // A new account has no data yet: the app shows its first-launch screens.
     _demo.update(_demo.settings.copyWith(scenario: DemoScenario.empty));
@@ -140,6 +149,55 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     _setSignedIn(value: false);
+  }
+
+  @override
+  Future<AccountProfile> profile() async {
+    await _demo.simulateRequest();
+    return _profile;
+  }
+
+  @override
+  Future<void> changePassword({
+    required String current,
+    required String next,
+  }) async {
+    await _demo.simulateSave();
+    _requireRightPassword();
+  }
+
+  @override
+  Future<void> deleteAccount({required String password}) async {
+    await _demo.simulateSave();
+    _requireRightPassword();
+    // Nothing of the account is left: the next one starts empty.
+    _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
+    _setSignedIn(value: false);
+  }
+
+  /// The fake server does not know the password: it is wrong when the demo
+  /// panel says the next sign-in has a wrong password.
+  void _requireRightPassword() {
+    if (_demo.settings.signIn == DemoSignIn.wrongPassword) {
+      throw const WrongCredentialsException();
+    }
+  }
+
+  /// Signs in as [email]: the sample account keeps its name, any other address
+  /// gets a name made from it.
+  void _useAccount(String email) {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty ||
+        trimmed.toLowerCase() == _profile.email.toLowerCase()) {
+      return;
+    }
+    final local = trimmed.split('@').first;
+    _profile = AccountProfile(
+      name: local.isEmpty
+          ? _profile.name
+          : '${local[0].toUpperCase()}${local.substring(1)}',
+      email: trimmed,
+    );
   }
 
   void _setSignedIn({required bool value}) {

@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/app_text_field.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -180,8 +181,7 @@ class _FormState extends State<_Form> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SegmentedButton<DebtDirection>(
-                          showSelectedIcon: false,
+                        PillSegmentedButton<DebtDirection>(
                           segments: [
                             ButtonSegment(
                               value: DebtDirection.lent,

@@ -6,6 +6,8 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import 'build_app.dart';
 import 'fake_language_repository.dart';
+import 'fake_push_messaging_repository.dart';
+import 'fake_theme_repository.dart';
 
 /// A tall phone, so a long list fits without scrolling.
 const tallPhone = Size(412, 1800);
@@ -87,4 +89,54 @@ Future<DemoController> openDebts(
     language: language,
     size: size,
   );
+}
+
+/// Opens the Reports tab.
+Future<DemoController> openReports(
+  WidgetTester tester, {
+  DemoSettings settings = const DemoSettings(),
+  AppLanguage language = AppLanguage.english,
+  Size size = tallPhone,
+}) {
+  return openTab(
+    tester,
+    english: 'Reports',
+    arabic: 'التقارير',
+    settings: settings,
+    language: language,
+    size: size,
+  );
+}
+
+/// Opens the Settings from the gear of the Overview. The push messaging is
+/// available and not yet allowed, so every row of the Settings is shown.
+Future<DemoController> openSettings(
+  WidgetTester tester, {
+  DemoSettings settings = const DemoSettings(),
+  AppLanguage language = AppLanguage.english,
+  Size size = tallPhone,
+  FakeThemeRepository? themeRepository,
+  FakeLanguageRepository? languageRepository,
+}) async {
+  tester.view
+    ..devicePixelRatio = 1
+    ..physicalSize = size;
+  addTearDown(tester.view.reset);
+  final demo = DemoController(initial: settings, latency: Duration.zero);
+  await tester.pumpWidget(
+    buildApp(
+      demo: demo,
+      languageRepository:
+          languageRepository ?? FakeLanguageRepository(language),
+      themeRepository: themeRepository,
+      pushMessaging: FakePushMessagingRepository(),
+      authRepository: FakeAuthRepository(demo: demo, signedIn: true),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.byTooltip(language == AppLanguage.arabic ? 'الإعدادات' : 'Settings'),
+  );
+  await tester.pumpAndSettle();
+  return demo;
 }

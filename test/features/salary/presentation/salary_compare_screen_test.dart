@@ -5,6 +5,7 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/salary/presentation/salary_compare_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
@@ -18,7 +19,7 @@ Finder figure(String text) => find.text(amount(text));
 
 Finder segment(String label) {
   return find.descendant(
-    of: find.byType(SegmentedButton<PeriodScope>),
+    of: find.byType(PillSegmentedButton<PeriodScope>),
     matching: find.text(label),
   );
 }
@@ -95,7 +96,7 @@ void main() {
     testWidgets('has no choice of part', (tester) async {
       await pumpCompare(tester);
 
-      expect(find.byType(SegmentedButton<PeriodScope>), findsNothing);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsNothing);
     });
 
     testWidgets('the back arrow returns to the history', (tester) async {
@@ -231,7 +232,7 @@ void main() {
     testWidgets('has the choice Month, Part 1 and Part 2', (tester) async {
       await pumpCompare(tester, settings: twoPayments);
 
-      expect(find.byType(SegmentedButton<PeriodScope>), findsOneWidget);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsOneWidget);
       for (final label in ['Month', 'Part 1', 'Part 2']) {
         expect(segment(label), findsOneWidget);
       }
@@ -311,12 +312,12 @@ void main() {
       tester,
     ) async {
       final demo = await pumpCompare(tester);
-      expect(find.byType(SegmentedButton<PeriodScope>), findsNothing);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsNothing);
 
       demo.update(demo.settings.copyWith(paymentMode: PaymentMode.twoPayments));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SegmentedButton<PeriodScope>), findsOneWidget);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsOneWidget);
     });
   });
 
@@ -472,7 +473,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(SegmentedButton<PeriodScope>),
+          of: find.byType(PillSegmentedButton<PeriodScope>),
           matching: find.text('الجزء 2'),
         ),
       );

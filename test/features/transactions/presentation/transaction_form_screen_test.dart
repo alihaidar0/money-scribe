@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
+import 'package:money_scribe/features/transactions/presentation/accounts_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
@@ -293,7 +295,9 @@ void main() {
       expect(find.text('Coffee · Cash'), findsOneWidget);
     });
 
-    testWidgets('Manage accounts opens the Settings', (tester) async {
+    testWidgets('Manage accounts opens the Accounts screen, and back returns', (
+      tester,
+    ) async {
       await openAddForm(tester);
       await tester.tap(find.byIcon(Icons.expand_more));
       await tester.pumpAndSettle();
@@ -301,8 +305,36 @@ void main() {
       await tester.tap(inSheet(find.text('Manage accounts')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Settings'), findsWidgets);
+      expect(find.byType(AccountsScreen), findsOneWidget);
       expect(find.byType(TransactionFormScreen), findsNothing);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TransactionFormScreen), findsOneWidget);
+    });
+
+    testWidgets('an account added there is offered by the form', (
+      tester,
+    ) async {
+      await openAddForm(tester);
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+      await tester.tap(inSheet(find.text('Add account')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add account'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Savings');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      expect(inSheet(find.text('Savings')), findsOneWidget);
     });
   });
 
@@ -360,8 +392,8 @@ void main() {
       await openEditForm(tester, 'Scholarship');
       expect(
         tester
-            .widget<SegmentedButton<TransactionKind>>(
-              find.byType(SegmentedButton<TransactionKind>),
+            .widget<PillSegmentedButton<TransactionKind>>(
+              find.byType(PillSegmentedButton<TransactionKind>),
             )
             .selected,
         {TransactionKind.income},

@@ -169,28 +169,28 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 ### F. Reports
 
-- [ ] RP-1 Reports, Categories
-- [ ] RP-2 Reports, Categories by part
-- [ ] RP-3 Reports, Month vs month
-- [ ] RP-4 Reports, Part vs part
-- [ ] RP-5 Reports, Debts
+- [x] RP-1 Reports, Categories
+- [x] RP-2 Reports, Categories by part
+- [x] RP-3 Reports, Month vs month
+- [x] RP-4 Reports, Part vs part
+- [x] RP-5 Reports, Debts
 
 ### G. Settings, account and data
 
-- [ ] ST-1 Settings
-- [ ] ST-2 Account
-- [ ] ST-3 Pay schedule
-- [ ] ST-4 Categories
-- [ ] ST-4b Add or edit category
-- [ ] ST-5 Accounts
-- [ ] ST-5b Add or edit account
-- [ ] ST-6 Change password
-- [ ] ST-7 Export CSV
-- [ ] ST-8 Import CSV
-- [ ] ST-8b Import result
-- [ ] ST-9 Default currency
-- [ ] ST-10 Sign out
-- [ ] ST-11 Delete account
+- [x] ST-1 Settings
+- [x] ST-2 Account
+- [x] ST-3 Pay schedule
+- [x] ST-4 Categories
+- [x] ST-4b Add or edit category
+- [x] ST-5 Accounts
+- [x] ST-5b Add or edit account
+- [x] ST-6 Change password
+- [x] ST-7 Export CSV
+- [x] ST-8 Import CSV
+- [x] ST-8b Import result
+- [x] ST-9 Default currency
+- [x] ST-10 Sign out
+- [x] ST-11 Delete account
 
 ### H. Loading, empty, error and no connection
 
@@ -211,10 +211,10 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] DB-10 Debts, empty
 - [x] DB-11 Debts, error
 - [x] DB-12 Debts, no connection
-- [ ] RP-6 Reports, loading
-- [ ] RP-7 Reports, empty
-- [ ] RP-8 Reports, error
-- [ ] RP-9 Reports, no connection
+- [x] RP-6 Reports, loading
+- [x] RP-7 Reports, empty
+- [x] RP-8 Reports, error
+- [x] RP-9 Reports, no connection
 - [ ] NC-1 No connection, full screen
 - [ ] ERR-1 Could not save
 - [ ] ERR-2 Something went wrong

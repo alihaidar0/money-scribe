@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
@@ -36,7 +37,7 @@ Finder inSheet(Finder finder) {
 Finder pageParts() {
   return find.descendant(
     of: find.byType(Scaffold).first,
-    matching: find.byType(SegmentedButton<FixedItemPart>),
+    matching: find.byType(PillSegmentedButton<FixedItemPart>),
   );
 }
 
@@ -81,7 +82,7 @@ void main() {
       expect(find.byTooltip('Salary history'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
-      final segments = find.byType(SegmentedButton<Object?>);
+      final segments = find.byType(PillSegmentedButton<Object?>);
       expect(segments, findsNothing);
     });
 
@@ -291,10 +292,11 @@ void main() {
       await openAddSheet(tester);
 
       expect(find.text('Applies to'), findsOneWidget);
-      final parts = inSheet(find.byType(SegmentedButton<FixedItemPart>));
-      expect(tester.widget<SegmentedButton<FixedItemPart>>(parts).selected, {
-        FixedItemPart.second,
-      });
+      final parts = inSheet(find.byType(PillSegmentedButton<FixedItemPart>));
+      expect(
+        tester.widget<PillSegmentedButton<FixedItemPart>>(parts).selected,
+        {FixedItemPart.second},
+      );
     });
 
     testWidgets('an item added to Part 1 does not appear in Part 2', (
@@ -351,16 +353,16 @@ void main() {
       expect(find.text('Applies to'), findsOneWidget);
       expect(
         tester
-            .widget<SegmentedButton<FixedItemPart>>(
-              inSheet(find.byType(SegmentedButton<FixedItemPart>)),
+            .widget<PillSegmentedButton<FixedItemPart>>(
+              inSheet(find.byType(PillSegmentedButton<FixedItemPart>)),
             )
             .selected,
         {FixedItemPart.first},
       );
       expect(
         tester
-            .widget<SegmentedButton<FixedItemKind>>(
-              inSheet(find.byType(SegmentedButton<FixedItemKind>)),
+            .widget<PillSegmentedButton<FixedItemKind>>(
+              inSheet(find.byType(PillSegmentedButton<FixedItemKind>)),
             )
             .selected,
         {FixedItemKind.expense},
@@ -400,7 +402,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: inSheet(find.byType(SegmentedButton<FixedItemPart>)),
+          of: inSheet(find.byType(PillSegmentedButton<FixedItemPart>)),
           matching: find.text('Part 2'),
         ),
       );

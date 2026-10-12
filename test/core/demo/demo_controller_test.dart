@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
@@ -156,6 +157,71 @@ void main() {
       demo.update(
         const DemoSettings(scenario: DemoScenario.error, save: DemoSave.fails),
       );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(count, 0);
+    });
+  });
+
+  group('the schedule of a saved month', () {
+    const october = YearMonth(2026, 10);
+    const september = YearMonth(2026, 9);
+
+    test('is the account schedule until the month is saved', () {
+      final demo = DemoController(
+        initial: const DemoSettings(paymentMode: PaymentMode.twoPayments),
+        latency: Duration.zero,
+      );
+
+      expect(demo.paymentModeOf(october), PaymentMode.twoPayments);
+    });
+
+    test('a saved month keeps its own schedule', () {
+      final demo = DemoController(latency: Duration.zero)
+        ..setMonthPaymentMode(september, PaymentMode.twoPayments);
+
+      expect(demo.paymentModeOf(september), PaymentMode.twoPayments);
+      expect(demo.paymentModeOf(october), PaymentMode.onePayment);
+
+      demo
+        ..update(const DemoSettings(paymentMode: PaymentMode.twoPayments))
+        ..update(const DemoSettings());
+
+      expect(demo.paymentModeOf(september), PaymentMode.twoPayments);
+    });
+
+    test('forgetting it goes back to the account schedule', () {
+      final demo = DemoController(latency: Duration.zero)
+        ..setMonthPaymentMode(september, PaymentMode.twoPayments)
+        ..clearMonthPaymentMode(september);
+
+      expect(demo.paymentModeOf(september), PaymentMode.onePayment);
+    });
+
+    test('dataChangesWithSchedules also tells when a month is saved', () async {
+      final demo = DemoController(latency: Duration.zero);
+      var count = 0;
+      final subscription = demo.dataChangesWithSchedules.listen((_) => count++);
+      addTearDown(subscription.cancel);
+
+      demo
+        ..setMonthPaymentMode(september, PaymentMode.twoPayments)
+        // The same schedule again changes nothing.
+        ..setMonthPaymentMode(september, PaymentMode.twoPayments)
+        ..update(const DemoSettings(paymentMode: PaymentMode.twoPayments))
+        ..clearMonthPaymentMode(september);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(count, 3);
+    });
+
+    test('dataChanges alone does not tell when a month is saved', () async {
+      final demo = DemoController(latency: Duration.zero);
+      var count = 0;
+      final subscription = demo.dataChanges.listen((_) => count++);
+      addTearDown(subscription.cancel);
+
+      demo.setMonthPaymentMode(september, PaymentMode.twoPayments);
       await Future<void>.delayed(Duration.zero);
 
       expect(count, 0);

@@ -7,6 +7,7 @@ final class PaySchedule extends Equatable {
     this.mode = PaymentMode.onePayment,
     this.firstPayDay = 20,
     this.secondPayDay = 5,
+    this.remindOnPayDays = false,
   });
 
   /// The first and the last day of the month a pay day can be set to, so it
@@ -22,18 +23,23 @@ final class PaySchedule extends Equatable {
   /// The day of the next month the second payment (the 16th-end) is paid.
   final int secondPayDay;
 
+  /// Whether the person is reminded on the pay days.
+  final bool remindOnPayDays;
+
   PaySchedule copyWith({
     PaymentMode? mode,
     int? firstPayDay,
     int? secondPayDay,
+    bool? remindOnPayDays,
   }) {
     return PaySchedule(
       mode: mode ?? this.mode,
       firstPayDay: firstPayDay ?? this.firstPayDay,
       secondPayDay: secondPayDay ?? this.secondPayDay,
+      remindOnPayDays: remindOnPayDays ?? this.remindOnPayDays,
     );
   }
 
   @override
-  List<Object> get props => [mode, firstPayDay, secondPayDay];
+  List<Object> get props => [mode, firstPayDay, secondPayDay, remindOnPayDays];
 }

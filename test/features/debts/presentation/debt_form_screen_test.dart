@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debt_form_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
@@ -77,8 +78,8 @@ void main() {
       expect(find.text('I borrowed'), findsOneWidget);
       expect(
         tester
-            .widget<SegmentedButton<DebtDirection>>(
-              find.byType(SegmentedButton<DebtDirection>),
+            .widget<PillSegmentedButton<DebtDirection>>(
+              find.byType(PillSegmentedButton<DebtDirection>),
             )
             .selected,
         {DebtDirection.lent},
@@ -201,8 +202,8 @@ void main() {
       expect(find.text('31 Oct'), findsOneWidget);
       expect(
         tester
-            .widget<SegmentedButton<DebtDirection>>(
-              find.byType(SegmentedButton<DebtDirection>),
+            .widget<PillSegmentedButton<DebtDirection>>(
+              find.byType(PillSegmentedButton<DebtDirection>),
             )
             .selected,
         {DebtDirection.lent},

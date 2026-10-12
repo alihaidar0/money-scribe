@@ -8,6 +8,7 @@ import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -140,8 +141,7 @@ class _PartSwitch extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<FixedItemPart>(
-        showSelectedIcon: false,
+      child: PillSegmentedButton<FixedItemPart>(
         segments: [
           ButtonSegment(
             value: FixedItemPart.first,

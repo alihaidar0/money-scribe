@@ -41,6 +41,10 @@ class TransactionFormBloc
     on<TransactionCategoryChosen>(_onCategoryChosen, transformer: sequential());
     on<TransactionAccountChosen>(_onAccountChosen, transformer: sequential());
     on<TransactionNoteChanged>(_onNoteChanged, transformer: sequential());
+    on<TransactionAccountsRefreshed>(
+      _onAccountsRefreshed,
+      transformer: restartable(),
+    );
     on<TransactionSaveRequested>(_onSaveRequested, transformer: droppable());
     on<TransactionDeleteRequested>(
       _onDeleteRequested,
@@ -111,6 +115,30 @@ class TransactionFormBloc
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(state.copyWith(status: TransactionFormStatus.failure));
+    }
+  }
+
+  /// Loads the accounts again after they were managed. The chosen account
+  /// stays unless it was deleted, and then the first one takes its place.
+  Future<void> _onAccountsRefreshed(
+    TransactionAccountsRefreshed event,
+    Emitter<TransactionFormState> emit,
+  ) async {
+    try {
+      final accounts = await _accounts.accounts();
+      final chosen = state.values.accountId;
+      final kept = accounts.any((account) => account.id == chosen);
+      emit(
+        state.copyWith(
+          accounts: accounts,
+          values: kept || accounts.isEmpty
+              ? state.values
+              : state.values.copyWith(accountId: accounts.first.id),
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      // The list on screen is still good: keep it.
+      addError(error, stackTrace);
     }
   }
 

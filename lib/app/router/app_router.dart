@@ -3,9 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/demo/demo_panel_screen.dart';
 import 'package:money_scribe/app/shell/app_shell.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
+import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
 import 'package:money_scribe/features/auth/presentation/forgot_password_screen.dart';
@@ -27,9 +30,13 @@ import 'package:money_scribe/features/salary/presentation/salary_compare_screen.
 import 'package:money_scribe/features/salary/presentation/salary_edit_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
+import 'package:money_scribe/features/settings/presentation/csv_import_screen.dart';
+import 'package:money_scribe/features/settings/presentation/pay_schedule_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
 import 'package:money_scribe/features/settings/presentation/settings_screen.dart';
+import 'package:money_scribe/features/transactions/presentation/accounts_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/add_transaction_screen.dart';
+import 'package:money_scribe/features/transactions/presentation/categories_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/edit_transaction_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
@@ -101,6 +108,30 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.account,
+        builder: (context, state) => const AccountScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.changePassword,
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.paySchedule,
+        builder: (context, state) => const PayScheduleScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.categories,
+        builder: (context, state) => const CategoriesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accounts,
+        builder: (context, state) => const AccountsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.importCsv,
+        builder: (context, state) => const CsvImportScreen(),
       ),
       GoRoute(
         path: AppRoutes.addTransaction,
@@ -191,7 +222,15 @@ GoRouter createAppRouter({
             routes: [
               GoRoute(
                 path: AppRoutes.transactions,
-                builder: (context, state) => const TransactionsScreen(),
+                builder: (context, state) => TransactionsScreen(
+                  categoryId: state.uri.queryParameters['category'],
+                  month: YearMonth.tryParse(state.uri.queryParameters['month']),
+                  part: PeriodScope.values
+                      .asNameMap()[state.uri.queryParameters['part']],
+                  // A row of the Reports sends a number that changes with
+                  // every request.
+                  requestId: state.extra is int ? state.extra! as int : null,
+                ),
               ),
             ],
           ),

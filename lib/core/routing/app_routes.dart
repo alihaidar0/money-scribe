@@ -1,4 +1,5 @@
 import 'package:money_scribe/core/dates/year_month.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 
 /// The paths of the app's screens. Kept apart from the router so a screen can
 /// link to another without importing the router, which imports every screen.
@@ -38,6 +39,16 @@ abstract final class AppRoutes {
   static const editDebt = '/debts/:id/edit';
   static const salaryHistory = '/salary/history';
 
+  // The screens of the Settings.
+  static const account = '/settings/account';
+  static const changePassword = '/settings/account/change-password';
+  static const paySchedule = '/settings/pay-schedule';
+  static const categories = '/settings/categories';
+  static const accounts = '/settings/accounts';
+
+  /// Choosing a CSV file, importing it and its result.
+  static const importCsv = '/settings/import';
+
   /// A saved month, opened from the history to be corrected or deleted.
   static const salaryMonth = '/salary/history/:month';
   static const salaryCompare = '/salary/compare';
@@ -69,6 +80,21 @@ abstract final class AppRoutes {
     return month == null ? salary : '$salary?month=${month.param}';
   }
 
+  /// The Transactions tab narrowed to the category [categoryId] in [month],
+  /// or in one [part] of it: where a row of the Reports leads.
+  static String transactionsFor({
+    required String categoryId,
+    required YearMonth month,
+    PeriodScope part = PeriodScope.month,
+  }) {
+    final parameters = {
+      'category': categoryId,
+      'month': month.param,
+      if (part != PeriodScope.month) 'part': part.name,
+    };
+    return Uri(path: transactions, queryParameters: parameters).toString();
+  }
+
   /// The second segment of the Salary screen. Unlike the other secondary
   /// screens it keeps the navigation bar, so it is a page of the Salary tab.
   static const fixedItems = '/salary/fixed-items';
@@ -83,10 +109,11 @@ abstract final class AppRoutes {
 
   /// The screens a signed-in person has no reason to see: they lead to the
   /// app, so opening one of them goes to the Overview instead.
-  static const List<String> signedOutOnly = [
-    welcome,
-    signIn,
-    register,
+  static const List<String> signedOutOnly = [welcome, signIn, register];
+
+  /// The screens of resetting a password with a code. They also serve a
+  /// signed-in person who forgot the current password (Change password).
+  static const List<String> passwordReset = [
     forgotPassword,
     resetCode,
     newPassword,
@@ -99,6 +126,7 @@ abstract final class AppRoutes {
   /// is still open, and the next screen follows from there.
   static const List<String> withoutSignIn = [
     ...signedOutOnly,
+    ...passwordReset,
     verifyEmail,
     appLock,
     pinEntry,

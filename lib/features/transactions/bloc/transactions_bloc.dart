@@ -28,6 +28,12 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
     _changes = _transactions.changes.listen(
       (_) => add(const TransactionsDataChanged()),
     );
+    // A category or an account changed in the Settings: show the new names
+    // without the loading state.
+    _listChanges = [
+      _categories.changes.listen((_) => add(const TransactionsRefreshed())),
+      _accounts.changes.listen((_) => add(const TransactionsRefreshed())),
+    ];
     on<TransactionsStarted>(_onStarted, transformer: droppable());
     on<TransactionsRetried>(_onRetried, transformer: droppable());
     on<TransactionsDataChanged>(_onDataChanged, transformer: restartable());
@@ -43,6 +49,7 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
   final CategoriesRepository _categories;
 
   late final StreamSubscription<void> _changes;
+  late final List<StreamSubscription<void>> _listChanges;
 
   Future<void> _onStarted(
     TransactionsStarted event,
@@ -113,6 +120,9 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
   @override
   Future<void> close() async {
     await _changes.cancel();
+    for (final subscription in _listChanges) {
+      await subscription.cancel();
+    }
     await super.close();
   }
 

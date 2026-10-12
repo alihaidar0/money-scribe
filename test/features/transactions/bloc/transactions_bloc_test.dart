@@ -58,7 +58,7 @@ void main() {
             .having((s) => s.status, 'status', TransactionsStatus.ready)
             .having((s) => s.transactions.length, 'transactions', 4)
             .having((s) => s.accounts.length, 'accounts', 2)
-            .having((s) => s.categories.length, 'categories', 7)
+            .having((s) => s.categories.length, 'categories', 8)
             .having((s) => s.twoPayments, 'twoPayments', isFalse),
       ],
     );

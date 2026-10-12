@@ -23,4 +23,12 @@ class FakeAppLockRepository implements AppLockRepository {
   Future<void> savePin(String pin) async {
     _pin = pin;
   }
+
+  @override
+  Future<bool> isEnabled() async => _pin != null;
+
+  @override
+  Future<void> disable() async {
+    _pin = null;
+  }
 }

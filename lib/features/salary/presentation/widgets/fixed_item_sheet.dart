@@ -3,6 +3,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/fixed_item_dialogs.dart';
 
@@ -150,8 +151,7 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
               onChanged: (text) => setState(() => _amountText = text),
             ),
             const SizedBox(height: 16),
-            SegmentedButton<FixedItemKind>(
-              showSelectedIcon: false,
+            PillSegmentedButton<FixedItemKind>(
               segments: [
                 ButtonSegment(
                   value: FixedItemKind.income,
@@ -176,8 +176,7 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              SegmentedButton<FixedItemPart>(
-                showSelectedIcon: false,
+              PillSegmentedButton<FixedItemPart>(
                 segments: [
                   ButtonSegment(
                     value: FixedItemPart.first,
