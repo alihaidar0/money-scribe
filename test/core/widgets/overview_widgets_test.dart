@@ -33,6 +33,35 @@ BoxDecoration _decorationOf(WidgetTester tester, Finder inside) {
 }
 
 void main() {
+  group('HeroCard with stacked details', () {
+    testWidgets('shows each label above its amount, side by side', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const HeroCard(
+            label: 'Total',
+            amount: '104,400.00 ₽',
+            stackedDetails: true,
+            details: [
+              HeroDetail(label: 'Part 1', amount: '43,500.00 ₽'),
+              HeroDetail(label: 'Part 2', amount: '60,900.00 ₽'),
+            ],
+          ),
+        ),
+      );
+
+      final first = tester.getTopLeft(find.text('Part 1'));
+      final second = tester.getTopLeft(find.text('Part 2'));
+      expect(second.dx, greaterThan(first.dx));
+      expect(second.dy, first.dy);
+      expect(
+        tester.getTopLeft(find.text('43,500.00 ₽')).dy,
+        greaterThan(first.dy),
+      );
+    });
+  });
+
   group('HeroCard', () {
     const card = HeroCard(
       label: 'Balance',

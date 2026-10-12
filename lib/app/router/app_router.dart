@@ -20,6 +20,7 @@ import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
+import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
 import 'package:money_scribe/features/settings/presentation/settings_screen.dart';
@@ -100,8 +101,8 @@ GoRouter createAppRouter({
         builder: (context, state) => const AddTransactionScreen(),
       ),
       GoRoute(
-        path: AppRoutes.fixedItems,
-        builder: (context, state) => const FixedItemsScreen(),
+        path: AppRoutes.salaryHistory,
+        builder: (context, state) => const SalaryHistoryScreen(),
       ),
       GoRoute(
         path: AppRoutes.demo,
@@ -124,6 +125,13 @@ GoRouter createAppRouter({
               GoRoute(
                 path: AppRoutes.salary,
                 builder: (context, state) => const SalaryScreen(),
+                routes: [
+                  // The second segment of the tab, so the navigation bar stays.
+                  GoRoute(
+                    path: 'fixed-items',
+                    builder: (context, state) => const FixedItemsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -553,5 +553,233 @@
   "pushTokenCopyFailed": "Could not copy the push token",
   "@pushTokenCopyFailed": {
     "description": "Message shown when copying the push token to the clipboard failed."
+  },
+  "monthChipLabel": "{month}, choose month",
+  "@monthChipLabel": {
+    "description": "Spoken label of the chip that opens the month picker. The placeholder is the month shown, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseMonthTitle": "Choose month",
+  "@chooseMonthTitle": {
+    "description": "Title of the sheet that chooses a month."
+  },
+  "doneAction": "Done",
+  "@doneAction": {
+    "description": "Button that applies a choice and closes the sheet."
+  },
+  "retryAction": "Retry",
+  "@retryAction": {
+    "description": "Action of a message that repeats what failed."
+  },
+  "couldNotSave": "Couldn''t save. Check your connection.",
+  "@couldNotSave": {
+    "description": "Message shown when saving a form failed."
+  },
+  "salaryHistoryTitle": "Salary history",
+  "@salaryHistoryTitle": {
+    "description": "Title of the screen that lists the saved months, and tooltip of the button that opens it."
+  },
+  "salaryTotalAfterTax": "Total after tax",
+  "@salaryTotalAfterTax": {
+    "description": "Label of the main figure of the Salary screen: the pay of the month after tax."
+  },
+  "salaryResultsTitle": "Results",
+  "@salaryResultsTitle": {
+    "description": "Heading of the calculated lines on the Salary screen."
+  },
+  "salaryInputsTitle": "Inputs",
+  "@salaryInputsTitle": {
+    "description": "Heading of the numbers that are typed on the Salary screen."
+  },
+  "salaryResultsEmpty": "Fill in the inputs to see the results.",
+  "@salaryResultsEmpty": {
+    "description": "Shown instead of the calculated lines while the inputs are not complete."
+  },
+  "foodAllowanceLabel": "Food allowance",
+  "@foodAllowanceLabel": {
+    "description": "Calculated line: the food allowance for the month."
+  },
+  "foodAllowanceNote": "{days, plural, one{{days} day} other{{days} days}} × {rate}",
+  "@foodAllowanceNote": {
+    "description": "Under the food allowance: the working days times the allowance per day. The second placeholder is an amount with its currency.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "extraHoursPayLabel": "Extra-hours pay",
+  "@extraHoursPayLabel": {
+    "description": "Calculated line: the pay for the extra hours."
+  },
+  "extraHoursNote": "{hours, plural, =1{{hours} extra hour} other{{hours} extra hours}}",
+  "@extraHoursNote": {
+    "description": "Under the extra-hours pay: how many extra hours were worked. It can have a fraction, such as 7.5.",
+    "placeholders": {
+      "hours": {
+        "type": "num",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "incomeBeforeTaxLabel": "Income before tax",
+  "@incomeBeforeTaxLabel": {
+    "description": "Calculated line: base salary, food allowance and extra-hours pay together."
+  },
+  "taxLabel": "Tax ({rate}%)",
+  "@taxLabel": {
+    "description": "Calculated line: the tax withheld. The placeholder is the tax rate as a number, such as 13.",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentsPerMonthLabel": "Payments per month",
+  "@paymentsPerMonthLabel": {
+    "description": "Label of the choice between one payment and two payments a month."
+  },
+  "onePaymentOption": "One payment",
+  "@onePaymentOption": {
+    "description": "Option of the payments-per-month choice."
+  },
+  "twoPaymentsOption": "Two payments",
+  "@twoPaymentsOption": {
+    "description": "Option of the payments-per-month choice."
+  },
+  "baseSalaryLabel": "Base salary",
+  "@baseSalaryLabel": {
+    "description": "Label of the field for the salary the tax is taken from."
+  },
+  "workingDaysInMonthLabel": "Working days in the month",
+  "@workingDaysInMonthLabel": {
+    "description": "Label of the field for the working days of the whole month."
+  },
+  "workingDaysFirstHalfLabel": "Working days, 1st–15th",
+  "@workingDaysFirstHalfLabel": {
+    "description": "Label of the field for the working days from the 1st to the 15th, used when the month is paid in two payments."
+  },
+  "foodPerDayLabel": "Food allowance per day",
+  "@foodPerDayLabel": {
+    "description": "Label of the field for the food allowance of one working day."
+  },
+  "workingHoursInMonthLabel": "Working hours in the month",
+  "@workingHoursInMonthLabel": {
+    "description": "Label of the field for the working hours of the whole month."
+  },
+  "extraHoursLabel": "Extra hours",
+  "@extraHoursLabel": {
+    "description": "Label of the field for the extra hours worked."
+  },
+  "taxRateLabel": "Tax rate",
+  "@taxRateLabel": {
+    "description": "Label of the field for the tax rate, in percent."
+  },
+  "firstPaymentPaidOnDay": "Part 1 is paid on day {day}",
+  "@firstPaymentPaidOnDay": {
+    "description": "Note under the inputs: the day of the month the first part is paid.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "secondPaymentPaidOnDay": "Part 2 is paid on day {day} of the next month",
+  "@secondPaymentPaidOnDay": {
+    "description": "Note under the inputs: the day of the next month the second part is paid.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "partPaidOn": "{part} · paid {date}",
+  "@partPaidOn": {
+    "description": "Label of one payment of a month: which part and the day it is paid. The date is a day and a month, such as 20 Oct.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "saveMonthAction": "Save month",
+  "@saveMonthAction": {
+    "description": "Button that saves the salary of a month."
+  },
+  "monthSaved": "Month saved",
+  "@monthSaved": {
+    "description": "Message shown after a month was saved."
+  },
+  "viewHistoryAction": "View history",
+  "@viewHistoryAction": {
+    "description": "Action of a message: opens the saved months."
+  },
+  "fieldInvalidAmount": "Enter a valid amount.",
+  "@fieldInvalidAmount": {
+    "description": "Error under an amount field whose text is not an amount."
+  },
+  "fieldInvalidNumber": "Enter a valid number.",
+  "@fieldInvalidNumber": {
+    "description": "Error under a number field whose text is not a number."
+  },
+  "fieldMustBePositive": "Enter more than 0.",
+  "@fieldMustBePositive": {
+    "description": "Error under a field that must be above zero."
+  },
+  "workingDaysRange": "Enter a number from 1 to 31.",
+  "@workingDaysRange": {
+    "description": "Error under the working-days field."
+  },
+  "firstHalfDaysRange": "Can''t be more than the working days in the month.",
+  "@firstHalfDaysRange": {
+    "description": "Error under the field for the working days of the first half of the month."
+  },
+  "taxRateRange": "Enter a number from 0 to 100.",
+  "@taxRateRange": {
+    "description": "Error under the tax-rate field."
+  },
+  "switchToOneTitle": "Switch to one payment?",
+  "@switchToOneTitle": {
+    "description": "Title of the dialog that asks to merge the two payments of a month."
+  },
+  "switchToOneMessage": "{month} will have a single payment. The two pay amounts become one total, and the fixed items of Part 1 and Part 2 move into one list.",
+  "@switchToOneMessage": {
+    "description": "Text of the dialog that asks to merge the two payments of a month. The placeholder is the month, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "switchToTwoTitle": "Switch to two payments?",
+  "@switchToTwoTitle": {
+    "description": "Title of the dialog that asks to split a month into two payments."
+  },
+  "switchToTwoMessage": "{month} will be split into Part 1 (1st–15th) and Part 2 (16th–end). Its fixed items stay in Part 1 until you move them.",
+  "@switchToTwoMessage": {
+    "description": "Text of the dialog that asks to split a month into two payments. The placeholder is the month, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "switchAction": "Switch",
+  "@switchAction": {
+    "description": "Button that confirms switching between one and two payments."
+  },
+  "salaryLoadFailed": "Couldn''t load this month",
+  "@salaryLoadFailed": {
+    "description": "Title shown on the Salary screen when the month could not be loaded."
   }
 }

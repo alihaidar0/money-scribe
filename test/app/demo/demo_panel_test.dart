@@ -92,6 +92,15 @@ void main() {
       );
     });
 
+    testWidgets('makes the next save fail', (tester) async {
+      await openPanel(tester);
+
+      await tester.tap(find.text('Fails (could not save)'));
+      await tester.pumpAndSettle();
+
+      expect(demo.settings.save, DemoSave.fails);
+    });
+
     testWidgets('shows the current choices', (tester) async {
       await openPanel(tester);
 

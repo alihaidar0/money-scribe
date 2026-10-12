@@ -76,6 +76,14 @@ class DemoPanelScreen extends StatelessWidget {
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(code: value)),
               ),
+              const _Heading('Saving, next attempt'),
+              _Choice<DemoSave>(
+                values: DemoSave.values,
+                selected: settings.save,
+                label: _saveLabel,
+                onSelected: (value) =>
+                    demo.update(demo.settings.copyWith(save: value)),
+              ),
               const _Heading('Go to'),
               _GoTo(
                 label: 'Sign out and show Welcome',
@@ -123,6 +131,11 @@ class DemoPanelScreen extends StatelessWidget {
   static String _paymentModeLabel(PaymentMode value) => switch (value) {
     PaymentMode.onePayment => 'One payment',
     PaymentMode.twoPayments => 'Two payments (parts)',
+  };
+
+  static String _saveLabel(DemoSave value) => switch (value) {
+    DemoSave.accepted => 'Works',
+    DemoSave.fails => 'Fails (could not save)',
   };
 
   static String _signInLabel(DemoSignIn value) => switch (value) {

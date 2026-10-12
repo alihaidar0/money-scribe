@@ -14,12 +14,7 @@ class FakeOverviewRepository implements OverviewRepository {
   final DemoController _demo;
 
   @override
-  Stream<void> get changes {
-    return _demo.changes
-        .map((settings) => (settings.scenario, settings.paymentMode))
-        .distinct()
-        .map((_) {});
-  }
+  Stream<void> get changes => _demo.dataChanges;
 
   @override
   Future<MonthOverview?> month(YearMonth month) async {

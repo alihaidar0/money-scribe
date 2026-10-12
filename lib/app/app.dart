@@ -20,6 +20,7 @@ import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/domain/overview_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
@@ -36,6 +37,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.appLockRepository,
     required this.payScheduleRepository,
     required this.overviewRepository,
+    required this.salaryRepository,
     required this.demo,
     required this.environment,
     this.textClipboard = const SystemTextClipboard(),
@@ -50,6 +52,7 @@ class MoneyScribeApp extends StatefulWidget {
   final AppLockRepository appLockRepository;
   final PayScheduleRepository payScheduleRepository;
   final OverviewRepository overviewRepository;
+  final SalaryRepository salaryRepository;
 
   /// What the fake data pretends; changed by the demo panel.
   final DemoController demo;
@@ -91,6 +94,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.appLockRepository),
           RepositoryProvider.value(value: widget.payScheduleRepository),
           RepositoryProvider.value(value: widget.overviewRepository),
+          RepositoryProvider.value(value: widget.salaryRepository),
           RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),

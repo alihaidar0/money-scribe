@@ -17,6 +17,9 @@ enum DemoRegistration { accepted, rejected }
 /// What a code typed on the verification screens does.
 enum DemoCode { accepted, wrong, expired }
 
+/// What the next attempt to save something does.
+enum DemoSave { accepted, fails }
+
 /// The state of the demo panel. Fake data sources read it on every call, so a
 /// change applies to the next thing the person does.
 final class DemoSettings extends Equatable {
@@ -25,6 +28,7 @@ final class DemoSettings extends Equatable {
     this.signIn = DemoSignIn.accepted,
     this.registration = DemoRegistration.accepted,
     this.code = DemoCode.accepted,
+    this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
   });
 
@@ -32,6 +36,7 @@ final class DemoSettings extends Equatable {
   final DemoSignIn signIn;
   final DemoRegistration registration;
   final DemoCode code;
+  final DemoSave save;
 
   /// How the fake account is paid: one payment or two a month.
   final PaymentMode paymentMode;
@@ -41,6 +46,7 @@ final class DemoSettings extends Equatable {
     DemoSignIn? signIn,
     DemoRegistration? registration,
     DemoCode? code,
+    DemoSave? save,
     PaymentMode? paymentMode,
   }) {
     return DemoSettings(
@@ -48,12 +54,20 @@ final class DemoSettings extends Equatable {
       signIn: signIn ?? this.signIn,
       registration: registration ?? this.registration,
       code: code ?? this.code,
+      save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
     );
   }
 
   @override
-  List<Object> get props => [scenario, signIn, registration, code, paymentMode];
+  List<Object> get props => [
+    scenario,
+    signIn,
+    registration,
+    code,
+    save,
+    paymentMode,
+  ];
 }
 
 /// Holds the [DemoSettings] and tells whoever is listening when they change.
@@ -73,6 +87,22 @@ class DemoController {
   DemoSettings get settings => _settings;
 
   Stream<DemoSettings> get changes => _changes.stream;
+
+  /// Emits when what the fake data answers with changed: the scenario or the
+  /// payment mode. Screens that show data load it again then; the other
+  /// switches only apply to the next thing the person does. Every call returns
+  /// a stream of its own, to be listened to once.
+  Stream<void> get dataChanges {
+    var previous = (_settings.scenario, _settings.paymentMode);
+    return _changes.stream
+        .where((settings) {
+          final current = (settings.scenario, settings.paymentMode);
+          if (current == previous) return false;
+          previous = current;
+          return true;
+        })
+        .map((_) {});
+  }
 
   void update(DemoSettings settings) {
     if (settings == _settings) return;
@@ -96,6 +126,13 @@ class DemoController {
       case DemoScenario.normal || DemoScenario.loading || DemoScenario.empty:
         break;
     }
+  }
+
+  /// Like [simulateRequest], for a request that saves something: it also
+  /// fails when the panel says the next save does.
+  Future<void> simulateSave() async {
+    await simulateRequest();
+    if (_settings.save == DemoSave.fails) throw const NoConnectionException();
   }
 
   Future<void> dispose() => _changes.close();

@@ -249,17 +249,17 @@ void main() {
       };
 
       for (final MapEntry(key: row, value: screen) in destinations.entries) {
-        await tester.tap(
-          find.descendant(of: find.byType(ListView), matching: find.text(row)),
+        final finder = find.descendant(
+          of: find.byType(ListView),
+          matching: find.text(row),
         );
+        await tester.ensureVisible(finder);
+        await tester.pumpAndSettle();
+        await tester.tap(finder);
         await tester.pumpAndSettle();
         expect(find.byType(screen), findsOneWidget, reason: row);
 
-        if (screen == FixedItemsScreen) {
-          await tester.tap(find.byType(BackButton));
-        } else {
-          await tester.tap(find.text('Overview').last);
-        }
+        await tester.tap(find.text('Overview').last);
         await tester.pumpAndSettle();
         expect(find.byType(OverviewScreen), findsOneWidget, reason: row);
       }

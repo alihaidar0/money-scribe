@@ -6,6 +6,7 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
@@ -68,6 +69,28 @@ Future<void> _tapKeys(WidgetTester tester, List<int> digits) async {
     await tester.pumpAndSettle();
   }
 }
+
+/// Taps the first (0) or second (1) segment of the payments choice on the
+/// Salary screen, scrolling to it first.
+Future<void> _tapPaymentSegment(WidgetTester tester, int index) async {
+  final segment = find
+      .descendant(
+        of: find.byType(SegmentedButton<PaymentMode>),
+        matching: find.byType(Text),
+      )
+      .at(index);
+  await tester.ensureVisible(segment);
+  await tester.pumpAndSettle();
+  await tester.tap(segment);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapSaveMonth(WidgetTester tester) async {
+  await tester.tap(find.byType(FilledButton).last);
+  await tester.pumpAndSettle();
+}
+
+const _tallPhone = Size(412, 1800);
 
 final _scenes = <_Scene>[
   const _Scene('auth-1-welcome', AppRoutes.welcome),
@@ -281,7 +304,130 @@ final _scenes = <_Scene>[
     size: Size(1280, 800),
     setup: _useTwoPayments,
   ),
-  const _Scene('tab-salary', AppRoutes.salary, signedIn: true),
+  const _Scene('sal-1-salary', AppRoutes.salary, signedIn: true),
+  const _Scene(
+    'sal-1-salary-all-inputs',
+    AppRoutes.salary,
+    signedIn: true,
+    size: _tallPhone,
+  ),
+  _Scene(
+    'sal-1-field-errors',
+    AppRoutes.salary,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '0');
+      await tester.enterText(fields.at(1), '40');
+      await tester.enterText(fields.at(5), '120');
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'sal-2-two-payments',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  const _Scene(
+    'sal-2-two-payments-all-inputs',
+    AppRoutes.salary,
+    signedIn: true,
+    size: _tallPhone,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'sal-3-month-picker',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(MonthChip));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-4-switch-to-one',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapPaymentSegment(tester, 0);
+    },
+  ),
+  _Scene(
+    'sal-5-switch-to-two',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) => _tapPaymentSegment(tester, 1),
+  ),
+  _Scene(
+    'sal-10-month-saved',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) => _tapSaveMonth(tester),
+  ),
+  _Scene(
+    'err-1-could-not-save',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(demo.settings.copyWith(save: DemoSave.fails));
+      await _tapSaveMonth(tester);
+    },
+  ),
+  _Scene(
+    'sal-11-new-empty-month',
+    AppRoutes.salary,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'sal-11-new-empty-month-two-payments',
+    AppRoutes.salary,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      demo.update(
+        demo.settings.copyWith(
+          scenario: DemoScenario.empty,
+          paymentMode: PaymentMode.twoPayments,
+        ),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-12-loading',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'sal-13-error',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'sal-14-no-connection',
+    AppRoutes.salary,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  const _Scene(
+    'sal-wide-two-payments',
+    AppRoutes.salary,
+    signedIn: true,
+    size: Size(1280, 800),
+    setup: _useTwoPayments,
+  ),
+  const _Scene('fix-1-fixed-items', AppRoutes.fixedItems, signedIn: true),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),
 ];

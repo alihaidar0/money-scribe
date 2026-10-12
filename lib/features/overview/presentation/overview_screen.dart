@@ -183,14 +183,14 @@ class _OverviewContent extends StatelessWidget {
         icon: Icons.autorenew,
         title: l10n.overviewRecurringIncome,
         amount: figures.recurringIncome,
-        onTap: () => context.push(AppRoutes.fixedItems),
+        onTap: () => context.go(AppRoutes.fixedItems),
       ),
       const SizedBox(height: 8),
       AmountRow(
         icon: Icons.home_outlined,
         title: l10n.overviewFixedCosts,
         amount: figures.fixedCosts,
-        onTap: () => context.push(AppRoutes.fixedItems),
+        onTap: () => context.go(AppRoutes.fixedItems),
       ),
       const SizedBox(height: 8),
       AmountRow(
