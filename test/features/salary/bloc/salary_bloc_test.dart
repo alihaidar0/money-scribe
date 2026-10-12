@@ -464,6 +464,139 @@ void main() {
     );
   });
 
+  group('SalaryStarted with a month', () {
+    blocTest<SalaryBloc, SalaryState>(
+      'loads that month instead of the month of today',
+      build: build,
+      act: (bloc) => bloc.add(const SalaryStarted(month: september)),
+      verify: (bloc) {
+        expect(bloc.state.month, september);
+        expect(bloc.state.isSaved, isTrue);
+        expect(bloc.state.result!.totalAfterTax, rub(100050));
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'starts an empty month for one that was not saved',
+      build: build,
+      act: (bloc) => bloc.add(const SalaryStarted(month: YearMonth(2025, 1))),
+      verify: (bloc) {
+        expect(bloc.state.month, const YearMonth(2025, 1));
+        expect(bloc.state.isSaved, isFalse);
+        expect(bloc.state.form.baseSalary, isEmpty);
+      },
+    );
+  });
+
+  group('SalaryDeleteRequested', () {
+    blocTest<SalaryBloc, SalaryState>(
+      'deletes the saved month',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) async {
+        expect(bloc.state.deleteStatus, SalaryDeleteStatus.deleted);
+        expect(await repository.month(october), isNull);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'passes through deleting',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      skip: 2,
+      expect: () => [
+        isA<SalaryState>().having(
+          (s) => s.deleteStatus,
+          'deleteStatus',
+          SalaryDeleteStatus.deleting,
+        ),
+        isA<SalaryState>().having(
+          (s) => s.deleteStatus,
+          'deleteStatus',
+          SalaryDeleteStatus.deleted,
+        ),
+      ],
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'keeps the month when deleting fails',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        demo.update(demo.settings.copyWith(save: DemoSave.fails));
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) async {
+        expect(bloc.state.deleteStatus, SalaryDeleteStatus.failed);
+        expect(bloc.state.isSaved, isTrue);
+        expect(await repository.month(october), isNotNull);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'can be tried again after it failed',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        demo.update(demo.settings.copyWith(save: DemoSave.fails));
+        bloc.add(const SalaryDeleteRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.deleteStatus == SalaryDeleteStatus.failed,
+        );
+        demo.update(demo.settings.copyWith(save: DemoSave.accepted));
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) =>
+          expect(bloc.state.deleteStatus, SalaryDeleteStatus.deleted),
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'does nothing for a month that was not saved',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.empty)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) =>
+          expect(bloc.state.deleteStatus, SalaryDeleteStatus.idle),
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'loading another month forgets a finished deletion',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc.add(const SalaryDeleteRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.deleteStatus == SalaryDeleteStatus.deleted,
+        );
+        bloc.add(const SalaryMonthSelected(september));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) =>
+          expect(bloc.state.deleteStatus, SalaryDeleteStatus.idle),
+    );
+  });
+
   group('the demo panel', () {
     blocTest<SalaryBloc, SalaryState>(
       'switching to an error loads the month again and fails',

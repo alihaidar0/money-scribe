@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/demo/demo_panel_screen.dart';
 import 'package:money_scribe/app/shell/app_shell.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
@@ -20,6 +21,8 @@ import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
+import 'package:money_scribe/features/salary/presentation/salary_compare_screen.dart';
+import 'package:money_scribe/features/salary/presentation/salary_edit_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
@@ -103,6 +106,23 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.salaryHistory,
         builder: (context, state) => const SalaryHistoryScreen(),
+        routes: [
+          GoRoute(
+            path: ':month',
+            // An address with a month that does not exist shows the history.
+            redirect: (context, state) =>
+                YearMonth.tryParse(state.pathParameters['month']) == null
+                ? AppRoutes.salaryHistory
+                : null,
+            builder: (context, state) => SalaryEditScreen(
+              month: YearMonth.tryParse(state.pathParameters['month'])!,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.salaryCompare,
+        builder: (context, state) => const SalaryCompareScreen(),
       ),
       GoRoute(
         path: AppRoutes.demo,
@@ -124,7 +144,11 @@ GoRouter createAppRouter({
             routes: [
               GoRoute(
                 path: AppRoutes.salary,
-                builder: (context, state) => const SalaryScreen(),
+                builder: (context, state) => SalaryScreen(
+                  month: YearMonth.tryParse(state.uri.queryParameters['month']),
+                  // "New month" sends a number that changes with every request.
+                  requestId: state.extra is int ? state.extra! as int : null,
+                ),
                 routes: [
                   // The second segment of the tab, so the navigation bar stays.
                   GoRoute(

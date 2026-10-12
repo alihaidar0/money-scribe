@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
@@ -284,7 +285,7 @@ void main() {
   });
 
   group('saving (SAL-10)', () {
-    testWidgets('says the month was saved and offers the history', (
+    testWidgets('says the month was saved, in green, with no action', (
       tester,
     ) async {
       await _pumpSalary(tester);
@@ -293,11 +294,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Month saved'), findsOneWidget);
+      expect(find.byType(SnackBarAction), findsNothing);
+      expect(find.text('View history'), findsNothing);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      final income = tester
+          .widget<MaterialApp>(find.byType(MaterialApp))
+          .theme!
+          .extension<MoneyColors>()!
+          .income;
+      expect(snackBar.backgroundColor, income.container);
+      expect(snackBar.duration, const Duration(seconds: 2));
+    });
 
-      await tester.tap(find.text('View history'));
+    testWidgets('the message goes away after two seconds', (tester) async {
+      await _pumpSalary(tester);
+
+      await tester.tap(_save);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Month saved'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 2500));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SalaryHistoryScreen), findsOneWidget);
+      expect(find.text('Month saved'), findsNothing);
     });
 
     testWidgets('shows a spinner while the server answers', (tester) async {

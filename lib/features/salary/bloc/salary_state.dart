@@ -28,6 +28,20 @@ enum SalarySaveStatus {
   failed,
 }
 
+enum SalaryDeleteStatus {
+  /// Nothing to report.
+  idle,
+
+  /// The month is being deleted on the server.
+  deleting,
+
+  /// The month was deleted.
+  deleted,
+
+  /// The month could not be deleted; it is still saved.
+  failed,
+}
+
 final class SalaryState extends Equatable {
   const new({
     required this.month,
@@ -36,6 +50,7 @@ final class SalaryState extends Equatable {
     this.baseline = const SalaryForm(),
     this.isSaved = false,
     this.saveStatus = SalarySaveStatus.idle,
+    this.deleteStatus = SalaryDeleteStatus.idle,
     this.formVersion = 0,
   });
 
@@ -55,6 +70,8 @@ final class SalaryState extends Equatable {
   final bool isSaved;
 
   final SalarySaveStatus saveStatus;
+
+  final SalaryDeleteStatus deleteStatus;
 
   /// Changes whenever the form is replaced as a whole (a month was loaded), so
   /// the screen starts its text fields again from [form]. Typing does not
@@ -89,6 +106,7 @@ final class SalaryState extends Equatable {
     SalaryForm? baseline,
     bool? isSaved,
     SalarySaveStatus? saveStatus,
+    SalaryDeleteStatus? deleteStatus,
     int? formVersion,
   }) {
     return SalaryState(
@@ -98,6 +116,7 @@ final class SalaryState extends Equatable {
       baseline: baseline ?? this.baseline,
       isSaved: isSaved ?? this.isSaved,
       saveStatus: saveStatus ?? this.saveStatus,
+      deleteStatus: deleteStatus ?? this.deleteStatus,
       formVersion: formVersion ?? this.formVersion,
     );
   }
@@ -110,6 +129,7 @@ final class SalaryState extends Equatable {
     baseline,
     isSaved,
     saveStatus,
+    deleteStatus,
     formVersion,
   ];
 }

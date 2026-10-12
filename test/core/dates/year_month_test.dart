@@ -42,6 +42,41 @@ void main() {
     });
   });
 
+  group('YearMonth in an address', () {
+    test('is written as year and month', () {
+      expect(const YearMonth(2026, 9).param, '2026-09');
+      expect(const YearMonth(2026, 12).param, '2026-12');
+      expect(const YearMonth(987, 1).param, '0987-01');
+    });
+
+    test('reads back what it wrote', () {
+      for (final month in [
+        const YearMonth(2026, 1),
+        const YearMonth(2026, 10),
+        const YearMonth(1999, 12),
+      ]) {
+        expect(YearMonth.tryParse(month.param), month);
+      }
+    });
+
+    test('refuses anything else', () {
+      for (final text in [
+        null,
+        '',
+        '2026',
+        '2026-13',
+        '2026-00',
+        '2026-9',
+        '26-09',
+        '2026/09',
+        'abcd-ef',
+        ' 2026-09',
+      ]) {
+        expect(YearMonth.tryParse(text), isNull, reason: '$text');
+      }
+    });
+  });
+
   group('MonthFormatter', () {
     setUpAll(initializeDateFormatting);
 

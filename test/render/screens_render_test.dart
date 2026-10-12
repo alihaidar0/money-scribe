@@ -427,6 +427,88 @@ final _scenes = <_Scene>[
     size: Size(1280, 800),
     setup: _useTwoPayments,
   ),
+  const _Scene('sal-6-history', AppRoutes.salaryHistory, signedIn: true),
+  const _Scene(
+    'sal-7-history-two-payments',
+    AppRoutes.salaryHistory,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'sal-15-history-empty',
+    AppRoutes.salaryHistory,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'sal-6-history-loading',
+    AppRoutes.salaryHistory,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'sal-6-history-no-connection',
+    AppRoutes.salaryHistory,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  const _Scene(
+    'sal-6-history-wide',
+    AppRoutes.salaryHistory,
+    signedIn: true,
+    size: Size(1280, 800),
+  ),
+  const _Scene(
+    'sal-1b-edit-month',
+    '/salary/history/2026-09',
+    signedIn: true,
+    size: _tallPhone,
+  ),
+  const _Scene(
+    'sal-1b-edit-month-two-payments',
+    '/salary/history/2026-09',
+    signedIn: true,
+    size: _tallPhone,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'sal-1b-edit-month-changed',
+    '/salary/history/2026-09',
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField).at(4), '6');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-1b-discard-changes',
+    '/salary/history/2026-09',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField).at(4), '6');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-1c-delete-month',
+    '/salary/history/2026-09',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byWidgetPredicate((widget) => widget is PopupMenuItem).first,
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
   const _Scene('fix-1-fixed-items', AppRoutes.fixedItems, signedIn: true),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),

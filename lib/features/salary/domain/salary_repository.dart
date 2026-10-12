@@ -12,9 +12,16 @@ abstract interface class SalaryRepository {
   /// The saved salary of [month], or `null` when none was saved yet.
   Future<SalaryMonth?> month(YearMonth month);
 
+  /// Every saved month, the newest first.
+  Future<List<SalaryMonth>> savedMonths();
+
   /// How a month that was not saved yet starts.
   Future<SalaryDefaults> defaults();
 
   /// Saves [month], replacing the saved one of the same month.
   Future<void> save(SalaryMonth month);
+
+  /// Deletes the saved salary of [month], and with it the fixed items of the
+  /// month. Deleting a month that is not saved does nothing.
+  Future<void> delete(YearMonth month);
 }

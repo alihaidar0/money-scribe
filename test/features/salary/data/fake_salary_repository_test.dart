@@ -149,6 +149,101 @@ void main() {
     });
   });
 
+  group('savedMonths', () {
+    test('lists the seed, the newest first', () async {
+      final months = await repository.savedMonths();
+
+      expect(months.map((month) => month.month), SalarySeed.months);
+    });
+
+    test('is empty for an empty account', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+
+      expect(await repository.savedMonths(), isEmpty);
+    });
+
+    test('includes what was saved, in its place', () async {
+      final older = SalarySeed.month(october, PaymentMode.onePayment)!;
+      await repository.save(
+        SalaryMonth(
+          month: const YearMonth(2026, 1),
+          inputs: older.inputs,
+          firstPayDay: 20,
+          secondPayDay: 5,
+        ),
+      );
+
+      final months = await repository.savedMonths();
+
+      expect(months.map((month) => month.month), [
+        october,
+        september,
+        const YearMonth(2026, 8),
+        const YearMonth(2026, 1),
+      ]);
+    });
+
+    test('lists a month saved in an empty account', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+      await repository.save(SalarySeed.month(october, PaymentMode.onePayment)!);
+
+      expect((await repository.savedMonths()).map((m) => m.month), [october]);
+    });
+
+    test('fails the way the demo panel says', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+
+      await expectLater(
+        repository.savedMonths(),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+  });
+
+  group('delete', () {
+    test('removes a seeded month', () async {
+      await repository.delete(september);
+
+      expect(await repository.month(september), isNull);
+      expect((await repository.savedMonths()).map((month) => month.month), [
+        october,
+        const YearMonth(2026, 8),
+      ]);
+    });
+
+    test('removes a month that was saved', () async {
+      await repository.save(SalarySeed.month(october, PaymentMode.onePayment)!);
+      await repository.delete(october);
+
+      expect(await repository.month(october), isNull);
+    });
+
+    test('a month saved again after deleting is back', () async {
+      await repository.delete(october);
+      final month = SalarySeed.month(october, PaymentMode.onePayment)!;
+
+      await repository.save(month);
+
+      expect(await repository.month(october), month);
+    });
+
+    test('deleting a month that is not saved does nothing', () async {
+      await repository.delete(const YearMonth(2020, 1));
+
+      expect(await repository.savedMonths(), hasLength(3));
+    });
+
+    test('fails when the demo panel says so, and keeps the month', () async {
+      demo.update(const DemoSettings(save: DemoSave.fails));
+
+      await expectLater(
+        repository.delete(october),
+        throwsA(isA<NoConnectionException>()),
+      );
+      expect(await repository.month(october), isNotNull);
+    });
+  });
+
   group('changes', () {
     test('emits when the scenario or the payment mode changes', () async {
       final emitted = <void>[];

@@ -7,9 +7,15 @@ sealed class SalaryEvent extends Equatable {
   List<Object> get props => [];
 }
 
-/// The Salary screen opened: load the month of today.
+/// The Salary screen opened: load [month], or the month of today when none is
+/// given.
 final class SalaryStarted extends SalaryEvent {
-  const new();
+  const new({this.month});
+
+  final YearMonth? month;
+
+  @override
+  List<Object> get props => [?month];
 }
 
 /// The user chose another month in the month picker.
@@ -48,6 +54,11 @@ final class SalaryPaymentModeSelected extends SalaryEvent {
 
 /// The user pressed Save month.
 final class SalarySaveRequested extends SalaryEvent {
+  const new();
+}
+
+/// The user confirmed deleting the month.
+final class SalaryDeleteRequested extends SalaryEvent {
   const new();
 }
 
