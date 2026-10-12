@@ -8,6 +8,7 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
@@ -15,6 +16,9 @@ import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_reposito
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
 
 import 'fake_clock.dart';
 import 'fake_language_repository.dart';
@@ -50,6 +54,10 @@ Widget buildApp({
     overviewRepository: FakeOverviewRepository(demo: demoController),
     salaryRepository: FakeSalaryRepository(demo: demoController),
     fixedItemsRepository: FakeFixedItemsRepository(demo: demoController),
+    transactionsRepository: FakeTransactionsRepository(demo: demoController),
+    accountsRepository: FakeAccountsRepository(demo: demoController),
+    categoriesRepository: FakeCategoriesRepository(demo: demoController),
+    debtsRepository: FakeDebtsRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),
     ticker: ticker ?? FakeTicker(),

@@ -249,9 +249,10 @@ class _Actions extends StatelessWidget {
   Future<void> _addRepayment(BuildContext context) async {
     final debt = await showDebtChoiceSheet(context);
     if (debt == null || !context.mounted) return;
-    // The repayment form is not built yet.
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.comingSoon)));
+    // The debt opens with the sheet that adds the repayment over it.
+    await context.push<void>(
+      AppRoutes.debtDetailsPath(debt.id, addRepayment: true),
+    );
   }
 }
 

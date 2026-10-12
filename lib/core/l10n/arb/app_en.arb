@@ -1008,5 +1008,394 @@
         "type": "String"
       }
     }
+  },
+  "accountLabel": "Account",
+  "@accountLabel": {
+    "description": "Label of the choice of account of a transaction, the title of the account sheet and the Account filter."
+  },
+  "addADebtAction": "Add a debt",
+  "@addADebtAction": {
+    "description": "Button of the empty Debts screen that opens the form for a new debt."
+  },
+  "addAccountAction": "Add account",
+  "@addAccountAction": {
+    "description": "Button of the account sheet that adds an account."
+  },
+  "addAction": "Add",
+  "@addAction": {
+    "description": "Label of the button that adds a transaction."
+  },
+  "addDebtAction": "Add debt",
+  "@addDebtAction": {
+    "description": "Label of the button of the Debts screen that adds a debt."
+  },
+  "addDebtTitle": "Add debt",
+  "@addDebtTitle": {
+    "description": "Title of the form that adds a debt."
+  },
+  "addFirstPurchaseAction": "Add your first purchase",
+  "@addFirstPurchaseAction": {
+    "description": "Button of the empty Transactions screen that opens the form for a new transaction."
+  },
+  "addRepaymentAction": "Add repayment",
+  "@addRepaymentAction": {
+    "description": "Button of the debt details that adds a repayment."
+  },
+  "addRepaymentTitle": "Add repayment",
+  "@addRepaymentTitle": {
+    "description": "Title of the sheet that adds a repayment."
+  },
+  "amountInvalid": "Enter an amount above zero.",
+  "@amountInvalid": {
+    "description": "Error under an amount field that holds zero, or something that is not a number."
+  },
+  "amountLabel": "Amount",
+  "@amountLabel": {
+    "description": "Label of an amount field."
+  },
+  "applyAction": "Apply",
+  "@applyAction": {
+    "description": "Button of the Filters sheet that applies the choices."
+  },
+  "categoryLabel": "Category",
+  "@categoryLabel": {
+    "description": "Label of the category of a transaction and the Category filter."
+  },
+  "clearDateAction": "Clear date",
+  "@clearDateAction": {
+    "description": "Tooltip of the button that takes the day out of a date field."
+  },
+  "clearFiltersAction": "Clear filters",
+  "@clearFiltersAction": {
+    "description": "Button of the empty search result that clears the search and the filters."
+  },
+  "dateLabel": "Date",
+  "@dateLabel": {
+    "description": "Label of the day of a transaction or a repayment."
+  },
+  "datePartFirst": "Part 1 · 1st–15th",
+  "@datePartFirst": {
+    "description": "Caption under the day of a transaction in the first part of a month paid in two payments."
+  },
+  "datePartSecond": "Part 2 · 16th–end",
+  "@datePartSecond": {
+    "description": "Caption under the day of a transaction in the second part of a month paid in two payments."
+  },
+  "debtAmountBelowRepaid": "The amount can''t be less than the {repaid} already repaid.",
+  "@debtAmountBelowRepaid": {
+    "description": "Error under the amount of a debt that is lower than what was repaid. The placeholder is what was repaid.",
+    "placeholders": {
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtBorrowedHeadline": "Borrowed {amount}",
+  "@debtBorrowedHeadline": {
+    "description": "Line under the person of the debt details for money borrowed. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtBorrowedSummary": "Borrowed {amount} · repaid {repaid}",
+  "@debtBorrowedSummary": {
+    "description": "Line of a borrowed debt card: what was borrowed and what was repaid.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtDetailsTitle": "Debt details",
+  "@debtDetailsTitle": {
+    "description": "Title of the screen of one debt."
+  },
+  "debtDue": "Due {date}",
+  "@debtDue": {
+    "description": "The day a debt is due. The placeholder is a day such as 31 Oct.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "debtLentHeadline": "Lent {amount}",
+  "@debtLentHeadline": {
+    "description": "Line under the person of the debt details for money lent. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtLentSummary": "Lent {amount} · repaid {repaid}",
+  "@debtLentSummary": {
+    "description": "Line of a lent debt card: what was lent and what was repaid.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtProgress": "{repaid} of {total} repaid",
+  "@debtProgress": {
+    "description": "How much of a debt was repaid, spoken with the progress bar.",
+    "placeholders": {
+      "repaid": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "debtRemainingLabel": "Remaining",
+  "@debtRemainingLabel": {
+    "description": "Label over what is still to be repaid of a debt."
+  },
+  "debtsEmptyTitle": "No debts yet",
+  "@debtsEmptyTitle": {
+    "description": "Title of the Debts screen when there is no debt."
+  },
+  "debtsLoadFailed": "Couldn''t load debts",
+  "@debtsLoadFailed": {
+    "description": "Title of the Debts screen when loading failed."
+  },
+  "deleteDebtMessage": "The debt with {person} and its repayments will be permanently deleted from your account. This cannot be undone.",
+  "@deleteDebtMessage": {
+    "description": "Text of the question that asks to confirm deleting a debt. The placeholder is the person.",
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDebtTitle": "Delete this debt?",
+  "@deleteDebtTitle": {
+    "description": "Title of the question that asks to confirm deleting a debt."
+  },
+  "deleteRepaymentMessage": "The repayment of {amount} will be permanently deleted from your account. This cannot be undone.",
+  "@deleteRepaymentMessage": {
+    "description": "Text of the question that asks to confirm deleting a repayment. The placeholder is its amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRepaymentTitle": "Delete repayment?",
+  "@deleteRepaymentTitle": {
+    "description": "Title of the question that asks to confirm deleting a repayment."
+  },
+  "deleteTransactionMessage": "This transaction will be permanently deleted from your account. This cannot be undone.",
+  "@deleteTransactionMessage": {
+    "description": "Text of the question that asks to confirm deleting a transaction."
+  },
+  "deleteTransactionTitle": "Delete transaction?",
+  "@deleteTransactionTitle": {
+    "description": "Title of the question that asks to confirm deleting a transaction."
+  },
+  "deleteTransactionTooltip": "Delete transaction",
+  "@deleteTransactionTooltip": {
+    "description": "Tooltip of the button that deletes a transaction."
+  },
+  "discardChangesGenericMessage": "Your changes have not been saved.",
+  "@discardChangesGenericMessage": {
+    "description": "Text of the question that asks whether to leave a form with unsaved changes."
+  },
+  "dueBeforeStartError": "The due date can''t be before the start date.",
+  "@dueBeforeStartError": {
+    "description": "Error under the due day of a debt that is before its start day."
+  },
+  "dueDateLabel": "Due date",
+  "@dueDateLabel": {
+    "description": "Label of the day a debt is due, in the debt details."
+  },
+  "dueDateOptionalLabel": "Due date (optional)",
+  "@dueDateOptionalLabel": {
+    "description": "Label of the field with the day a debt is due, which can be left empty."
+  },
+  "editAction": "Edit",
+  "@editAction": {
+    "description": "Menu item that opens the form to change something."
+  },
+  "editDebtTitle": "Edit debt",
+  "@editDebtTitle": {
+    "description": "Title of the form that changes a debt."
+  },
+  "editRepaymentTitle": "Edit repayment",
+  "@editRepaymentTitle": {
+    "description": "Title of the sheet that changes a repayment."
+  },
+  "editTransactionTitle": "Edit transaction",
+  "@editTransactionTitle": {
+    "description": "Title of the form that changes a transaction."
+  },
+  "filterAll": "All",
+  "@filterAll": {
+    "description": "Segment of the Debts screen that shows every debt."
+  },
+  "filterChipCount": "{label} · {count}",
+  "@filterChipCount": {
+    "description": "Label of a filter chip with how many choices it holds, such as Category · 2.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterDateRange": "Date range",
+  "@filterDateRange": {
+    "description": "Label of the Date range filter."
+  },
+  "filterPeriod": "Period",
+  "@filterPeriod": {
+    "description": "Label of the choice of the part of the month in the Filters sheet."
+  },
+  "filtersTitle": "Filters",
+  "@filtersTitle": {
+    "description": "Title of the Filters sheet of the Transactions."
+  },
+  "fromLabel": "From",
+  "@fromLabel": {
+    "description": "Label of the first day of a date range."
+  },
+  "iBorrowed": "I borrowed",
+  "@iBorrowed": {
+    "description": "Segment of the debt form for money the person borrowed."
+  },
+  "iLent": "I lent",
+  "@iLent": {
+    "description": "Segment of the debt form for money the person lent."
+  },
+  "manageAccountsAction": "Manage accounts",
+  "@manageAccountsAction": {
+    "description": "Button of the account sheet that opens the accounts."
+  },
+  "noDebtsOfKind": "No debts in this list.",
+  "@noDebtsOfKind": {
+    "description": "Shown when the Lent or Borrowed segment has no debt."
+  },
+  "noRepayments": "No repayments yet.",
+  "@noRepayments": {
+    "description": "Shown in the debt details when nothing was repaid."
+  },
+  "noResultsMessage": "Try another word or clear the filters.",
+  "@noResultsMessage": {
+    "description": "Sentence under the title of the empty search result."
+  },
+  "noResultsTitle": "No results",
+  "@noResultsTitle": {
+    "description": "Title shown when no transaction matches the search or filters."
+  },
+  "noteLabel": "Note",
+  "@noteLabel": {
+    "description": "Label of a note field."
+  },
+  "partRangeLabel": "{part} · {from}–{to} {month}",
+  "@partRangeLabel": {
+    "description": "Header of a part of a month in the list of transactions, such as Part 2 · 16th–31st Oct.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "personLabel": "Person",
+  "@personLabel": {
+    "description": "Label of the field with the person of a debt."
+  },
+  "repaymentRow": "{amount} · {date}",
+  "@repaymentRow": {
+    "description": "A repayment in the list of the debt details: its amount and day.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repaymentTooHigh": "More than the {remaining} still to be repaid.",
+  "@repaymentTooHigh": {
+    "description": "Error under the amount of a repayment that is more than what is left of the debt.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "repaymentsTitle": "Repayments",
+  "@repaymentsTitle": {
+    "description": "Heading of the list of repayments in the debt details."
+  },
+  "resetAction": "Reset",
+  "@resetAction": {
+    "description": "Button of the Filters sheet that clears the choices."
+  },
+  "startDateLabel": "Start date",
+  "@startDateLabel": {
+    "description": "Label of the day a debt starts."
+  },
+  "summaryOwedToYou": "Owed to you",
+  "@summaryOwedToYou": {
+    "description": "Label of what the person is still to be repaid, on the Debts screen."
+  },
+  "summaryYouOwe": "You owe",
+  "@summaryYouOwe": {
+    "description": "Label of what the person still has to repay, on the Debts screen."
+  },
+  "toLabel": "To",
+  "@toLabel": {
+    "description": "Label of the last day of a date range."
+  },
+  "todayLabel": "Today",
+  "@todayLabel": {
+    "description": "Header of the transactions of today."
+  },
+  "transactionExpense": "Expense",
+  "@transactionExpense": {
+    "description": "Segment of a transaction that takes money out."
+  },
+  "transactionIncome": "Income",
+  "@transactionIncome": {
+    "description": "Segment of a transaction that brings money in."
+  },
+  "transactionSearchHint": "Search",
+  "@transactionSearchHint": {
+    "description": "Hint of the search field of the Transactions."
+  },
+  "transactionsEmptyTitle": "No transactions yet",
+  "@transactionsEmptyTitle": {
+    "description": "Title of the Transactions screen when there is none."
+  },
+  "transactionsLoadFailed": "Couldn''t load transactions",
+  "@transactionsLoadFailed": {
+    "description": "Title of the Transactions screen when loading failed."
+  },
+  "yesterdayLabel": "Yesterday",
+  "@yesterdayLabel": {
+    "description": "Header of the transactions of yesterday."
   }
 }

@@ -34,6 +34,10 @@ const List<String> _screens = [
   AppRoutes.reports,
   AppRoutes.settings,
   AppRoutes.addTransaction,
+  AppRoutes.editTransaction,
+  AppRoutes.addDebt,
+  AppRoutes.debtDetails,
+  AppRoutes.editDebt,
   AppRoutes.fixedItems,
   AppRoutes.salaryHistory,
   AppRoutes.salaryMonth,
@@ -87,8 +91,15 @@ Future<void> _openScreen(
     ),
   );
   await tester.pumpAndSettle();
-  GoRouter.of(tester.element(find.byType(Scaffold).first))
-      .go(route.replaceFirst(':month', '2026-09'));
+  GoRouter.of(tester.element(find.byType(Scaffold).first)).go(
+    route
+        .replaceFirst(':month', '2026-09')
+        // A transaction or a debt of the sample data.
+        .replaceFirst(
+          ':id',
+          route.startsWith('/debts') ? 'sam' : 'seed-groceries',
+        ),
+  );
   await tester.pumpAndSettle();
 }
 

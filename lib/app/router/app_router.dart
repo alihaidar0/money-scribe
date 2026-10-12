@@ -17,6 +17,8 @@ import 'package:money_scribe/features/auth/presentation/reset_code_screen.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_screen.dart';
 import 'package:money_scribe/features/auth/presentation/verify_email_screen.dart';
 import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
+import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
+import 'package:money_scribe/features/debts/presentation/debt_form_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
@@ -28,6 +30,7 @@ import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
 import 'package:money_scribe/features/settings/presentation/settings_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/add_transaction_screen.dart';
+import 'package:money_scribe/features/transactions/presentation/edit_transaction_screen.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
 /// The routes of the app. The caller owns the router and disposes it.
@@ -102,6 +105,27 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.addTransaction,
         builder: (context, state) => const AddTransactionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editTransaction,
+        builder: (context, state) =>
+            EditTransactionScreen(id: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.addDebt,
+        builder: (context, state) => const AddDebtScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.debtDetails,
+        builder: (context, state) => DebtDetailsScreen(
+          id: state.pathParameters['id']!,
+          addRepayment: state.uri.queryParameters['repay'] == '1',
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.editDebt,
+        builder: (context, state) =>
+            EditDebtScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoutes.salaryHistory,
