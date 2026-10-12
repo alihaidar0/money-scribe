@@ -119,6 +119,28 @@ class _FormView extends StatelessWidget {
                 ),
             ],
           ),
+          bottomNavigationBar:
+              BlocBuilder<TransactionFormBloc, TransactionFormState>(
+                buildWhen: (previous, current) =>
+                    previous.status != current.status ||
+                    previous.canSave != current.canSave ||
+                    previous.saveStatus != current.saveStatus ||
+                    previous.isEditing != current.isEditing,
+                builder: (context, state) =>
+                    state.status != TransactionFormStatus.ready
+                    ? const SizedBox.shrink()
+                    : PinnedButtonBar(
+                        label: state.isEditing
+                            ? l10n.saveChangesAction
+                            : l10n.saveAction,
+                        isBusy:
+                            state.saveStatus ==
+                            TransactionFormSaveStatus.saving,
+                        onPressed: state.canSave
+                            ? () => bloc.add(const TransactionSaveRequested())
+                            : null,
+                      ),
+              ),
           body: BlocBuilder<TransactionFormBloc, TransactionFormState>(
             buildWhen: (previous, current) => previous.status != current.status,
             builder: (context, state) => switch (state.status) {
@@ -151,9 +173,6 @@ class _FormView extends StatelessWidget {
     if (confirmed) bloc.add(const TransactionDeleteRequested());
   }
 }
-
-/// The widest the form grows, so it stays readable on a wide screen.
-const _maxContentWidth = 720.0;
 
 class _Form extends StatefulWidget {
   const new();
@@ -204,155 +223,116 @@ class _FormState extends State<_Form> {
     final bloc = context.read<TransactionFormBloc>();
     final today = context.read<Clock>().now();
 
-    return Column(
-      children: [
-        Expanded(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: BlocBuilder<TransactionFormBloc, TransactionFormState>(
-                  buildWhen: (previous, current) =>
-                      previous.values != current.values ||
-                      previous.categories != current.categories ||
-                      previous.accounts != current.accounts,
-                  builder: (context, state) {
-                    final values = state.values;
-                    final amountText = values.amountText;
-                    final amount = Money.tryParse(amountText, state.currency);
-                    final amountInvalid =
-                        amountText.isNotEmpty &&
-                        (amount == null || !amount.isPositive);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: BlocBuilder<TransactionFormBloc, TransactionFormState>(
+        buildWhen: (previous, current) =>
+            previous.values != current.values ||
+            previous.categories != current.categories ||
+            previous.accounts != current.accounts,
+        builder: (context, state) {
+          final values = state.values;
+          final amountText = values.amountText;
+          final amount = Money.tryParse(amountText, state.currency);
+          final amountInvalid =
+              amountText.isNotEmpty && (amount == null || !amount.isPositive);
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        PillSegmentedButton<TransactionKind>(
-                          segments: [
-                            ButtonSegment(
-                              value: TransactionKind.expense,
-                              label: Text(l10n.transactionExpense),
-                            ),
-                            ButtonSegment(
-                              value: TransactionKind.income,
-                              label: Text(l10n.transactionIncome),
-                            ),
-                          ],
-                          selected: {values.kind},
-                          onSelectionChanged: (selection) => bloc.add(
-                            TransactionKindSelected(selection.first),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        AmountField(
-                          controller: _amount,
-                          label: l10n.amountLabel,
-                          currency: state.currency,
-                          hintText: '0.00',
-                          alwaysFloatLabel: true,
-                          style: theme.textTheme.displaySmall,
-                          errorText: amountInvalid ? l10n.amountInvalid : null,
-                          textInputAction: TextInputAction.next,
-                          onChanged: (text) =>
-                              bloc.add(TransactionAmountChanged(text)),
-                        ),
-                        const SizedBox(height: 16),
-                        DateField(
-                          label: l10n.dateLabel,
-                          value: values.date,
-                          today: today,
-                          onChanged: (date) =>
-                              bloc.add(TransactionDateChosen(date)),
-                        ),
-                        if (state.twoPayments)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(
-                              start: 16,
-                              top: 4,
-                            ),
-                            child: Text(
-                              PeriodScope.partOfDay(values.date.day) ==
-                                      PeriodScope.firstPart
-                                  ? l10n.datePartFirst
-                                  : l10n.datePartSecond,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            l10n.categoryLabel,
-                            style: theme.textTheme.labelLarge,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final category in state.availableCategories)
-                              ChoiceChip(
-                                avatar: Icon(
-                                  categoryIcon(category.icon),
-                                  size: 18,
-                                ),
-                                label: Text(category.name),
-                                selected: values.categoryId == category.id,
-                                showCheckmark: false,
-                                onSelected: (_) => bloc.add(
-                                  TransactionCategoryChosen(category.id),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _AccountRow(
-                          name: state.account?.name ?? '',
-                          icon: accountIcon(
-                            state.account?.kind ?? AccountKind.card,
-                          ),
-                          onTap: () => _chooseAccount(context),
-                        ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _note,
-                          label: l10n.noteLabel,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(
-                              TransactionDraft.maxNoteLength,
-                            ),
-                          ],
-                          onChanged: (text) =>
-                              bloc.add(TransactionNoteChanged(text)),
-                        ),
-                      ],
-                    );
-                  },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PillSegmentedButton<TransactionKind>(
+                segments: [
+                  ButtonSegment(
+                    value: TransactionKind.expense,
+                    label: Text(l10n.transactionExpense),
+                  ),
+                  ButtonSegment(
+                    value: TransactionKind.income,
+                    label: Text(l10n.transactionIncome),
+                  ),
+                ],
+                selected: {values.kind},
+                onSelectionChanged: (selection) =>
+                    bloc.add(TransactionKindSelected(selection.first)),
+              ),
+              const SizedBox(height: 16),
+              AmountField(
+                controller: _amount,
+                label: l10n.amountLabel,
+                currency: state.currency,
+                hintText: '0.00',
+                alwaysFloatLabel: true,
+                style: theme.textTheme.displaySmall,
+                errorText: amountInvalid ? l10n.amountInvalid : null,
+                textInputAction: TextInputAction.next,
+                onChanged: (text) => bloc.add(TransactionAmountChanged(text)),
+              ),
+              const SizedBox(height: 16),
+              DateField(
+                label: l10n.dateLabel,
+                value: values.date,
+                today: today,
+                onChanged: (date) => bloc.add(TransactionDateChosen(date)),
+              ),
+              if (state.twoPayments)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 16, top: 4),
+                  child: Text(
+                    PeriodScope.partOfDay(values.date.day) ==
+                            PeriodScope.firstPart
+                        ? l10n.datePartFirst
+                        : l10n.datePartSecond,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Semantics(
+                header: true,
+                child: Text(
+                  l10n.categoryLabel,
+                  style: theme.textTheme.labelLarge,
                 ),
               ),
-            ),
-          ),
-        ),
-        BlocBuilder<TransactionFormBloc, TransactionFormState>(
-          buildWhen: (previous, current) =>
-              previous.canSave != current.canSave ||
-              previous.saveStatus != current.saveStatus ||
-              previous.isEditing != current.isEditing,
-          builder: (context, state) => PinnedButtonBar(
-            label: state.isEditing ? l10n.saveChangesAction : l10n.saveAction,
-            isBusy: state.saveStatus == TransactionFormSaveStatus.saving,
-            onPressed: state.canSave
-                ? () => bloc.add(const TransactionSaveRequested())
-                : null,
-          ),
-        ),
-      ],
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final category in state.availableCategories)
+                    ChoiceChip(
+                      avatar: Icon(categoryIcon(category.icon), size: 18),
+                      label: Text(category.name),
+                      selected: values.categoryId == category.id,
+                      showCheckmark: false,
+                      onSelected: (_) =>
+                          bloc.add(TransactionCategoryChosen(category.id)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _AccountRow(
+                name: state.account?.name ?? '',
+                icon: accountIcon(state.account?.kind ?? AccountKind.card),
+                onTap: () => _chooseAccount(context),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _note,
+                label: l10n.noteLabel,
+                textInputAction: TextInputAction.done,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(
+                    TransactionDraft.maxNoteLength,
+                  ),
+                ],
+                onChanged: (text) => bloc.add(TransactionNoteChanged(text)),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

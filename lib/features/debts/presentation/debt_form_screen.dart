@@ -103,6 +103,24 @@ class _FormView extends StatelessWidget {
           appBar: AppBar(
             title: Text(isEditing ? l10n.editDebtTitle : l10n.addDebtTitle),
           ),
+          bottomNavigationBar: BlocBuilder<DebtFormBloc, DebtFormState>(
+            buildWhen: (previous, current) =>
+                previous.status != current.status ||
+                previous.canSave != current.canSave ||
+                previous.saveStatus != current.saveStatus ||
+                previous.isEditing != current.isEditing,
+            builder: (context, state) => state.status != DebtFormStatus.ready
+                ? const SizedBox.shrink()
+                : PinnedButtonBar(
+                    label: state.isEditing
+                        ? l10n.saveChangesAction
+                        : l10n.saveAction,
+                    isBusy: state.saveStatus == DebtFormSaveStatus.saving,
+                    onPressed: state.canSave
+                        ? () => bloc.add(const DebtSaveRequested())
+                        : null,
+                  ),
+          ),
           body: BlocBuilder<DebtFormBloc, DebtFormState>(
             buildWhen: (previous, current) => previous.status != current.status,
             builder: (context, state) => switch (state.status) {
@@ -124,9 +142,6 @@ class _FormView extends StatelessWidget {
     );
   }
 }
-
-/// The widest the form grows, so it stays readable on a wide screen.
-const _maxContentWidth = 720.0;
 
 class _Form extends StatefulWidget {
   const new();
@@ -161,138 +176,101 @@ class _FormState extends State<_Form> {
     final bloc = context.read<DebtFormBloc>();
     final today = context.read<Clock>().now();
 
-    return Column(
-      children: [
-        Expanded(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: BlocBuilder<DebtFormBloc, DebtFormState>(
-                  buildWhen: (previous, current) =>
-                      previous.values != current.values,
-                  builder: (context, state) {
-                    final values = state.values;
-                    final amount = state.amount;
-                    final repaid = state.repaid;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: BlocBuilder<DebtFormBloc, DebtFormState>(
+        buildWhen: (previous, current) => previous.values != current.values,
+        builder: (context, state) {
+          final values = state.values;
+          final amount = state.amount;
+          final repaid = state.repaid;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        PillSegmentedButton<DebtDirection>(
-                          segments: [
-                            ButtonSegment(
-                              value: DebtDirection.lent,
-                              label: Text(l10n.iLent),
-                            ),
-                            ButtonSegment(
-                              value: DebtDirection.borrowed,
-                              label: Text(l10n.iBorrowed),
-                            ),
-                          ],
-                          selected: {values.direction},
-                          onSelectionChanged: (selection) =>
-                              bloc.add(DebtDirectionSelected(selection.first)),
-                        ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _person,
-                          label: l10n.personLabel,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(
-                              DebtDraft.maxPersonLength,
-                            ),
-                          ],
-                          onChanged: (text) =>
-                              bloc.add(DebtPersonChanged(text)),
-                        ),
-                        const SizedBox(height: 16),
-                        AmountField(
-                          controller: _amount,
-                          label: l10n.amountLabel,
-                          currency: state.currency,
-                          hintText: '0.00',
-                          alwaysFloatLabel: true,
-                          style: theme.textTheme.displaySmall,
-                          errorText: state.amountBelowRepaid && repaid != null
-                              ? l10n.debtAmountBelowRepaid(
-                                  repaid: context.moneyFormatter.format(repaid),
-                                )
-                              : values.amountText.isNotEmpty &&
-                                    (amount == null || !amount.isPositive)
-                              ? l10n.amountInvalid
-                              : null,
-                          textInputAction: TextInputAction.next,
-                          onChanged: (text) =>
-                              bloc.add(DebtAmountChanged(text)),
-                        ),
-                        const SizedBox(height: 16),
-                        DateField(
-                          label: l10n.startDateLabel,
-                          value: values.startDate,
-                          today: today,
-                          onChanged: (date) =>
-                              bloc.add(DebtStartDateChosen(date)),
-                        ),
-                        const SizedBox(height: 16),
-                        DateField(
-                          label: l10n.dueDateOptionalLabel,
-                          value: values.dueDate,
-                          today: today,
-                          onChanged: (date) =>
-                              bloc.add(DebtDueDateChosen(date)),
-                          onCleared: () => bloc.add(const DebtDueDateCleared()),
-                        ),
-                        if (state.dueBeforeStart)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(
-                              start: 16,
-                              top: 4,
-                            ),
-                            child: Text(
-                              l10n.dueBeforeStartError,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: _note,
-                          label: l10n.noteLabel,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(
-                              DebtDraft.maxNoteLength,
-                            ),
-                          ],
-                          onChanged: (text) => bloc.add(DebtNoteChanged(text)),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PillSegmentedButton<DebtDirection>(
+                segments: [
+                  ButtonSegment(
+                    value: DebtDirection.lent,
+                    label: Text(l10n.iLent),
+                  ),
+                  ButtonSegment(
+                    value: DebtDirection.borrowed,
+                    label: Text(l10n.iBorrowed),
+                  ),
+                ],
+                selected: {values.direction},
+                onSelectionChanged: (selection) =>
+                    bloc.add(DebtDirectionSelected(selection.first)),
               ),
-            ),
-          ),
-        ),
-        BlocBuilder<DebtFormBloc, DebtFormState>(
-          buildWhen: (previous, current) =>
-              previous.canSave != current.canSave ||
-              previous.saveStatus != current.saveStatus ||
-              previous.isEditing != current.isEditing,
-          builder: (context, state) => PinnedButtonBar(
-            label: state.isEditing ? l10n.saveChangesAction : l10n.saveAction,
-            isBusy: state.saveStatus == DebtFormSaveStatus.saving,
-            onPressed: state.canSave
-                ? () => bloc.add(const DebtSaveRequested())
-                : null,
-          ),
-        ),
-      ],
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _person,
+                label: l10n.personLabel,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(DebtDraft.maxPersonLength),
+                ],
+                onChanged: (text) => bloc.add(DebtPersonChanged(text)),
+              ),
+              const SizedBox(height: 16),
+              AmountField(
+                controller: _amount,
+                label: l10n.amountLabel,
+                currency: state.currency,
+                hintText: '0.00',
+                alwaysFloatLabel: true,
+                style: theme.textTheme.displaySmall,
+                errorText: state.amountBelowRepaid && repaid != null
+                    ? l10n.debtAmountBelowRepaid(
+                        repaid: context.moneyFormatter.format(repaid),
+                      )
+                    : values.amountText.isNotEmpty &&
+                          (amount == null || !amount.isPositive)
+                    ? l10n.amountInvalid
+                    : null,
+                textInputAction: TextInputAction.next,
+                onChanged: (text) => bloc.add(DebtAmountChanged(text)),
+              ),
+              const SizedBox(height: 16),
+              DateField(
+                label: l10n.startDateLabel,
+                value: values.startDate,
+                today: today,
+                onChanged: (date) => bloc.add(DebtStartDateChosen(date)),
+              ),
+              const SizedBox(height: 16),
+              DateField(
+                label: l10n.dueDateOptionalLabel,
+                value: values.dueDate,
+                today: today,
+                onChanged: (date) => bloc.add(DebtDueDateChosen(date)),
+                onCleared: () => bloc.add(const DebtDueDateCleared()),
+              ),
+              if (state.dueBeforeStart)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 16, top: 4),
+                  child: Text(
+                    l10n.dueBeforeStartError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _note,
+                label: l10n.noteLabel,
+                textInputAction: TextInputAction.done,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(DebtDraft.maxNoteLength),
+                ],
+                onChanged: (text) => bloc.add(DebtNoteChanged(text)),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

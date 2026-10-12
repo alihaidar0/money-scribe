@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -165,6 +166,50 @@ void main() {
       expect(amountText('+300.00 ₽'), findsNWidgets(2));
     });
 
+    testWidgets('the failure message stays when the form is left', (
+      tester,
+    ) async {
+      final demo = await openAddForm(tester);
+      await tester.enterText(find.byType(TextField).first, '50');
+      await tester.tap(find.text('Dining'));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(save: DemoSave.fails));
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      // Like a message of success, it is read on the next screen and goes away
+      // by itself.
+      expect(find.byType(TransactionsScreen), findsOneWidget);
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.pump(failureSnackBarDuration);
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('the failure message goes away by itself', (tester) async {
+      final demo = await openAddForm(tester);
+      await tester.enterText(find.byType(TextField).first, '50');
+      await tester.tap(find.text('Dining'));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(save: DemoSave.fails));
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.pump(failureSnackBarDuration);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.byType(TransactionFormScreen), findsOneWidget);
+    });
+
     testWidgets('a failed save keeps the form and offers Retry (ERR-1)', (
       tester,
     ) async {
@@ -179,6 +224,11 @@ void main() {
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
       expect(find.text("Couldn't save. Check your connection."), findsOne);
+      // The message sits above the Save button, which stays in sight.
+      expect(
+        tester.getRect(find.byType(SnackBar)).bottom,
+        lessThanOrEqualTo(tester.getRect(saveButton()).top),
+      );
 
       demo.update(const DemoSettings());
       await tester.tap(find.text('Retry'));
