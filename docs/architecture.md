@@ -73,6 +73,11 @@ with **events everywhere**: even a simple feature has event and state classes (n
 - Repositories are faked with small in-memory classes in `test/support/`, not mocked.
 - Screens have widget tests; `test/app/layout_test.dart` opens every route in English and
   Arabic at 200% text size.
+- `test/app/navigation_test.dart` (sign-in flow) and `test/app/navigation_screens_test.dart` (the main
+  screens and the Settings) are the link tests: every button leads where the design says.
+- `test/render/screens_render_test.dart` draws every screen and state to `build/screens/` in English and
+  Arabic, light and dark, at phone and 1280 x 800 sizes, to be looked at. A floating button shows a hard
+  black outline there: the test renderer draws elevation shadows that way, the app does not.
 - `test/architecture_test.dart` enforces the dependency rules above.
 
 ## Data
@@ -119,3 +124,14 @@ sit above the shell, so they hide the bar. The exception is a screen that is a s
 as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
+
+A screen pushed above the shell is wrapped once, in the router, in `WideFrame` (`core/widgets/`), which
+centres the whole screen in a column on a window from 600 dp and changes nothing on a phone; it also gives
+its child the width of the column as the window width. A screen therefore never constrains its own width:
+widths come from `FrameWidth` (narrow, regular, wide), and a screen that adapts to its room (list and detail,
+`TwoColumns`) reads it with `LayoutBuilder`, never with the window size.
+
+The shell keeps every visited tab alive, so each floating button sets `heroTag: null`: two of them
+under one route would otherwise share the default hero tag and fail the assertion when a screen is
+pushed above the shell. A message at the bottom of a form (a failed save) must not cover its button, so
+the pinned button of a form sits in the `Scaffold`'s `bottomNavigationBar`, where a snack bar rises above it.

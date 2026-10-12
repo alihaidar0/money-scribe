@@ -92,7 +92,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Demo panel (staging only) to force loading, empty, error and no connection, and the payment mode
 - [x] Shared screen widgets: hero card, amount row, period card, state views, code boxes
 - [x] Screen render check: every screen drawn to an image in a test, in English and Arabic
-- [ ] Navigation test: every button leads where the design says
+- [x] Navigation test: every button leads where the design says
 
 ### A. Authentication and first start
 
@@ -215,30 +215,33 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] RP-7 Reports, empty
 - [x] RP-8 Reports, error
 - [x] RP-9 Reports, no connection
-- [ ] NC-1 No connection, full screen
-- [ ] ERR-1 Could not save
-- [ ] ERR-2 Something went wrong
+- [x] NC-1 No connection, full screen
+- [x] ERR-1 Could not save
+- [x] ERR-2 Something went wrong
 
 ### I. Arabic (right-to-left) screens
 
-- [ ] AR-1 Overview (Arabic)
-- [ ] AR-2 Salary (Arabic)
-- [ ] AR-3 Transactions (Arabic)
-- [ ] AR-4 Add transaction (Arabic)
-- [ ] AR-5 Debts (Arabic)
-- [ ] AR-6 Settings (Arabic)
-- [ ] AR-7 Sign in (Arabic)
-- [ ] AR-8 Verify email (Arabic)
+- [x] AR-1 Overview (Arabic)
+- [x] AR-2 Salary (Arabic)
+- [x] AR-3 Transactions (Arabic)
+- [x] AR-4 Add transaction (Arabic)
+- [x] AR-5 Debts (Arabic)
+- [x] AR-6 Settings (Arabic)
+- [x] AR-7 Sign in (Arabic)
+- [x] AR-8 Verify email (Arabic)
 
 ### J. Tablet and web layouts
 
-- [ ] TB-1 Transactions, wide
-- [ ] TB-2 Overview, wide
-- [ ] TB-3 Sign in, web
+- [x] TB-1 Transactions, wide
+- [x] TB-2 Overview, wide
+- [x] TB-3 Sign in, web
+- [x] Web 1: pushed screens framed as one centred column, the authentication pages split with the brand panel
+- [x] Web 2: list and detail for Debts, sections list for Settings
+- [x] Web 3: Reports in two columns
 
 ### K. Dark mode, app icon and fix-ups
 
-- [ ] DK-1 Dark mode: every screen checked in dark
+- [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

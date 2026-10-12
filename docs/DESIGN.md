@@ -159,6 +159,14 @@ App icon: a fountain-pen nib (the scribe) in a light circle on a blue background
 
 Material 3 window size classes: compact < 600 dp, medium 600 to 839 dp, expanded ≥ 840 dp. Expanded screens use list and detail side by side with a navigation rail. Content max width on web about 1200 dp.
 
+Adaptive layouts (built; the phone layout is never changed, a wider window only adds room):
+
+- **One rule:** a screen is one column on a phone. From 600 dp (medium) a screen pushed above the navigation is **framed**: the whole screen, app bar included, is one centred column on a tinted canvas (`WideFrame`: 560 dp for a short form or a list of settings, 720 dp for a form, details or a list, 1040 dp for a page with two columns of its own). From 840 dp (expanded) the five top-level screens and Settings use the room.
+- **List and detail** (Transactions, Debts): the list on one side and the chosen item on the other, with its buttons (the newest transaction, or the first debt, is chosen first). Cards and rows select instead of opening.
+- **Two columns** (Overview, Salary, Reports): the figures or the chart on one side and the rows or the inputs on the other (`TwoColumns`, from 720 dp of content). The controls above (view switch, month, part) keep the width of a phone.
+- **Sections** (Settings): a list of the five sections on one side and the rows of the chosen one on the other.
+- **Authentication**: the page splits into a brand panel (app icon, name, tagline; the hero card colours in both themes) and the form in a card. The Welcome screen shows the brand itself and does not split.
+
 ### 7.1 Navigation and screen anatomy
 
 - Five top-level screens: Overview (launch screen), Salary (segments: Month, Fixed items), Transactions, Debts, Reports. Bottom navigation bar on phones, navigation rail on tablet and web. Order is fixed. Settings is a gear icon in the top app bar of every top-level screen.
