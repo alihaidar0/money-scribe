@@ -34,7 +34,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 ## 3. Core features
 
 - [x] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
-- [ ] Salary calculation: one or two payments a month, every line rounded to the kopeck (pure Dart, tests)
+- [x] Salary calculation: one or two payments a month, every line rounded to the kopeck (pure Dart, tests)
 - [ ] Monthly salary calculator, with every month saved
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
