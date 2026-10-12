@@ -11,6 +11,7 @@ import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/two_columns.dart';
 import 'package:money_scribe/features/reports/domain/category_spend.dart';
 import 'package:money_scribe/features/reports/domain/period_report.dart';
 import 'package:money_scribe/features/reports/presentation/widgets/donut_chart.dart';
@@ -84,9 +85,8 @@ class CategoriesView extends StatelessWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return TwoColumns(
+      first: [
         Center(
           child: DonutChart(
             values: [
@@ -117,7 +117,8 @@ class CategoriesView extends StatelessWidget {
           const SizedBox(height: 24),
           PartsSummary(parts: parts!, onPartSelected: onPartSelected),
         ],
-        const SizedBox(height: 16),
+      ],
+      second: [
         for (var i = 0; i < period.categories.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
