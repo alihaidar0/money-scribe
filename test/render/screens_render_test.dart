@@ -8,6 +8,7 @@ import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
@@ -82,6 +83,38 @@ Future<void> _tapPaymentSegment(WidgetTester tester, int index) async {
   await tester.ensureVisible(segment);
   await tester.pumpAndSettle();
   await tester.tap(segment);
+  await tester.pumpAndSettle();
+}
+
+/// Taps the segment of the Month, Part 1, Part 2 choice at [index] (0 to 2).
+Future<void> _tapPartSegment(WidgetTester tester, int index) async {
+  await tester.tap(
+    find
+        .descendant(
+          of: find.byType(SegmentedButton<PeriodScope>),
+          matching: find.byType(Text),
+        )
+        .at(index),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// Taps the segment of the choice "Part 1 | Part 2" of the fixed items at
+/// [index] (0 or 1), not the one in an open sheet.
+Future<void> _tapFixedPart(WidgetTester tester, int index) async {
+  await tester.tap(
+    find
+        .descendant(
+          of: find.byType(SegmentedButton<FixedItemPart>).first,
+          matching: find.byType(Text),
+        )
+        .at(index),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openEditSheet(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.edit_outlined).first);
   await tester.pumpAndSettle();
 }
 
@@ -434,6 +467,84 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: _useTwoPayments,
   ),
+  const _Scene('sal-8-compare-months', AppRoutes.salaryCompare, signedIn: true),
+  _Scene(
+    'sal-9-compare-parts',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapPartSegment(tester, 2);
+    },
+  ),
+  const _Scene(
+    'sal-9-compare-whole-month-two-payments',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'sal-8-compare-unsaved-month',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(MonthChip).last);
+      await tester.pumpAndSettle();
+      // October is the chosen month (a filled button), so the outlined ones
+      // are January to September: the seventh is July.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(GridView),
+              matching: find.byType(OutlinedButton),
+            )
+            .at(6),
+      );
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-8-compare-month-picker',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(MonthChip).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'sal-8-compare-large-text',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'sal-8-compare-wide',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    size: Size(1280, 800),
+  ),
+  _Scene(
+    'sal-8-compare-loading',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'sal-8-compare-no-connection',
+    AppRoutes.salaryCompare,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
   _Scene(
     'sal-15-history-empty',
     AppRoutes.salaryHistory,
@@ -510,6 +621,128 @@ final _scenes = <_Scene>[
     },
   ),
   const _Scene('fix-1-fixed-items', AppRoutes.fixedItems, signedIn: true),
+  const _Scene(
+    'fix-2-fixed-items-two-payments',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'fix-2-fixed-items-part-2',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapFixedPart(tester, 1);
+    },
+  ),
+  _Scene(
+    'fix-3-add-fixed-item',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-3-add-fixed-item-filled',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      final fields = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(fields.at(0), 'Gym');
+      await tester.enterText(fields.at(1), '1200');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-4-edit-fixed-item',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _openEditSheet(tester);
+    },
+  ),
+  _Scene(
+    'fix-5-delete-fixed-item',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _openEditSheet(tester);
+      // After the four segments (Income, Expense, Part 1, Part 2) comes Delete.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(BottomSheet),
+              matching: find.byType(TextButton),
+            )
+            .at(4),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-6-fixed-items-empty',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'fix-6-fixed-items-empty-part',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        demo.settings.copyWith(
+          scenario: DemoScenario.empty,
+          paymentMode: PaymentMode.twoPayments,
+        ),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-1-fixed-items-loading',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'fix-1-fixed-items-no-connection',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  _Scene(
+    'fix-2-fixed-items-large-text',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'fix-2-fixed-items-wide',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    size: Size(1280, 800),
+    setup: _useTwoPayments,
+  ),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),
 ];
@@ -561,7 +794,9 @@ void main() {
           expect(tester.takeException(), isNull);
           await saveScreenshot(tester, key, name);
           // Let any pending fake answer (the slow "loading" one takes eight
-          // seconds) finish before the test ends.
+          // seconds, and a screen may ask twice in a row) finish before the
+          // test ends.
+          await tester.pump(const Duration(seconds: 10));
           await tester.pump(const Duration(seconds: 10));
           await tester.pumpAndSettle();
         });

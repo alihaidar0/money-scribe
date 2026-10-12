@@ -48,6 +48,11 @@ abstract final class AppRoutes {
   /// screens it keeps the navigation bar, so it is a page of the Salary tab.
   static const fixedItems = '/salary/fixed-items';
 
+  /// The fixed items of [month], or of the month of today when none is given.
+  static String fixedItemsTab([YearMonth? month]) {
+    return month == null ? fixedItems : '$fixedItems?month=${month.param}';
+  }
+
   /// The demo panel of staging builds. It goes away with the fake data.
   static const demo = '/demo';
 

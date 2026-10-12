@@ -847,5 +847,166 @@
   "enterMonthAction": "Enter a month",
   "@enterMonthAction": {
     "description": "Button on the empty salary history that starts a month."
+  },
+  "compareLineColumn": "Line",
+  "@compareLineColumn": {
+    "description": "Header of the first column of the comparison of two months: the name of each calculated line."
+  },
+  "compareDifferenceColumn": "Difference",
+  "@compareDifferenceColumn": {
+    "description": "Header of the last column of the comparison of two months: the later month minus the earlier one."
+  },
+  "compareTaxLabel": "Tax",
+  "@compareTaxLabel": {
+    "description": "Line of the comparison of two months: the tax withheld, without the rate."
+  },
+  "comparePayAfterTaxLabel": "Pay after tax",
+  "@comparePayAfterTaxLabel": {
+    "description": "Line of the comparison of one part of two months: what that part pays after tax."
+  },
+  "swapMonthsTooltip": "Swap months",
+  "@swapMonthsTooltip": {
+    "description": "Tooltip of the button between the two months of the comparison that swaps them."
+  },
+  "compareNotSaved": "No saved salary",
+  "@compareNotSaved": {
+    "description": "Spoken instead of the dash shown for a month of the comparison that has no saved salary."
+  },
+  "compareLineSemantics": "{line}: {leftMonth} {leftValue}, {rightMonth} {rightValue}, difference {difference}",
+  "@compareLineSemantics": {
+    "description": "Spoken description of one line of the comparison of two months, with the difference of the two figures.",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "leftMonth": {
+        "type": "String"
+      },
+      "leftValue": {
+        "type": "String"
+      },
+      "rightMonth": {
+        "type": "String"
+      },
+      "rightValue": {
+        "type": "String"
+      },
+      "difference": {
+        "type": "String"
+      }
+    }
+  },
+  "compareLineSemanticsNoDifference": "{line}: {leftMonth} {leftValue}, {rightMonth} {rightValue}",
+  "@compareLineSemanticsNoDifference": {
+    "description": "Spoken description of one line of the comparison when a month has no figure, so there is no difference.",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "leftMonth": {
+        "type": "String"
+      },
+      "leftValue": {
+        "type": "String"
+      },
+      "rightMonth": {
+        "type": "String"
+      },
+      "rightValue": {
+        "type": "String"
+      }
+    }
+  },
+  "saveAction": "Save",
+  "@saveAction": {
+    "description": "Button that saves a form or a sheet."
+  },
+  "addItemAction": "Add item",
+  "@addItemAction": {
+    "description": "Button that opens the sheet to add a fixed item."
+  },
+  "fixedItemsEmptyTitle": "No fixed items yet",
+  "@fixedItemsEmptyTitle": {
+    "description": "Title shown on the fixed items when the month has none."
+  },
+  "fixedItemsEmptyMessage": "Add your rent, services or scholarship.",
+  "@fixedItemsEmptyMessage": {
+    "description": "Sentence under the title of the empty fixed items."
+  },
+  "addFixedItemTitle": "Add fixed item",
+  "@addFixedItemTitle": {
+    "description": "Title of the sheet that adds a fixed item."
+  },
+  "editFixedItemTitle": "Edit fixed item",
+  "@editFixedItemTitle": {
+    "description": "Title of the sheet that changes a fixed item."
+  },
+  "fixedItemNameLabel": "Name",
+  "@fixedItemNameLabel": {
+    "description": "Label of the field with the name of a fixed item, such as Rent."
+  },
+  "fixedItemAmountLabel": "Amount",
+  "@fixedItemAmountLabel": {
+    "description": "Label of the field with the amount of a fixed item."
+  },
+  "fixedItemIncome": "Income",
+  "@fixedItemIncome": {
+    "description": "Segment of a fixed item that adds to the month, such as a scholarship."
+  },
+  "fixedItemExpense": "Expense",
+  "@fixedItemExpense": {
+    "description": "Segment of a fixed item that takes from the month, such as the rent."
+  },
+  "fixedItemAppliesTo": "Applies to",
+  "@fixedItemAppliesTo": {
+    "description": "Label of the choice of the part of the month a fixed item belongs to."
+  },
+  "deleteFixedItemTitle": "Delete fixed item?",
+  "@deleteFixedItemTitle": {
+    "description": "Title of the question that asks to confirm deleting a fixed item."
+  },
+  "deleteFixedItemMessage": "{name} will be removed from your fixed items. This cannot be undone.",
+  "@deleteFixedItemMessage": {
+    "description": "Text of the question that asks to confirm deleting a fixed item. The placeholder is its name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editFixedItemTooltip": "Edit {name}",
+  "@editFixedItemTooltip": {
+    "description": "Tooltip and spoken label of the button that edits a fixed item. The placeholder is its name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fixedItemsBalanceLabel": "Balance after fixed items",
+  "@fixedItemsBalanceLabel": {
+    "description": "Label of what is left of the pay once the fixed items are counted."
+  },
+  "fixedItemsBalancePartLabel": "Balance after fixed items · {part}",
+  "@fixedItemsBalancePartLabel": {
+    "description": "Label of the balance of one part of a month. The placeholder is the part, such as Part 1.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      }
+    }
+  },
+  "fixedItemsPayTerm": "Pay",
+  "@fixedItemsPayTerm": {
+    "description": "First term of the sum that gives the balance of one part: the pay of that part."
+  },
+  "fixedItemsWholeMonth": "Whole month {amount}",
+  "@fixedItemsWholeMonth": {
+    "description": "Line under the balance of a part: the balance of the whole month. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

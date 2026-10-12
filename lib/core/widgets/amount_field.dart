@@ -19,6 +19,7 @@ class AmountField extends StatefulWidget {
     this.errorText,
     this.hintText,
     this.alwaysFloatLabel = false,
+    this.style,
     this.textInputAction,
     this.onChanged,
     super.key,
@@ -30,6 +31,9 @@ class AmountField extends StatefulWidget {
   final String? errorText;
   final String? hintText;
   final bool alwaysFloatLabel;
+
+  /// The style of the typed number, for example a large one.
+  final TextStyle? style;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onChanged;
 
@@ -100,6 +104,7 @@ class _AmountFieldState extends State<AmountField> {
       // Left to right in every language, so the symbol stays after the number.
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.end,
+      style: widget.style,
       textInputAction: widget.textInputAction,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [

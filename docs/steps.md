@@ -135,14 +135,14 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] SAL-5 Switch to two payments
 - [x] SAL-6 Salary history, one payment
 - [x] SAL-7 Salary history, two payments
-- [ ] SAL-8 Compare months
-- [ ] SAL-9 Compare parts
+- [x] SAL-8 Compare months
+- [x] SAL-9 Compare parts
 - [x] SAL-10 Month saved
-- [ ] FIX-1 Fixed items, one payment
-- [ ] FIX-2 Fixed items, two payments
-- [ ] FIX-3 Add fixed item
-- [ ] FIX-4 Edit fixed item
-- [ ] FIX-5 Delete fixed item
+- [x] FIX-1 Fixed items, one payment
+- [x] FIX-2 Fixed items, two payments
+- [x] FIX-3 Add fixed item
+- [x] FIX-4 Edit fixed item
+- [x] FIX-5 Delete fixed item
 
 ### D. Transactions
 
@@ -202,7 +202,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] SAL-13 Salary, error
 - [x] SAL-14 Salary, no connection
 - [x] SAL-15 Salary history, empty
-- [ ] FIX-6 Fixed items, empty
+- [x] FIX-6 Fixed items, empty
 - [ ] TX-9 Transactions, loading
 - [ ] TX-10 Transactions, empty
 - [ ] TX-11 Transactions, error

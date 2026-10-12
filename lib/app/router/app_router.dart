@@ -153,7 +153,11 @@ GoRouter createAppRouter({
                   // The second segment of the tab, so the navigation bar stays.
                   GoRoute(
                     path: 'fixed-items',
-                    builder: (context, state) => const FixedItemsScreen(),
+                    builder: (context, state) => FixedItemsScreen(
+                      month: YearMonth.tryParse(
+                        state.uri.queryParameters['month'],
+                      ),
+                    ),
                   ),
                 ],
               ),
