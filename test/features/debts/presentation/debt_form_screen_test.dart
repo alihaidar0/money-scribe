@@ -177,6 +177,11 @@ void main() {
 
       expect(find.byType(DebtFormScreen), findsOneWidget);
       expect(find.text("Couldn't save. Check your connection."), findsOne);
+      // The message sits above the Save button, which stays in sight.
+      expect(
+        tester.getRect(find.byType(SnackBar)).bottom,
+        lessThanOrEqualTo(tester.getRect(saveButton()).top),
+      );
 
       demo.update(const DemoSettings());
       await tester.tap(find.text('Retry'));

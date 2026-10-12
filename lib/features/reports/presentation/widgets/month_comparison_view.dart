@@ -7,6 +7,7 @@ import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
+import 'package:money_scribe/core/widgets/two_columns.dart';
 import 'package:money_scribe/features/reports/domain/period_report.dart';
 import 'package:money_scribe/features/reports/presentation/widgets/parts_summary.dart';
 
@@ -98,13 +99,13 @@ class MonthComparisonView extends StatelessWidget {
       ),
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return TwoColumns(
+      first: [
         _GroupedBars(lines: lines),
         const SizedBox(height: 12),
         _BarsLegend(previousName: previousName, currentName: currentName),
-        const SizedBox(height: 16),
+      ],
+      second: [
         for (final line in lines)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),

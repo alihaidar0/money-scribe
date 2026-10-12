@@ -142,6 +142,7 @@ Future<void> _tapReportsView(WidgetTester tester, int index) async {
 }
 
 const _tallPhone = Size(412, 1800);
+const _wideWindow = Size(1280, 800);
 
 final _scenes = <_Scene>[
   const _Scene('auth-1-welcome', AppRoutes.welcome),
@@ -834,6 +835,23 @@ final _scenes = <_Scene>[
       await tester.pumpAndSettle();
     },
   ),
+  _Scene(
+    'err-1-could-not-save',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField).first, '1284.50');
+      await tester.tap(find.byType(ChoiceChip).first);
+      await tester.pumpAndSettle();
+      demo.update(demo.settings.copyWith(scenario: DemoScenario.noConnection));
+      await tester.tap(find.byType(FilledButton).last);
+      // The snack bar goes away by itself after a few seconds, so no
+      // settling: let it slide in and stop.
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    },
+  ),
   const _Scene(
     'tx-4c-add-transaction-two-payments',
     AppRoutes.addTransaction,
@@ -1247,12 +1265,80 @@ final _scenes = <_Scene>[
     setup: (tester, demo) =>
         _useScenario(tester, demo, DemoScenario.noConnection),
   ),
+
+  // J. Tablet and web layouts.
+  const _Scene(
+    'tb-1-transactions-wide',
+    AppRoutes.transactions,
+    signedIn: true,
+    size: _wideWindow,
+  ),
+  const _Scene(
+    'tb-2-overview-wide',
+    AppRoutes.overview,
+    signedIn: true,
+    size: _wideWindow,
+  ),
+  const _Scene('tb-3-sign-in-web', AppRoutes.signIn, size: _wideWindow),
+  _Scene(
+    'tb-3b-sign-in-web-no-connection',
+    AppRoutes.signIn,
+    size: _wideWindow,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await _tapPrimary(tester);
+    },
+  ),
+];
+
+/// The screens that adapt to a wide window, drawn again at 1280 x 800 as
+/// `web-<name>`.
+const _webNames = {
+  'auth-3-register',
+  'auth-4-verify-email',
+  'auth-6-pay-setup',
+  'auth-7-forgot-password',
+  'auth-11-app-lock',
+  'ov-1-overview',
+  'sal-1-salary',
+  'sal-1b-edit-month-changed',
+  'sal-6-history',
+  'sal-8-compare-months',
+  'fix-1-fixed-items',
+  'tx-1-transactions',
+  'tx-4b-add-transaction-filled',
+  'tx-5-edit-transaction',
+  'db-1-debts',
+  'db-2-add-debt',
+  'db-3-debt-details',
+  'db-8-edit-debt',
+  'rp-1-reports',
+  'rp-3-month-vs-month',
+  'rp-5-debts',
+  'st-1-settings',
+  'st-2-account',
+  'st-3b-pay-schedule-one',
+  'st-4-categories',
+  'st-5-accounts',
+  'st-8-import-csv',
+};
+
+final List<_Scene> _webScenes = [
+  for (final scene in _scenes)
+    if (_webNames.contains(scene.name))
+      _Scene(
+        'web-${scene.name}',
+        scene.route,
+        signedIn: scene.signedIn,
+        setup: scene.setup,
+        size: _wideWindow,
+      ),
 ];
 
 void main() {
   setUpAll(loadAppFonts);
 
-  for (final scene in _scenes) {
+  for (final scene in [..._scenes, ..._webScenes]) {
     for (final language in [AppLanguage.english, AppLanguage.arabic]) {
       for (final brightness in Brightness.values) {
         final name = '${scene.name}-${language.name}-${brightness.name}';
@@ -1296,6 +1382,12 @@ void main() {
           await tester.pumpAndSettle();
           await scene.setup?.call(tester, demo);
 
+          // Pictures (the app icon) decode outside the test clock: give them
+          // a moment, or they are missing from the image.
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 100)),
+          );
+          await tester.pump();
           expect(tester.takeException(), isNull);
           await saveScreenshot(tester, key, name);
           // Let any pending fake answer (the slow "loading" one takes eight

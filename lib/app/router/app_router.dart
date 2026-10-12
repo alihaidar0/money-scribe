@@ -5,6 +5,7 @@ import 'package:money_scribe/app/shell/app_shell.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
@@ -111,56 +112,73 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.account,
-        builder: (context, state) => const AccountScreen(),
+        builder: (context, state) =>
+            const WideFrame(width: FrameWidth.narrow, child: AccountScreen()),
       ),
       GoRoute(
         path: AppRoutes.changePassword,
-        builder: (context, state) => const ChangePasswordScreen(),
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: ChangePasswordScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.paySchedule,
-        builder: (context, state) => const PayScheduleScreen(),
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: PayScheduleScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.categories,
-        builder: (context, state) => const CategoriesScreen(),
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: CategoriesScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.accounts,
-        builder: (context, state) => const AccountsScreen(),
+        builder: (context, state) =>
+            const WideFrame(width: FrameWidth.narrow, child: AccountsScreen()),
       ),
       GoRoute(
         path: AppRoutes.importCsv,
-        builder: (context, state) => const CsvImportScreen(),
+        builder: (context, state) =>
+            const WideFrame(width: FrameWidth.narrow, child: CsvImportScreen()),
       ),
       GoRoute(
         path: AppRoutes.addTransaction,
-        builder: (context, state) => const AddTransactionScreen(),
+        builder: (context, state) =>
+            const WideFrame(child: AddTransactionScreen()),
       ),
       GoRoute(
         path: AppRoutes.editTransaction,
-        builder: (context, state) =>
-            EditTransactionScreen(id: state.pathParameters['id']!),
+        builder: (context, state) => WideFrame(
+          child: EditTransactionScreen(id: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: AppRoutes.addDebt,
-        builder: (context, state) => const AddDebtScreen(),
+        builder: (context, state) => const WideFrame(child: AddDebtScreen()),
       ),
       GoRoute(
         path: AppRoutes.debtDetails,
-        builder: (context, state) => DebtDetailsScreen(
-          id: state.pathParameters['id']!,
-          addRepayment: state.uri.queryParameters['repay'] == '1',
+        builder: (context, state) => WideFrame(
+          child: DebtDetailsScreen(
+            id: state.pathParameters['id']!,
+            addRepayment: state.uri.queryParameters['repay'] == '1',
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.editDebt,
         builder: (context, state) =>
-            EditDebtScreen(id: state.pathParameters['id']!),
+            WideFrame(child: EditDebtScreen(id: state.pathParameters['id']!)),
       ),
       GoRoute(
         path: AppRoutes.salaryHistory,
-        builder: (context, state) => const SalaryHistoryScreen(),
+        builder: (context, state) =>
+            const WideFrame(child: SalaryHistoryScreen()),
         routes: [
           GoRoute(
             path: ':month',
@@ -169,15 +187,19 @@ GoRouter createAppRouter({
                 YearMonth.tryParse(state.pathParameters['month']) == null
                 ? AppRoutes.salaryHistory
                 : null,
-            builder: (context, state) => SalaryEditScreen(
-              month: YearMonth.tryParse(state.pathParameters['month'])!,
+            builder: (context, state) => WideFrame(
+              width: FrameWidth.wide,
+              child: SalaryEditScreen(
+                month: YearMonth.tryParse(state.pathParameters['month'])!,
+              ),
             ),
           ),
         ],
       ),
       GoRoute(
         path: AppRoutes.salaryCompare,
-        builder: (context, state) => const SalaryCompareScreen(),
+        builder: (context, state) =>
+            const WideFrame(child: SalaryCompareScreen()),
       ),
       GoRoute(
         path: AppRoutes.demo,

@@ -15,6 +15,7 @@ import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
+import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/salary/bloc/salary_bloc.dart';
 import 'package:money_scribe/features/salary/domain/salary_form.dart';
 import 'package:money_scribe/features/salary/domain/salary_result.dart';
@@ -97,9 +98,6 @@ class SalaryBody extends StatelessWidget {
 /// The content width from which the results and the inputs sit side by side.
 const _twoColumnsFrom = 720.0;
 
-/// The widest the content grows, so a form stays readable on a wide screen.
-const _maxContentWidth = 1040.0;
-
 class _SalaryContent extends StatelessWidget {
   const new({required this.editing});
 
@@ -134,8 +132,8 @@ class _SalaryContent extends StatelessWidget {
                 return Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: _maxContentWidth,
+                    constraints: BoxConstraints(
+                      maxWidth: FrameWidth.wide.value,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -341,7 +339,7 @@ class _SaveBar extends StatelessWidget {
           child: Center(
             heightFactor: 1,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+              constraints: BoxConstraints(maxWidth: FrameWidth.regular.value),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(

@@ -26,9 +26,6 @@ class ChangePasswordScreen extends StatelessWidget {
   }
 }
 
-/// The widest the form grows, so it stays readable on a wide screen.
-const _maxContentWidth = 560.0;
-
 class _ChangePasswordView extends StatefulWidget {
   const new();
 
@@ -91,67 +88,57 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
               // The form keeps what was typed while the failure is shown.
               Offstage(
                 offstage: failure != null,
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: _maxContentWidth,
-                    ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          PasswordField(
-                            controller: _current,
-                            label: l10n.currentPasswordLabel,
-                            enabled: !isBusy,
-                            textInputAction: TextInputAction.next,
-                            errorText:
-                                state.status ==
-                                    ChangePasswordStatus.wrongCurrent
-                                ? l10n.changePasswordWrongCurrent
-                                : null,
-                            onChanged: _edited,
-                          ),
-                          const SizedBox(height: 16),
-                          PasswordField(
-                            controller: _next,
-                            label: l10n.newPasswordLabel,
-                            enabled: !isBusy,
-                            helperText: l10n.passwordRuleLength,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.newPassword],
-                            onChanged: _edited,
-                          ),
-                          const SizedBox(height: 16),
-                          PasswordField(
-                            controller: _confirmation,
-                            label: l10n.confirmNewPasswordLabel,
-                            enabled: !isBusy,
-                            errorText: state.mismatch
-                                ? l10n.registerPasswordsMismatch
-                                : null,
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.newPassword],
-                            onChanged: _edited,
-                            onSubmitted: (_) {
-                              if (state.isValid && !isBusy) _submit();
-                            },
-                          ),
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: TextButton(
-                              onPressed: isBusy
-                                  ? null
-                                  : () =>
-                                        context.push(AppRoutes.forgotPassword),
-                              child: Text(l10n.forgotYourPasswordLink),
-                            ),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      PasswordField(
+                        controller: _current,
+                        label: l10n.currentPasswordLabel,
+                        enabled: !isBusy,
+                        textInputAction: TextInputAction.next,
+                        errorText:
+                            state.status == ChangePasswordStatus.wrongCurrent
+                            ? l10n.changePasswordWrongCurrent
+                            : null,
+                        onChanged: _edited,
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      PasswordField(
+                        controller: _next,
+                        label: l10n.newPasswordLabel,
+                        enabled: !isBusy,
+                        helperText: l10n.passwordRuleLength,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.newPassword],
+                        onChanged: _edited,
+                      ),
+                      const SizedBox(height: 16),
+                      PasswordField(
+                        controller: _confirmation,
+                        label: l10n.confirmNewPasswordLabel,
+                        enabled: !isBusy,
+                        errorText: state.mismatch
+                            ? l10n.registerPasswordsMismatch
+                            : null,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.newPassword],
+                        onChanged: _edited,
+                        onSubmitted: (_) {
+                          if (state.isValid && !isBusy) _submit();
+                        },
+                      ),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: isBusy
+                              ? null
+                              : () => context.push(AppRoutes.forgotPassword),
+                          child: Text(l10n.forgotYourPasswordLink),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

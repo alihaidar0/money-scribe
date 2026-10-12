@@ -480,6 +480,110 @@ void main() {
     });
   });
 
+  group('a wide window (TB-1)', () {
+    const wide = Size(1280, 800);
+
+    testWidgets('shows the newest transaction beside the list', (tester) async {
+      await openTransactions(tester, size: wide);
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.text('Category'), findsOneWidget);
+      expect(find.text('Account'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Edit'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Delete'), findsOneWidget);
+      // The amount is in the day's total, the row and the pane.
+      expect(amountText('−640.00 ₽'), findsNWidgets(3));
+    });
+
+    testWidgets('a phone has no detail pane', (tester) async {
+      await openTransactions(tester);
+
+      expect(find.text('Category'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'Delete'), findsNothing);
+    });
+
+    testWidgets('a row shows its transaction instead of opening it', (
+      tester,
+    ) async {
+      await openTransactions(tester, size: wide);
+
+      await tester.tap(find.text('Groceries'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TransactionFormScreen), findsNothing);
+      // Day total, row and pane.
+      expect(amountText('−1,284.50 ₽'), findsNWidgets(3));
+      expect(amountText('−640.00 ₽'), findsNWidgets(2));
+      // The pane shows the note alone; the row joins it with the account.
+      expect(find.text('Weekly shopping'), findsOneWidget);
+    });
+
+    testWidgets('the detail has the date, the account and the note', (
+      tester,
+    ) async {
+      await openTransactions(tester, size: wide);
+
+      await tester.tap(find.text('Groceries'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Date'), findsOneWidget);
+      expect(find.text('Note'), findsOneWidget);
+      expect(find.text('Mon 5 Oct'), findsNWidgets(2));
+    });
+
+    testWidgets('Edit opens the form of the shown transaction', (tester) async {
+      await openTransactions(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Edit'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit transaction'), findsOneWidget);
+    });
+
+    testWidgets('Delete asks first, and Cancel keeps it', (tester) async {
+      await openTransactions(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete transaction?'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      // The row and the pane.
+      expect(find.text('Transport'), findsNWidgets(2));
+    });
+
+    testWidgets('confirming Delete removes it and shows the next', (
+      tester,
+    ) async {
+      await openTransactions(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Transport'), findsNothing);
+      expect(find.text('Mon 19 Oct'), findsNothing);
+      // The next newest is shown: the day's total, the row and the pane.
+      expect(amountText('−220.00 ₽'), findsNWidgets(3));
+    });
+
+    testWidgets('a failed Delete says so and offers Retry', (tester) async {
+      final demo = await openTransactions(tester, size: wide);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't delete. Check your connection."), findsOne);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
   group('no transactions (TX-10)', () {
     const empty = DemoSettings(scenario: DemoScenario.empty);
 

@@ -28,9 +28,6 @@ class CategoriesScreen extends StatelessWidget {
   }
 }
 
-/// The widest the list grows, so a row stays readable on a wide screen.
-const _maxContentWidth = 560.0;
-
 class _CategoriesView extends StatelessWidget {
   const new();
 
@@ -59,6 +56,7 @@ class _CategoriesView extends StatelessWidget {
         appBar: AppBar(title: Text(l10n.categoriesTitle)),
         floatingActionButton: status == CategoriesStatus.ready
             ? FloatingActionButton.extended(
+                heroTag: null,
                 onPressed: () => _add(context),
                 icon: const Icon(Icons.add),
                 label: Text(l10n.addCategoryAction),
@@ -98,22 +96,16 @@ class _List extends StatelessWidget {
           (bloc) => bloc.state.categories,
         );
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: ListView(
-          // Room under the last row for the button.
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-          children: [
-            for (final category in categories)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _CategoryRow(category: category),
-              ),
-          ],
-        ),
-      ),
+    return ListView(
+      // Room under the last row for the button.
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      children: [
+        for (final category in categories)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _CategoryRow(category: category),
+          ),
+      ],
     );
   }
 }

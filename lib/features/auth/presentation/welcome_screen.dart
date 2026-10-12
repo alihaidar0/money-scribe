@@ -19,6 +19,7 @@ class WelcomeScreen extends StatelessWidget {
     return FlowPage(
       showBackButton: false,
       centered: true,
+      brandPanelWhenWide: false,
       content: [
         const Align(child: AppIconImage()),
         const SizedBox(height: 24),

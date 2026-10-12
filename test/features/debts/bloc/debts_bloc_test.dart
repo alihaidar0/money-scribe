@@ -221,4 +221,71 @@ void main() {
       errors: () => [isA<ServerException>()],
     );
   });
+
+  group('DebtSelected', () {
+    test('the first debt of the list is shown until one is chosen', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      await start(bloc);
+
+      expect(bloc.state.selectedId, isNull);
+      expect(bloc.state.selected?.id, 'sam');
+    });
+
+    blocTest<DebtsBloc, DebtsState>(
+      'shows the chosen debt',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtSelected('anna'));
+      },
+      verify: (bloc) => expect(bloc.state.selected?.id, 'anna'),
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'falls back to the first one when the chosen one is filtered out',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const DebtSelected('anna'))
+          ..add(const DebtsFilterSelected(DebtsFilter.lent));
+      },
+      verify: (bloc) => expect(bloc.state.selected?.id, 'sam'),
+    );
+  });
+
+  group('DebtDeleteConfirmed', () {
+    blocTest<DebtsBloc, DebtsState>(
+      'deletes the debt and shows the rest',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtDeleteConfirmed('sam'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.debts.map((debt) => debt.id), ['maria', 'anna']);
+        expect(bloc.state.deleteStatus, DebtsDeleteStatus.idle);
+        expect(bloc.state.selected?.id, 'maria');
+      },
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'reports no connection and keeps the debt',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        demo.update(
+          demo.settings.copyWith(scenario: DemoScenario.noConnection),
+        );
+        bloc.add(const DebtDeleteConfirmed('sam'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.deleteStatus, DebtsDeleteStatus.failed);
+        expect(bloc.state.deletingId, 'sam');
+      },
+    );
+  });
 }

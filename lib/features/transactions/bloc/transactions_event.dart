@@ -64,3 +64,24 @@ final class TransactionsScopeSelected extends TransactionsEvent {
   @override
   List<Object> get props => [scope];
 }
+
+/// The user chose a transaction in the list of a wide window, to see it in the
+/// detail pane.
+final class TransactionSelected extends TransactionsEvent {
+  const new(this.id);
+
+  final String id;
+
+  @override
+  List<Object> get props => [id];
+}
+
+/// The user confirmed deleting the transaction [id] from the detail pane.
+final class TransactionDeleteConfirmed extends TransactionsEvent {
+  const new(this.id);
+
+  final String id;
+
+  @override
+  List<Object> get props => [id];
+}

@@ -37,3 +37,24 @@ final class DebtsFilterSelected extends DebtsEvent {
   @override
   List<Object> get props => [filter];
 }
+
+/// The user chose a debt in the list of a wide window, to see it in the detail
+/// pane.
+final class DebtSelected extends DebtsEvent {
+  const new(this.id);
+
+  final String id;
+
+  @override
+  List<Object> get props => [id];
+}
+
+/// The user confirmed deleting the debt [id] from the detail pane.
+final class DebtDeleteConfirmed extends DebtsEvent {
+  const new(this.id);
+
+  final String id;
+
+  @override
+  List<Object> get props => [id];
+}

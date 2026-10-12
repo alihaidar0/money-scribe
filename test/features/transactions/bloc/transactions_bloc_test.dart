@@ -334,4 +334,82 @@ void main() {
       errors: () => [isA<ServerException>()],
     );
   });
+
+  group('TransactionSelected', () {
+    test('the newest transaction is shown until one is chosen', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      await start(bloc);
+
+      expect(bloc.state.selectedId, isNull);
+      expect(bloc.state.selected?.id, 'seed-taxi');
+    });
+
+    blocTest<TransactionsBloc, TransactionsState>(
+      'shows the chosen transaction',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionSelected('seed-groceries'));
+      },
+      verify: (bloc) => expect(bloc.state.selected?.id, 'seed-groceries'),
+    );
+
+    blocTest<TransactionsBloc, TransactionsState>(
+      'falls back to the newest one when the chosen one is filtered out',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionSelected('seed-groceries'))
+          ..add(const TransactionsSearched('taxi'));
+      },
+      verify: (bloc) => expect(bloc.state.selected?.id, 'seed-taxi'),
+    );
+
+    blocTest<TransactionsBloc, TransactionsState>(
+      'shows nothing when no transaction passes the filters',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionsSearched('no such thing'));
+      },
+      verify: (bloc) => expect(bloc.state.selected, isNull),
+    );
+  });
+
+  group('TransactionDeleteConfirmed', () {
+    blocTest<TransactionsBloc, TransactionsState>(
+      'deletes the transaction and shows the rest',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionDeleteConfirmed('seed-taxi'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.transactions, hasLength(3));
+        expect(bloc.state.deleteStatus, TransactionsDeleteStatus.idle);
+        expect(bloc.state.selected?.id, 'seed-coffee');
+      },
+    );
+
+    blocTest<TransactionsBloc, TransactionsState>(
+      'reports no connection and keeps the transaction',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        demo.update(
+          demo.settings.copyWith(scenario: DemoScenario.noConnection),
+        );
+        bloc.add(const TransactionDeleteConfirmed('seed-taxi'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.deleteStatus, TransactionsDeleteStatus.failed);
+        expect(bloc.state.deletingId, 'seed-taxi');
+        expect(bloc.state.status, TransactionsStatus.noConnection);
+      },
+    );
+  });
 }

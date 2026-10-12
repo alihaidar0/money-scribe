@@ -8,6 +8,7 @@ import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
+import 'package:money_scribe/core/widgets/two_columns.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
 
 /// RP-5: where the debts stand: what is owed to the person and what they owe,
@@ -37,18 +38,24 @@ class DebtsView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-        if (report.overdue.isNotEmpty)
-          _Section(
-            title: l10n.reportsOverdueSection(count: report.overdue.length),
-            items: report.overdue,
-            today: today,
-          ),
-        if (report.open.isNotEmpty)
-          _Section(
-            title: l10n.reportsOpenSection(count: report.open.length),
-            items: report.open,
-            today: today,
-          ),
+        TwoColumns(
+          first: [
+            if (report.overdue.isNotEmpty)
+              _Section(
+                title: l10n.reportsOverdueSection(count: report.overdue.length),
+                items: report.overdue,
+                today: today,
+              ),
+          ],
+          second: [
+            if (report.open.isNotEmpty)
+              _Section(
+                title: l10n.reportsOpenSection(count: report.open.length),
+                items: report.open,
+                today: today,
+              ),
+          ],
+        ),
       ],
     );
   }

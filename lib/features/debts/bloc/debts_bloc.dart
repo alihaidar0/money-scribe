@@ -25,6 +25,8 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
     on<DebtsDataChanged>(_onDataChanged, transformer: restartable());
     on<DebtsRefreshed>(_onRefreshed, transformer: restartable());
     on<DebtsFilterSelected>(_onFilterSelected, transformer: sequential());
+    on<DebtSelected>(_onSelected, transformer: sequential());
+    on<DebtDeleteConfirmed>(_onDeleteConfirmed, transformer: droppable());
   }
 
   static DateTime _day(DateTime date) =>
@@ -56,6 +58,32 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
 
   void _onFilterSelected(DebtsFilterSelected event, Emitter<DebtsState> emit) {
     emit(state.copyWith(filter: event.filter));
+  }
+
+  void _onSelected(DebtSelected event, Emitter<DebtsState> emit) {
+    emit(state.copyWith(selectedId: event.id));
+  }
+
+  Future<void> _onDeleteConfirmed(
+    DebtDeleteConfirmed event,
+    Emitter<DebtsState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        deleteStatus: DebtsDeleteStatus.deleting,
+        deletingId: event.id,
+      ),
+    );
+    try {
+      await _repository.delete(event.id);
+    } on Exception catch (error, stackTrace) {
+      if (emit.isDone) return;
+      if (error is! NoConnectionException) addError(error, stackTrace);
+      emit(state.copyWith(deleteStatus: DebtsDeleteStatus.failed));
+      return;
+    }
+    emit(state.copyWith(deleteStatus: DebtsDeleteStatus.idle));
+    await _load(emit, showLoading: false);
   }
 
   @override

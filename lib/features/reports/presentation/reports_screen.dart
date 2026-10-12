@@ -14,6 +14,7 @@ import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
+import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/reports/presentation/widgets/categories_view.dart';
@@ -78,9 +79,6 @@ class _ReportsView extends StatelessWidget {
   }
 }
 
-/// The widest the page grows, so it stays readable on a wide screen.
-const _maxContentWidth = 720.0;
-
 class _Content extends StatelessWidget {
   const new();
 
@@ -94,38 +92,51 @@ class _Content extends StatelessWidget {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        constraints: BoxConstraints(maxWidth: FrameWidth.wide.value),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
-            _ViewSwitch(
-              selected: view,
-              onSelected: (view) => bloc.add(ReportsViewSelected(view)),
-            ),
-            if (view != ReportsView.debts) ...[
-              const SizedBox(height: 16),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: MonthChip(
-                  month: state.month,
-                  onPressed: () => _chooseMonth(context, state.month),
+            // The controls keep the width of a phone, whatever the window.
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: FrameWidth.narrow.value),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ViewSwitch(
+                      selected: view,
+                      onSelected: (view) => bloc.add(ReportsViewSelected(view)),
+                    ),
+                    if (view != ReportsView.debts) ...[
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: MonthChip(
+                          month: state.month,
+                          onPressed: () => _chooseMonth(context, state.month),
+                        ),
+                      ),
+                      if (view == ReportsView.monthVsMonth) ...[
+                        const SizedBox(height: 12),
+                        _CompareChip(
+                          month: state.compareMonth,
+                          onPressed: () => _chooseCompareMonth(context, state),
+                        ),
+                      ],
+                      if (state.twoPayments) ...[
+                        const SizedBox(height: 12),
+                        PartSelector(
+                          selected: state.effectiveScope,
+                          onSelected: (scope) =>
+                              bloc.add(ReportsScopeSelected(scope)),
+                        ),
+                      ],
+                    ],
+                  ],
                 ),
               ),
-              if (view == ReportsView.monthVsMonth) ...[
-                const SizedBox(height: 12),
-                _CompareChip(
-                  month: state.compareMonth,
-                  onPressed: () => _chooseCompareMonth(context, state),
-                ),
-              ],
-              if (state.twoPayments) ...[
-                const SizedBox(height: 12),
-                PartSelector(
-                  selected: state.effectiveScope,
-                  onSelected: (scope) => bloc.add(ReportsScopeSelected(scope)),
-                ),
-              ],
-            ],
+            ),
             const SizedBox(height: 24),
             switch (view) {
               ReportsView.categories when period != null => CategoriesView(
