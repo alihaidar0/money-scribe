@@ -315,6 +315,70 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
 
+    group('the brand panel', () {
+      Future<void> pump(WidgetTester tester, Size size, {bool panel = true}) {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = size;
+        addTearDown(tester.view.reset);
+        return tester.pumpWidget(
+          _host(
+            FlowPage(brandPanelWhenWide: panel, content: const [Text('form')]),
+          ),
+        );
+      }
+
+      testWidgets('shows the name and the tagline beside a wide page', (
+        tester,
+      ) async {
+        await pump(tester, const Size(1280, 800));
+
+        expect(find.text('Money Scribe'), findsOneWidget);
+        expect(
+          find.text('Your salary, purchases and debts in one place.'),
+          findsOneWidget,
+        );
+        // The form is in the right half.
+        expect(
+          tester.getCenter(find.text('form')).dx,
+          greaterThan(tester.getCenter(find.text('Money Scribe')).dx),
+        );
+      });
+
+      testWidgets('is not shown on a phone', (tester) async {
+        await pump(tester, const Size(412, 915));
+
+        expect(find.text('Money Scribe'), findsNothing);
+        expect(find.text('form'), findsOneWidget);
+      });
+
+      testWidgets('is not shown when the page turns it off', (tester) async {
+        await pump(tester, const Size(1280, 800), panel: false);
+
+        expect(find.text('Money Scribe'), findsNothing);
+      });
+
+      testWidgets('mirrors in Arabic: the panel is on the right', (
+        tester,
+      ) async {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(1280, 800);
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          _host(
+            const FlowPage(content: [Text('form')]),
+            locale: const Locale('ar'),
+          ),
+        );
+
+        expect(
+          tester.getCenter(find.text('Money Scribe')).dx,
+          greaterThan(tester.getCenter(find.text('form')).dx),
+        );
+      });
+    });
+
     testWidgets('pins the bottom group to the bottom of a tall screen', (
       tester,
     ) async {
