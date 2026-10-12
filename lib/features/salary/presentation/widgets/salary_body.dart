@@ -8,6 +8,7 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
+import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
@@ -65,45 +66,18 @@ class SalaryBody extends StatelessWidget {
   }
 
   void _onStatusChanged(BuildContext context, SalaryState state) {
-    final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    final colors = Theme.of(context).colorScheme;
-
-    SnackBar failure(String text, VoidCallback onRetry) {
-      return SnackBar(
-        backgroundColor: colors.errorContainer,
-        content: Row(
-          children: [
-            Icon(Icons.error_outline, color: colors.onErrorContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(color: colors.onErrorContainer),
-              ),
-            ),
-          ],
-        ),
-        action: SnackBarAction(
-          label: l10n.retryAction,
-          textColor: colors.onErrorContainer,
-          onPressed: onRetry,
-        ),
-      );
-    }
+    final bloc = context.read<SalaryBloc>();
 
     switch (state.saveStatus) {
       case SalarySaveStatus.saved when !editing:
         showSuccessSnackBar(context, l10n.monthSaved);
       case SalarySaveStatus.failed:
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            failure(
-              l10n.couldNotSave,
-              () => context.read<SalaryBloc>().add(const SalarySaveRequested()),
-            ),
-          );
+        showFailureSnackBar(
+          context,
+          l10n.couldNotSave,
+          onRetry: () => bloc.add(const SalarySaveRequested()),
+        );
       case SalarySaveStatus.idle ||
           SalarySaveStatus.saving ||
           SalarySaveStatus.saved:
@@ -111,14 +85,11 @@ class SalaryBody extends StatelessWidget {
     }
 
     if (state.deleteStatus == SalaryDeleteStatus.failed) {
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          failure(
-            l10n.couldNotDelete,
-            () => context.read<SalaryBloc>().add(const SalaryDeleteRequested()),
-          ),
-        );
+      showFailureSnackBar(
+        context,
+        l10n.couldNotDelete,
+        onRetry: () => bloc.add(const SalaryDeleteRequested()),
+      );
     }
   }
 }
@@ -143,7 +114,12 @@ class _SalaryContent extends StatelessWidget {
             builder: (context, constraints) {
               final summary = [
                 if (!editing) ...[
-                  const SalarySectionSwitch(selected: SalarySection.month),
+                  SalarySectionSwitch(
+                    selected: SalarySection.month,
+                    month: context.select<SalaryBloc, YearMonth>(
+                      (bloc) => bloc.state.month,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                 ],
                 _MonthRow(editing: editing),

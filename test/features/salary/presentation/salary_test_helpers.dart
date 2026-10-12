@@ -73,3 +73,53 @@ Future<DemoController> pumpHistory(
   await tester.pumpAndSettle();
   return demo;
 }
+
+/// Opens the salary history, then the comparison with the Compare icon.
+Future<DemoController> pumpCompare(
+  WidgetTester tester, {
+  DemoSettings settings = const DemoSettings(),
+  AppLanguage language = AppLanguage.english,
+  Size size = tallPhone,
+}) async {
+  final demo = await pumpHistory(
+    tester,
+    settings: settings,
+    language: language,
+    size: size,
+  );
+  await tester.tap(
+    find.byTooltip(
+      language == AppLanguage.arabic ? 'مقارنة الأشهر' : 'Compare months',
+    ),
+  );
+  await tester.pumpAndSettle();
+  return demo;
+}
+
+/// Goes to the Salary tab, then opens the "Fixed items" segment.
+Future<DemoController> pumpFixedItems(
+  WidgetTester tester, {
+  DemoSettings settings = const DemoSettings(),
+  AppLanguage language = AppLanguage.english,
+  Size size = tallPhone,
+}) async {
+  final demo = await pumpApp(
+    tester,
+    settings: settings,
+    language: language,
+    size: size,
+  );
+  final arabic = language == AppLanguage.arabic;
+  await tester.tap(
+    find.descendant(
+      of: find.byWidgetPredicate(
+        (widget) => widget is NavigationBar || widget is NavigationRail,
+      ),
+      matching: find.text(arabic ? 'الراتب' : 'Salary'),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(arabic ? 'البنود الثابتة' : 'Fixed items'));
+  await tester.pumpAndSettle();
+  return demo;
+}

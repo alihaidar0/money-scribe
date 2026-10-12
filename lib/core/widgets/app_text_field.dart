@@ -23,6 +23,7 @@ class AppTextField extends StatelessWidget {
     this.unit,
     this.focusNode,
     this.textAlign = TextAlign.start,
+    this.style,
     this.inputFormatters,
     this.onChanged,
     this.onSubmitted,
@@ -76,6 +77,10 @@ class AppTextField extends StatelessWidget {
   /// form line up.
   final TextAlign textAlign;
 
+  /// The style of the typed text, when it is not the usual one (a large
+  /// amount).
+  final TextStyle? style;
+
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -89,6 +94,7 @@ class AppTextField extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       textAlign: textAlign,
+      style: style,
       enabled: enabled,
       obscureText: obscureText,
       keyboardType: keyboardType,

@@ -11,6 +11,7 @@ import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
@@ -48,6 +49,7 @@ Widget buildApp({
     payScheduleRepository: FakePayScheduleRepository(demo: demoController),
     overviewRepository: FakeOverviewRepository(demo: demoController),
     salaryRepository: FakeSalaryRepository(demo: demoController),
+    fixedItemsRepository: FakeFixedItemsRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),
     ticker: ticker ?? FakeTicker(),

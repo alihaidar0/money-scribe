@@ -10,6 +10,32 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 class MonthChip extends StatelessWidget {
   const new({required this.month, this.onPressed, super.key});
 
+  static const _startPadding = 20.0;
+  static const _endPadding = 12.0;
+  static const _endPaddingWithoutChevron = 20.0;
+  static const _chevronGap = 4.0;
+  static const _chevronSize = 24.0;
+
+  /// The width a chip with a chevron needs to show [month] on one line, at the
+  /// current text size.
+  static double naturalWidth(BuildContext context, YearMonth month) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: context.monthFormatter.format(month),
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width.ceilToDouble() +
+        _startPadding +
+        _endPadding +
+        _chevronGap +
+        _chevronSize;
+  }
+
   final YearMonth month;
   final VoidCallback? onPressed;
 
@@ -36,9 +62,9 @@ class MonthChip extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 48),
             child: Padding(
               padding: EdgeInsetsDirectional.fromSTEB(
-                20,
+                _startPadding,
                 8,
-                onPressed == null ? 20 : 12,
+                onPressed == null ? _endPaddingWithoutChevron : _endPadding,
                 8,
               ),
               child: Row(
@@ -48,8 +74,8 @@ class MonthChip extends StatelessWidget {
                     child: Text(text, style: theme.textTheme.titleMedium),
                   ),
                   if (onPressed != null) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.expand_more),
+                    const SizedBox(width: _chevronGap),
+                    const Icon(Icons.expand_more, size: _chevronSize),
                   ],
                 ],
               ),
