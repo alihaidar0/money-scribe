@@ -720,10 +720,6 @@
   "@monthSaved": {
     "description": "Message shown after a month was saved."
   },
-  "viewHistoryAction": "View history",
-  "@viewHistoryAction": {
-    "description": "Action of a message: opens the saved months."
-  },
   "fieldInvalidAmount": "Enter a valid amount.",
   "@fieldInvalidAmount": {
     "description": "Error under an amount field whose text is not an amount."
@@ -781,5 +777,75 @@
   "salaryLoadFailed": "Couldn''t load this month",
   "@salaryLoadFailed": {
     "description": "Title shown on the Salary screen when the month could not be loaded."
+  },
+  "saveChangesAction": "Save changes",
+  "@saveChangesAction": {
+    "description": "Button that saves the corrections made to a saved month."
+  },
+  "deleteMonthAction": "Delete month",
+  "@deleteMonthAction": {
+    "description": "Menu item that deletes a saved month."
+  },
+  "deleteMonthTitle": "Delete {month}?",
+  "@deleteMonthTitle": {
+    "description": "Title of the dialog that asks to delete a saved month. The placeholder is the month, such as September 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteMonthMessage": "This month and its fixed items will be permanently deleted from your account. This cannot be undone.",
+  "@deleteMonthMessage": {
+    "description": "Text of the dialog that asks to delete a saved month."
+  },
+  "deleteAction": "Delete",
+  "@deleteAction": {
+    "description": "Button that confirms a deletion."
+  },
+  "monthDeleted": "Month deleted",
+  "@monthDeleted": {
+    "description": "Message shown after a month was deleted."
+  },
+  "couldNotDelete": "Couldn''t delete. Check your connection.",
+  "@couldNotDelete": {
+    "description": "Message shown when deleting failed."
+  },
+  "discardChangesTitle": "Discard changes?",
+  "@discardChangesTitle": {
+    "description": "Title of the dialog shown when leaving a form that has unsaved changes."
+  },
+  "discardChangesMessage": "Your changes to {month} have not been saved.",
+  "@discardChangesMessage": {
+    "description": "Text of the dialog shown when leaving a saved month with unsaved changes. The placeholder is the month, such as September 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "keepEditingAction": "Keep editing",
+  "@keepEditingAction": {
+    "description": "Button that closes the discard dialog and stays on the form."
+  },
+  "discardAction": "Discard",
+  "@discardAction": {
+    "description": "Button that leaves a form and drops its unsaved changes."
+  },
+  "newMonthAction": "New month",
+  "@newMonthAction": {
+    "description": "Button that starts the salary of a month that was not saved yet."
+  },
+  "compareMonthsTitle": "Compare months",
+  "@compareMonthsTitle": {
+    "description": "Title of the screen that compares two months, and tooltip of the button that opens it."
+  },
+  "salaryHistoryEmptyTitle": "No saved months yet",
+  "@salaryHistoryEmptyTitle": {
+    "description": "Title shown on the salary history when no month was saved."
+  },
+  "enterMonthAction": "Enter a month",
+  "@enterMonthAction": {
+    "description": "Button on the empty salary history that starts a month."
   }
 }

@@ -25,6 +25,26 @@ final class YearMonth extends Equatable implements Comparable<YearMonth> {
   /// The first day of the month, at midnight.
   DateTime get firstDay => DateTime(year, month);
 
+  /// The month as text for an address, such as `2026-09`. [tryParse] reads it
+  /// back.
+  String get param {
+    final paddedYear = year.toString().padLeft(4, '0');
+    final paddedMonth = month.toString().padLeft(2, '0');
+    return '$paddedYear-$paddedMonth';
+  }
+
+  /// Reads a month written the way [param] writes it, or `null` for anything
+  /// else.
+  static YearMonth? tryParse(String? text) {
+    final match = _param.firstMatch(text ?? '');
+    if (match == null) return null;
+    final month = int.parse(match.group(2)!);
+    if (month < 1 || month > 12) return null;
+    return YearMonth(int.parse(match.group(1)!), month);
+  }
+
+  static final RegExp _param = RegExp(r'^(\d{4})-(\d{2})$');
+
   @override
   int compareTo(YearMonth other) {
     return year != other.year ? year - other.year : month - other.month;

@@ -36,6 +36,8 @@ const List<String> _screens = [
   AppRoutes.addTransaction,
   AppRoutes.fixedItems,
   AppRoutes.salaryHistory,
+  AppRoutes.salaryMonth,
+  AppRoutes.salaryCompare,
   AppRoutes.demo,
 ];
 
@@ -85,7 +87,8 @@ Future<void> _openScreen(
     ),
   );
   await tester.pumpAndSettle();
-  GoRouter.of(tester.element(find.byType(Scaffold).first)).go(route);
+  GoRouter.of(tester.element(find.byType(Scaffold).first))
+      .go(route.replaceFirst(':month', '2026-09'));
   await tester.pumpAndSettle();
 }
 

@@ -82,7 +82,7 @@ class DemoPanelScreen extends StatelessWidget {
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(code: value)),
               ),
-              const _Heading('Saving, next attempt'),
+              const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
                 values: DemoSave.values,
                 selected: settings.save,

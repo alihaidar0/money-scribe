@@ -1,3 +1,5 @@
+import 'package:money_scribe/core/dates/year_month.dart';
+
 /// The paths of the app's screens. Kept apart from the router so a screen can
 /// link to another without importing the router, which imports every screen.
 abstract final class AppRoutes {
@@ -27,6 +29,20 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const addTransaction = '/transactions/add';
   static const salaryHistory = '/salary/history';
+
+  /// A saved month, opened from the history to be corrected or deleted.
+  static const salaryMonth = '/salary/history/:month';
+  static const salaryCompare = '/salary/compare';
+
+  /// The address of the saved [month] in [salaryMonth].
+  static String salaryMonthPath(YearMonth month) {
+    return '$salaryHistory/${month.param}';
+  }
+
+  /// The Salary tab, showing [month] when one is given.
+  static String salaryTab([YearMonth? month]) {
+    return month == null ? salary : '$salary?month=${month.param}';
+  }
 
   /// The second segment of the Salary screen. Unlike the other secondary
   /// screens it keeps the navigation bar, so it is a page of the Salary tab.

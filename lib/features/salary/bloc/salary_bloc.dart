@@ -29,6 +29,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     on<SalaryFieldChanged>(_onFieldChanged, transformer: sequential());
     on<SalaryPaymentModeSelected>(_onModeSelected, transformer: sequential());
     on<SalarySaveRequested>(_onSaveRequested, transformer: droppable());
+    on<SalaryDeleteRequested>(_onDeleteRequested, transformer: droppable());
     on<SalaryRetried>(_onRetried, transformer: droppable());
     on<SalaryDataChanged>(_onDataChanged, transformer: restartable());
   }
@@ -41,7 +42,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
   late final StreamSubscription<void> _changes;
 
   Future<void> _onStarted(SalaryStarted event, Emitter<SalaryState> emit) {
-    return _load(state.month, emit);
+    return _load(event.month ?? state.month, emit);
   }
 
   Future<void> _onMonthSelected(
@@ -102,6 +103,24 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     }
   }
 
+  Future<void> _onDeleteRequested(
+    SalaryDeleteRequested event,
+    Emitter<SalaryState> emit,
+  ) async {
+    if (!state.isSaved) return;
+
+    emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleting));
+    try {
+      await _repository.delete(state.month);
+      emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleted));
+    } on NoConnectionException {
+      emit(state.copyWith(deleteStatus: SalaryDeleteStatus.failed));
+    } on Exception catch (error, stackTrace) {
+      addError(error, stackTrace);
+      emit(state.copyWith(deleteStatus: SalaryDeleteStatus.failed));
+    }
+  }
+
   Future<void> _onRetried(SalaryRetried event, Emitter<SalaryState> emit) {
     return _load(state.month, emit);
   }
@@ -131,6 +150,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
         status: SalaryStatus.loading,
         month: month,
         saveStatus: SalarySaveStatus.idle,
+        deleteStatus: SalaryDeleteStatus.idle,
       ),
     );
     try {

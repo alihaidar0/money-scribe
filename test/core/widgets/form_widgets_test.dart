@@ -4,10 +4,12 @@ import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
+import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
+import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 
 Widget _host(Widget child, {Locale locale = const Locale('en')}) {
   return MaterialApp(
@@ -148,6 +150,92 @@ void main() {
     });
   });
 
+  group('showSuccessSnackBar', () {
+    Future<void> show(WidgetTester tester, ThemeData theme) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showSuccessSnackBar(context, 'Done it'),
+                child: const Text('Show'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Show'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('is green with a check, and has no action', (tester) async {
+      await show(tester, AppTheme.light);
+
+      expect(find.text('Done it'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byType(SnackBarAction), findsNothing);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.backgroundColor, MoneyColors.light.income.container);
+      expect(
+        tester.widget<Text>(find.text('Done it')).style!.color,
+        MoneyColors.light.income.onContainer,
+      );
+    });
+
+    testWidgets('follows the dark theme', (tester) async {
+      await show(tester, AppTheme.dark);
+
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.backgroundColor, MoneyColors.dark.income.container);
+    });
+
+    testWidgets('stays for two seconds', (tester) async {
+      await show(tester, AppTheme.light);
+      expect(successSnackBarDuration, const Duration(seconds: 2));
+
+      await tester.pump(const Duration(milliseconds: 1500));
+      expect(find.text('Done it'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+      expect(find.text('Done it'), findsNothing);
+    });
+
+    testWidgets('replaces the message that is showing', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Column(
+                children: [
+                  TextButton(
+                    onPressed: () => showSuccessSnackBar(context, 'First'),
+                    child: const Text('One'),
+                  ),
+                  TextButton(
+                    onPressed: () => showSuccessSnackBar(context, 'Second'),
+                    child: const Text('Two'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('One'));
+      await tester.pump();
+      await tester.tap(find.text('Two'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('First'), findsNothing);
+      expect(find.text('Second'), findsOneWidget);
+    });
+  });
+
   group('MonthChip', () {
     testWidgets('shows the month and opens on tap', (tester) async {
       var taps = 0;
@@ -190,6 +278,24 @@ void main() {
       expect(
         tester.getSize(find.byType(MonthChip)).height,
         greaterThanOrEqualTo(48),
+      );
+    });
+  });
+
+  group('a MonthChip that only shows the month', () {
+    testWidgets('has no chevron and does not react to a tap', (tester) async {
+      await tester.pumpWidget(
+        _host(const Center(child: MonthChip(month: YearMonth(2026, 9)))),
+      );
+
+      expect(find.text('September 2026'), findsOneWidget);
+      expect(find.byIcon(Icons.expand_more), findsNothing);
+      expect(tester.widget<InkWell>(find.byType(InkWell)).onTap, isNull);
+      // It is read as plain text, not as a button.
+      expect(find.bySemanticsLabel('September 2026'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('September 2026, choose month'),
+        findsNothing,
       );
     });
   });
@@ -337,6 +443,23 @@ void main() {
       expect(find.text('Something went wrong'), findsNothing);
       expect(find.text('Please try again in a moment.'), findsNothing);
       expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('can show its action as a filled button', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          StateView(
+            icon: Icons.history,
+            title: 'Nothing yet',
+            actionLabel: 'Start',
+            filledAction: true,
+            onAction: () {},
+          ),
+        ),
+      );
+
+      expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+      expect(find.text('Nothing yet'), findsOneWidget);
     });
 
     testWidgets('keeps the usual words for no connection', (tester) async {

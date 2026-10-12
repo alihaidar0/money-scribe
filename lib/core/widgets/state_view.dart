@@ -20,6 +20,7 @@ class StateView extends StatelessWidget {
     required this.actionLabel,
     required this.onAction,
     this.message,
+    this.filledAction = false,
     super.key,
   });
 
@@ -28,6 +29,10 @@ class StateView extends StatelessWidget {
 
   /// The sentence under the title, when the title does not say enough.
   final String? message;
+
+  /// Shows the action as a filled primary button instead of a tonal one, for
+  /// an empty state that leads to the next thing to do.
+  final bool filledAction;
   final String actionLabel;
   final VoidCallback? onAction;
 
@@ -62,7 +67,13 @@ class StateView extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 24),
-              FilledButton.tonal(onPressed: onAction, child: Text(actionLabel)),
+              if (filledAction)
+                FilledButton(onPressed: onAction, child: Text(actionLabel))
+              else
+                FilledButton.tonal(
+                  onPressed: onAction,
+                  child: Text(actionLabel),
+                ),
             ],
           ),
         ),
