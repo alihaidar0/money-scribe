@@ -28,9 +28,6 @@ class CsvImportScreen extends StatelessWidget {
   }
 }
 
-/// The widest the page grows, so it stays readable on a wide screen.
-const _maxContentWidth = 560.0;
-
 class _CsvImportView extends StatelessWidget {
   const new();
 
@@ -99,13 +96,7 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: ListView(padding: const EdgeInsets.all(16), children: children),
-      ),
-    );
+    return ListView(padding: const EdgeInsets.all(16), children: children);
   }
 }
 

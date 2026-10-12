@@ -87,6 +87,7 @@ class _SalaryHistoryView extends StatelessWidget {
       ),
       floatingActionButton: hasMonths
           ? FloatingActionButton.extended(
+              heroTag: null,
               onPressed: () => _startNewMonth(context),
               icon: const Icon(Icons.add),
               label: Text(l10n.newMonthAction),
@@ -96,9 +97,6 @@ class _SalaryHistoryView extends StatelessWidget {
   }
 }
 
-/// The widest the list grows, so a card stays readable on a wide screen.
-const _maxListWidth = 720.0;
-
 class _HistoryList extends StatelessWidget {
   const new({required this.entries});
 
@@ -106,18 +104,12 @@ class _HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxListWidth),
-        child: ListView.separated(
-          // Room under the last card for the button.
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-          itemCount: entries.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
-        ),
-      ),
+    return ListView.separated(
+      // Room under the last card for the button.
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      itemCount: entries.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
     );
   }
 }

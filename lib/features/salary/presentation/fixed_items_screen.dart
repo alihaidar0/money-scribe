@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
+import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/salary/bloc/fixed_items_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
@@ -195,9 +196,6 @@ Future<void> _editItem(BuildContext context, FixedItem item) async {
   }
 }
 
-/// The widest the content grows, so a card stays readable on a wide screen.
-const _maxContentWidth = 720.0;
-
 class _Content extends StatelessWidget {
   const new();
 
@@ -221,7 +219,7 @@ class _Content extends StatelessWidget {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        constraints: BoxConstraints(maxWidth: FrameWidth.regular.value),
         child: LayoutBuilder(
           builder: (context, constraints) => Column(
             children: [
@@ -243,6 +241,7 @@ class _Content extends StatelessWidget {
                       end: 16,
                       bottom: 16,
                       child: FloatingActionButton.extended(
+                        heroTag: null,
                         onPressed: () => _addItem(context),
                         icon: const Icon(Icons.add),
                         label: Text(l10n.addItemAction),

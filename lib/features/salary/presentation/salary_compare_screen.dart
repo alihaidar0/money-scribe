@@ -34,9 +34,6 @@ class SalaryCompareScreen extends StatelessWidget {
   }
 }
 
-/// The widest the content grows, so the table stays readable on a wide screen.
-const _maxContentWidth = 720.0;
-
 class _CompareView extends StatelessWidget {
   const new();
 
@@ -73,33 +70,27 @@ class _CompareContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final bloc = context.read<SalaryCompareBloc>();
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (state.hasParts) ...[
-                PartSelector(
-                  selected: state.effectiveScope,
-                  onSelected: (scope) =>
-                      bloc.add(SalaryCompareScopeSelected(scope)),
-                ),
-                const SizedBox(height: 16),
-              ],
-              _MonthPair(left: state.left, right: state.right),
-              const SizedBox(height: 16),
-              SalaryCompareTable(
-                lines: state.lines,
-                left: state.left,
-                right: state.right,
-              ),
-            ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (state.hasParts) ...[
+            PartSelector(
+              selected: state.effectiveScope,
+              onSelected: (scope) =>
+                  bloc.add(SalaryCompareScopeSelected(scope)),
+            ),
+            const SizedBox(height: 16),
+          ],
+          _MonthPair(left: state.left, right: state.right),
+          const SizedBox(height: 16),
+          SalaryCompareTable(
+            lines: state.lines,
+            left: state.left,
+            right: state.right,
           ),
-        ),
+        ],
       ),
     );
   }

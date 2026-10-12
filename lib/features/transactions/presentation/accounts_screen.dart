@@ -27,9 +27,6 @@ class AccountsScreen extends StatelessWidget {
   }
 }
 
-/// The widest the list grows, so a row stays readable on a wide screen.
-const _maxContentWidth = 560.0;
-
 class _AccountsView extends StatelessWidget {
   const new();
 
@@ -73,6 +70,7 @@ class _AccountsView extends StatelessWidget {
         appBar: AppBar(title: Text(l10n.accountsTitle)),
         floatingActionButton: status == AccountsStatus.ready
             ? FloatingActionButton.extended(
+                heroTag: null,
                 onPressed: () => _add(context),
                 icon: const Icon(Icons.add),
                 label: Text(l10n.addAccountAction),
@@ -126,22 +124,16 @@ class _List extends StatelessWidget {
       );
     }
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: ListView(
-          // Room under the last row for the button.
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-          children: [
-            for (final account in accounts)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _AccountRow(account: account),
-              ),
-          ],
-        ),
-      ),
+    return ListView(
+      // Room under the last row for the button.
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      children: [
+        for (final account in accounts)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _AccountRow(account: account),
+          ),
+      ],
     );
   }
 }

@@ -27,9 +27,6 @@ class AccountScreen extends StatelessWidget {
   }
 }
 
-/// The widest the page grows, so it stays readable on a wide screen.
-const _maxContentWidth = 560.0;
-
 class _AccountView extends StatelessWidget {
   const new();
 
@@ -84,68 +81,59 @@ class _Content extends StatelessWidget {
       (bloc) => bloc.state.isBusy,
     );
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          children: [
-            Center(
-              child: Semantics(
-                container: true,
-                child: Column(
-                  children: [
-                    ExcludeSemantics(child: _Initial(profile.initial)),
-                    const SizedBox(height: 16),
-                    Text(
-                      profile.name,
-                      style: theme.textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    // An address reads from left to right in any language.
-                    Text(
-                      profile.email,
-                      textDirection: TextDirection.ltr,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      children: [
+        Center(
+          child: Semantics(
+            container: true,
+            child: Column(
+              children: [
+                ExcludeSemantics(child: _Initial(profile.initial)),
+                const SizedBox(height: 16),
+                Text(
+                  profile.name,
+                  style: theme.textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
                 ),
-              ),
+                const SizedBox(height: 4),
+                // An address reads from left to right in any language.
+                Text(
+                  profile.email,
+                  textDirection: TextDirection.ltr,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: Text(l10n.changePasswordTitle),
-              trailing: const _Chevron(),
-              onTap: () => context.push(AppRoutes.changePassword),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: Text(l10n.signOutAction),
-              enabled: !isBusy,
-              onTap: () => _signOut(context),
-            ),
-            const Divider(height: 32),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: theme.colorScheme.error,
-              ),
-              title: Text(
-                l10n.deleteMyAccountAction,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-              enabled: !isBusy,
-              onTap: () => showDeleteAccountDialog(context),
-            ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        ListTile(
+          leading: const Icon(Icons.lock_outline),
+          title: Text(l10n.changePasswordTitle),
+          trailing: const _Chevron(),
+          onTap: () => context.push(AppRoutes.changePassword),
+        ),
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: Text(l10n.signOutAction),
+          enabled: !isBusy,
+          onTap: () => _signOut(context),
+        ),
+        const Divider(height: 32),
+        ListTile(
+          leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+          title: Text(
+            l10n.deleteMyAccountAction,
+            style: TextStyle(color: theme.colorScheme.error),
+          ),
+          enabled: !isBusy,
+          onTap: () => showDeleteAccountDialog(context),
+        ),
+      ],
     );
   }
 
