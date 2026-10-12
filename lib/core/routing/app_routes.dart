@@ -28,11 +28,36 @@ abstract final class AppRoutes {
   // Secondary screens.
   static const settings = '/settings';
   static const addTransaction = '/transactions/add';
+
+  /// A transaction, opened from the list to be changed or deleted.
+  static const editTransaction = '/transactions/edit/:id';
+  static const addDebt = '/debts/add';
+
+  /// A debt with its repayments.
+  static const debtDetails = '/debts/:id';
+  static const editDebt = '/debts/:id/edit';
   static const salaryHistory = '/salary/history';
 
   /// A saved month, opened from the history to be corrected or deleted.
   static const salaryMonth = '/salary/history/:month';
   static const salaryCompare = '/salary/compare';
+
+  /// The address of the transaction [id] in [editTransaction].
+  static String editTransactionPath(String id) {
+    return '/transactions/edit/${Uri.encodeComponent(id)}';
+  }
+
+  /// The address of the debt [id] in [debtDetails]. With [addRepayment] the
+  /// sheet that adds a repayment opens over it.
+  static String debtDetailsPath(String id, {bool addRepayment = false}) {
+    final path = '/debts/${Uri.encodeComponent(id)}';
+    return addRepayment ? '$path?repay=1' : path;
+  }
+
+  /// The address of the debt [id] in [editDebt].
+  static String editDebtPath(String id) {
+    return '/debts/${Uri.encodeComponent(id)}/edit';
+  }
 
   /// The address of the saved [month] in [salaryMonth].
   static String salaryMonthPath(YearMonth month) {

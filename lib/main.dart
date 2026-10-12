@@ -6,12 +6,16 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_language_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
+import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -37,6 +41,10 @@ Future<void> main() async {
       overviewRepository: FakeOverviewRepository(demo: demo),
       salaryRepository: FakeSalaryRepository(demo: demo),
       fixedItemsRepository: FakeFixedItemsRepository(demo: demo),
+      transactionsRepository: FakeTransactionsRepository(demo: demo),
+      accountsRepository: FakeAccountsRepository(demo: demo),
+      categoriesRepository: FakeCategoriesRepository(demo: demo),
+      debtsRepository: FakeDebtsRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,
     ),

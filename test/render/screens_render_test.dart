@@ -8,6 +8,7 @@ import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
@@ -742,6 +743,261 @@ final _scenes = <_Scene>[
     signedIn: true,
     size: Size(1280, 800),
     setup: _useTwoPayments,
+  ),
+  const _Scene('tx-1-transactions', AppRoutes.transactions, signedIn: true),
+  const _Scene(
+    'tx-2-transactions-two-payments',
+    AppRoutes.transactions,
+    signedIn: true,
+    size: _tallPhone,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'tx-2b-transactions-part-2',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(SegmentedButton<PeriodScope>),
+              matching: find.byType(Text),
+            )
+            .at(2),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-3-filters',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FilterChip).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-3b-filters-two-payments',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await tester.tap(find.byType(FilterChip).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-3c-filtered-by-category',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FilterChip).first);
+      await tester.pumpAndSettle();
+      // The first category chip of the sheet, then Apply.
+      await tester.tap(find.byType(FilterChip).at(3));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'tx-4-add-transaction',
+    AppRoutes.addTransaction,
+    signedIn: true,
+  ),
+  _Scene(
+    'tx-4b-add-transaction-filled',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField).first, '1284.50');
+      await tester.tap(find.byType(ChoiceChip).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'tx-4c-add-transaction-two-payments',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  const _Scene(
+    'tx-5-edit-transaction',
+    '/transactions/edit/seed-groceries',
+    signedIn: true,
+  ),
+  _Scene(
+    'tx-6-choose-account',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-7-delete-transaction',
+    '/transactions/edit/seed-groceries',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-8-no-results',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField).first, 'xyz');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'tx-9-loading',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'tx-10-empty',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'tx-11-error',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'tx-12-no-connection',
+    AppRoutes.transactions,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  const _Scene(
+    'tx-wide-two-payments',
+    AppRoutes.transactions,
+    signedIn: true,
+    size: Size(1280, 800),
+    setup: _useTwoPayments,
+  ),
+  const _Scene('db-1-debts', AppRoutes.debts, signedIn: true),
+  _Scene(
+    'db-1b-debts-borrowed',
+    AppRoutes.debts,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(SegmentedButton<DebtsFilter>),
+              matching: find.byType(Text),
+            )
+            .at(2),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('db-2-add-debt', AppRoutes.addDebt, signedIn: true),
+  _Scene(
+    'db-2b-add-debt-filled',
+    AppRoutes.addDebt,
+    signedIn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Sam');
+      await tester.enterText(fields.at(1), '10000');
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('db-3-debt-details', '/debts/sam', signedIn: true),
+  const _Scene('db-3b-debt-overdue', '/debts/maria', signedIn: true),
+  const _Scene('db-3c-debt-settled', '/debts/anna', signedIn: true),
+  const _Scene('db-4-add-repayment', '/debts/sam?repay=1', signedIn: true),
+  _Scene(
+    'db-5-edit-repayment',
+    '/debts/sam',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.chevron_right).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'db-6-delete-repayment',
+    '/debts/sam',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.chevron_right).first);
+      await tester.pumpAndSettle();
+      // The red button of the sheet is the first of its row: after the date.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(BottomSheet),
+              matching: find.byType(TextButton),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'db-7-delete-debt',
+    '/debts/sam',
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byWidgetPredicate((widget) => widget is PopupMenuItem).last,
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('db-8-edit-debt', '/debts/sam/edit', signedIn: true),
+  _Scene(
+    'db-9-loading',
+    AppRoutes.debts,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'db-10-empty',
+    AppRoutes.debts,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'db-11-error',
+    AppRoutes.debts,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'db-12-no-connection',
+    AppRoutes.debts,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+  const _Scene(
+    'db-wide',
+    AppRoutes.debts,
+    signedIn: true,
+    size: Size(1280, 800),
   ),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),

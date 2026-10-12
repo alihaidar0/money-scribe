@@ -146,26 +146,26 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 ### D. Transactions
 
-- [ ] TX-1 Transactions, one payment
-- [ ] TX-2 Transactions, two payments
-- [ ] TX-3 Filters
-- [ ] TX-3b Filters, two payments
-- [ ] TX-4 Add transaction
-- [ ] TX-5 Edit transaction
-- [ ] TX-6 Choose account
-- [ ] TX-7 Delete transaction
-- [ ] TX-8 Transactions, no results
+- [x] TX-1 Transactions, one payment
+- [x] TX-2 Transactions, two payments
+- [x] TX-3 Filters
+- [x] TX-3b Filters, two payments
+- [x] TX-4 Add transaction
+- [x] TX-5 Edit transaction
+- [x] TX-6 Choose account
+- [x] TX-7 Delete transaction
+- [x] TX-8 Transactions, no results
 
 ### E. Debts
 
-- [ ] DB-1 Debts
-- [ ] DB-2 Add debt
-- [ ] DB-3 Debt details
-- [ ] DB-4 Add repayment
-- [ ] DB-5 Edit repayment
-- [ ] DB-6 Delete repayment
-- [ ] DB-7 Delete debt
-- [ ] DB-8 Edit debt
+- [x] DB-1 Debts
+- [x] DB-2 Add debt
+- [x] DB-3 Debt details
+- [x] DB-4 Add repayment
+- [x] DB-5 Edit repayment
+- [x] DB-6 Delete repayment
+- [x] DB-7 Delete debt
+- [x] DB-8 Edit debt
 
 ### F. Reports
 
@@ -203,14 +203,14 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] SAL-14 Salary, no connection
 - [x] SAL-15 Salary history, empty
 - [x] FIX-6 Fixed items, empty
-- [ ] TX-9 Transactions, loading
-- [ ] TX-10 Transactions, empty
-- [ ] TX-11 Transactions, error
-- [ ] TX-12 Transactions, no connection
-- [ ] DB-9 Debts, loading
-- [ ] DB-10 Debts, empty
-- [ ] DB-11 Debts, error
-- [ ] DB-12 Debts, no connection
+- [x] TX-9 Transactions, loading
+- [x] TX-10 Transactions, empty
+- [x] TX-11 Transactions, error
+- [x] TX-12 Transactions, no connection
+- [x] DB-9 Debts, loading
+- [x] DB-10 Debts, empty
+- [x] DB-11 Debts, error
+- [x] DB-12 Debts, no connection
 - [ ] RP-6 Reports, loading
 - [ ] RP-7 Reports, empty
 - [ ] RP-8 Reports, error

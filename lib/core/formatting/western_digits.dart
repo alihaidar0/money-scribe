@@ -1,9 +1,21 @@
+import 'package:intl/intl.dart';
+
 /// Digits are always Western (0-9) in every language of the app. This turns the
 /// Arabic-Indic digits (٠-٩), the Persian ones (۰-۹) and the Arabic decimal and
 /// thousands separators (٫ ٬) into their Western forms, so formatted numbers
 /// stay Western whatever the locale data says, and digits typed on an Arabic
 /// keyboard are understood.
 abstract final class WesternDigits {
+  /// Makes every `DateFormat` of the languages that have their own digits write
+  /// Western ones. It covers the dates inside Flutter's own widgets, such as
+  /// the date picker, which format through `intl` and not through the app's
+  /// formatters. Call it once, before any date is formatted.
+  static void useInDateFormats() {
+    for (final language in const ['ar', 'fa']) {
+      DateFormat.useNativeDigitsByDefaultFor(language, false);
+    }
+  }
+
   static const _arabicIndicZero = 0x0660;
   static const _persianZero = 0x06F0;
   static const _arabicDecimalSeparator = 0x066B;

@@ -12,12 +12,14 @@ import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/environment/app_environment_scope.dart';
+import 'package:money_scribe/core/formatting/western_digits.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
@@ -25,6 +27,9 @@ import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
+import 'package:money_scribe/features/transactions/domain/accounts_repository.dart';
+import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
+import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
 
 /// The root of the app. It receives what the device and the server provide
 /// (repositories, the environment) from `main`, so tests can pass fakes, and
@@ -40,6 +45,10 @@ class MoneyScribeApp extends StatefulWidget {
     required this.overviewRepository,
     required this.salaryRepository,
     required this.fixedItemsRepository,
+    required this.transactionsRepository,
+    required this.accountsRepository,
+    required this.categoriesRepository,
+    required this.debtsRepository,
     required this.demo,
     required this.environment,
     this.textClipboard = const SystemTextClipboard(),
@@ -56,6 +65,10 @@ class MoneyScribeApp extends StatefulWidget {
   final OverviewRepository overviewRepository;
   final SalaryRepository salaryRepository;
   final FixedItemsRepository fixedItemsRepository;
+  final TransactionsRepository transactionsRepository;
+  final AccountsRepository accountsRepository;
+  final CategoriesRepository categoriesRepository;
+  final DebtsRepository debtsRepository;
 
   /// What the fake data pretends; changed by the demo panel.
   final DemoController demo;
@@ -70,6 +83,12 @@ class MoneyScribeApp extends StatefulWidget {
 }
 
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
+  @override
+  void initState() {
+    super.initState();
+    WesternDigits.useInDateFormats();
+  }
+
   late final StreamListenable _signInChanges = StreamListenable(
     widget.authRepository.signedInChanges,
   );
@@ -99,6 +118,10 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.overviewRepository),
           RepositoryProvider.value(value: widget.salaryRepository),
           RepositoryProvider.value(value: widget.fixedItemsRepository),
+          RepositoryProvider.value(value: widget.transactionsRepository),
+          RepositoryProvider.value(value: widget.accountsRepository),
+          RepositoryProvider.value(value: widget.categoriesRepository),
+          RepositoryProvider.value(value: widget.debtsRepository),
           RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),

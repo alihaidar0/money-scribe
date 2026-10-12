@@ -4,6 +4,7 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
@@ -305,7 +306,9 @@ void main() {
       expect(find.byType(OverviewScreen), findsOneWidget);
     });
 
-    testWidgets('choosing a debt closes the sheet', (tester) async {
+    testWidgets('choosing a debt opens it with the repayment sheet', (
+      tester,
+    ) async {
       await _pumpOverview(tester);
       await tester.tap(find.text('Add repayment'));
       await tester.pumpAndSettle();
@@ -314,7 +317,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Choose a debt'), findsNothing);
-      expect(find.text('This screen is coming soon.'), findsOneWidget);
+      expect(find.byType(DebtDetailsScreen), findsOneWidget);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('Add repayment'), findsWidgets);
     });
   });
 
