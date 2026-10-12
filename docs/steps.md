@@ -126,18 +126,18 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 ### C. Salary, fixed items and history
 
-- [ ] SAL-1 Salary, one payment
+- [x] SAL-1 Salary, one payment
 - [ ] SAL-1b Salary, editing a saved month
 - [ ] SAL-1c Delete month
-- [ ] SAL-2 Salary, two payments
-- [ ] SAL-3 Month picker
-- [ ] SAL-4 Switch to one payment
-- [ ] SAL-5 Switch to two payments
+- [x] SAL-2 Salary, two payments
+- [x] SAL-3 Month picker
+- [x] SAL-4 Switch to one payment
+- [x] SAL-5 Switch to two payments
 - [ ] SAL-6 Salary history, one payment
 - [ ] SAL-7 Salary history, two payments
 - [ ] SAL-8 Compare months
 - [ ] SAL-9 Compare parts
-- [ ] SAL-10 Month saved
+- [x] SAL-10 Month saved
 - [ ] FIX-1 Fixed items, one payment
 - [ ] FIX-2 Fixed items, two payments
 - [ ] FIX-3 Add fixed item
@@ -197,10 +197,10 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] OV-5 Overview, loading
 - [x] OV-6 Overview, error
 - [x] OV-7 Overview, no connection
-- [ ] SAL-11 Salary, new empty month
-- [ ] SAL-12 Salary, loading
-- [ ] SAL-13 Salary, error
-- [ ] SAL-14 Salary, no connection
+- [x] SAL-11 Salary, new empty month
+- [x] SAL-12 Salary, loading
+- [x] SAL-13 Salary, error
+- [x] SAL-14 Salary, no connection
 - [ ] SAL-15 Salary history, empty
 - [ ] FIX-6 Fixed items, empty
 - [ ] TX-9 Transactions, loading

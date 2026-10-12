@@ -35,6 +35,7 @@ const List<String> _screens = [
   AppRoutes.settings,
   AppRoutes.addTransaction,
   AppRoutes.fixedItems,
+  AppRoutes.salaryHistory,
   AppRoutes.demo,
 ];
 
@@ -45,10 +46,17 @@ const Map<AppLanguage, TextDirection> _languages = {
 
 /// The paths of all the routes of [routes], also those inside the tabs of the
 /// navigation shell.
-Iterable<String> _paths(List<RouteBase> routes) sync* {
+Iterable<String> _paths(List<RouteBase> routes, [String parent = '']) sync* {
   for (final route in routes) {
-    if (route is GoRoute) yield route.path;
-    yield* _paths(route.routes);
+    if (route is GoRoute) {
+      final path = route.path.startsWith('/')
+          ? route.path
+          : '${parent == '/' ? '' : parent}/${route.path}';
+      yield path;
+      yield* _paths(route.routes, path);
+    } else {
+      yield* _paths(route.routes, parent);
+    }
   }
 }
 

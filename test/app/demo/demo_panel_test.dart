@@ -55,7 +55,7 @@ void main() {
     }) async {
       tester.view
         ..devicePixelRatio = 1
-        ..physicalSize = const Size(412, 1800);
+        ..physicalSize = const Size(412, 2600);
       addTearDown(tester.view.reset);
       demo = DemoController(latency: Duration.zero);
       await tester.pumpWidget(
@@ -90,6 +90,41 @@ void main() {
           paymentMode: PaymentMode.twoPayments,
         ),
       );
+    });
+
+    testWidgets('switches the theme of the app', (tester) async {
+      await openPanel(tester);
+      ThemeMode themeMode() =>
+          tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode!;
+      expect(themeMode(), ThemeMode.system);
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      expect(demo.settings.theme, DemoTheme.dark);
+      expect(themeMode(), ThemeMode.dark);
+      expect(
+        Theme.of(tester.element(find.byType(DemoPanelScreen))).brightness,
+        Brightness.dark,
+      );
+
+      await tester.tap(find.text('Light'));
+      await tester.pumpAndSettle();
+
+      expect(themeMode(), ThemeMode.light);
+      expect(
+        Theme.of(tester.element(find.byType(DemoPanelScreen))).brightness,
+        Brightness.light,
+      );
+    });
+
+    testWidgets('makes the next save fail', (tester) async {
+      await openPanel(tester);
+
+      await tester.tap(find.text('Fails (could not save)'));
+      await tester.pumpAndSettle();
+
+      expect(demo.settings.save, DemoSave.fails);
     });
 
     testWidgets('shows the current choices', (tester) async {

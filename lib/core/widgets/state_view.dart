@@ -17,15 +17,17 @@ class StateView extends StatelessWidget {
   const new({
     required this.icon,
     required this.title,
-    required this.message,
     required this.actionLabel,
     required this.onAction,
+    this.message,
     super.key,
   });
 
   final IconData icon;
   final String title;
-  final String message;
+
+  /// The sentence under the title, when the title does not say enough.
+  final String? message;
   final String actionLabel;
   final VoidCallback? onAction;
 
@@ -51,12 +53,14 @@ class StateView extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                style: textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
+              if (message != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  message!,
+                  style: textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 24),
               FilledButton.tonal(onPressed: onAction, child: Text(actionLabel)),
             ],
@@ -70,10 +74,20 @@ class StateView extends StatelessWidget {
 /// The full-screen state for a failure: "No connection" or "Something went
 /// wrong", each with a "Try again" button.
 class FailureView extends StatelessWidget {
-  const new({required this.kind, required this.onRetry, super.key});
+  const new({
+    required this.kind,
+    required this.onRetry,
+    this.errorTitle,
+    super.key,
+  });
 
   final FailureKind kind;
   final VoidCallback onRetry;
+
+  /// A title that says what could not be done, for a screen whose design has
+  /// its own words for [FailureKind.error]. It replaces the title and the
+  /// sentence.
+  final String? errorTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -89,8 +103,8 @@ class FailureView extends StatelessWidget {
       ),
       FailureKind.error => StateView(
         icon: Icons.error_outline,
-        title: l10n.errorTitle,
-        message: l10n.errorMessage,
+        title: errorTitle ?? l10n.errorTitle,
+        message: errorTitle == null ? l10n.errorMessage : null,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
       ),

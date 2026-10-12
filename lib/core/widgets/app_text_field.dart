@@ -14,10 +14,15 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.obscureText = false,
     this.helperText,
+    this.hintText,
+    this.alwaysFloatLabel = false,
     this.errorText,
     this.error,
     this.showErrorOutline = false,
     this.suffixIcon,
+    this.unit,
+    this.focusNode,
+    this.textAlign = TextAlign.start,
     this.inputFormatters,
     this.onChanged,
     this.onSubmitted,
@@ -38,6 +43,13 @@ class AppTextField extends StatelessWidget {
   final bool obscureText;
   final String? helperText;
 
+  /// Grey text shown while the field is empty.
+  final String? hintText;
+
+  /// Keeps the label above the field even while it is empty, so a [hintText]
+  /// shows under it.
+  final bool alwaysFloatLabel;
+
   /// An error sentence under the field.
   final String? errorText;
 
@@ -50,6 +62,20 @@ class AppTextField extends StatelessWidget {
   final bool showErrorOutline;
 
   final Widget? suffixIcon;
+
+  /// A unit that stays after a number typed left to right, such as a currency
+  /// symbol or `%`, in either reading direction: with [textDirection] set to
+  /// left to right, it sits at the end of the field in a left-to-right screen
+  /// and at the start of it in a right-to-left one, which is the right-hand
+  /// side of the number in both.
+  final String? unit;
+
+  final FocusNode? focusNode;
+
+  /// Where the typed text sits: at the end for a number, so the figures of a
+  /// form line up.
+  final TextAlign textAlign;
+
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -57,9 +83,12 @@ class AppTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final outlineOnly = showErrorOutline && errorText == null && error == null;
+    final isRightToLeft = Directionality.of(context) == TextDirection.rtl;
 
     return TextField(
       controller: controller,
+      focusNode: focusNode,
+      textAlign: textAlign,
       enabled: enabled,
       obscureText: obscureText,
       keyboardType: keyboardType,
@@ -74,6 +103,10 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         helperText: helperText,
+        hintText: hintText,
+        floatingLabelBehavior: alwaysFloatLabel
+            ? FloatingLabelBehavior.always
+            : null,
         helperMaxLines: 2,
         errorText: outlineOnly ? ' ' : errorText,
         // A blank error line would still take room: collapse it.
@@ -83,6 +116,8 @@ class AppTextField extends StatelessWidget {
         error: error,
         errorMaxLines: 3,
         suffixIcon: suffixIcon,
+        suffixText: isRightToLeft ? null : unit,
+        prefixText: isRightToLeft ? unit : null,
       ),
     );
   }

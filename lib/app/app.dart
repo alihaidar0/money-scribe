@@ -20,6 +20,7 @@ import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/domain/overview_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
@@ -36,6 +37,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.appLockRepository,
     required this.payScheduleRepository,
     required this.overviewRepository,
+    required this.salaryRepository,
     required this.demo,
     required this.environment,
     this.textClipboard = const SystemTextClipboard(),
@@ -50,6 +52,7 @@ class MoneyScribeApp extends StatefulWidget {
   final AppLockRepository appLockRepository;
   final PayScheduleRepository payScheduleRepository;
   final OverviewRepository overviewRepository;
+  final SalaryRepository salaryRepository;
 
   /// What the fake data pretends; changed by the demo panel.
   final DemoController demo;
@@ -91,6 +94,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.appLockRepository),
           RepositoryProvider.value(value: widget.payScheduleRepository),
           RepositoryProvider.value(value: widget.overviewRepository),
+          RepositoryProvider.value(value: widget.salaryRepository),
           RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),
@@ -112,35 +116,45 @@ class _AppView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showDemoPanel = !AppEnvironmentScope.of(context).isProduction;
+    final demo = context.read<DemoController>();
 
     // Only the locale is needed, so a language change rebuilds the app and
     // nothing else does.
     return BlocSelector<LanguageBloc, LanguageState, Locale?>(
       selector: (state) => state.language.locale,
-      builder: (context, locale) => MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        onGenerateTitle: (context) => context.l10n.appTitle,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        // `null` follows the device language.
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        // The font follows the language actually shown, which is only known
-        // below the app, once the device language has been resolved.
-        builder: (context, child) => Theme(
-          data: AppTheme.forLocale(
-            Theme.of(context),
-            Localizations.localeOf(context),
+      builder: (context, locale) => StreamBuilder<DemoTheme>(
+        initialData: demo.settings.theme,
+        stream: demo.changes.map((settings) => settings.theme).distinct(),
+        builder: (context, theme) => MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          onGenerateTitle: (context) => context.l10n.appTitle,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: switch (theme.requireData) {
+            DemoTheme.system => ThemeMode.system,
+            DemoTheme.light => ThemeMode.light,
+            DemoTheme.dark => ThemeMode.dark,
+          },
+          // `null` follows the device language.
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          // The font follows the language actually shown, which is only known
+          // below the app, once the device language has been resolved.
+          builder: (context, child) => Theme(
+            data: AppTheme.forLocale(
+              Theme.of(context),
+              Localizations.localeOf(context),
+            ),
+            child: Stack(
+              children: [
+                child!,
+                if (showDemoPanel) DemoHandle(onPressed: _openDemoPanel),
+              ],
+            ),
           ),
-          child: Stack(
-            children: [
-              child!,
-              if (showDemoPanel) DemoHandle(onPressed: _openDemoPanel),
-            ],
-          ),
+          routerConfig: router,
         ),
-        routerConfig: router,
       ),
     );
   }

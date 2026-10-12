@@ -47,46 +47,54 @@ class AmountRow extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 64),
             child: Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 12, 12),
-              child: Row(
-                children: [
-                  IconCircle(
-                    icon: icon,
-                    size: 40,
-                    background: money.container,
-                    foreground: money.onContainer,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: theme.textTheme.bodyLarge),
-                        if (subtitle != null)
-                          Text(
-                            subtitle!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+              child: LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  children: [
+                    IconCircle(
+                      icon: icon,
+                      size: 40,
+                      background: money.container,
+                      foreground: money.onContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: theme.textTheme.bodyLarge),
+                          if (subtitle != null)
+                            Text(
+                              subtitle!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      context.moneyFormatter.formatSigned(amount),
-                      style: theme.textTheme.titleMedium?.amount.copyWith(
-                        color: money.color,
+                        ],
                       ),
-                      textAlign: TextAlign.end,
                     ),
-                  ),
-                  if (onTap != null)
-                    Icon(
-                      Icons.chevron_right,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    const SizedBox(width: 8),
+                    // Laid out first, as wide as the amount needs up to a share
+                    // of the row, so it sits at the end and the title takes the
+                    // rest.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * 0.5,
+                      ),
+                      child: Text(
+                        context.moneyFormatter.formatSigned(amount),
+                        style: theme.textTheme.titleMedium?.amount.copyWith(
+                          color: money.color,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
                     ),
-                ],
+                    if (onTap != null)
+                      Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

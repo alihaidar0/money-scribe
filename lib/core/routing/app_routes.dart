@@ -26,6 +26,10 @@ abstract final class AppRoutes {
   // Secondary screens.
   static const settings = '/settings';
   static const addTransaction = '/transactions/add';
+  static const salaryHistory = '/salary/history';
+
+  /// The second segment of the Salary screen. Unlike the other secondary
+  /// screens it keeps the navigation bar, so it is a page of the Salary tab.
   static const fixedItems = '/salary/fixed-items';
 
   /// The demo panel of staging builds. It goes away with the fake data.

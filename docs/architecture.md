@@ -91,15 +91,17 @@ implementations with invented data; the device keeps only simple settings in
   `data/fake/`, switch the feature in `main`, and delete its `data/fake/` folder. Nothing in
   `bloc/` or `presentation/` changes.
 - `core/demo/` holds `DemoController`, the plain-Dart switchboard the fake data sources read on every
-  request: the scenario (normal, loading, empty, error, no connection) and what the next sign-in,
-  registration and code check answer. Builds that are not production show a small handle on the
+  request: the scenario (normal, loading, empty, error, no connection), what the next sign-in,
+  registration, code check and save answer, and how the account is paid. Builds that are not production show a small handle on the
   end edge of the screen that opens the demo panel (`app/demo/`), where these are changed, the
-  language is switched and the screens no button leads to can be opened. The panel and the
+  language and the theme (light or dark) are switched and the screens no button leads to can be opened. The panel and the
   controller go away with the fake data.
-- A repository can tell its screens that its data may have changed (`Stream<void> changes`, for
-  example `OverviewRepository`), and the Bloc loads again. The fake one follows the demo panel,
-  so switching the scenario or the payment mode refreshes the visible screen; a real one can emit
-  after the app saves something that the screen is made of.
+- A repository can tell its screens that its data may have changed without the app saving it
+  (`Stream<void> changes`, for example `OverviewRepository` and `SalaryRepository`), and the Bloc
+  loads again. The fake ones follow `DemoController.dataChanges`, so switching the scenario or the
+  payment mode refreshes the visible screen while the other switches wait for the next request; a
+  real one can emit when the server pushes a change. A screen that saves updates its own state
+  with what it sent, so it never needs to load again after saving.
 - The fake account has one payment mode (one or two payments a month) and one scenario. A new
   account starts as "empty" (so the Overview shows its first-launch screen) and signing in to an
   existing one brings the data; the first-start pay question sets the mode.
@@ -111,6 +113,7 @@ implementations with invented data; the device keeps only simple settings in
 
 `go_router` with a `StatefulShellRoute` around the five top-level screens: a navigation bar below
 840 dp and a rail from 840 dp (`app/shell/`). Secondary screens and the whole authentication flow
-sit above the shell, so they hide the bar. A signed-out person is redirected to the Welcome screen
+sit above the shell, so they hide the bar. The exception is a screen that is a segment of a tab, such
+as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
