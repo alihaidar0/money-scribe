@@ -8,7 +8,12 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 /// [onPressed] it only shows the month, with no chevron, for a screen whose
 /// month cannot be changed.
 class MonthChip extends StatelessWidget {
-  const new({required this.month, this.onPressed, super.key});
+  const new({
+    required this.month,
+    this.onPressed,
+    this.semanticLabel,
+    super.key,
+  });
 
   static const _startPadding = 20.0;
   static const _endPadding = 12.0;
@@ -39,6 +44,10 @@ class MonthChip extends StatelessWidget {
   final YearMonth month;
   final VoidCallback? onPressed;
 
+  /// What a screen reader says instead of "October 2026, choose month", for a
+  /// screen with more than one chip.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -49,7 +58,7 @@ class MonthChip extends StatelessWidget {
       button: onPressed != null,
       label: onPressed == null
           ? text
-          : context.l10n.monthChipLabel(month: text),
+          : semanticLabel ?? context.l10n.monthChipLabel(month: text),
       excludeSemantics: true,
       onTap: onPressed,
       child: Material(

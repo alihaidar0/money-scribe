@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 
@@ -20,9 +21,6 @@ enum DemoCode { accepted, wrong, expired }
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
 
-/// Which colours the app is shown in: the device's choice, or one of the two.
-enum DemoTheme { system, light, dark }
-
 /// The state of the demo panel. Fake data sources read it on every call, so a
 /// change applies to the next thing the person does.
 final class DemoSettings extends Equatable {
@@ -33,7 +31,6 @@ final class DemoSettings extends Equatable {
     this.code = DemoCode.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
-    this.theme = DemoTheme.system,
   });
 
   final DemoScenario scenario;
@@ -41,9 +38,6 @@ final class DemoSettings extends Equatable {
   final DemoRegistration registration;
   final DemoCode code;
   final DemoSave save;
-
-  /// The theme of the app, for trying the screens in light and dark.
-  final DemoTheme theme;
 
   /// How the fake account is paid: one payment or two a month.
   final PaymentMode paymentMode;
@@ -55,7 +49,6 @@ final class DemoSettings extends Equatable {
     DemoCode? code,
     DemoSave? save,
     PaymentMode? paymentMode,
-    DemoTheme? theme,
   }) {
     return DemoSettings(
       scenario: scenario ?? this.scenario,
@@ -64,7 +57,6 @@ final class DemoSettings extends Equatable {
       code: code ?? this.code,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
-      theme: theme ?? this.theme,
     );
   }
 
@@ -76,7 +68,6 @@ final class DemoSettings extends Equatable {
     code,
     save,
     paymentMode,
-    theme,
   ];
 }
 
@@ -92,7 +83,12 @@ class DemoController {
   final Duration latency;
 
   final _changes = StreamController<DemoSettings>.broadcast();
+  final _scheduleChanges = StreamController<void>.broadcast();
   DemoSettings _settings;
+
+  /// How each month that was saved with its own schedule is paid. A saved
+  /// month keeps its schedule whatever the account's current one is.
+  final _monthModes = <YearMonth, PaymentMode>{};
 
   DemoSettings get settings => _settings;
 
@@ -112,6 +108,46 @@ class DemoController {
           return true;
         })
         .map((_) {});
+  }
+
+  /// How [month] is paid: the schedule it was saved with, or else the
+  /// account's current one.
+  PaymentMode paymentModeOf(YearMonth month) {
+    return _monthModes[month] ?? _settings.paymentMode;
+  }
+
+  /// Remembers that [month] was saved with the schedule [mode], so every screen
+  /// that shows the month agrees on whether it has two parts.
+  void setMonthPaymentMode(YearMonth month, PaymentMode mode) {
+    if (_monthModes[month] == mode) return;
+    _monthModes[month] = mode;
+    _scheduleChanges.add(null);
+  }
+
+  /// Forgets the schedule of [month], for example when its salary is deleted.
+  void clearMonthPaymentMode(YearMonth month) {
+    if (_monthModes.remove(month) != null) _scheduleChanges.add(null);
+  }
+
+  /// [dataChanges], and also emits when a month was saved with another
+  /// schedule. For the screens that show the parts of a month, which have to
+  /// follow the salary of each month. Every call returns a stream of its own,
+  /// to be listened to once.
+  Stream<void> get dataChangesWithSchedules {
+    late StreamController<void> controller;
+    StreamSubscription<void>? data;
+    StreamSubscription<void>? schedules;
+    controller = StreamController<void>(
+      onListen: () {
+        data = dataChanges.listen(controller.add);
+        schedules = _scheduleChanges.stream.listen(controller.add);
+      },
+      onCancel: () async {
+        await data?.cancel();
+        await schedules?.cancel();
+      },
+    );
+    return controller.stream;
   }
 
   void update(DemoSettings settings) {
@@ -145,5 +181,8 @@ class DemoController {
     if (_settings.save == DemoSave.fails) throw const NoConnectionException();
   }
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    await _changes.close();
+    await _scheduleChanges.close();
+  }
 }

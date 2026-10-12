@@ -72,6 +72,32 @@ class FakeTransactionsRepository implements TransactionsRepository {
     return _demo.settings.paymentMode;
   }
 
+  /// Whether any transaction is in the account [accountId]. The fake accounts
+  /// ask it before deleting one.
+  bool hasTransactionsInAccount(String accountId) {
+    return _current().any((transaction) => transaction.accountId == accountId);
+  }
+
+  /// Moves the transactions of the category [from] to the category [to], as
+  /// the server does when a category is deleted.
+  void moveCategory({required String from, required String to}) {
+    _edited = [
+      for (final transaction in _current())
+        if (transaction.categoryId == from)
+          Transaction(
+            id: transaction.id,
+            amount: transaction.amount,
+            kind: transaction.kind,
+            date: transaction.date,
+            categoryId: to,
+            accountId: transaction.accountId,
+            note: transaction.note,
+          )
+        else
+          transaction,
+    ];
+  }
+
   /// The transactions, without waiting for the server.
   List<Transaction> _current() {
     final edited = _edited;

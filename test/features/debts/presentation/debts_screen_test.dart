@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
@@ -12,7 +13,7 @@ import '../../../support/open_screen.dart';
 
 Finder filter(String label) {
   return find.descendant(
-    of: find.byType(SegmentedButton<DebtsFilter>),
+    of: find.byType(PillSegmentedButton<DebtsFilter>),
     matching: find.text(label),
   );
 }

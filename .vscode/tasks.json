@@ -15,6 +15,26 @@
         "clear": true
       },
       "problemMatcher": []
+    },
+    {
+      // Terminal > Run Task > "Run app on emulator": connects the container to
+      // the host emulator, then runs the staging flavor in an interactive
+      // terminal (r hot reload, R hot restart, q quit).
+      "label": "Run app on emulator",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "scripts/connect-emulator.sh --wait 30 && flutter run --flavor staging -d host.docker.internal:5555"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": true
+      },
+      "problemMatcher": []
     }
   ]
 }

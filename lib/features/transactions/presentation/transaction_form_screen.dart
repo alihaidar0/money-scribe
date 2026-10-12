@@ -10,9 +10,11 @@ import 'package:money_scribe/core/routing/leave_screen.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
+import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -22,7 +24,7 @@ import 'package:money_scribe/features/transactions/domain/accounts_repository.da
 import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
-import 'package:money_scribe/features/transactions/presentation/category_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/account_sheet.dart';
 
 /// TX-4, TX-5, TX-6 and TX-7: the form that adds a transaction, or with [id]
@@ -187,8 +189,9 @@ class _FormState extends State<_Form> {
       case AccountChosen(:final account):
         bloc.add(TransactionAccountChosen(account.id));
       case AddAccountRequested() || ManageAccountsRequested():
-        // Accounts are managed in the Settings.
-        if (context.mounted) await context.push<void>(AppRoutes.settings);
+        if (!context.mounted) break;
+        await context.push<void>(AppRoutes.accounts);
+        bloc.add(const TransactionAccountsRefreshed());
       case null:
         break;
     }
@@ -226,8 +229,7 @@ class _FormState extends State<_Form> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SegmentedButton<TransactionKind>(
-                          showSelectedIcon: false,
+                        PillSegmentedButton<TransactionKind>(
                           segments: [
                             ButtonSegment(
                               value: TransactionKind.expense,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
-import 'package:money_scribe/features/transactions/presentation/category_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
 
 /// What the person chose in the account sheet.
 sealed class AccountSheetResult {

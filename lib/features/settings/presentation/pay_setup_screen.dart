@@ -5,6 +5,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
+import 'package:money_scribe/core/widgets/day_stepper.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/settings/bloc/pay_schedule_bloc.dart';
@@ -77,16 +78,20 @@ class _PaySetupView extends StatelessWidget {
             ),
             if (schedule.mode == PaymentMode.twoPayments) ...[
               const SizedBox(height: 24),
-              _DayStepper(
+              DayStepper(
                 label: l10n.firstPayDay,
                 value: schedule.firstPayDay,
+                min: PaySchedule.firstDayOfMonth,
+                max: PaySchedule.lastDayOfMonth,
                 onChanged: (day) => bloc.add(FirstPayDayChanged(day)),
               ),
               const SizedBox(height: 12),
-              _DayStepper(
+              DayStepper(
                 label: l10n.secondPayDay,
                 caption: l10n.ofNextMonth,
                 value: schedule.secondPayDay,
+                min: PaySchedule.firstDayOfMonth,
+                max: PaySchedule.lastDayOfMonth,
                 onChanged: (day) => bloc.add(SecondPayDayChanged(day)),
               ),
             ],
@@ -173,69 +178,6 @@ class _ModeCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A label with a minus button, the day and a plus button.
-class _DayStepper extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.caption,
-  });
-
-  final String label;
-  final String? caption;
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: theme.textTheme.bodyLarge),
-              if (caption != null)
-                Text(
-                  caption!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        IconButton.filledTonal(
-          tooltip: l10n.decrease,
-          icon: const Icon(Icons.remove),
-          onPressed: value > PaySchedule.firstDayOfMonth
-              ? () => onChanged(value - 1)
-              : null,
-        ),
-        SizedBox(
-          width: 44,
-          child: Text(
-            '$value',
-            style: theme.textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        IconButton.filledTonal(
-          tooltip: l10n.increase,
-          icon: const Icon(Icons.add),
-          onPressed: value < PaySchedule.lastDayOfMonth
-              ? () => onChanged(value + 1)
-              : null,
-        ),
-      ],
     );
   }
 }

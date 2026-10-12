@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';

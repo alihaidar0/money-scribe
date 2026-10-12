@@ -10,8 +10,13 @@ import 'package:money_scribe/features/notifications/domain/push_messaging_reposi
 /// The notification settings on the Settings screen: the permission and, in
 /// staging builds, a way to copy the push token for test messages. Shows
 /// nothing where push is not available.
+///
+/// A [footer] is shown at the end of the section, such as a related switch;
+/// it is hidden together with the section.
 class NotificationsSettingsSection extends StatelessWidget {
-  const new({super.key});
+  const new({this.footer, super.key});
+
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +29,15 @@ class NotificationsSettingsSection extends StatelessWidget {
         clipboard: context.read<TextClipboard>(),
         canCopyPushToken: canCopyPushToken,
       )..add(const NotificationsStarted()),
-      child: const _NotificationsView(),
+      child: _NotificationsView(footer: footer),
     );
   }
 }
 
 class _NotificationsView extends StatelessWidget {
-  const new();
+  const new({required this.footer});
+
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +83,7 @@ class _NotificationsView extends StatelessWidget {
                     const PushTokenCopyRequested(),
                   ),
                 ),
+              ?footer,
             ],
           );
         },

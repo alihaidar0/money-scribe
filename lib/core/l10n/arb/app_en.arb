@@ -1397,5 +1397,578 @@
   "yesterdayLabel": "Yesterday",
   "@yesterdayLabel": {
     "description": "Header of the transactions of yesterday."
+  },
+  "reportsViewCategories": "Categories",
+  "@reportsViewCategories": {
+    "description": "Segment of the Reports screen that shows the spending by category."
+  },
+  "reportsViewMonthVsMonth": "Month vs month",
+  "@reportsViewMonthVsMonth": {
+    "description": "Segment of the Reports screen that compares a month with the month before."
+  },
+  "reportsViewDebts": "Debts",
+  "@reportsViewDebts": {
+    "description": "Segment of the Reports screen that shows where the debts stand."
+  },
+  "reportsChartSemantics": "Spending by category, {total} in total",
+  "@reportsChartSemantics": {
+    "description": "Spoken description of the donut chart. The placeholder is the total spent, with its currency.",
+    "placeholders": {
+      "total": {"type": "String"}
+    }
+  },
+  "reportsNoSpending": "Nothing was spent in this period.",
+  "@reportsNoSpending": {
+    "description": "Shown instead of the chart when the chosen month or part has no spending."
+  },
+  "reportsVsPrevious": "vs {period} {change}",
+  "@reportsVsPrevious": {
+    "description": "Line under the chart: how much more or less was spent than in the period before. The first placeholder is that period, such as September or September Part 1, the second the signed difference with its currency.",
+    "placeholders": {
+      "period": {"type": "String"},
+      "change": {"type": "String"}
+    }
+  },
+  "reportsShare": "{value}%",
+  "@reportsShare": {
+    "description": "The share of a category in the spending, as a percentage. The placeholder is the number with one decimal, such as 56.9.",
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "reportsPartMonth": "{part} · {month}",
+  "@reportsPartMonth": {
+    "description": "A part of a month with the month, such as Part 1 · October 2026, in the comparison of two months.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "month": {"type": "String"}
+    }
+  },
+  "reportsLegendSemantics": "{name}, {amount}, {share} of the spending. Shows its transactions.",
+  "@reportsLegendSemantics": {
+    "description": "Spoken description of a row under the donut chart, which opens the transactions of that category. The placeholders are the category, the amount spent and the share with its percent sign.",
+    "placeholders": {
+      "name": {"type": "String"},
+      "amount": {"type": "String"},
+      "share": {"type": "String"}
+    }
+  },
+  "reportsEmptyTitle": "Not enough data yet",
+  "@reportsEmptyTitle": {
+    "description": "Title of the Reports screen when the account has nothing to report."
+  },
+  "reportsEmptyMessage": "Add a few transactions to see your reports.",
+  "@reportsEmptyMessage": {
+    "description": "Sentence under the title of the empty Reports screen."
+  },
+  "reportsEmptyAction": "Add a purchase",
+  "@reportsEmptyAction": {
+    "description": "Button of the empty Reports screen that opens the form for a new purchase."
+  },
+  "reportsLoadFailed": "Couldn''t load your reports",
+  "@reportsLoadFailed": {
+    "description": "Title of the Reports screen when the server fails."
+  },
+  "reportsOverdueSection": "Overdue ({count})",
+  "@reportsOverdueSection": {
+    "description": "Heading of the overdue debts on the Reports screen. The placeholder is how many there are.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reportsOpenSection": "Open ({count})",
+  "@reportsOpenSection": {
+    "description": "Heading of the debts that are being repaid on time on the Reports screen. The placeholder is how many there are.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reportsNoPreviousMonth": "There is no report for {month} to compare with.",
+  "@reportsNoPreviousMonth": {
+    "description": "Shown in the month comparison when the month before has no data. The placeholder is that month.",
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "reportsComparisonSemantics": "{line}: {previousPeriod} {previousValue}, {currentPeriod} {currentValue}, difference {difference}",
+  "@reportsComparisonSemantics": {
+    "description": "Spoken description of a line of the month comparison, such as Income. The placeholders are the line, the two periods with their amounts and the signed difference.",
+    "placeholders": {
+      "line": {"type": "String"},
+      "previousPeriod": {"type": "String"},
+      "previousValue": {"type": "String"},
+      "currentPeriod": {"type": "String"},
+      "currentValue": {"type": "String"},
+      "difference": {"type": "String"}
+    }
+  },
+  "accountTitle": "Account",
+  "@accountTitle": {
+    "description": "Title of the Account screen, and heading of the first section of the Settings."
+  },
+  "settingsPaymentsSection": "Payments",
+  "@settingsPaymentsSection": {
+    "description": "Heading of the Settings section about how the salary is paid."
+  },
+  "settingsPreferencesSection": "Preferences",
+  "@settingsPreferencesSection": {
+    "description": "Heading of the Settings section with the currency, the theme and the language."
+  },
+  "settingsDataSection": "Data",
+  "@settingsDataSection": {
+    "description": "Heading of the Settings section with the categories, the accounts and the CSV files."
+  },
+  "settingsSecuritySection": "Security",
+  "@settingsSecuritySection": {
+    "description": "Heading of the Settings section with the app lock."
+  },
+  "payScheduleTitle": "Pay schedule",
+  "@payScheduleTitle": {
+    "description": "Title of the Pay schedule screen, and its row in the Settings."
+  },
+  "payScheduleOneValue": "One payment a month",
+  "@payScheduleOneValue": {
+    "description": "Value of the Pay schedule row in the Settings when the salary is paid once a month."
+  },
+  "payScheduleTwoValue": "Two payments a month",
+  "@payScheduleTwoValue": {
+    "description": "Value of the Pay schedule row in the Settings when the salary is paid twice a month."
+  },
+  "defaultCurrencyTitle": "Default currency",
+  "@defaultCurrencyTitle": {
+    "description": "Title of the default currency sheet, and its row in the Settings."
+  },
+  "themeTitle": "Theme",
+  "@themeTitle": {
+    "description": "Label of the theme choice in the Settings."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme choice that follows the device."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme choice that is always light."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme choice that is always dark."
+  },
+  "remindOnPayDays": "Remind me on pay days",
+  "@remindOnPayDays": {
+    "description": "Switch that turns the reminder on the pay days on or off."
+  },
+  "categoriesTitle": "Categories",
+  "@categoriesTitle": {
+    "description": "Title of the Categories screen, and its row in the Settings."
+  },
+  "accountsTitle": "Accounts",
+  "@accountsTitle": {
+    "description": "Title of the Accounts screen, and its row in the Settings. Accounts are where money is kept, such as a card or cash."
+  },
+  "exportCsvTitle": "Export CSV",
+  "@exportCsvTitle": {
+    "description": "Title of the export sheet, and its row in the Settings. CSV is a file format and stays in Latin letters."
+  },
+  "importCsvTitle": "Import CSV",
+  "@importCsvTitle": {
+    "description": "Title of the import screen, and its row in the Settings. CSV is a file format and stays in Latin letters."
+  },
+  "appLockTitle": "App lock",
+  "@appLockTitle": {
+    "description": "Switch in the Settings that locks the app with a fingerprint or a PIN."
+  },
+  "appVersionLabel": "Money Scribe {version}",
+  "@appVersionLabel": {
+    "description": "Small text at the bottom of the Settings: the name of the app and its version. The name is a brand and stays in Latin letters.",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "settingsLoadFailed": "Couldn''t load some settings.",
+  "@settingsLoadFailed": {
+    "description": "Banner at the top of the Settings when the pay schedule or the currency could not be loaded."
+  },
+  "accountLoadFailed": "Couldn''t load your account",
+  "@accountLoadFailed": {
+    "description": "Row of the Settings, and title of the Account screen, when the name and the email could not be loaded."
+  },
+  "changePasswordTitle": "Change password",
+  "@changePasswordTitle": {
+    "description": "Title of the Change password screen, and its row on the Account screen."
+  },
+  "signOutAction": "Sign out",
+  "@signOutAction": {
+    "description": "Row of the Account screen, and button of the dialog, that sign the person out."
+  },
+  "deleteMyAccountAction": "Delete account",
+  "@deleteMyAccountAction": {
+    "description": "Row of the Account screen, and button of the dialog, that delete the account of the person and all its data."
+  },
+  "signOutTitle": "Sign out?",
+  "@signOutTitle": {
+    "description": "Title of the dialog that asks whether to sign out."
+  },
+  "signOutMessage": "You will need to sign in again to see your data.",
+  "@signOutMessage": {
+    "description": "Text of the dialog that asks whether to sign out."
+  },
+  "deleteMyAccountTitle": "Delete your account?",
+  "@deleteMyAccountTitle": {
+    "description": "Title of the dialog that asks whether to delete the account."
+  },
+  "deleteMyAccountMessage": "All your data will be permanently deleted from the server. This cannot be undone.",
+  "@deleteMyAccountMessage": {
+    "description": "Text of the dialog that asks whether to delete the account."
+  },
+  "deleteMyAccountWrongPassword": "The password is incorrect.",
+  "@deleteMyAccountWrongPassword": {
+    "description": "Error under the password field of the delete account dialog."
+  },
+  "deleteMyAccountFailed": "Couldn''t delete your account. Check your connection and try again.",
+  "@deleteMyAccountFailed": {
+    "description": "Banner in the delete account dialog when the server could not be reached or failed."
+  },
+  "couldNotSignOut": "Couldn''t sign out. Check your connection.",
+  "@couldNotSignOut": {
+    "description": "Message when signing out failed."
+  },
+  "currentPasswordLabel": "Current password",
+  "@currentPasswordLabel": {
+    "description": "Label of the field for the password the person has now."
+  },
+  "confirmNewPasswordLabel": "Confirm new password",
+  "@confirmNewPasswordLabel": {
+    "description": "Label of the field that repeats the new password."
+  },
+  "changePasswordWrongCurrent": "Your current password is incorrect.",
+  "@changePasswordWrongCurrent": {
+    "description": "Error under the current password field when it is not the password."
+  },
+  "forgotYourPasswordLink": "Forgot your password?",
+  "@forgotYourPasswordLink": {
+    "description": "Text button on the Change password screen that starts the reset by email."
+  },
+  "payScheduleNote": "This sets how new months are created. To correct a saved month, open it from Salary history.",
+  "@payScheduleNote": {
+    "description": "Note on the Pay schedule screen: the schedule is for new months, saved months are corrected in the salary history."
+  },
+  "addCategoryAction": "Add category",
+  "@addCategoryAction": {
+    "description": "Button of the Categories screen that adds a category."
+  },
+  "addCategoryTitle": "Add category",
+  "@addCategoryTitle": {
+    "description": "Title of the sheet that adds a category."
+  },
+  "editCategoryTitle": "Edit category",
+  "@editCategoryTitle": {
+    "description": "Title of the sheet that changes a category."
+  },
+  "categoryDefaultLabel": "Default",
+  "@categoryDefaultLabel": {
+    "description": "Small label on a built-in category, which cannot be changed."
+  },
+  "categoryIconLabel": "Icon",
+  "@categoryIconLabel": {
+    "description": "Heading of the icons a category can have."
+  },
+  "categoryIconGifts": "Gifts",
+  "@categoryIconGifts": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconHealth": "Health",
+  "@categoryIconHealth": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconEntertainment": "Entertainment",
+  "@categoryIconEntertainment": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconShopping": "Shopping",
+  "@categoryIconShopping": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconEducation": "Education",
+  "@categoryIconEducation": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconTravel": "Travel",
+  "@categoryIconTravel": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconSubscriptions": "Subscriptions",
+  "@categoryIconSubscriptions": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconOther": "Other",
+  "@categoryIconOther": {
+    "description": "Name of an icon a category can have."
+  },
+  "deleteCategoryTitle": "Delete category?",
+  "@deleteCategoryTitle": {
+    "description": "Title of the dialog that asks whether to delete a category."
+  },
+  "deleteCategoryMessage": "{name} will be removed. Its transactions move to Other.",
+  "@deleteCategoryMessage": {
+    "description": "Text of the dialog that asks whether to delete a category. The placeholder is its name; Other is the category that takes its transactions.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "categoriesLoadFailed": "Couldn''t load categories",
+  "@categoriesLoadFailed": {
+    "description": "Title of the Categories screen when the server fails."
+  },
+  "editItemTooltip": "Edit {name}",
+  "@editItemTooltip": {
+    "description": "Tooltip of the button that edits a category or an account. The placeholder is its name.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "addAccountTitle": "Add account",
+  "@addAccountTitle": {
+    "description": "Title of the sheet that adds an account."
+  },
+  "editAccountTitle": "Edit account",
+  "@editAccountTitle": {
+    "description": "Title of the sheet that changes an account."
+  },
+  "accountKindCard": "Card",
+  "@accountKindCard": {
+    "description": "Kind of account: a bank card."
+  },
+  "accountKindCash": "Cash",
+  "@accountKindCash": {
+    "description": "Kind of account: cash."
+  },
+  "accountKindOther": "Other",
+  "@accountKindOther": {
+    "description": "Kind of account: anything else."
+  },
+  "accountKindLabel": "Kind",
+  "@accountKindLabel": {
+    "description": "Heading of the kinds an account can be."
+  },
+  "accountDeleteTitle": "Delete account?",
+  "@accountDeleteTitle": {
+    "description": "Title of the dialog that asks whether to delete an account where money is kept, such as a card."
+  },
+  "accountDeleteMessage": "{name} will be removed from your accounts. This cannot be undone.",
+  "@accountDeleteMessage": {
+    "description": "Text of the dialog that asks whether to delete an account where money is kept. The placeholder is its name.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "accountInUse": "This account has transactions, so it can''t be deleted.",
+  "@accountInUse": {
+    "description": "Message when an account that has transactions is deleted."
+  },
+  "accountsEmptyTitle": "No accounts yet",
+  "@accountsEmptyTitle": {
+    "description": "Title of the Accounts screen when there is none."
+  },
+  "accountsLoadFailed": "Couldn''t load accounts",
+  "@accountsLoadFailed": {
+    "description": "Title of the Accounts screen when the server fails."
+  },
+  "csvWhatToExport": "What to export",
+  "@csvWhatToExport": {
+    "description": "Heading of the kinds of data an export can hold."
+  },
+  "csvKindSalaryMonths": "Salary months",
+  "@csvKindSalaryMonths": {
+    "description": "Kind of data an export can hold: the saved salary months."
+  },
+  "csvPeriodAllTime": "All time",
+  "@csvPeriodAllTime": {
+    "description": "Period of an export: every day."
+  },
+  "csvPeriodThisYear": "This year",
+  "@csvPeriodThisYear": {
+    "description": "Period of an export: the current year."
+  },
+  "csvPeriodCustom": "Custom",
+  "@csvPeriodCustom": {
+    "description": "Period of an export: days the person chooses."
+  },
+  "csvChooseKind": "Choose something to export.",
+  "@csvChooseKind": {
+    "description": "Hint under the kinds of data of an export when none is chosen."
+  },
+  "csvDatesReversed": "The first day can''t be after the last day.",
+  "@csvDatesReversed": {
+    "description": "Error under the days of a custom export period."
+  },
+  "exportAction": "Export",
+  "@exportAction": {
+    "description": "Button that makes the CSV file."
+  },
+  "csvExportReady": "Your CSV file is ready.",
+  "@csvExportReady": {
+    "description": "Message after the CSV file was made and shared."
+  },
+  "couldNotExport": "Couldn''t export. Check your connection.",
+  "@couldNotExport": {
+    "description": "Message when the export failed."
+  },
+  "csvRowCount": "{rows, plural, one{{rows} row} other{{rows} rows}}",
+  "@csvRowCount": {
+    "description": "Number of rows of a CSV file.",
+    "placeholders": {
+      "rows": {"type": "int"}
+    }
+  },
+  "csvReadyToImport": "Ready to import: {rows, plural, one{{rows} row} other{{rows} rows}}, 0 problems.",
+  "@csvReadyToImport": {
+    "description": "Status of a chosen CSV file that can be imported.",
+    "placeholders": {
+      "rows": {"type": "int"}
+    }
+  },
+  "csvChooseAnotherFile": "Choose another file",
+  "@csvChooseAnotherFile": {
+    "description": "Text button that opens the file picker again."
+  },
+  "csvChooseFile": "Choose a file",
+  "@csvChooseFile": {
+    "description": "Button that opens the file picker."
+  },
+  "csvNoFileTitle": "No file chosen",
+  "@csvNoFileTitle": {
+    "description": "Title of the import screen when no file is chosen."
+  },
+  "csvNoFileMessage": "Choose a CSV file to import.",
+  "@csvNoFileMessage": {
+    "description": "Sentence of the import screen when no file is chosen."
+  },
+  "csvImportAction": "Import",
+  "@csvImportAction": {
+    "description": "Button that imports the rows of the chosen file."
+  },
+  "csvImportFinished": "Import finished: {imported} imported, {skipped} skipped.",
+  "@csvImportFinished": {
+    "description": "Result of an import. The placeholders are how many rows were imported and how many were skipped.",
+    "placeholders": {
+      "imported": {"type": "int"},
+      "skipped": {"type": "int"}
+    }
+  },
+  "csvProblemInvalidAmount": "Row {row}: the amount is not valid",
+  "@csvProblemInvalidAmount": {
+    "description": "A row of the file that was skipped because its amount cannot be read. The placeholder is the number of the row.",
+    "placeholders": {
+      "row": {"type": "int"}
+    }
+  },
+  "csvProblemMissingDate": "Row {row}: the date is missing",
+  "@csvProblemMissingDate": {
+    "description": "A row of the file that was skipped because it has no date. The placeholder is the number of the row.",
+    "placeholders": {
+      "row": {"type": "int"}
+    }
+  },
+  "csvImportFailed": "Couldn''t import the file. Check your connection.",
+  "@csvImportFailed": {
+    "description": "Message when the import failed."
+  },
+  "currencyNameRub": "Russian ruble",
+  "@currencyNameRub": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameUsd": "US dollar",
+  "@currencyNameUsd": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameEur": "Euro",
+  "@currencyNameEur": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameGbp": "British pound",
+  "@currencyNameGbp": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameTry": "Turkish lira",
+  "@currencyNameTry": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameJpy": "Japanese yen",
+  "@currencyNameJpy": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameSar": "Saudi riyal",
+  "@currencyNameSar": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameAed": "UAE dirham",
+  "@currencyNameAed": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameEgp": "Egyptian pound",
+  "@currencyNameEgp": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameKwd": "Kuwaiti dinar",
+  "@currencyNameKwd": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "reportsByPart": "By part",
+  "@reportsByPart": {
+    "description": "Heading of the cards that show each part of a month paid in two payments, on the Reports screen."
+  },
+  "reportsCompareWith": "Compare with",
+  "@reportsCompareWith": {
+    "description": "Small label above the chip that chooses the month the month comparison is made against."
+  },
+  "reportsCompareChipLabel": "{month}, choose month to compare with",
+  "@reportsCompareChipLabel": {
+    "description": "Spoken label of the chip that chooses the month to compare with. The placeholder is the month it shows.",
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "reportsPartSemantics": "{part}: income {income}, spent {spent}. Shows this part.",
+  "@reportsPartSemantics": {
+    "description": "Spoken description of the card of one part of a month, which shows that part when pressed. The placeholders are the part, the income and the spending of the part.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "income": {"type": "String"},
+      "spent": {"type": "String"}
+    }
+  },
+  "languageSystemShort": "System",
+  "@languageSystemShort": {
+    "description": "Language choice that follows the device language, in the short row of choices in the Settings."
+  },
+  "filterDatesChip": "{from} – {to}",
+  "@filterDatesChip": {
+    "description": "Chip of an active filter: the days a list of transactions is limited to. The placeholders are the first and the last day.",
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "filterFromChip": "From {date}",
+  "@filterFromChip": {
+    "description": "Chip of an active filter: the list starts on this day. The placeholder is the day.",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "filterToChip": "Until {date}",
+  "@filterToChip": {
+    "description": "Chip of an active filter: the list ends on this day. The placeholder is the day.",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "removeFilterTooltip": "Remove filter {name}",
+  "@removeFilterTooltip": {
+    "description": "Tooltip of the cross on the chip of an active filter. The placeholder is what the chip says.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
   }
 }

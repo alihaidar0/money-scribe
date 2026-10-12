@@ -62,6 +62,45 @@ final class TransactionFilter extends Equatable {
     );
   }
 
+  /// How many choices of the Filters sheet narrow the list: each category,
+  /// each account, and the days (as one).
+  int get sheetFilterCount {
+    return categoryIds.length +
+        accountIds.length +
+        (from != null || to != null ? 1 : 0);
+  }
+
+  /// The same filter without the category [id].
+  TransactionFilter withoutCategory(String id) {
+    return TransactionFilter(
+      query: query,
+      categoryIds: {...categoryIds}..remove(id),
+      accountIds: accountIds,
+      from: from,
+      to: to,
+    );
+  }
+
+  /// The same filter without the account [id].
+  TransactionFilter withoutAccount(String id) {
+    return TransactionFilter(
+      query: query,
+      categoryIds: categoryIds,
+      accountIds: {...accountIds}..remove(id),
+      from: from,
+      to: to,
+    );
+  }
+
+  /// The same filter without the days.
+  TransactionFilter withoutDates() {
+    return TransactionFilter(
+      query: query,
+      categoryIds: categoryIds,
+      accountIds: accountIds,
+    );
+  }
+
   /// Whether [transaction] passes the filter. [categoryName] and
   /// [accountName] are what the search looks in besides the note.
   bool matches(

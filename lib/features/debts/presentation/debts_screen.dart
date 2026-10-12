@@ -3,13 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
-import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
+import 'package:money_scribe/core/widgets/debt_summary_row.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -118,7 +119,7 @@ class _Content extends StatelessWidget {
           // Room under the last card for the button.
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
           children: [
-            _SummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+            DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
             const SizedBox(height: 16),
             const _FilterSwitch(),
             const SizedBox(height: 16),
@@ -144,73 +145,6 @@ class _Content extends StatelessWidget {
   }
 }
 
-/// "Owed to you" and "You owe", side by side while there is room.
-class _SummaryRow extends StatelessWidget {
-  const new({required this.owedToYou, required this.youOwe});
-
-  final Money owedToYou;
-  final Money youOwe;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final owed = _SummaryTile(label: l10n.summaryOwedToYou, amount: owedToYou);
-    final owe = _SummaryTile(label: l10n.summaryYouOwe, amount: youOwe);
-
-    return LayoutBuilder(
-      builder: (context, constraints) =>
-          constraints.maxWidth >= 360 &&
-              MediaQuery.textScalerOf(context).scale(1) <= 1.3
-          ? Row(
-              children: [
-                Expanded(child: owed),
-                const SizedBox(width: 12),
-                Expanded(child: owe),
-              ],
-            )
-          : Column(children: [owed, const SizedBox(height: 12), owe]),
-    );
-  }
-}
-
-class _SummaryTile extends StatelessWidget {
-  const new({required this.label, required this.amount});
-
-  final String label;
-  final Money amount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              context.moneyFormatter.format(amount),
-              style: theme.textTheme.titleLarge?.amount,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _FilterSwitch extends StatelessWidget {
   const new();
 
@@ -223,8 +157,7 @@ class _FilterSwitch extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<DebtsFilter>(
-        showSelectedIcon: false,
+      child: PillSegmentedButton<DebtsFilter>(
         segments: [
           ButtonSegment(value: DebtsFilter.all, label: Text(l10n.filterAll)),
           ButtonSegment(value: DebtsFilter.lent, label: Text(l10n.debtLent)),

@@ -1,3 +1,5 @@
+import 'package:money_scribe/features/auth/domain/account_profile.dart';
+
 /// What a 4-digit code is for.
 enum CodePurpose { verifyEmail, resetPassword }
 
@@ -42,4 +44,15 @@ abstract interface class AuthRepository {
   Future<void> resetPassword(String newPassword);
 
   Future<void> signOut();
+
+  /// The name and the email of the signed-in person.
+  Future<AccountProfile> profile();
+
+  /// Sets a new password after checking the current one. Throws
+  /// `WrongCredentialsException` when [current] is not the password.
+  Future<void> changePassword({required String current, required String next});
+
+  /// Deletes the account with all its data from the server and signs out.
+  /// Throws `WrongCredentialsException` when [password] is not the password.
+  Future<void> deleteAccount({required String password});
 }

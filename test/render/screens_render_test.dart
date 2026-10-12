@@ -7,13 +7,16 @@ import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
+import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
+import '../support/fake_push_messaging_repository.dart';
 import '../support/render_screen.dart';
 
 /// The render check: every screen and state is drawn to a picture in English
@@ -77,7 +80,7 @@ Future<void> _tapKeys(WidgetTester tester, List<int> digits) async {
 Future<void> _tapPaymentSegment(WidgetTester tester, int index) async {
   final segment = find
       .descendant(
-        of: find.byType(SegmentedButton<PaymentMode>),
+        of: find.byType(PillSegmentedButton<PaymentMode>),
         matching: find.byType(Text),
       )
       .at(index);
@@ -92,7 +95,7 @@ Future<void> _tapPartSegment(WidgetTester tester, int index) async {
   await tester.tap(
     find
         .descendant(
-          of: find.byType(SegmentedButton<PeriodScope>),
+          of: find.byType(PillSegmentedButton<PeriodScope>),
           matching: find.byType(Text),
         )
         .at(index),
@@ -106,7 +109,7 @@ Future<void> _tapFixedPart(WidgetTester tester, int index) async {
   await tester.tap(
     find
         .descendant(
-          of: find.byType(SegmentedButton<FixedItemPart>).first,
+          of: find.byType(PillSegmentedButton<FixedItemPart>).first,
           matching: find.byType(Text),
         )
         .at(index),
@@ -121,6 +124,20 @@ Future<void> _openEditSheet(WidgetTester tester) async {
 
 Future<void> _tapSaveMonth(WidgetTester tester) async {
   await tester.tap(find.byType(FilledButton).last);
+  await tester.pumpAndSettle();
+}
+
+/// Taps the segment of the Categories, Month vs month, Debts choice of the
+/// Reports at [index] (0 to 2).
+Future<void> _tapReportsView(WidgetTester tester, int index) async {
+  await tester.tap(
+    find
+        .descendant(
+          of: find.byType(PillSegmentedButton<ReportsView>),
+          matching: find.byType(Text),
+        )
+        .at(index),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -286,7 +303,7 @@ final _scenes = <_Scene>[
       await tester.tap(
         find
             .descendant(
-              of: find.byType(SegmentedButton<PeriodScope>),
+              of: find.byType(PillSegmentedButton<PeriodScope>),
               matching: find.byType(Text),
             )
             .at(1),
@@ -678,14 +695,14 @@ final _scenes = <_Scene>[
     setup: (tester, demo) async {
       await _useTwoPayments(tester, demo);
       await _openEditSheet(tester);
-      // After the four segments (Income, Expense, Part 1, Part 2) comes Delete.
+      // The segments are not text buttons, so Delete is the first of them.
       await tester.tap(
         find
             .descendant(
               of: find.byType(BottomSheet),
               matching: find.byType(TextButton),
             )
-            .at(4),
+            .first,
       );
       await tester.pumpAndSettle();
     },
@@ -761,7 +778,7 @@ final _scenes = <_Scene>[
       await tester.tap(
         find
             .descendant(
-              of: find.byType(SegmentedButton<PeriodScope>),
+              of: find.byType(PillSegmentedButton<PeriodScope>),
               matching: find.byType(Text),
             )
             .at(2),
@@ -774,7 +791,7 @@ final _scenes = <_Scene>[
     AppRoutes.transactions,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byType(FilterChip).first);
+      await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
     },
   ),
@@ -784,7 +801,7 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: (tester, demo) async {
       await _useTwoPayments(tester, demo);
-      await tester.tap(find.byType(FilterChip).first);
+      await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
     },
   ),
@@ -793,7 +810,7 @@ final _scenes = <_Scene>[
     AppRoutes.transactions,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byType(FilterChip).first);
+      await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
       // The first category chip of the sheet, then Apply.
       await tester.tap(find.byType(FilterChip).at(3));
@@ -899,7 +916,7 @@ final _scenes = <_Scene>[
       await tester.tap(
         find
             .descendant(
-              of: find.byType(SegmentedButton<DebtsFilter>),
+              of: find.byType(PillSegmentedButton<DebtsFilter>),
               matching: find.byType(Text),
             )
             .at(2),
@@ -1001,6 +1018,235 @@ final _scenes = <_Scene>[
   ),
   const _Scene('settings', AppRoutes.settings, signedIn: true),
   const _Scene('demo-panel', AppRoutes.demo),
+  // F. Reports.
+  const _Scene('rp-1-reports', AppRoutes.reports, signedIn: true),
+  const _Scene(
+    'rp-2-reports-two-payments',
+    AppRoutes.reports,
+    signedIn: true,
+    size: _tallPhone,
+    setup: _useTwoPayments,
+  ),
+  _Scene(
+    'rp-2b-reports-part-1',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapPartSegment(tester, 1);
+    },
+  ),
+  _Scene(
+    'rp-3-month-vs-month',
+    AppRoutes.reports,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) => _tapReportsView(tester, 1),
+  ),
+  _Scene(
+    'rp-4-part-vs-part',
+    AppRoutes.reports,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapReportsView(tester, 1);
+      await _tapPartSegment(tester, 1);
+    },
+  ),
+  _Scene(
+    'rp-3b-month-vs-month-two-payments',
+    AppRoutes.reports,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _tapReportsView(tester, 1);
+    },
+  ),
+  _Scene(
+    'rp-5-debts',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) => _tapReportsView(tester, 2),
+  ),
+  _Scene(
+    'rp-6-loading',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  ),
+  _Scene(
+    'rp-7-empty',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
+  ),
+  _Scene(
+    'rp-8-error',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'rp-9-no-connection',
+    AppRoutes.reports,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
+
+  // G. Settings, account and data.
+  const _Scene(
+    'st-1-settings',
+    AppRoutes.settings,
+    signedIn: true,
+    size: Size(412, 1900),
+  ),
+  const _Scene('st-2-account', AppRoutes.account, signedIn: true),
+  const _Scene(
+    'st-3-pay-schedule',
+    AppRoutes.paySchedule,
+    signedIn: true,
+    setup: _useTwoPayments,
+  ),
+  const _Scene('st-3b-pay-schedule-one', AppRoutes.paySchedule, signedIn: true),
+  const _Scene('st-4-categories', AppRoutes.categories, signedIn: true),
+  _Scene(
+    'st-4b-edit-category',
+    AppRoutes.categories,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.edit_outlined).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-4c-add-category',
+    AppRoutes.categories,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('st-5-accounts', AppRoutes.accounts, signedIn: true),
+  _Scene(
+    'st-5b-edit-account',
+    AppRoutes.accounts,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.edit_outlined).first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'st-6-change-password',
+    AppRoutes.changePassword,
+    signedIn: true,
+  ),
+  _Scene(
+    'st-6b-change-password-filled',
+    AppRoutes.changePassword,
+    signedIn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-2');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-7-export-csv',
+    AppRoutes.settings,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.file_upload_outlined));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-7b-export-csv-custom',
+    AppRoutes.settings,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.file_upload_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ChoiceChip).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('st-8-import-csv', AppRoutes.importCsv, signedIn: true),
+  _Scene(
+    'st-8b-import-result',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-9-default-currency',
+    AppRoutes.settings,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.currency_exchange));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-10-sign-out',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.logout));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-11-delete-account',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-11b-delete-account-wrong-password',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-4d-categories-error',
+    AppRoutes.categories,
+    signedIn: true,
+    setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.error),
+  ),
+  _Scene(
+    'st-1b-settings-no-connection',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) =>
+        _useScenario(tester, demo, DemoScenario.noConnection),
+  ),
 ];
 
 void main() {
@@ -1028,6 +1274,9 @@ void main() {
               boundaryKey: key,
               child: buildApp(
                 languageRepository: FakeLanguageRepository(language),
+                // Available and not yet allowed, so the Settings show the
+                // notification rows.
+                pushMessaging: FakePushMessagingRepository(),
                 demo: demo,
                 authRepository: FakeAuthRepository(
                   demo: demo,

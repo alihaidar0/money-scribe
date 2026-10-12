@@ -86,3 +86,8 @@ final class TransactionSaveRequested extends TransactionFormEvent {
 final class TransactionDeleteRequested extends TransactionFormEvent {
   const new();
 }
+
+/// The user came back from managing the accounts: load them again.
+final class TransactionAccountsRefreshed extends TransactionFormEvent {
+  const new();
+}

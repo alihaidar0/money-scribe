@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/transactions/presentation/transaction_form_screen.dart';
@@ -14,7 +15,7 @@ const twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
 
 Finder partSegment(String label) {
   return find.descendant(
-    of: find.byType(SegmentedButton<PeriodScope>),
+    of: find.byType(PillSegmentedButton<PeriodScope>),
     matching: find.text(label),
   );
 }
@@ -23,8 +24,24 @@ Finder inSheet(Finder finder) {
   return find.descendant(of: find.byType(BottomSheet), matching: finder);
 }
 
+/// The button that opens the Filters sheet, whichever style it has.
+Finder filtersButton(String label) {
+  return find.ancestor(
+    of: find.text(label),
+    matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton),
+  );
+}
+
+/// The cross of the chip of an active filter.
+Finder removeChip(String label) {
+  return find.descendant(
+    of: find.widgetWithText(InputChip, label),
+    matching: find.byIcon(Icons.clear),
+  );
+}
+
 Future<void> openFilters(WidgetTester tester) async {
-  await tester.tap(find.widgetWithText(FilterChip, 'Category'));
+  await tester.tap(find.byIcon(Icons.tune).first);
   await tester.pumpAndSettle();
 }
 
@@ -77,18 +94,18 @@ void main() {
       expect(find.text('Card'), findsOneWidget);
     });
 
-    testWidgets('has the search, the three chips and the Add button', (
+    testWidgets('has the search, the Filters button and the Add button', (
       tester,
     ) async {
       await openTransactions(tester);
 
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Search'), findsOneWidget);
-      for (final chip in ['Category', 'Account', 'Date range']) {
-        expect(find.widgetWithText(FilterChip, chip), findsOneWidget);
-      }
+      expect(filtersButton('Filters'), findsOneWidget);
+      // Nothing is on, so there is no chip to take off.
+      expect(find.byType(InputChip), findsNothing);
       expect(find.widgetWithText(FloatingActionButton, 'Add'), findsOneWidget);
-      expect(find.byType(SegmentedButton<PeriodScope>), findsNothing);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsNothing);
     });
 
     testWidgets('has no part headers', (tester) async {
@@ -102,7 +119,7 @@ void main() {
     testWidgets('has the choice Month, Part 1 and Part 2', (tester) async {
       await openTransactions(tester, settings: twoPayments);
 
-      expect(find.byType(SegmentedButton<PeriodScope>), findsOneWidget);
+      expect(find.byType(PillSegmentedButton<PeriodScope>), findsOneWidget);
       for (final label in ['Month', 'Part 1', 'Part 2']) {
         expect(partSegment(label), findsOneWidget);
       }
@@ -183,9 +200,10 @@ void main() {
       expect(find.text('No results'), findsOneWidget);
       expect(find.text('Try another word or clear the filters.'), findsOne);
       expect(find.widgetWithText(FilledButton, 'Clear filters'), findsOne);
-      // The search and the chips stay.
+      // The search and the Filters button stay.
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Category'), findsOneWidget);
+      // The first is the button; the demo panel handle has the same icon.
+      expect(find.byIcon(Icons.tune), findsWidgets);
     });
 
     testWidgets('Clear filters brings the list back and empties the search', (
@@ -214,7 +232,7 @@ void main() {
 
       await openFilters(tester);
 
-      expect(find.text('Filters'), findsOneWidget);
+      expect(inSheet(find.text('Filters')), findsOneWidget);
       for (final name in [
         'Groceries',
         'Dining',
@@ -235,16 +253,13 @@ void main() {
       expect(inSheet(find.text('Period')), findsNothing);
     });
 
-    testWidgets('every chip opens the same sheet', (tester) async {
+    testWidgets('the Filters button opens the sheet', (tester) async {
       await openTransactions(tester);
 
-      for (final chip in ['Account', 'Date range']) {
-        await tester.tap(find.widgetWithText(FilterChip, chip));
-        await tester.pumpAndSettle();
-        expect(find.text('Filters'), findsOneWidget, reason: chip);
-        await tester.tapAt(const Offset(10, 10));
-        await tester.pumpAndSettle();
-      }
+      await tester.tap(filtersButton('Filters'));
+      await tester.pumpAndSettle();
+
+      expect(inSheet(find.text('Filters')), findsOneWidget);
     });
 
     testWidgets('Apply narrows the list to the chosen category', (
@@ -260,8 +275,34 @@ void main() {
       expect(find.byType(BottomSheet), findsNothing);
       expect(find.text('Taxi · Card'), findsOneWidget);
       expect(find.text('Coffee · Cash'), findsNothing);
-      // The chip says how many choices it holds.
-      expect(find.widgetWithText(FilterChip, 'Category · 1'), findsOneWidget);
+      // The button says how many choices are on, and a chip names this one.
+      expect(filtersButton('Filters · 1'), findsOneWidget);
+      expect(find.widgetWithText(InputChip, 'Transport'), findsOneWidget);
+    });
+
+    testWidgets('the cross of a chip takes that choice off', (tester) async {
+      await openTransactions(tester);
+      await openFilters(tester);
+      await tester.tap(inSheet(find.text('Transport')));
+      await tester.tap(inSheet(find.text('Cash')));
+      await tester.tap(inSheet(find.text('Apply')));
+      await tester.pumpAndSettle();
+      expect(filtersButton('Filters · 2'), findsOneWidget);
+
+      await tester.tap(removeChip('Transport'));
+      await tester.pumpAndSettle();
+
+      expect(filtersButton('Filters · 1'), findsOneWidget);
+      expect(find.widgetWithText(InputChip, 'Transport'), findsNothing);
+      expect(find.widgetWithText(InputChip, 'Cash'), findsOneWidget);
+      expect(find.text('Coffee · Cash'), findsOneWidget);
+      expect(find.text('Taxi · Card'), findsNothing);
+
+      await tester.tap(removeChip('Cash'));
+      await tester.pumpAndSettle();
+
+      expect(filtersButton('Filters'), findsOneWidget);
+      expect(find.text('Taxi · Card'), findsOneWidget);
     });
 
     testWidgets('Apply narrows by account', (tester) async {
@@ -274,7 +315,7 @@ void main() {
 
       expect(find.text('Coffee · Cash'), findsOneWidget);
       expect(find.text('Taxi · Card'), findsNothing);
-      expect(find.widgetWithText(FilterChip, 'Account · 1'), findsOneWidget);
+      expect(find.widgetWithText(InputChip, 'Cash'), findsOneWidget);
     });
 
     testWidgets('Apply narrows by a day range', (tester) async {
@@ -292,12 +333,12 @@ void main() {
       expect(find.text('Sat 17 Oct'), findsOneWidget);
       expect(find.text('Mon 19 Oct'), findsOneWidget);
       expect(find.text('Mon 5 Oct'), findsNothing);
-      expect(
-        tester
-            .widget<FilterChip>(find.widgetWithText(FilterChip, 'Date range'))
-            .selected,
-        isTrue,
-      );
+      expect(find.widgetWithText(InputChip, 'From 17 Oct'), findsOneWidget);
+
+      await tester.tap(removeChip('From 17 Oct'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mon 5 Oct'), findsOneWidget);
     });
 
     testWidgets('the choices are kept when the sheet opens again', (
@@ -309,7 +350,7 @@ void main() {
       await tester.tap(inSheet(find.text('Apply')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Category · 1'));
+      await tester.tap(filtersButton('Filters · 1'));
       await tester.pumpAndSettle();
 
       expect(
@@ -332,14 +373,14 @@ void main() {
       await tester.tap(inSheet(find.text('Apply')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Category · 1'));
+      await tester.tap(filtersButton('Filters · 1'));
       await tester.pumpAndSettle();
       await tester.tap(inSheet(find.text('Reset')));
       await tester.pumpAndSettle();
 
       expect(find.byType(BottomSheet), findsNothing);
       expect(find.text('Coffee · Cash'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Category'), findsOneWidget);
+      expect(filtersButton('Filters'), findsOneWidget);
     });
 
     testWidgets('dismissing the sheet changes nothing', (tester) async {
@@ -393,8 +434,8 @@ void main() {
       // The choice above the list follows.
       expect(
         tester
-            .widget<SegmentedButton<PeriodScope>>(
-              find.byType(SegmentedButton<PeriodScope>),
+            .widget<PillSegmentedButton<PeriodScope>>(
+              find.byType(PillSegmentedButton<PeriodScope>),
             )
             .selected,
         {PeriodScope.secondPart},
@@ -532,7 +573,7 @@ void main() {
       );
 
       expect(find.text('بحث'), findsOneWidget);
-      expect(find.text('الفئة'), findsOneWidget);
+      expect(find.text('عوامل التصفية'), findsOneWidget);
       expect(find.text('إضافة'), findsOneWidget);
       expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
       expect(find.textContaining('الجزء 2 · 16–31'), findsOneWidget);
@@ -541,10 +582,10 @@ void main() {
     testWidgets('the filters sheet is in Arabic', (tester) async {
       await openTransactions(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'الفئة'));
+      await tester.tap(find.byIcon(Icons.tune).first);
       await tester.pumpAndSettle();
 
-      expect(find.text('عوامل التصفية'), findsOneWidget);
+      expect(inSheet(find.text('عوامل التصفية')), findsOneWidget);
       expect(inSheet(find.text('تطبيق')), findsOneWidget);
       expect(inSheet(find.text('إعادة تعيين')), findsOneWidget);
     });

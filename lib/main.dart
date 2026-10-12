@@ -9,10 +9,14 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
+import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
+import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_language_repository.dart';
+import 'package:money_scribe/features/settings/data/shared_preferences_theme_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
@@ -30,21 +34,32 @@ Future<void> main() async {
   // and live in memory. Connecting the server replaces them here and deletes
   // their `data/fake/` folders (`docs/architecture.md`).
   final demo = DemoController();
+  final transactions = FakeTransactionsRepository(demo: demo);
 
   runApp(
     MoneyScribeApp(
       languageRepository: SharedPreferencesLanguageRepository(preferences),
+      themeRepository: SharedPreferencesThemeRepository(preferences),
       pushMessagingRepository: pushMessaging,
       authRepository: FakeAuthRepository(demo: demo),
       appLockRepository: FakeAppLockRepository(),
       payScheduleRepository: FakePayScheduleRepository(demo: demo),
+      defaultCurrencyRepository: FakeDefaultCurrencyRepository(demo: demo),
+      csvTransferRepository: FakeCsvTransferRepository(demo: demo),
       overviewRepository: FakeOverviewRepository(demo: demo),
       salaryRepository: FakeSalaryRepository(demo: demo),
       fixedItemsRepository: FakeFixedItemsRepository(demo: demo),
-      transactionsRepository: FakeTransactionsRepository(demo: demo),
-      accountsRepository: FakeAccountsRepository(demo: demo),
-      categoriesRepository: FakeCategoriesRepository(demo: demo),
+      transactionsRepository: transactions,
+      accountsRepository: FakeAccountsRepository(
+        demo: demo,
+        transactions: transactions,
+      ),
+      categoriesRepository: FakeCategoriesRepository(
+        demo: demo,
+        transactions: transactions,
+      ),
       debtsRepository: FakeDebtsRepository(demo: demo),
+      reportsRepository: FakeReportsRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,
     ),

@@ -12,6 +12,15 @@ class FakePayScheduleRepository implements PayScheduleRepository {
   PaySchedule? saved;
 
   @override
+  Future<PaySchedule> load() async {
+    await _demo.simulateRequest();
+    // The demo panel can change how the account is paid at any time.
+    return (saved ?? const PaySchedule()).copyWith(
+      mode: _demo.settings.paymentMode,
+    );
+  }
+
+  @override
   Future<void> save(PaySchedule schedule) async {
     await _demo.simulateRequest();
     saved = schedule;

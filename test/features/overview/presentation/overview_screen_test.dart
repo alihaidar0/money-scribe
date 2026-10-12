@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
@@ -81,7 +82,7 @@ void main() {
     testWidgets('has no part selector and no period cards', (tester) async {
       await _pumpOverview(tester);
 
-      expect(find.byType(SegmentedButton<Object>), findsNothing);
+      expect(find.byType(PillSegmentedButton<Object>), findsNothing);
       expect(find.text('Part 1'), findsNothing);
       expect(find.textContaining('Part 1', findRichText: true), findsNothing);
     });

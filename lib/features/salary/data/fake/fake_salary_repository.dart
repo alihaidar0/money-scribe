@@ -49,6 +49,8 @@ class FakeSalaryRepository implements SalaryRepository {
     await _demo.simulateSave();
     _saved[month.month] = month;
     _deleted.remove(month.month);
+    // The other screens of the month follow how it is paid.
+    _demo.setMonthPaymentMode(month.month, month.inputs.paymentMode);
   }
 
   @override
@@ -56,6 +58,7 @@ class FakeSalaryRepository implements SalaryRepository {
     await _demo.simulateSave();
     _saved.remove(month);
     _deleted.add(month);
+    _demo.clearMonthPaymentMode(month);
   }
 
   /// The saved month, without waiting for the server.

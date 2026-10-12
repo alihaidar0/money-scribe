@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
+import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
-import 'package:money_scribe/features/transactions/presentation/category_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
 
 /// What the Filters sheet answers with: the choices to apply and the part of
 /// the month to show.

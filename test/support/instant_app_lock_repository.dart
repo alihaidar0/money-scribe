@@ -19,4 +19,12 @@ class InstantAppLockRepository implements AppLockRepository {
   Future<void> savePin(String pin) async {
     this.pin = pin;
   }
+
+  @override
+  Future<bool> isEnabled() async => pin != null;
+
+  @override
+  Future<void> disable() async {
+    pin = null;
+  }
 }

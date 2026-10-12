@@ -11,15 +11,58 @@ part 'pay_schedule_state.dart';
 
 /// Choosing how the salary is paid: one payment or two, and the pay days.
 class PayScheduleBloc extends Bloc<PayScheduleEvent, PayScheduleState> {
-  new({required this._repository}) : super(const PayScheduleState()) {
+  new({required this._repository, PayScheduleState? initialState})
+    : super(initialState ?? const PayScheduleState()) {
+    on<PayScheduleStarted>(_onStarted, transformer: droppable());
     on<PaymentModeSelected>(_onModeSelected, transformer: sequential());
     on<FirstPayDayChanged>(_onFirstPayDayChanged, transformer: sequential());
     on<SecondPayDayChanged>(_onSecondPayDayChanged, transformer: sequential());
+    on<RemindOnPayDaysChanged>(_onRemindChanged, transformer: sequential());
     // A second press while the first is being saved is ignored.
     on<PayScheduleConfirmed>(_onConfirmed, transformer: droppable());
   }
 
   final PayScheduleRepository _repository;
+
+  Future<void> _onStarted(
+    PayScheduleStarted event,
+    Emitter<PayScheduleState> emit,
+  ) async {
+    emit(
+      PayScheduleState(
+        schedule: state.schedule,
+        status: PayScheduleStatus.loading,
+        isLoaded: false,
+      ),
+    );
+    try {
+      emit(PayScheduleState(schedule: await _repository.load()));
+    } on NoConnectionException {
+      emit(
+        PayScheduleState(
+          schedule: state.schedule,
+          status: PayScheduleStatus.noConnection,
+          isLoaded: false,
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      addError(error, stackTrace);
+      emit(
+        PayScheduleState(
+          schedule: state.schedule,
+          status: PayScheduleStatus.failure,
+          isLoaded: false,
+        ),
+      );
+    }
+  }
+
+  void _onRemindChanged(
+    RemindOnPayDaysChanged event,
+    Emitter<PayScheduleState> emit,
+  ) {
+    emit(_edited(state.schedule.copyWith(remindOnPayDays: event.remind)));
+  }
 
   void _onModeSelected(
     PaymentModeSelected event,

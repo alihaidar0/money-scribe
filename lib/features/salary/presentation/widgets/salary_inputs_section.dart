@@ -4,6 +4,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/salary/domain/salary_form.dart';
 
 /// The "Inputs" section of the Salary screen: the choice of one or two
@@ -61,8 +62,7 @@ class _SalaryInputsSectionState extends State<SalaryInputsSection> {
         const SizedBox(height: 12),
         Text(l10n.paymentsPerMonthLabel, style: theme.textTheme.bodyMedium),
         const SizedBox(height: 8),
-        SegmentedButton<PaymentMode>(
-          showSelectedIcon: false,
+        PillSegmentedButton<PaymentMode>(
           segments: [
             ButtonSegment(
               value: PaymentMode.onePayment,

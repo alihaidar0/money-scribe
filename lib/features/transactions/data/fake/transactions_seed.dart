@@ -1,3 +1,4 @@
+import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
@@ -52,6 +53,13 @@ abstract final class TransactionsSeed {
       name: 'Other',
       icon: CategoryIcon.other,
       kind: CategoryKind.both,
+    ),
+    TransactionCategory(
+      id: 'gifts',
+      name: 'Gifts',
+      icon: CategoryIcon.gifts,
+      kind: CategoryKind.both,
+      isCustom: true,
     ),
   ];
 

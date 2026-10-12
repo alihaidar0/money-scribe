@@ -110,6 +110,7 @@ void main() {
         expect(bloc.state.availableCategories.map((category) => category.id), [
           'scholarship',
           'other',
+          'gifts',
         ]);
       },
     );

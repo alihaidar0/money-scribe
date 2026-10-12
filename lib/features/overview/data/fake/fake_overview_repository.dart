@@ -14,13 +14,13 @@ class FakeOverviewRepository implements OverviewRepository {
   final DemoController _demo;
 
   @override
-  Stream<void> get changes => _demo.dataChanges;
+  Stream<void> get changes => _demo.dataChangesWithSchedules;
 
   @override
   Future<MonthOverview?> month(YearMonth month) async {
     await _demo.simulateRequest();
     if (_demo.settings.scenario == DemoScenario.empty) return null;
-    return OverviewSeed.month(month, _demo.settings.paymentMode);
+    return OverviewSeed.month(month, _demo.paymentModeOf(month));
   }
 
   @override

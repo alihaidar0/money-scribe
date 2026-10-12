@@ -115,4 +115,66 @@ void main() {
     ],
     errors: () => [isA<ServerException>()],
   );
+
+  group('PayScheduleStarted', () {
+    blocTest<PayScheduleBloc, PayScheduleState>(
+      'loads the saved schedule',
+      setUp: () =>
+          demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),
+      build: build,
+      act: (bloc) => bloc.add(const PayScheduleStarted()),
+      expect: () => const [
+        PayScheduleState(status: PayScheduleStatus.loading, isLoaded: false),
+        PayScheduleState(schedule: PaySchedule(mode: PaymentMode.twoPayments)),
+      ],
+    );
+
+    blocTest<PayScheduleBloc, PayScheduleState>(
+      'reports no connection, and Try again loads again',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.noConnection)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const PayScheduleStarted());
+        await Future<void>.delayed(Duration.zero);
+        demo.update(const DemoSettings());
+        bloc.add(const PayScheduleStarted());
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, PayScheduleStatus.editing);
+        expect(bloc.state.isLoaded, isTrue);
+      },
+    );
+
+    blocTest<PayScheduleBloc, PayScheduleState>(
+      'a failure to load is not a failure to save',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.noConnection)),
+      build: build,
+      act: (bloc) => bloc.add(const PayScheduleStarted()),
+      verify: (bloc) {
+        expect(bloc.state.status, PayScheduleStatus.noConnection);
+        expect(bloc.state.isLoaded, isFalse);
+      },
+    );
+
+    blocTest<PayScheduleBloc, PayScheduleState>(
+      'reports a server failure and the error',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.error)),
+      build: build,
+      act: (bloc) => bloc.add(const PayScheduleStarted()),
+      errors: () => [isA<ServerException>()],
+      verify: (bloc) => expect(bloc.state.status, PayScheduleStatus.failure),
+    );
+  });
+
+  blocTest<PayScheduleBloc, PayScheduleState>(
+    'turns the reminder on and off, and saves it with the schedule',
+    build: build,
+    act: (bloc) => bloc
+      ..add(const RemindOnPayDaysChanged(remind: true))
+      ..add(const PayScheduleConfirmed()),
+    verify: (_) => expect(repository.saved?.remindOnPayDays, isTrue),
+  );
 }

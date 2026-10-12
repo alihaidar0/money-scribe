@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 
 /// The segmented control "Month | Part 1 | Part 2" of a month paid in two
 /// payments. It chooses what a screen shows the figures of.
@@ -16,8 +17,7 @@ class PartSelector extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<PeriodScope>(
-        showSelectedIcon: false,
+      child: PillSegmentedButton<PeriodScope>(
         segments: [
           ButtonSegment(value: PeriodScope.month, label: Text(l10n.partMonth)),
           ButtonSegment(

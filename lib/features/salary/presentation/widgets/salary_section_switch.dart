@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 
 /// The two segments of the Salary tab.
 enum SalarySection { month, fixedItems }
@@ -23,8 +24,7 @@ class SalarySectionSwitch extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      child: SegmentedButton<SalarySection>(
-        showSelectedIcon: false,
+      child: PillSegmentedButton<SalarySection>(
         segments: [
           ButtonSegment(
             value: SalarySection.month,
