@@ -1,0 +1,149 @@
+# .github/workflows/backend-contract.yml
+#
+# Weekly check that this app is not left on an old backend contract. It compares
+# the release pinned in api/BACKEND_VERSION with the newest release of the
+# backend repository and keeps ONE issue open while a newer release exists
+# (label "dependencies"); the issue closes by itself once the app is current.
+# An issue, not a pull request: Actions may not open pull requests in this setup
+# and such a pull request would not trigger "CI passed" anyway.
+#
+# Opt in: set the repository variable BACKEND_REPO (OWNER/REPO of the backend).
+# Without it the job is skipped. A private backend also needs the secret
+# BACKEND_READ_TOKEN, a fine-grained token with read-only "Contents" access to
+# that one repository; a public backend needs nothing (docs/github-setup.md).
+#
+# Not part of "CI passed": it depends on another repository's state. It uses only
+# actions/checkout and the preinstalled GitHub CLI.
+name: Backend contract
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: backend-contract
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Compare with the backend's newest release
+    if: vars.BACKEND_REPO != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: api/BACKEND_VERSION
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Compare api/BACKEND_VERSION with the newest backend release
+        env:
+          BACKEND_REPO: ${{ vars.BACKEND_REPO }}
+          # Reads the backend. The default token only sees public repositories.
+          BACKEND_TOKEN: ${{ secrets.BACKEND_READ_TOKEN || github.token }}
+          # Reads and writes issues of THIS repository only.
+          GH_TOKEN: ${{ github.token }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          title="Backend contract: a newer backend release is available"
+          label="dependencies"
+
+          backend() { GH_TOKEN="$BACKEND_TOKEN" gh "$@"; }
+
+          if [[ ! "$BACKEND_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "::error::The repository variable BACKEND_REPO must be OWNER/REPO (got '$BACKEND_REPO')."
+            exit 1
+          fi
+
+          # A failure here is a red run on purpose: a private backend without a
+          # valid BACKEND_READ_TOKEN must not look like "no update".
+          if ! backend api "repos/$BACKEND_REPO" --jq .full_name > /dev/null; then
+            echo "::error::Cannot read $BACKEND_REPO. For a private repository, store a read-only fine-grained token as the secret BACKEND_READ_TOKEN."
+            exit 1
+          fi
+
+          pinned=""
+          if [[ -f api/BACKEND_VERSION ]]; then
+            pinned="$(head -n 1 api/BACKEND_VERSION | tr -d '[:space:]')"
+          fi
+          if [[ -n "$pinned" && ! "$pinned" =~ ^[A-Za-z0-9._+-]+$ ]]; then
+            echo "::error::api/BACKEND_VERSION must hold a release tag or a commit SHA (got '$pinned')."
+            exit 1
+          fi
+
+          # The newest published release (drafts and pre-releases are not "latest").
+          if ! latest="$(backend api "repos/$BACKEND_REPO/releases/latest" --jq '.tag_name + " " + .html_url' 2> /dev/null)"; then
+            echo "$BACKEND_REPO has no published release yet; nothing to compare."
+            echo "$BACKEND_REPO has no published release yet; nothing to compare." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          latest_tag="${latest%% *}"
+          latest_url="${latest#* }"
+          if [[ ! "$latest_tag" =~ ^[A-Za-z0-9._+-]+$ ]]; then
+            echo "::error::Unexpected release tag name from $BACKEND_REPO."
+            exit 1
+          fi
+
+          # Is the newest release ahead of what is pinned? The compare API answers
+          # for tags and commits alike: identical, ahead, behind or diverged.
+          outdated=false
+          if [[ "$pinned" != "$latest_tag" ]]; then
+            outdated=true
+            if [[ -n "$pinned" ]]; then
+              status="$(backend api "repos/$BACKEND_REPO/compare/$pinned...$latest_tag" --jq .status 2> /dev/null || echo unknown)"
+              case "$status" in
+                identical | behind) outdated=false ;;
+              esac
+            fi
+          fi
+
+          existing="$(gh issue list --repo "$THIS_REPO" --state open --label "$label" \
+            --search "\"$title\" in:title" --json number,title \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")"
+
+          if [[ "$outdated" == "false" ]]; then
+            echo "api/BACKEND_VERSION (${pinned:-none}) is current."
+            if [[ -n "$existing" ]]; then
+              gh issue close "$existing" --repo "$THIS_REPO" --reason completed \
+                --comment "The app now uses the newest backend release (${pinned:-none}). Closing."
+            fi
+            exit 0
+          fi
+
+          body_file="$RUNNER_TEMP/issue-body.md"
+          {
+            if [[ -z "$pinned" ]]; then
+              echo "No backend release is pinned yet (\`api/BACKEND_VERSION\` is missing or empty)."
+            else
+              echo "This app is pinned to \`$pinned\`."
+            fi
+            echo ""
+            echo "The newest release of \`$BACKEND_REPO\` is [\`$latest_tag\`]($latest_url)."
+            echo ""
+            echo "To move to it:"
+            echo ""
+            echo "1. Read the release notes and look for \`breaking change\` entries."
+            echo "2. Run \`scripts/sync-api.sh $latest_tag\`, which pins the contract and regenerates \`lib/api\`."
+            echo "3. Let the compiler show what changed, fix it, and open a pull request with \`api/\` and \`lib/api\`."
+            echo ""
+            echo "This issue is updated every Monday and closes by itself when the app is current."
+          } > "$body_file"
+
+          if [[ -n "$existing" ]]; then
+            gh issue edit "$existing" --repo "$THIS_REPO" --body-file "$body_file"
+            echo "Updated issue #$existing: $latest_tag is newer than ${pinned:-nothing}." >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh issue create --repo "$THIS_REPO" --title "$title" --label "$label" --body-file "$body_file"
+            echo "Opened an issue: $latest_tag is newer than ${pinned:-nothing}." >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -22,7 +22,8 @@ fail() {
 
 # ── 1. Staged files: LF line endings, no trailing whitespace, final newline ───
 # Mirrors the Format job in ci.yml: Markdown may keep trailing spaces, and the
-# folders written by `flutter create` are only checked for line endings.
+# folders written by `flutter create` are only checked for line endings, as is
+# api/openapi.yaml, a verbatim copy of the backend's contract.
 cr="$(printf '\r')"
 problems=""
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
@@ -35,7 +36,7 @@ while IFS= read -r file; do
 "
   fi
   case "$file" in
-    android/* | ios/* | web/* | macos/* | linux/* | windows/*) continue ;;
+    android/* | ios/* | web/* | macos/* | linux/* | windows/* | api/openapi.yaml) continue ;;
   esac
   case "$file" in
     *.md) ;;
