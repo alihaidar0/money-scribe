@@ -32,7 +32,7 @@ Application libraries and their exact versions are pinned in `pubspec.yaml` and
 ## Template
 
 Created from [`alihaidar0/flutter-template`](https://github.com/alihaidar0/flutter-template)
-release [`v2026.10.06`](https://github.com/alihaidar0/flutter-template/releases/tag/v2026.10.06).
+release [`v2026.10.15`](https://github.com/alihaidar0/flutter-template/releases/tag/v2026.10.15).
 
 ## License
 
