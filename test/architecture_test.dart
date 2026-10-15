@@ -47,6 +47,11 @@ final _rules = [
     ),
   ),
   _Rule(
+    'only data uses the generated API client',
+    RegExp('^features/[^/]+/(domain|bloc|presentation)/'),
+    RegExp('^core/api/'),
+  ),
+  _Rule(
     'a Bloc is free of Flutter and does not reach data or screens',
     RegExp('^features/[^/]+/bloc/'),
     RegExp(
