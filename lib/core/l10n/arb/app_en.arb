@@ -8,9 +8,483 @@
   "@overviewTitle": {
     "description": "Title of the Overview screen, the first screen of the app."
   },
-  "overviewEmpty": "Nothing here yet",
-  "@overviewEmpty": {
-    "description": "Placeholder text on the Overview screen while it has no content."
+  "salaryTitle": "Salary",
+  "@salaryTitle": {
+    "description": "Title of the Salary screen and label of its tab in the navigation bar."
+  },
+  "transactionsTitle": "Transactions",
+  "@transactionsTitle": {
+    "description": "Title of the Transactions screen and label of its tab in the navigation bar."
+  },
+  "debtsTitle": "Debts",
+  "@debtsTitle": {
+    "description": "Title of the Debts screen and label of its tab in the navigation bar."
+  },
+  "reportsTitle": "Reports",
+  "@reportsTitle": {
+    "description": "Title of the Reports screen and label of its tab in the navigation bar."
+  },
+  "comingSoon": "This screen is coming soon.",
+  "@comingSoon": {
+    "description": "Text on a screen that is not built yet."
+  },
+  "overviewBalance": "Balance",
+  "@overviewBalance": {
+    "description": "Label of the main figure of the Overview: what is left of the month."
+  },
+  "overviewIncome": "Income",
+  "@overviewIncome": {
+    "description": "Label of the income figure under the balance, and in a period card."
+  },
+  "overviewSpent": "Spent",
+  "@overviewSpent": {
+    "description": "Label of the spending figure under the balance, and in a period card."
+  },
+  "overviewAddPurchase": "Add purchase",
+  "@overviewAddPurchase": {
+    "description": "Button on the Overview that opens the form for a new purchase."
+  },
+  "overviewAddRepayment": "Add repayment",
+  "@overviewAddRepayment": {
+    "description": "Button on the Overview that asks which debt a repayment is for."
+  },
+  "overviewRecurringIncome": "Recurring income",
+  "@overviewRecurringIncome": {
+    "description": "Row of the Overview: income that comes every month, such as a scholarship."
+  },
+  "overviewFixedCosts": "Fixed costs",
+  "@overviewFixedCosts": {
+    "description": "Row of the Overview: costs that come every month, such as rent."
+  },
+  "overviewPurchases": "Purchases",
+  "@overviewPurchases": {
+    "description": "Row of the Overview: what was bought in the period."
+  },
+  "overviewDebtMovements": "Debt movements",
+  "@overviewDebtMovements": {
+    "description": "Row of the Overview: money that moved because of debts, such as repayments."
+  },
+  "partMonth": "Month",
+  "@partMonth": {
+    "description": "Option of the part selector: the figures of the whole month."
+  },
+  "partFirst": "Part 1",
+  "@partFirst": {
+    "description": "Option of the part selector: the first of the two payments of a month."
+  },
+  "partSecond": "Part 2",
+  "@partSecond": {
+    "description": "Option of the part selector: the second of the two payments of a month."
+  },
+  "periodFirstPart": "Part 1 · 1st–15th",
+  "@periodFirstPart": {
+    "description": "Title of the card of the first part of a month, the 1st to the 15th."
+  },
+  "periodSecondPart": "Part 2 · 16th–end",
+  "@periodSecondPart": {
+    "description": "Title of the card of the second part of a month, the 16th to the end."
+  },
+  "previousMonth": "Previous month",
+  "@previousMonth": {
+    "description": "Spoken label of the arrow that goes to the previous month."
+  },
+  "nextMonth": "Next month",
+  "@nextMonth": {
+    "description": "Spoken label of the arrow that goes to the next month."
+  },
+  "firstLaunchTitle": "Welcome to Money Scribe",
+  "@firstLaunchTitle": {
+    "description": "Title of the Overview before any data exists. Money Scribe is the app name and stays in Latin letters."
+  },
+  "firstLaunchMessage": "Add your first salary month to see your balance.",
+  "@firstLaunchMessage": {
+    "description": "Sentence under the first-launch title."
+  },
+  "firstLaunchAction": "Enter your first salary month",
+  "@firstLaunchAction": {
+    "description": "Button on the first-launch Overview that opens the salary form."
+  },
+  "chooseDebtTitle": "Choose a debt",
+  "@chooseDebtTitle": {
+    "description": "Title of the sheet that asks which debt a repayment is for."
+  },
+  "cancelAction": "Cancel",
+  "@cancelAction": {
+    "description": "Button that closes a sheet or dialog without doing anything."
+  },
+  "debtLent": "Lent",
+  "@debtLent": {
+    "description": "Badge of a debt: the person lent the money."
+  },
+  "debtBorrowed": "Borrowed",
+  "@debtBorrowed": {
+    "description": "Badge of a debt: the person borrowed the money."
+  },
+  "debtOpen": "Open",
+  "@debtOpen": {
+    "description": "Status badge of a debt that is not yet repaid."
+  },
+  "debtSettled": "Settled",
+  "@debtSettled": {
+    "description": "Status badge of a debt that is fully repaid."
+  },
+  "debtOverdue": "Overdue",
+  "@debtOverdue": {
+    "description": "Status badge of a debt past its due date."
+  },
+  "noOpenDebts": "No open debts.",
+  "@noOpenDebts": {
+    "description": "Text of the Choose a debt sheet when there is no debt to repay."
+  },
+  "fixedItemsTitle": "Fixed items",
+  "@fixedItemsTitle": {
+    "description": "Title of the screen with the recurring income and costs."
+  },
+  "addTransactionTitle": "Add transaction",
+  "@addTransactionTitle": {
+    "description": "Title of the form for a new transaction."
+  },
+  "loadingLabel": "Loading",
+  "@loadingLabel": {
+    "description": "Spoken label of a screen while its content loads."
+  },
+  "debtRemaining": "Remaining {amount}",
+  "@debtRemaining": {
+    "description": "Under the name of a debt: what is still to be repaid. The placeholder is an amount with its currency.",
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "Button that repeats a request that failed."
+  },
+  "noConnectionTitle": "No connection",
+  "@noConnectionTitle": {
+    "description": "Title shown when the server cannot be reached."
+  },
+  "noConnectionMessage": "Check your internet connection and try again.",
+  "@noConnectionMessage": {
+    "description": "Explanation under the No connection title."
+  },
+  "errorTitle": "Something went wrong",
+  "@errorTitle": {
+    "description": "Title shown when the server fails."
+  },
+  "errorMessage": "Please try again in a moment.",
+  "@errorMessage": {
+    "description": "Explanation under the Something went wrong title."
+  },
+  "continueAction": "Continue",
+  "@continueAction": {
+    "description": "Button that moves to the next step of a flow."
+  },
+  "emailLabel": "Email",
+  "@emailLabel": {
+    "description": "Label of an email field."
+  },
+  "passwordLabel": "Password",
+  "@passwordLabel": {
+    "description": "Label of a password field."
+  },
+  "confirmPasswordLabel": "Confirm password",
+  "@confirmPasswordLabel": {
+    "description": "Label of the field that repeats a password."
+  },
+  "newPasswordLabel": "New password",
+  "@newPasswordLabel": {
+    "description": "Label of the field where a new password is typed."
+  },
+  "nameLabel": "Name",
+  "@nameLabel": {
+    "description": "Label of the field for the name of the account owner."
+  },
+  "showPassword": "Show password",
+  "@showPassword": {
+    "description": "Tooltip of the eye button that shows the typed password."
+  },
+  "hidePassword": "Hide password",
+  "@hidePassword": {
+    "description": "Tooltip of the eye button that hides the typed password."
+  },
+  "termsName": "Terms",
+  "@termsName": {
+    "description": "Name of the Terms document, shown as a link inside a sentence."
+  },
+  "privacyPolicyName": "Privacy Policy",
+  "@privacyPolicyName": {
+    "description": "Name of the Privacy Policy document, shown as a link inside a sentence."
+  },
+  "welcomeTagline": "Your salary, purchases and debts in one place.",
+  "@welcomeTagline": {
+    "description": "One sentence under the app name on the Welcome screen."
+  },
+  "welcomeAgreement": "By continuing you agree to the {terms} and the {privacy}.",
+  "@welcomeAgreement": {
+    "description": "Small text at the bottom of the Welcome screen. The two placeholders are the names of the Terms and the Privacy Policy, shown as links.",
+    "placeholders": {
+      "terms": {"type": "String"},
+      "privacy": {"type": "String"}
+    }
+  },
+  "signIn": "Sign in",
+  "@signIn": {
+    "description": "Title of the Sign in screen and the label of the buttons that open it or send the form."
+  },
+  "createAccount": "Create account",
+  "@createAccount": {
+    "description": "Title of the Create account screen and the label of the buttons that open it or send the form."
+  },
+  "signInWelcomeBack": "Welcome back.",
+  "@signInWelcomeBack": {
+    "description": "Sentence under the title of the Sign in screen."
+  },
+  "forgotPasswordLink": "Forgot password?",
+  "@forgotPasswordLink": {
+    "description": "Title of the Forgot password screen and the text button on the Sign in screen that opens it."
+  },
+  "newToApp": "New to Money Scribe?",
+  "@newToApp": {
+    "description": "Question at the bottom of the Sign in screen, followed by the Create account button. Money Scribe is the app name and stays in Latin letters."
+  },
+  "signInWrongCredentials": "Email or password is incorrect.",
+  "@signInWrongCredentials": {
+    "description": "Error banner on the Sign in screen after a wrong email or password."
+  },
+  "signInLocked": "Too many attempts. Try again in {time}.",
+  "@signInLocked": {
+    "description": "Banner on the Sign in screen while sign-in is locked. The placeholder is the time left as minutes and seconds, such as 4:59.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "registerSentence": "It takes a minute.",
+  "@registerSentence": {
+    "description": "Sentence under the title of the Create account screen."
+  },
+  "passwordRuleLength": "At least 8 characters",
+  "@passwordRuleLength": {
+    "description": "Rule for a new password: helper text under the password field and an item of the checklist on the New password screen."
+  },
+  "registerAgreement": "I agree to the {terms} and the {privacy}",
+  "@registerAgreement": {
+    "description": "Label of the checkbox on the Create account screen. The two placeholders are the names of the Terms and the Privacy Policy, shown as links.",
+    "placeholders": {
+      "terms": {"type": "String"},
+      "privacy": {"type": "String"}
+    }
+  },
+  "alreadyHaveAccount": "Already have an account?",
+  "@alreadyHaveAccount": {
+    "description": "Question at the bottom of the Create account screen, followed by the Sign in button."
+  },
+  "registerEmailTaken": "This email is already registered. {signIn} instead.",
+  "@registerEmailTaken": {
+    "description": "Error under the email field of the Create account screen. The placeholder is the word Sign in, shown as a link that opens the Sign in screen.",
+    "placeholders": {
+      "signIn": {"type": "String"}
+    }
+  },
+  "registerPasswordTooShort": "Use at least 8 characters.",
+  "@registerPasswordTooShort": {
+    "description": "Error under the password field of the Create account screen."
+  },
+  "registerPasswordsMismatch": "Passwords do not match.",
+  "@registerPasswordsMismatch": {
+    "description": "Error under the confirm password field of the Create account screen."
+  },
+  "verifyEmailTitle": "Verify your email",
+  "@verifyEmailTitle": {
+    "description": "Title of the screen where the code sent to a new account's email is typed."
+  },
+  "enterCodeTitle": "Enter the code",
+  "@enterCodeTitle": {
+    "description": "Title of the screen where the code sent to reset a password is typed."
+  },
+  "codeSentTo": "We sent a 4-digit code to {email}.",
+  "@codeSentTo": {
+    "description": "Text under the title of the code screens. The placeholder is the email address the code was sent to.",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "codeFieldLabel": "4-digit code",
+  "@codeFieldLabel": {
+    "description": "Spoken label of the field where the 4-digit code is typed, for screen readers."
+  },
+  "resendCodeIn": "Resend code in {time}",
+  "@resendCodeIn": {
+    "description": "Muted text under the code boxes while a new code cannot be asked for yet. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "resendCode": "Resend code",
+  "@resendCode": {
+    "description": "Button that sends a new code."
+  },
+  "verifyAction": "Verify",
+  "@verifyAction": {
+    "description": "Button that checks the code on the Verify your email screen."
+  },
+  "changeEmail": "Change email",
+  "@changeEmail": {
+    "description": "Text button that goes back to edit the email address."
+  },
+  "codeIncorrectAttemptsLeft": "The code is incorrect. {count} attempts left.",
+  "@codeIncorrectAttemptsLeft": {
+    "description": "Error under the code boxes after a wrong code, when two or more tries remain. The placeholder is the number of tries left.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "codeIncorrectLastAttempt": "The code is incorrect. 1 attempt left.",
+  "@codeIncorrectLastAttempt": {
+    "description": "Error under the code boxes after a wrong code, when one try remains."
+  },
+  "codeExpired": "This code has expired.",
+  "@codeExpired": {
+    "description": "Banner on the code screens when the code is no longer valid."
+  },
+  "emailVerifiedTitle": "Email verified",
+  "@emailVerifiedTitle": {
+    "description": "Title of the screen shown after the email address was verified."
+  },
+  "emailVerifiedMessage": "Your account is ready.",
+  "@emailVerifiedMessage": {
+    "description": "Sentence under the Email verified title."
+  },
+  "payTitle": "How are you paid?",
+  "@payTitle": {
+    "description": "Title of the first-start screen where the person chooses one or two payments a month."
+  },
+  "payHint": "You can change this later in Settings.",
+  "@payHint": {
+    "description": "Sentence under the title of the How are you paid screen."
+  },
+  "payOneTitle": "One payment a month",
+  "@payOneTitle": {
+    "description": "Option: the salary is paid once a month."
+  },
+  "payOneCaption": "One salary payment for the whole month.",
+  "@payOneCaption": {
+    "description": "Explanation under the one-payment option."
+  },
+  "payTwoTitle": "Two payments a month",
+  "@payTwoTitle": {
+    "description": "Option: the salary is paid twice a month."
+  },
+  "payTwoCaption": "One payment for the 1st–15th and one for the 16th–end of the month.",
+  "@payTwoCaption": {
+    "description": "Explanation under the two-payments option. The first payment covers the 1st to the 15th, the second the 16th to the end of the month."
+  },
+  "firstPayDay": "First payment is paid on day",
+  "@firstPayDay": {
+    "description": "Label of the stepper that sets the day of the month the first payment is paid. The number follows the label."
+  },
+  "secondPayDay": "Second payment is paid on day",
+  "@secondPayDay": {
+    "description": "Label of the stepper that sets the day the second payment is paid. The number follows the label."
+  },
+  "ofNextMonth": "of the next month",
+  "@ofNextMonth": {
+    "description": "Caption under the second pay day: the second payment is paid in the following month."
+  },
+  "increase": "Increase",
+  "@increase": {
+    "description": "Tooltip of the plus button of a number stepper."
+  },
+  "decrease": "Decrease",
+  "@decrease": {
+    "description": "Tooltip of the minus button of a number stepper."
+  },
+  "forgotPasswordMessage": "Enter your email and we will send you a 4-digit code.",
+  "@forgotPasswordMessage": {
+    "description": "Text under the title of the Forgot password screen."
+  },
+  "sendCode": "Send code",
+  "@sendCode": {
+    "description": "Button that sends the 4-digit code by email."
+  },
+  "backToSignIn": "Back to sign in",
+  "@backToSignIn": {
+    "description": "Text button that returns to the Sign in screen."
+  },
+  "newPasswordTitle": "Create a new password",
+  "@newPasswordTitle": {
+    "description": "Title of the screen where a new password is chosen."
+  },
+  "passwordRuleNumber": "One number",
+  "@passwordRuleNumber": {
+    "description": "Rule for a new password: it contains at least one digit. An item of the checklist."
+  },
+  "passwordRuleMatch": "Passwords match",
+  "@passwordRuleMatch": {
+    "description": "Rule for a new password: the two fields are equal. An item of the checklist."
+  },
+  "savePassword": "Save password",
+  "@savePassword": {
+    "description": "Button that saves the new password."
+  },
+  "passwordChangedTitle": "Password changed",
+  "@passwordChangedTitle": {
+    "description": "Title of the screen shown after the password was changed."
+  },
+  "passwordChangedMessage": "Sign in with your new password.",
+  "@passwordChangedMessage": {
+    "description": "Sentence under the Password changed title."
+  },
+  "appLockedTitle": "Money Scribe is locked",
+  "@appLockedTitle": {
+    "description": "Title of the App lock screen. Money Scribe is the app name and stays in Latin letters."
+  },
+  "appLockedHint": "Touch the sensor to unlock.",
+  "@appLockedHint": {
+    "description": "Instruction on the App lock screen."
+  },
+  "fingerprintNotRecognised": "Fingerprint not recognised. Try again or use your PIN.",
+  "@fingerprintNotRecognised": {
+    "description": "Shown on the App lock screen when the fingerprint did not match."
+  },
+  "unlockWithFingerprint": "Unlock with fingerprint",
+  "@unlockWithFingerprint": {
+    "description": "Spoken label of the large fingerprint button on the App lock screen."
+  },
+  "usePin": "Use PIN",
+  "@usePin": {
+    "description": "Text button on the App lock screen that opens the PIN pad. PIN is the 4-digit code that opens the app."
+  },
+  "enterPinTitle": "Enter your PIN",
+  "@enterPinTitle": {
+    "description": "Title of the PIN entry screen."
+  },
+  "forgotPin": "Forgot PIN?",
+  "@forgotPin": {
+    "description": "Text button under the PIN pad that signs the person out so they can sign in again."
+  },
+  "pinIncorrect": "Incorrect PIN. Try again.",
+  "@pinIncorrect": {
+    "description": "Error under the PIN dots after a wrong PIN."
+  },
+  "pinBackspace": "Delete last digit",
+  "@pinBackspace": {
+    "description": "Spoken label of the backspace key of the PIN pad."
+  },
+  "createPinTitle": "Create a 4-digit PIN",
+  "@createPinTitle": {
+    "description": "Title of the screen where a PIN for the app lock is chosen."
+  },
+  "createPinHint": "You will use it when the fingerprint is not available.",
+  "@createPinHint": {
+    "description": "Text under the title of the Create a PIN screen."
+  },
+  "repeatPinTitle": "Repeat your PIN",
+  "@repeatPinTitle": {
+    "description": "Title of the Create a PIN screen after the first entry, when the PIN is typed again to confirm it."
+  },
+  "pinMismatch": "The PINs do not match. Try again.",
+  "@pinMismatch": {
+    "description": "Error under the PIN dots when the repeated PIN differs from the first one."
   },
   "settingsTitle": "Settings",
   "@settingsTitle": {
@@ -31,5 +505,1470 @@
   "languageArabic": "العربية",
   "@languageArabic": {
     "description": "Language option for Arabic. Written in the language itself in every translation, so a reader can always find it."
+  },
+  "notificationsSectionTitle": "Notifications",
+  "@notificationsSectionTitle": {
+    "description": "Heading of the notification settings on the Settings screen."
+  },
+  "notificationsPermissionTitle": "Show notifications",
+  "@notificationsPermissionTitle": {
+    "description": "Label of the setting that lets the app show notifications on the device."
+  },
+  "notificationsStatusGranted": "Allowed",
+  "@notificationsStatusGranted": {
+    "description": "Status under the notification setting: the user allowed notifications."
+  },
+  "notificationsStatusNotGranted": "Not allowed yet",
+  "@notificationsStatusNotGranted": {
+    "description": "Status under the notification setting: notifications are not allowed yet, and the Allow button next to it asks the user."
+  },
+  "notificationsStatusBlocked": "Blocked. Turn notifications on in the system settings.",
+  "@notificationsStatusBlocked": {
+    "description": "Status under the notification setting: the user refused and the system will not ask again, so notifications can only be turned on in the system settings of the device."
+  },
+  "notificationsStatusError": "Could not check the notification setting.",
+  "@notificationsStatusError": {
+    "description": "Status under the notification setting: reading the setting from the device failed."
+  },
+  "notificationsAllow": "Allow",
+  "@notificationsAllow": {
+    "description": "Button that asks the user to allow notifications."
+  },
+  "pushTokenCopy": "Copy push token",
+  "@pushTokenCopy": {
+    "description": "Label of a test-only row on the Settings screen that copies this device's push token. Shown in staging builds only."
+  },
+  "pushTokenCopyHint": "For test messages from the Firebase console. Staging builds only.",
+  "@pushTokenCopyHint": {
+    "description": "Explanation under the row that copies the push token. Firebase is a product name and stays in Latin letters."
+  },
+  "pushTokenCopied": "Push token copied",
+  "@pushTokenCopied": {
+    "description": "Message shown after the push token was copied to the clipboard."
+  },
+  "pushTokenMissing": "No push token yet",
+  "@pushTokenMissing": {
+    "description": "Message shown when the device has no push token to copy."
+  },
+  "pushTokenCopyFailed": "Could not copy the push token",
+  "@pushTokenCopyFailed": {
+    "description": "Message shown when copying the push token to the clipboard failed."
+  },
+  "monthChipLabel": "{month}, choose month",
+  "@monthChipLabel": {
+    "description": "Spoken label of the chip that opens the month picker. The placeholder is the month shown, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseMonthTitle": "Choose month",
+  "@chooseMonthTitle": {
+    "description": "Title of the sheet that chooses a month."
+  },
+  "doneAction": "Done",
+  "@doneAction": {
+    "description": "Button that applies a choice and closes the sheet."
+  },
+  "retryAction": "Retry",
+  "@retryAction": {
+    "description": "Action of a message that repeats what failed."
+  },
+  "couldNotSave": "Couldn''t save. Check your connection.",
+  "@couldNotSave": {
+    "description": "Message shown when saving a form failed."
+  },
+  "salaryHistoryTitle": "Salary history",
+  "@salaryHistoryTitle": {
+    "description": "Title of the screen that lists the saved months, and tooltip of the button that opens it."
+  },
+  "salaryTotalAfterTax": "Total after tax",
+  "@salaryTotalAfterTax": {
+    "description": "Label of the main figure of the Salary screen: the pay of the month after tax."
+  },
+  "salaryResultsTitle": "Results",
+  "@salaryResultsTitle": {
+    "description": "Heading of the calculated lines on the Salary screen."
+  },
+  "salaryInputsTitle": "Inputs",
+  "@salaryInputsTitle": {
+    "description": "Heading of the numbers that are typed on the Salary screen."
+  },
+  "salaryResultsEmpty": "Fill in the inputs to see the results.",
+  "@salaryResultsEmpty": {
+    "description": "Shown instead of the calculated lines while the inputs are not complete."
+  },
+  "foodAllowanceLabel": "Food allowance",
+  "@foodAllowanceLabel": {
+    "description": "Calculated line: the food allowance for the month."
+  },
+  "foodAllowanceNote": "{days, plural, one{{days} day} other{{days} days}} × {rate}",
+  "@foodAllowanceNote": {
+    "description": "Under the food allowance: the working days times the allowance per day. The second placeholder is an amount with its currency.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "extraHoursPayLabel": "Extra-hours pay",
+  "@extraHoursPayLabel": {
+    "description": "Calculated line: the pay for the extra hours."
+  },
+  "extraHoursNote": "{hours, plural, =1{{hours} extra hour} other{{hours} extra hours}}",
+  "@extraHoursNote": {
+    "description": "Under the extra-hours pay: how many extra hours were worked. It can have a fraction, such as 7.5.",
+    "placeholders": {
+      "hours": {
+        "type": "num",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "incomeBeforeTaxLabel": "Income before tax",
+  "@incomeBeforeTaxLabel": {
+    "description": "Calculated line: base salary, food allowance and extra-hours pay together."
+  },
+  "taxLabel": "Tax ({rate}%)",
+  "@taxLabel": {
+    "description": "Calculated line: the tax withheld. The placeholder is the tax rate as a number, such as 13.",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentsPerMonthLabel": "Payments per month",
+  "@paymentsPerMonthLabel": {
+    "description": "Label of the choice between one payment and two payments a month."
+  },
+  "onePaymentOption": "One payment",
+  "@onePaymentOption": {
+    "description": "Option of the payments-per-month choice."
+  },
+  "twoPaymentsOption": "Two payments",
+  "@twoPaymentsOption": {
+    "description": "Option of the payments-per-month choice."
+  },
+  "baseSalaryLabel": "Base salary",
+  "@baseSalaryLabel": {
+    "description": "Label of the field for the salary the tax is taken from."
+  },
+  "workingDaysInMonthLabel": "Working days in the month",
+  "@workingDaysInMonthLabel": {
+    "description": "Label of the field for the working days of the whole month."
+  },
+  "workingDaysFirstHalfLabel": "Working days, 1st–15th",
+  "@workingDaysFirstHalfLabel": {
+    "description": "Label of the field for the working days from the 1st to the 15th, used when the month is paid in two payments."
+  },
+  "foodPerDayLabel": "Food allowance per day",
+  "@foodPerDayLabel": {
+    "description": "Label of the field for the food allowance of one working day."
+  },
+  "workingHoursInMonthLabel": "Working hours in the month",
+  "@workingHoursInMonthLabel": {
+    "description": "Label of the field for the working hours of the whole month."
+  },
+  "extraHoursLabel": "Extra hours",
+  "@extraHoursLabel": {
+    "description": "Label of the field for the extra hours worked."
+  },
+  "taxRateLabel": "Tax rate",
+  "@taxRateLabel": {
+    "description": "Label of the field for the tax rate, in percent."
+  },
+  "firstPaymentPaidOnDay": "Part 1 is paid on day {day}",
+  "@firstPaymentPaidOnDay": {
+    "description": "Note under the inputs: the day of the month the first part is paid.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "secondPaymentPaidOnDay": "Part 2 is paid on day {day} of the next month",
+  "@secondPaymentPaidOnDay": {
+    "description": "Note under the inputs: the day of the next month the second part is paid.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "partPaidOn": "{part} · paid {date}",
+  "@partPaidOn": {
+    "description": "Label of one payment of a month: which part and the day it is paid. The date is a day and a month, such as 20 Oct.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "saveMonthAction": "Save month",
+  "@saveMonthAction": {
+    "description": "Button that saves the salary of a month."
+  },
+  "monthSaved": "Month saved",
+  "@monthSaved": {
+    "description": "Message shown after a month was saved."
+  },
+  "fieldInvalidAmount": "Enter a valid amount.",
+  "@fieldInvalidAmount": {
+    "description": "Error under an amount field whose text is not an amount."
+  },
+  "fieldInvalidNumber": "Enter a valid number.",
+  "@fieldInvalidNumber": {
+    "description": "Error under a number field whose text is not a number."
+  },
+  "fieldMustBePositive": "Enter more than 0.",
+  "@fieldMustBePositive": {
+    "description": "Error under a field that must be above zero."
+  },
+  "workingDaysRange": "Enter a number from 1 to 31.",
+  "@workingDaysRange": {
+    "description": "Error under the working-days field."
+  },
+  "firstHalfDaysRange": "Can''t be more than the working days in the month.",
+  "@firstHalfDaysRange": {
+    "description": "Error under the field for the working days of the first half of the month."
+  },
+  "taxRateRange": "Enter a number from 0 to 100.",
+  "@taxRateRange": {
+    "description": "Error under the tax-rate field."
+  },
+  "switchToOneTitle": "Switch to one payment?",
+  "@switchToOneTitle": {
+    "description": "Title of the dialog that asks to merge the two payments of a month."
+  },
+  "switchToOneMessage": "{month} will have a single payment. The two pay amounts become one total, and the fixed items of Part 1 and Part 2 move into one list.",
+  "@switchToOneMessage": {
+    "description": "Text of the dialog that asks to merge the two payments of a month. The placeholder is the month, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "switchToTwoTitle": "Switch to two payments?",
+  "@switchToTwoTitle": {
+    "description": "Title of the dialog that asks to split a month into two payments."
+  },
+  "switchToTwoMessage": "{month} will be split into Part 1 (1st–15th) and Part 2 (16th–end). Its fixed items stay in Part 1 until you move them.",
+  "@switchToTwoMessage": {
+    "description": "Text of the dialog that asks to split a month into two payments. The placeholder is the month, such as October 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "switchAction": "Switch",
+  "@switchAction": {
+    "description": "Button that confirms switching between one and two payments."
+  },
+  "salaryLoadFailed": "Couldn''t load this month",
+  "@salaryLoadFailed": {
+    "description": "Title shown on the Salary screen when the month could not be loaded."
+  },
+  "saveChangesAction": "Save changes",
+  "@saveChangesAction": {
+    "description": "Button that saves the corrections made to a saved month."
+  },
+  "deleteMonthAction": "Delete month",
+  "@deleteMonthAction": {
+    "description": "Menu item that deletes a saved month."
+  },
+  "deleteMonthTitle": "Delete {month}?",
+  "@deleteMonthTitle": {
+    "description": "Title of the dialog that asks to delete a saved month. The placeholder is the month, such as September 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteMonthMessage": "This month and its fixed items will be permanently deleted from your account. This cannot be undone.",
+  "@deleteMonthMessage": {
+    "description": "Text of the dialog that asks to delete a saved month."
+  },
+  "deleteAction": "Delete",
+  "@deleteAction": {
+    "description": "Button that confirms a deletion."
+  },
+  "monthDeleted": "Month deleted",
+  "@monthDeleted": {
+    "description": "Message shown after a month was deleted."
+  },
+  "couldNotDelete": "Couldn''t delete. Check your connection.",
+  "@couldNotDelete": {
+    "description": "Message shown when deleting failed."
+  },
+  "discardChangesTitle": "Discard changes?",
+  "@discardChangesTitle": {
+    "description": "Title of the dialog shown when leaving a form that has unsaved changes."
+  },
+  "discardChangesMessage": "Your changes to {month} have not been saved.",
+  "@discardChangesMessage": {
+    "description": "Text of the dialog shown when leaving a saved month with unsaved changes. The placeholder is the month, such as September 2026.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "keepEditingAction": "Keep editing",
+  "@keepEditingAction": {
+    "description": "Button that closes the discard dialog and stays on the form."
+  },
+  "discardAction": "Discard",
+  "@discardAction": {
+    "description": "Button that leaves a form and drops its unsaved changes."
+  },
+  "newMonthAction": "New month",
+  "@newMonthAction": {
+    "description": "Button that starts the salary of a month that was not saved yet."
+  },
+  "compareMonthsTitle": "Compare months",
+  "@compareMonthsTitle": {
+    "description": "Title of the screen that compares two months, and tooltip of the button that opens it."
+  },
+  "salaryHistoryEmptyTitle": "No saved months yet",
+  "@salaryHistoryEmptyTitle": {
+    "description": "Title shown on the salary history when no month was saved."
+  },
+  "enterMonthAction": "Enter a month",
+  "@enterMonthAction": {
+    "description": "Button on the empty salary history that starts a month."
+  },
+  "compareLineColumn": "Line",
+  "@compareLineColumn": {
+    "description": "Header of the first column of the comparison of two months: the name of each calculated line."
+  },
+  "compareDifferenceColumn": "Difference",
+  "@compareDifferenceColumn": {
+    "description": "Header of the last column of the comparison of two months: the later month minus the earlier one."
+  },
+  "compareTaxLabel": "Tax",
+  "@compareTaxLabel": {
+    "description": "Line of the comparison of two months: the tax withheld, without the rate."
+  },
+  "comparePayAfterTaxLabel": "Pay after tax",
+  "@comparePayAfterTaxLabel": {
+    "description": "Line of the comparison of one part of two months: what that part pays after tax."
+  },
+  "swapMonthsTooltip": "Swap months",
+  "@swapMonthsTooltip": {
+    "description": "Tooltip of the button between the two months of the comparison that swaps them."
+  },
+  "compareNotSaved": "No saved salary",
+  "@compareNotSaved": {
+    "description": "Spoken instead of the dash shown for a month of the comparison that has no saved salary."
+  },
+  "compareLineSemantics": "{line}: {leftMonth} {leftValue}, {rightMonth} {rightValue}, difference {difference}",
+  "@compareLineSemantics": {
+    "description": "Spoken description of one line of the comparison of two months, with the difference of the two figures.",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "leftMonth": {
+        "type": "String"
+      },
+      "leftValue": {
+        "type": "String"
+      },
+      "rightMonth": {
+        "type": "String"
+      },
+      "rightValue": {
+        "type": "String"
+      },
+      "difference": {
+        "type": "String"
+      }
+    }
+  },
+  "compareLineSemanticsNoDifference": "{line}: {leftMonth} {leftValue}, {rightMonth} {rightValue}",
+  "@compareLineSemanticsNoDifference": {
+    "description": "Spoken description of one line of the comparison when a month has no figure, so there is no difference.",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "leftMonth": {
+        "type": "String"
+      },
+      "leftValue": {
+        "type": "String"
+      },
+      "rightMonth": {
+        "type": "String"
+      },
+      "rightValue": {
+        "type": "String"
+      }
+    }
+  },
+  "saveAction": "Save",
+  "@saveAction": {
+    "description": "Button that saves a form or a sheet."
+  },
+  "addItemAction": "Add item",
+  "@addItemAction": {
+    "description": "Button that opens the sheet to add a fixed item."
+  },
+  "fixedItemsEmptyTitle": "No fixed items yet",
+  "@fixedItemsEmptyTitle": {
+    "description": "Title shown on the fixed items when the month has none."
+  },
+  "fixedItemsEmptyMessage": "Add your rent, services or scholarship.",
+  "@fixedItemsEmptyMessage": {
+    "description": "Sentence under the title of the empty fixed items."
+  },
+  "addFixedItemTitle": "Add fixed item",
+  "@addFixedItemTitle": {
+    "description": "Title of the sheet that adds a fixed item."
+  },
+  "editFixedItemTitle": "Edit fixed item",
+  "@editFixedItemTitle": {
+    "description": "Title of the sheet that changes a fixed item."
+  },
+  "fixedItemNameLabel": "Name",
+  "@fixedItemNameLabel": {
+    "description": "Label of the field with the name of a fixed item, such as Rent."
+  },
+  "fixedItemAmountLabel": "Amount",
+  "@fixedItemAmountLabel": {
+    "description": "Label of the field with the amount of a fixed item."
+  },
+  "fixedItemIncome": "Income",
+  "@fixedItemIncome": {
+    "description": "Segment of a fixed item that adds to the month, such as a scholarship."
+  },
+  "fixedItemExpense": "Expense",
+  "@fixedItemExpense": {
+    "description": "Segment of a fixed item that takes from the month, such as the rent."
+  },
+  "fixedItemAppliesTo": "Applies to",
+  "@fixedItemAppliesTo": {
+    "description": "Label of the choice of the part of the month a fixed item belongs to."
+  },
+  "deleteFixedItemTitle": "Delete fixed item?",
+  "@deleteFixedItemTitle": {
+    "description": "Title of the question that asks to confirm deleting a fixed item."
+  },
+  "deleteFixedItemMessage": "{name} will be removed from your fixed items. This cannot be undone.",
+  "@deleteFixedItemMessage": {
+    "description": "Text of the question that asks to confirm deleting a fixed item. The placeholder is its name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editFixedItemTooltip": "Edit {name}",
+  "@editFixedItemTooltip": {
+    "description": "Tooltip and spoken label of the button that edits a fixed item. The placeholder is its name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fixedItemsBalanceLabel": "Balance after fixed items",
+  "@fixedItemsBalanceLabel": {
+    "description": "Label of what is left of the pay once the fixed items are counted."
+  },
+  "fixedItemsBalancePartLabel": "Balance after fixed items · {part}",
+  "@fixedItemsBalancePartLabel": {
+    "description": "Label of the balance of one part of a month. The placeholder is the part, such as Part 1.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      }
+    }
+  },
+  "fixedItemsPayTerm": "Pay",
+  "@fixedItemsPayTerm": {
+    "description": "First term of the sum that gives the balance of one part: the pay of that part."
+  },
+  "fixedItemsWholeMonth": "Whole month {amount}",
+  "@fixedItemsWholeMonth": {
+    "description": "Line under the balance of a part: the balance of the whole month. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLabel": "Account",
+  "@accountLabel": {
+    "description": "Label of the choice of account of a transaction, the title of the account sheet and the Account filter."
+  },
+  "addADebtAction": "Add a debt",
+  "@addADebtAction": {
+    "description": "Button of the empty Debts screen that opens the form for a new debt."
+  },
+  "addAccountAction": "Add account",
+  "@addAccountAction": {
+    "description": "Button of the account sheet that adds an account."
+  },
+  "addAction": "Add",
+  "@addAction": {
+    "description": "Label of the button that adds a transaction."
+  },
+  "addDebtAction": "Add debt",
+  "@addDebtAction": {
+    "description": "Label of the button of the Debts screen that adds a debt."
+  },
+  "addDebtTitle": "Add debt",
+  "@addDebtTitle": {
+    "description": "Title of the form that adds a debt."
+  },
+  "addFirstPurchaseAction": "Add your first purchase",
+  "@addFirstPurchaseAction": {
+    "description": "Button of the empty Transactions screen that opens the form for a new transaction."
+  },
+  "addRepaymentAction": "Add repayment",
+  "@addRepaymentAction": {
+    "description": "Button of the debt details that adds a repayment."
+  },
+  "addRepaymentTitle": "Add repayment",
+  "@addRepaymentTitle": {
+    "description": "Title of the sheet that adds a repayment."
+  },
+  "amountInvalid": "Enter an amount above zero.",
+  "@amountInvalid": {
+    "description": "Error under an amount field that holds zero, or something that is not a number."
+  },
+  "amountLabel": "Amount",
+  "@amountLabel": {
+    "description": "Label of an amount field."
+  },
+  "applyAction": "Apply",
+  "@applyAction": {
+    "description": "Button of the Filters sheet that applies the choices."
+  },
+  "categoryLabel": "Category",
+  "@categoryLabel": {
+    "description": "Label of the category of a transaction and the Category filter."
+  },
+  "clearDateAction": "Clear date",
+  "@clearDateAction": {
+    "description": "Tooltip of the button that takes the day out of a date field."
+  },
+  "clearFiltersAction": "Clear filters",
+  "@clearFiltersAction": {
+    "description": "Button of the empty search result that clears the search and the filters."
+  },
+  "dateLabel": "Date",
+  "@dateLabel": {
+    "description": "Label of the day of a transaction or a repayment."
+  },
+  "datePartFirst": "Part 1 · 1st–15th",
+  "@datePartFirst": {
+    "description": "Caption under the day of a transaction in the first part of a month paid in two payments."
+  },
+  "datePartSecond": "Part 2 · 16th–end",
+  "@datePartSecond": {
+    "description": "Caption under the day of a transaction in the second part of a month paid in two payments."
+  },
+  "debtAmountBelowRepaid": "The amount can''t be less than the {repaid} already repaid.",
+  "@debtAmountBelowRepaid": {
+    "description": "Error under the amount of a debt that is lower than what was repaid. The placeholder is what was repaid.",
+    "placeholders": {
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtBorrowedHeadline": "Borrowed {amount}",
+  "@debtBorrowedHeadline": {
+    "description": "Line under the person of the debt details for money borrowed. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtBorrowedSummary": "Borrowed {amount} · repaid {repaid}",
+  "@debtBorrowedSummary": {
+    "description": "Line of a borrowed debt card: what was borrowed and what was repaid.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtDetailsTitle": "Debt details",
+  "@debtDetailsTitle": {
+    "description": "Title of the screen of one debt."
+  },
+  "debtDue": "Due {date}",
+  "@debtDue": {
+    "description": "The day a debt is due. The placeholder is a day such as 31 Oct.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "debtLentHeadline": "Lent {amount}",
+  "@debtLentHeadline": {
+    "description": "Line under the person of the debt details for money lent. The placeholder is the amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtLentSummary": "Lent {amount} · repaid {repaid}",
+  "@debtLentSummary": {
+    "description": "Line of a lent debt card: what was lent and what was repaid.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "repaid": {
+        "type": "String"
+      }
+    }
+  },
+  "debtProgress": "{repaid} of {total} repaid",
+  "@debtProgress": {
+    "description": "How much of a debt was repaid, spoken with the progress bar.",
+    "placeholders": {
+      "repaid": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "debtRemainingLabel": "Remaining",
+  "@debtRemainingLabel": {
+    "description": "Label over what is still to be repaid of a debt."
+  },
+  "debtsEmptyTitle": "No debts yet",
+  "@debtsEmptyTitle": {
+    "description": "Title of the Debts screen when there is no debt."
+  },
+  "debtsLoadFailed": "Couldn''t load debts",
+  "@debtsLoadFailed": {
+    "description": "Title of the Debts screen when loading failed."
+  },
+  "deleteDebtMessage": "The debt with {person} and its repayments will be permanently deleted from your account. This cannot be undone.",
+  "@deleteDebtMessage": {
+    "description": "Text of the question that asks to confirm deleting a debt. The placeholder is the person.",
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDebtTitle": "Delete this debt?",
+  "@deleteDebtTitle": {
+    "description": "Title of the question that asks to confirm deleting a debt."
+  },
+  "deleteRepaymentMessage": "The repayment of {amount} will be permanently deleted from your account. This cannot be undone.",
+  "@deleteRepaymentMessage": {
+    "description": "Text of the question that asks to confirm deleting a repayment. The placeholder is its amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRepaymentTitle": "Delete repayment?",
+  "@deleteRepaymentTitle": {
+    "description": "Title of the question that asks to confirm deleting a repayment."
+  },
+  "deleteTransactionMessage": "This transaction will be permanently deleted from your account. This cannot be undone.",
+  "@deleteTransactionMessage": {
+    "description": "Text of the question that asks to confirm deleting a transaction."
+  },
+  "deleteTransactionTitle": "Delete transaction?",
+  "@deleteTransactionTitle": {
+    "description": "Title of the question that asks to confirm deleting a transaction."
+  },
+  "deleteTransactionTooltip": "Delete transaction",
+  "@deleteTransactionTooltip": {
+    "description": "Tooltip of the button that deletes a transaction."
+  },
+  "discardChangesGenericMessage": "Your changes have not been saved.",
+  "@discardChangesGenericMessage": {
+    "description": "Text of the question that asks whether to leave a form with unsaved changes."
+  },
+  "dueBeforeStartError": "The due date can''t be before the start date.",
+  "@dueBeforeStartError": {
+    "description": "Error under the due day of a debt that is before its start day."
+  },
+  "dueDateLabel": "Due date",
+  "@dueDateLabel": {
+    "description": "Label of the day a debt is due, in the debt details."
+  },
+  "dueDateOptionalLabel": "Due date (optional)",
+  "@dueDateOptionalLabel": {
+    "description": "Label of the field with the day a debt is due, which can be left empty."
+  },
+  "editAction": "Edit",
+  "@editAction": {
+    "description": "Menu item that opens the form to change something."
+  },
+  "editDebtTitle": "Edit debt",
+  "@editDebtTitle": {
+    "description": "Title of the form that changes a debt."
+  },
+  "editRepaymentTitle": "Edit repayment",
+  "@editRepaymentTitle": {
+    "description": "Title of the sheet that changes a repayment."
+  },
+  "editTransactionTitle": "Edit transaction",
+  "@editTransactionTitle": {
+    "description": "Title of the form that changes a transaction."
+  },
+  "filterAll": "All",
+  "@filterAll": {
+    "description": "Segment of the Debts screen that shows every debt."
+  },
+  "filterChipCount": "{label} · {count}",
+  "@filterChipCount": {
+    "description": "Label of a filter chip with how many choices it holds, such as Category · 2.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterDateRange": "Date range",
+  "@filterDateRange": {
+    "description": "Label of the Date range filter."
+  },
+  "filterPeriod": "Period",
+  "@filterPeriod": {
+    "description": "Label of the choice of the part of the month in the Filters sheet."
+  },
+  "filtersTitle": "Filters",
+  "@filtersTitle": {
+    "description": "Title of the Filters sheet of the Transactions."
+  },
+  "fromLabel": "From",
+  "@fromLabel": {
+    "description": "Label of the first day of a date range."
+  },
+  "iBorrowed": "I borrowed",
+  "@iBorrowed": {
+    "description": "Segment of the debt form for money the person borrowed."
+  },
+  "iLent": "I lent",
+  "@iLent": {
+    "description": "Segment of the debt form for money the person lent."
+  },
+  "manageAccountsAction": "Manage accounts",
+  "@manageAccountsAction": {
+    "description": "Button of the account sheet that opens the accounts."
+  },
+  "noDebtsOfKind": "No debts in this list.",
+  "@noDebtsOfKind": {
+    "description": "Shown when the Lent or Borrowed segment has no debt."
+  },
+  "noRepayments": "No repayments yet.",
+  "@noRepayments": {
+    "description": "Shown in the debt details when nothing was repaid."
+  },
+  "noResultsMessage": "Try another word or clear the filters.",
+  "@noResultsMessage": {
+    "description": "Sentence under the title of the empty search result."
+  },
+  "noResultsTitle": "No results",
+  "@noResultsTitle": {
+    "description": "Title shown when no transaction matches the search or filters."
+  },
+  "noteLabel": "Note",
+  "@noteLabel": {
+    "description": "Label of a note field."
+  },
+  "partRangeLabel": "{part} · {from}–{to} {month}",
+  "@partRangeLabel": {
+    "description": "Header of a part of a month in the list of transactions, such as Part 2 · 16th–31st Oct.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "personLabel": "Person",
+  "@personLabel": {
+    "description": "Label of the field with the person of a debt."
+  },
+  "repaymentRow": "{amount} · {date}",
+  "@repaymentRow": {
+    "description": "A repayment in the list of the debt details: its amount and day.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repaymentTooHigh": "More than the {remaining} still to be repaid.",
+  "@repaymentTooHigh": {
+    "description": "Error under the amount of a repayment that is more than what is left of the debt.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "repaymentsTitle": "Repayments",
+  "@repaymentsTitle": {
+    "description": "Heading of the list of repayments in the debt details."
+  },
+  "resetAction": "Reset",
+  "@resetAction": {
+    "description": "Button of the Filters sheet that clears the choices."
+  },
+  "startDateLabel": "Start date",
+  "@startDateLabel": {
+    "description": "Label of the day a debt starts."
+  },
+  "summaryOwedToYou": "Owed to you",
+  "@summaryOwedToYou": {
+    "description": "Label of what the person is still to be repaid, on the Debts screen."
+  },
+  "summaryYouOwe": "You owe",
+  "@summaryYouOwe": {
+    "description": "Label of what the person still has to repay, on the Debts screen."
+  },
+  "toLabel": "To",
+  "@toLabel": {
+    "description": "Label of the last day of a date range."
+  },
+  "todayLabel": "Today",
+  "@todayLabel": {
+    "description": "Header of the transactions of today."
+  },
+  "transactionExpense": "Expense",
+  "@transactionExpense": {
+    "description": "Segment of a transaction that takes money out."
+  },
+  "transactionIncome": "Income",
+  "@transactionIncome": {
+    "description": "Segment of a transaction that brings money in."
+  },
+  "transactionSearchHint": "Search",
+  "@transactionSearchHint": {
+    "description": "Hint of the search field of the Transactions."
+  },
+  "transactionsEmptyTitle": "No transactions yet",
+  "@transactionsEmptyTitle": {
+    "description": "Title of the Transactions screen when there is none."
+  },
+  "transactionsLoadFailed": "Couldn''t load transactions",
+  "@transactionsLoadFailed": {
+    "description": "Title of the Transactions screen when loading failed."
+  },
+  "yesterdayLabel": "Yesterday",
+  "@yesterdayLabel": {
+    "description": "Header of the transactions of yesterday."
+  },
+  "reportsViewCategories": "Categories",
+  "@reportsViewCategories": {
+    "description": "Segment of the Reports screen that shows the spending by category."
+  },
+  "reportsViewMonthVsMonth": "Month vs month",
+  "@reportsViewMonthVsMonth": {
+    "description": "Segment of the Reports screen that compares a month with the month before."
+  },
+  "reportsViewDebts": "Debts",
+  "@reportsViewDebts": {
+    "description": "Segment of the Reports screen that shows where the debts stand."
+  },
+  "reportsChartSemantics": "Spending by category, {total} in total",
+  "@reportsChartSemantics": {
+    "description": "Spoken description of the donut chart. The placeholder is the total spent, with its currency.",
+    "placeholders": {
+      "total": {"type": "String"}
+    }
+  },
+  "reportsNoSpending": "Nothing was spent in this period.",
+  "@reportsNoSpending": {
+    "description": "Shown instead of the chart when the chosen month or part has no spending."
+  },
+  "reportsVsPrevious": "vs {period} {change}",
+  "@reportsVsPrevious": {
+    "description": "Line under the chart: how much more or less was spent than in the period before. The first placeholder is that period, such as September or September Part 1, the second the signed difference with its currency.",
+    "placeholders": {
+      "period": {"type": "String"},
+      "change": {"type": "String"}
+    }
+  },
+  "reportsShare": "{value}%",
+  "@reportsShare": {
+    "description": "The share of a category in the spending, as a percentage. The placeholder is the number with one decimal, such as 56.9.",
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "reportsPartMonth": "{part} · {month}",
+  "@reportsPartMonth": {
+    "description": "A part of a month with the month, such as Part 1 · October 2026, in the comparison of two months.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "month": {"type": "String"}
+    }
+  },
+  "reportsLegendSemantics": "{name}, {amount}, {share} of the spending. Shows its transactions.",
+  "@reportsLegendSemantics": {
+    "description": "Spoken description of a row under the donut chart, which opens the transactions of that category. The placeholders are the category, the amount spent and the share with its percent sign.",
+    "placeholders": {
+      "name": {"type": "String"},
+      "amount": {"type": "String"},
+      "share": {"type": "String"}
+    }
+  },
+  "reportsEmptyTitle": "Not enough data yet",
+  "@reportsEmptyTitle": {
+    "description": "Title of the Reports screen when the account has nothing to report."
+  },
+  "reportsEmptyMessage": "Add a few transactions to see your reports.",
+  "@reportsEmptyMessage": {
+    "description": "Sentence under the title of the empty Reports screen."
+  },
+  "reportsEmptyAction": "Add a purchase",
+  "@reportsEmptyAction": {
+    "description": "Button of the empty Reports screen that opens the form for a new purchase."
+  },
+  "reportsLoadFailed": "Couldn''t load your reports",
+  "@reportsLoadFailed": {
+    "description": "Title of the Reports screen when the server fails."
+  },
+  "reportsOverdueSection": "Overdue ({count})",
+  "@reportsOverdueSection": {
+    "description": "Heading of the overdue debts on the Reports screen. The placeholder is how many there are.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reportsOpenSection": "Open ({count})",
+  "@reportsOpenSection": {
+    "description": "Heading of the debts that are being repaid on time on the Reports screen. The placeholder is how many there are.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reportsNoPreviousMonth": "There is no report for {month} to compare with.",
+  "@reportsNoPreviousMonth": {
+    "description": "Shown in the month comparison when the month before has no data. The placeholder is that month.",
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "reportsComparisonSemantics": "{line}: {previousPeriod} {previousValue}, {currentPeriod} {currentValue}, difference {difference}",
+  "@reportsComparisonSemantics": {
+    "description": "Spoken description of a line of the month comparison, such as Income. The placeholders are the line, the two periods with their amounts and the signed difference.",
+    "placeholders": {
+      "line": {"type": "String"},
+      "previousPeriod": {"type": "String"},
+      "previousValue": {"type": "String"},
+      "currentPeriod": {"type": "String"},
+      "currentValue": {"type": "String"},
+      "difference": {"type": "String"}
+    }
+  },
+  "accountTitle": "Account",
+  "@accountTitle": {
+    "description": "Title of the Account screen, and heading of the first section of the Settings."
+  },
+  "settingsPaymentsSection": "Payments",
+  "@settingsPaymentsSection": {
+    "description": "Heading of the Settings section about how the salary is paid."
+  },
+  "settingsPreferencesSection": "Preferences",
+  "@settingsPreferencesSection": {
+    "description": "Heading of the Settings section with the currency, the theme and the language."
+  },
+  "settingsDataSection": "Data",
+  "@settingsDataSection": {
+    "description": "Heading of the Settings section with the categories, the accounts and the CSV files."
+  },
+  "settingsSecuritySection": "Security",
+  "@settingsSecuritySection": {
+    "description": "Heading of the Settings section with the app lock."
+  },
+  "payScheduleTitle": "Pay schedule",
+  "@payScheduleTitle": {
+    "description": "Title of the Pay schedule screen, and its row in the Settings."
+  },
+  "payScheduleOneValue": "One payment a month",
+  "@payScheduleOneValue": {
+    "description": "Value of the Pay schedule row in the Settings when the salary is paid once a month."
+  },
+  "payScheduleTwoValue": "Two payments a month",
+  "@payScheduleTwoValue": {
+    "description": "Value of the Pay schedule row in the Settings when the salary is paid twice a month."
+  },
+  "defaultCurrencyTitle": "Default currency",
+  "@defaultCurrencyTitle": {
+    "description": "Title of the default currency sheet, and its row in the Settings."
+  },
+  "themeTitle": "Theme",
+  "@themeTitle": {
+    "description": "Label of the theme choice in the Settings."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme choice that follows the device."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme choice that is always light."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme choice that is always dark."
+  },
+  "remindOnPayDays": "Remind me on pay days",
+  "@remindOnPayDays": {
+    "description": "Switch that turns the reminder on the pay days on or off."
+  },
+  "categoriesTitle": "Categories",
+  "@categoriesTitle": {
+    "description": "Title of the Categories screen, and its row in the Settings."
+  },
+  "accountsTitle": "Accounts",
+  "@accountsTitle": {
+    "description": "Title of the Accounts screen, and its row in the Settings. Accounts are where money is kept, such as a card or cash."
+  },
+  "exportCsvTitle": "Export CSV",
+  "@exportCsvTitle": {
+    "description": "Title of the export sheet, and its row in the Settings. CSV is a file format and stays in Latin letters."
+  },
+  "importCsvTitle": "Import CSV",
+  "@importCsvTitle": {
+    "description": "Title of the import screen, and its row in the Settings. CSV is a file format and stays in Latin letters."
+  },
+  "appLockTitle": "App lock",
+  "@appLockTitle": {
+    "description": "Switch in the Settings that locks the app with a fingerprint or a PIN."
+  },
+  "appVersionLabel": "Money Scribe {version}",
+  "@appVersionLabel": {
+    "description": "Small text at the bottom of the Settings: the name of the app and its version. The name is a brand and stays in Latin letters.",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "settingsLoadFailed": "Couldn''t load some settings.",
+  "@settingsLoadFailed": {
+    "description": "Banner at the top of the Settings when the pay schedule or the currency could not be loaded."
+  },
+  "accountLoadFailed": "Couldn''t load your account",
+  "@accountLoadFailed": {
+    "description": "Row of the Settings, and title of the Account screen, when the name and the email could not be loaded."
+  },
+  "changePasswordTitle": "Change password",
+  "@changePasswordTitle": {
+    "description": "Title of the Change password screen, and its row on the Account screen."
+  },
+  "signOutAction": "Sign out",
+  "@signOutAction": {
+    "description": "Row of the Account screen, and button of the dialog, that sign the person out."
+  },
+  "deleteMyAccountAction": "Delete account",
+  "@deleteMyAccountAction": {
+    "description": "Row of the Account screen, and button of the dialog, that delete the account of the person and all its data."
+  },
+  "signOutTitle": "Sign out?",
+  "@signOutTitle": {
+    "description": "Title of the dialog that asks whether to sign out."
+  },
+  "signOutMessage": "You will need to sign in again to see your data.",
+  "@signOutMessage": {
+    "description": "Text of the dialog that asks whether to sign out."
+  },
+  "deleteMyAccountTitle": "Delete your account?",
+  "@deleteMyAccountTitle": {
+    "description": "Title of the dialog that asks whether to delete the account."
+  },
+  "deleteMyAccountMessage": "All your data will be permanently deleted from the server. This cannot be undone.",
+  "@deleteMyAccountMessage": {
+    "description": "Text of the dialog that asks whether to delete the account."
+  },
+  "deleteMyAccountWrongPassword": "The password is incorrect.",
+  "@deleteMyAccountWrongPassword": {
+    "description": "Error under the password field of the delete account dialog."
+  },
+  "deleteMyAccountFailed": "Couldn''t delete your account. Check your connection and try again.",
+  "@deleteMyAccountFailed": {
+    "description": "Banner in the delete account dialog when the server could not be reached or failed."
+  },
+  "couldNotSignOut": "Couldn''t sign out. Check your connection.",
+  "@couldNotSignOut": {
+    "description": "Message when signing out failed."
+  },
+  "currentPasswordLabel": "Current password",
+  "@currentPasswordLabel": {
+    "description": "Label of the field for the password the person has now."
+  },
+  "confirmNewPasswordLabel": "Confirm new password",
+  "@confirmNewPasswordLabel": {
+    "description": "Label of the field that repeats the new password."
+  },
+  "changePasswordWrongCurrent": "Your current password is incorrect.",
+  "@changePasswordWrongCurrent": {
+    "description": "Error under the current password field when it is not the password."
+  },
+  "forgotYourPasswordLink": "Forgot your password?",
+  "@forgotYourPasswordLink": {
+    "description": "Text button on the Change password screen that starts the reset by email."
+  },
+  "payScheduleNote": "This sets how new months are created. To correct a saved month, open it from Salary history.",
+  "@payScheduleNote": {
+    "description": "Note on the Pay schedule screen: the schedule is for new months, saved months are corrected in the salary history."
+  },
+  "addCategoryAction": "Add category",
+  "@addCategoryAction": {
+    "description": "Button of the Categories screen that adds a category."
+  },
+  "addCategoryTitle": "Add category",
+  "@addCategoryTitle": {
+    "description": "Title of the sheet that adds a category."
+  },
+  "editCategoryTitle": "Edit category",
+  "@editCategoryTitle": {
+    "description": "Title of the sheet that changes a category."
+  },
+  "categoryDefaultLabel": "Default",
+  "@categoryDefaultLabel": {
+    "description": "Small label on a built-in category, which cannot be changed."
+  },
+  "categoryIconLabel": "Icon",
+  "@categoryIconLabel": {
+    "description": "Heading of the icons a category can have."
+  },
+  "categoryIconGifts": "Gifts",
+  "@categoryIconGifts": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconHealth": "Health",
+  "@categoryIconHealth": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconEntertainment": "Entertainment",
+  "@categoryIconEntertainment": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconShopping": "Shopping",
+  "@categoryIconShopping": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconEducation": "Education",
+  "@categoryIconEducation": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconTravel": "Travel",
+  "@categoryIconTravel": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconSubscriptions": "Subscriptions",
+  "@categoryIconSubscriptions": {
+    "description": "Name of an icon a category can have."
+  },
+  "categoryIconOther": "Other",
+  "@categoryIconOther": {
+    "description": "Name of an icon a category can have."
+  },
+  "deleteCategoryTitle": "Delete category?",
+  "@deleteCategoryTitle": {
+    "description": "Title of the dialog that asks whether to delete a category."
+  },
+  "deleteCategoryMessage": "{name} will be removed. Its transactions move to Other.",
+  "@deleteCategoryMessage": {
+    "description": "Text of the dialog that asks whether to delete a category. The placeholder is its name; Other is the category that takes its transactions.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "categoriesLoadFailed": "Couldn''t load categories",
+  "@categoriesLoadFailed": {
+    "description": "Title of the Categories screen when the server fails."
+  },
+  "editItemTooltip": "Edit {name}",
+  "@editItemTooltip": {
+    "description": "Tooltip of the button that edits a category or an account. The placeholder is its name.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "addAccountTitle": "Add account",
+  "@addAccountTitle": {
+    "description": "Title of the sheet that adds an account."
+  },
+  "editAccountTitle": "Edit account",
+  "@editAccountTitle": {
+    "description": "Title of the sheet that changes an account."
+  },
+  "accountKindCard": "Card",
+  "@accountKindCard": {
+    "description": "Kind of account: a bank card."
+  },
+  "accountKindCash": "Cash",
+  "@accountKindCash": {
+    "description": "Kind of account: cash."
+  },
+  "accountKindOther": "Other",
+  "@accountKindOther": {
+    "description": "Kind of account: anything else."
+  },
+  "accountKindLabel": "Kind",
+  "@accountKindLabel": {
+    "description": "Heading of the kinds an account can be."
+  },
+  "accountDeleteTitle": "Delete account?",
+  "@accountDeleteTitle": {
+    "description": "Title of the dialog that asks whether to delete an account where money is kept, such as a card."
+  },
+  "accountDeleteMessage": "{name} will be removed from your accounts. This cannot be undone.",
+  "@accountDeleteMessage": {
+    "description": "Text of the dialog that asks whether to delete an account where money is kept. The placeholder is its name.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "accountInUse": "This account has transactions, so it can''t be deleted.",
+  "@accountInUse": {
+    "description": "Message when an account that has transactions is deleted."
+  },
+  "accountsEmptyTitle": "No accounts yet",
+  "@accountsEmptyTitle": {
+    "description": "Title of the Accounts screen when there is none."
+  },
+  "accountsLoadFailed": "Couldn''t load accounts",
+  "@accountsLoadFailed": {
+    "description": "Title of the Accounts screen when the server fails."
+  },
+  "csvWhatToExport": "What to export",
+  "@csvWhatToExport": {
+    "description": "Heading of the kinds of data an export can hold."
+  },
+  "csvKindSalaryMonths": "Salary months",
+  "@csvKindSalaryMonths": {
+    "description": "Kind of data an export can hold: the saved salary months."
+  },
+  "csvPeriodAllTime": "All time",
+  "@csvPeriodAllTime": {
+    "description": "Period of an export: every day."
+  },
+  "csvPeriodThisYear": "This year",
+  "@csvPeriodThisYear": {
+    "description": "Period of an export: the current year."
+  },
+  "csvPeriodCustom": "Custom",
+  "@csvPeriodCustom": {
+    "description": "Period of an export: days the person chooses."
+  },
+  "csvChooseKind": "Choose something to export.",
+  "@csvChooseKind": {
+    "description": "Hint under the kinds of data of an export when none is chosen."
+  },
+  "csvDatesReversed": "The first day can''t be after the last day.",
+  "@csvDatesReversed": {
+    "description": "Error under the days of a custom export period."
+  },
+  "exportAction": "Export",
+  "@exportAction": {
+    "description": "Button that makes the CSV file."
+  },
+  "csvExportReady": "Your CSV file is ready.",
+  "@csvExportReady": {
+    "description": "Message after the CSV file was made and shared."
+  },
+  "couldNotExport": "Couldn''t export. Check your connection.",
+  "@couldNotExport": {
+    "description": "Message when the export failed."
+  },
+  "csvRowCount": "{rows, plural, one{{rows} row} other{{rows} rows}}",
+  "@csvRowCount": {
+    "description": "Number of rows of a CSV file.",
+    "placeholders": {
+      "rows": {"type": "int"}
+    }
+  },
+  "csvReadyToImport": "Ready to import: {rows, plural, one{{rows} row} other{{rows} rows}}, 0 problems.",
+  "@csvReadyToImport": {
+    "description": "Status of a chosen CSV file that can be imported.",
+    "placeholders": {
+      "rows": {"type": "int"}
+    }
+  },
+  "csvChooseAnotherFile": "Choose another file",
+  "@csvChooseAnotherFile": {
+    "description": "Text button that opens the file picker again."
+  },
+  "csvChooseFile": "Choose a file",
+  "@csvChooseFile": {
+    "description": "Button that opens the file picker."
+  },
+  "csvNoFileTitle": "No file chosen",
+  "@csvNoFileTitle": {
+    "description": "Title of the import screen when no file is chosen."
+  },
+  "csvNoFileMessage": "Choose a CSV file to import.",
+  "@csvNoFileMessage": {
+    "description": "Sentence of the import screen when no file is chosen."
+  },
+  "csvImportAction": "Import",
+  "@csvImportAction": {
+    "description": "Button that imports the rows of the chosen file."
+  },
+  "csvImportFinished": "Import finished: {imported} imported, {skipped} skipped.",
+  "@csvImportFinished": {
+    "description": "Result of an import. The placeholders are how many rows were imported and how many were skipped.",
+    "placeholders": {
+      "imported": {"type": "int"},
+      "skipped": {"type": "int"}
+    }
+  },
+  "csvProblemInvalidAmount": "Row {row}: the amount is not valid",
+  "@csvProblemInvalidAmount": {
+    "description": "A row of the file that was skipped because its amount cannot be read. The placeholder is the number of the row.",
+    "placeholders": {
+      "row": {"type": "int"}
+    }
+  },
+  "csvProblemMissingDate": "Row {row}: the date is missing",
+  "@csvProblemMissingDate": {
+    "description": "A row of the file that was skipped because it has no date. The placeholder is the number of the row.",
+    "placeholders": {
+      "row": {"type": "int"}
+    }
+  },
+  "csvImportFailed": "Couldn''t import the file. Check your connection.",
+  "@csvImportFailed": {
+    "description": "Message when the import failed."
+  },
+  "currencyNameRub": "Russian ruble",
+  "@currencyNameRub": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameUsd": "US dollar",
+  "@currencyNameUsd": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameEur": "Euro",
+  "@currencyNameEur": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameGbp": "British pound",
+  "@currencyNameGbp": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameTry": "Turkish lira",
+  "@currencyNameTry": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameJpy": "Japanese yen",
+  "@currencyNameJpy": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameSar": "Saudi riyal",
+  "@currencyNameSar": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameAed": "UAE dirham",
+  "@currencyNameAed": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameEgp": "Egyptian pound",
+  "@currencyNameEgp": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "currencyNameKwd": "Kuwaiti dinar",
+  "@currencyNameKwd": {
+    "description": "Name of a currency, shown next to its symbol in the list of currencies."
+  },
+  "reportsByPart": "By part",
+  "@reportsByPart": {
+    "description": "Heading of the cards that show each part of a month paid in two payments, on the Reports screen."
+  },
+  "reportsCompareWith": "Compare with",
+  "@reportsCompareWith": {
+    "description": "Small label above the chip that chooses the month the month comparison is made against."
+  },
+  "reportsCompareChipLabel": "{month}, choose month to compare with",
+  "@reportsCompareChipLabel": {
+    "description": "Spoken label of the chip that chooses the month to compare with. The placeholder is the month it shows.",
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "reportsPartSemantics": "{part}: income {income}, spent {spent}. Shows this part.",
+  "@reportsPartSemantics": {
+    "description": "Spoken description of the card of one part of a month, which shows that part when pressed. The placeholders are the part, the income and the spending of the part.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "income": {"type": "String"},
+      "spent": {"type": "String"}
+    }
+  },
+  "languageSystemShort": "System",
+  "@languageSystemShort": {
+    "description": "Language choice that follows the device language, in the short row of choices in the Settings."
+  },
+  "filterDatesChip": "{from} – {to}",
+  "@filterDatesChip": {
+    "description": "Chip of an active filter: the days a list of transactions is limited to. The placeholders are the first and the last day.",
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "filterFromChip": "From {date}",
+  "@filterFromChip": {
+    "description": "Chip of an active filter: the list starts on this day. The placeholder is the day.",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "filterToChip": "Until {date}",
+  "@filterToChip": {
+    "description": "Chip of an active filter: the list ends on this day. The placeholder is the day.",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "removeFilterTooltip": "Remove filter {name}",
+  "@removeFilterTooltip": {
+    "description": "Tooltip of the cross on the chip of an active filter. The placeholder is what the chip says.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
   }
 }

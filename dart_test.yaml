@@ -1,0 +1,6 @@
+# The render check draws every screen to a picture (about three minutes), so the
+# usual `flutter test` run, the commit hook and CI skip it. Run it when a screen
+# changes: flutter test --run-skipped --tags render test/render
+tags:
+  render:
+    skip: "slow render check; run with --run-skipped --tags render"

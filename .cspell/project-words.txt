@@ -26,6 +26,7 @@ moneyscribe
 ntfs
 passwordless
 pbxproj
+permille
 pnpm
 printcert
 pubspec

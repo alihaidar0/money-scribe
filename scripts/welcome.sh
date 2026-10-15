@@ -57,6 +57,16 @@ if [ -f "$WORKSPACE/pubspec.yaml" ] && [ -f "$WORKSPACE/pubspec.lock" ]; then
   echo "  ❯ fanalyze      flutter analyze"
   echo "  ❯ fdoctor       flutter doctor -v"
   echo ""
+  # Backend contract (docs/backend-api.md): show where it stands.
+  if [ -f "$WORKSPACE/api/BACKEND_VERSION" ]; then
+    echo "  🔌  Backend contract: $(head -n 1 "$WORKSPACE/api/BACKEND_VERSION" | cut -c1-40)"
+    echo "  ❯ scripts/sync-api.sh vX.Y.Z   move to another backend release"
+  elif [ -f "$WORKSPACE/api/BACKEND_REPO" ]; then
+    echo "  ❯ scripts/sync-api.sh vX.Y.Z   pin the backend API contract and generate the client"
+  else
+    echo "  ❯ Backend: docs/backend-api.md"
+  fi
+  echo ""
   echo "  ❯ Git aliases:  gs · ga · gc · gp · gl"
   echo "  📖  https://github.com/alihaidar0/money-scribe"
 

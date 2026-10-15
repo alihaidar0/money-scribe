@@ -59,7 +59,7 @@ The default branch is `develop`, the integration branch, so every automatic pull
 | Workflow permissions | **Read repository contents and packages permissions** |
 | Allow GitHub Actions to create and approve pull requests | Off |
 
-Every workflow also declares its own top-level `permissions:` block (`contents: read`); the jobs that need more request it explicitly: the `release-draft` job of `build.yml` (`contents: write`, to create the draft release and attach the signed files), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
+Every workflow also declares its own top-level `permissions:` block (`contents: read`); the jobs that need more request it explicitly: the `release-draft` job of `build.yml` (`contents: write`, to create the draft release and attach the signed files), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes), `backend-contract.yml` (`issues: write`, to open and close the reminder about a newer backend release) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
 
 Workflows run on an explicit runner image (`ubuntu-24.04`) rather than `ubuntu-latest`. GitHub moves `ubuntu-latest` to a new Ubuntu release on its own schedule, which changes the toolchain under every job at once. Moving to a newer image is a deliberate edit of the `runs-on:` lines once the build has been verified on it.
 
@@ -69,6 +69,7 @@ CI and the pull-request builds need **no secrets and no environments**: they onl
 
 - Create an environment per deployment target, restrict it to its branch under **Deployment branches and tags**, and put the target's credentials there as environment secrets rather than repository secrets (a repository secret stays readable from any branch).
 - Optionally require a reviewer on the environment for production deployments.
+- The weekly backend contract check (`backend-contract.yml`) is off until you set the repository variable `BACKEND_REPO` (**Settings → Secrets and variables → Actions → Variables**) to `OWNER/REPO` of the backend. A private backend also needs the repository secret `BACKEND_READ_TOKEN`, a fine-grained personal access token limited to that one repository with read-only **Contents** access; it is only used to read the backend's releases. A public backend needs no token. See [`backend-api.md`](backend-api.md).
 - Never commit a keystore, signing password or service-account key; any file in the repository is readable by everyone who can read the repository, so secrets belong in environment secrets.
 
 ## 4. Settings → Advanced Security (Code security)

@@ -1,21 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/router/app_router.dart';
+import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
+import '../support/fake_push_messaging_repository.dart';
 
 /// Every screen of the app. Add a new screen here: the test below fails when a
 /// route is missing from this list.
-const List<String> _screens = [AppRoutes.overview, AppRoutes.settings];
+const List<String> _screens = [
+  AppRoutes.welcome,
+  AppRoutes.signIn,
+  AppRoutes.register,
+  AppRoutes.verifyEmail,
+  AppRoutes.emailVerified,
+  AppRoutes.paySetup,
+  AppRoutes.forgotPassword,
+  AppRoutes.resetCode,
+  AppRoutes.newPassword,
+  AppRoutes.passwordChanged,
+  AppRoutes.appLock,
+  AppRoutes.pinEntry,
+  AppRoutes.createPin,
+  AppRoutes.overview,
+  AppRoutes.salary,
+  AppRoutes.transactions,
+  AppRoutes.debts,
+  AppRoutes.reports,
+  AppRoutes.settings,
+  AppRoutes.account,
+  AppRoutes.changePassword,
+  AppRoutes.paySchedule,
+  AppRoutes.categories,
+  AppRoutes.accounts,
+  AppRoutes.importCsv,
+  AppRoutes.addTransaction,
+  AppRoutes.editTransaction,
+  AppRoutes.addDebt,
+  AppRoutes.debtDetails,
+  AppRoutes.editDebt,
+  AppRoutes.fixedItems,
+  AppRoutes.salaryHistory,
+  AppRoutes.salaryMonth,
+  AppRoutes.salaryCompare,
+  AppRoutes.demo,
+];
 
 const Map<AppLanguage, TextDirection> _languages = {
   AppLanguage.english: TextDirection.ltr,
   AppLanguage.arabic: TextDirection.rtl,
 };
+
+/// The paths of all the routes of [routes], also those inside the tabs of the
+/// navigation shell.
+Iterable<String> _paths(List<RouteBase> routes, [String parent = '']) sync* {
+  for (final route in routes) {
+    if (route is GoRoute) {
+      final path = route.path.startsWith('/')
+          ? route.path
+          : '${parent == '/' ? '' : parent}/${route.path}';
+      yield path;
+      yield* _paths(route.routes, path);
+    } else {
+      yield* _paths(route.routes, parent);
+    }
+  }
+}
 
 Future<void> _openScreen(
   WidgetTester tester,
@@ -27,29 +82,41 @@ Future<void> _openScreen(
     ..physicalSize = const Size(360 * 3, 640 * 3);
   addTearDown(tester.view.reset);
 
+  // The screens of the sign-in flow are for a signed-out person, the others
+  // for a signed-in one.
+  final signedIn = !AppRoutes.withoutSignIn.contains(route);
+  final demo = DemoController(latency: Duration.zero);
+
   await tester.pumpWidget(
-    buildApp(languageRepository: FakeLanguageRepository(language)),
+    buildApp(
+      languageRepository: FakeLanguageRepository(language),
+      // Push available and not yet allowed, so every row and button is shown.
+      pushMessaging: FakePushMessagingRepository(),
+      demo: demo,
+      authRepository: FakeAuthRepository(demo: demo, signedIn: signedIn),
+    ),
   );
-  final container = ProviderScope.containerOf(
-    tester.element(find.byType(MaterialApp)),
+  await tester.pumpAndSettle();
+  GoRouter.of(tester.element(find.byType(Scaffold).first)).go(
+    route
+        .replaceFirst(':month', '2026-09')
+        // A transaction or a debt of the sample data.
+        .replaceFirst(
+          ':id',
+          route.startsWith('/debts') ? 'sam' : 'seed-groceries',
+        ),
   );
-  container.read(appRouterProvider).go(route);
   await tester.pumpAndSettle();
 }
 
 void main() {
   test('this list covers every route of the app', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+    final demo = DemoController(latency: Duration.zero);
+    final auth = FakeAuthRepository(demo: demo);
+    final router = createAppRouter(auth: auth, refreshListenable: _Never());
+    addTearDown(router.dispose);
 
-    final routes = container
-        .read(appRouterProvider)
-        .configuration
-        .routes
-        .whereType<GoRoute>()
-        .map((route) => route.path);
-
-    expect(_screens, unorderedEquals(routes));
+    expect(_screens, unorderedEquals(_paths(router.configuration.routes)));
   });
 
   for (final route in _screens) {
@@ -59,7 +126,7 @@ void main() {
         testWidgets('is laid out $direction', (tester) async {
           await _openScreen(tester, route, language);
 
-          final context = tester.element(find.byType(Scaffold));
+          final context = tester.element(find.byType(Scaffold).first);
           expect(Directionality.of(context), direction);
           expect(tester.takeException(), isNull);
         });
@@ -79,7 +146,14 @@ void main() {
   testWidgets('the app bar mirrors in Arabic', (tester) async {
     await _openScreen(tester, AppRoutes.overview, AppLanguage.arabic);
     final width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
-    final title = tester.getCenter(find.text('نظرة عامة')).dx;
+    final title = tester
+        .getCenter(
+          find.descendant(
+            of: find.byType(AppBar),
+            matching: find.text('نظرة عامة'),
+          ),
+        )
+        .dx;
     final settings = tester.getCenter(find.byIcon(Icons.settings_outlined)).dx;
 
     expect(title, greaterThan(width / 2), reason: 'title starts on the right');
@@ -87,9 +161,7 @@ void main() {
   });
 
   testWidgets('the back arrow sits on the right in Arabic', (tester) async {
-    await _openScreen(tester, AppRoutes.overview, AppLanguage.arabic);
-    await tester.tap(find.byIcon(Icons.settings_outlined));
-    await tester.pumpAndSettle();
+    await _openScreen(tester, AppRoutes.signIn, AppLanguage.arabic);
     final width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
     expect(
@@ -97,4 +169,9 @@ void main() {
       greaterThan(width / 2),
     );
   });
+}
+
+/// A listenable that never changes.
+class _Never extends ChangeNotifier {
+  new();
 }

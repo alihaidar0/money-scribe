@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
-import 'package:money_scribe/app/theme/money_colors.dart';
+import 'package:money_scribe/core/theme/money_colors.dart';
 
 import 'design_file_parser.dart';
 

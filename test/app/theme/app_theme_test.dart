@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/theme/app_color_schemes.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/app/theme/app_typography.dart';
+import 'package:money_scribe/core/theme/amount_text_style.dart';
 
 void main() {
   group('colours', () {

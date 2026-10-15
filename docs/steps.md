@@ -23,23 +23,25 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [x] Spell checker configured (`cspell.json`, shared project word list)
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
 - [x] Design brief for the theme and screens ([`design-brief.md`](design-brief.md))
-- [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Riverpod and `go_router`
+- [x] App shell: feature-first folders (`app/`, `core/`, `features/<name>/`), Bloc and `go_router`
 - [x] Material 3 theme with light and dark modes
 - [x] Localization with ARB files: English and Arabic, with the language following the system and a setting
 - [x] Arabic font and right-to-left layout, added to the design system and checked on every screen
-- [ ] Data layer base: repository interfaces with fake data sources (invented data), ready to be replaced by the server
-- [ ] Immutable models with `freezed`, added with the first model that needs it
+- [x] State management with Bloc (`flutter_bloc`, events in every feature), documented in [`architecture.md`](architecture.md)
+- [ ] Data layer base: repository interfaces with fake data sources (invented data), one feature at a time, replaced by the server later
+- [ ] Immutable models (sealed classes, `json_serializable` for DTOs), added with the first model that needs it
 
 ## 3. Core features
 
-- [ ] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
+- [x] `Money` value object: integer minor units, currency code, one place for rounding, Western digits in every language
+- [x] Salary calculation: one or two payments a month, every line rounded to the kopeck (pure Dart, tests)
 - [ ] Monthly salary calculator, with every month saved
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
 - [ ] Debts: borrowed and lent, partial repayments, settled status
-- [ ] Backend and sign-in, with the server as the only place the data is stored (provider chosen when needed)
+- [ ] Backend and sign-in, with the server as the only place the data is stored (the Django backend; steps in section 7)
 - [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
-- [ ] Notifications: local reminders first (for example debts due), push once the backend is chosen
+- [ ] Notifications: local reminders first (for example debts due); push messages through Firebase Cloud Messaging are tested from the Firebase console until the backend can send them
 
 ## 4. Insight and polish
 
@@ -68,13 +70,198 @@ To do, in this order, one step at a time:
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
 - [x] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
-- [ ] Raise the version, open the `develop` → `main` release pull request, test its files, merge, check the signed production build, publish the release
-- [ ] Create one Google Cloud project per environment (staging and production)
-- [ ] Register the staging and production Android apps in their projects (no SDK or keys in the app yet)
+- [x] Open the `develop` → `main` release pull request, test its files, merge, check the signed production build and the draft release `v0.1.0` (left unpublished)
+- [x] Create one Google Cloud project per environment (staging and production)
+- [x] Add Firebase to both projects (Analytics off) and register the staging and production Android apps; keep `google-services.json` out of Git
+- [x] Store each environment's `google-services.json` (base64) as the secret `GOOGLE_SERVICES_JSON_BASE64` of its GitHub environment
+- [x] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
 - [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)
 - [ ] Optional: set the repository variable `BUILD_IOS` to `true` for the iOS compile check in CI (after the iOS flavors)
+- [ ] Publish the first release (`v0.1.0` or higher) once the app has its first real features
 - [ ] Register the domain and check the USPTO and WIPO trademark databases
+
+## 6. Screens
+
+Every screen of the design is built with fake data, checked on the emulator, and then ticked. The IDs come from the design prompts, which are kept locally; a screen with a one-payment and a two-payment version has a line for each.
+
+### Foundations
+
+- [x] Navigation shell: bottom bar on phones, rail on tablet and web, a route for every screen
+- [x] Demo panel (staging only) to force loading, empty, error and no connection, and the payment mode
+- [x] Shared screen widgets: hero card, amount row, period card, state views, code boxes
+- [x] Screen render check: every screen drawn to an image in a test, in English and Arabic
+- [x] Navigation test: every button leads where the design says
+
+### A. Authentication and first start
+
+- [x] AUTH-1 Welcome
+- [x] AUTH-2 Sign in
+- [x] AUTH-2b Sign in, wrong password
+- [x] AUTH-2c Sign in, too many attempts
+- [x] AUTH-3 Register
+- [x] AUTH-3b Register, errors
+- [x] AUTH-4 Verify email
+- [x] AUTH-4b Verify email, wrong code
+- [x] AUTH-4c Verify email, code expired
+- [x] AUTH-5 Email verified
+- [x] AUTH-6 How are you paid?
+- [x] AUTH-6b How are you paid? two payments
+- [x] AUTH-7 Forgot password
+- [x] AUTH-8 Reset code
+- [x] AUTH-8b Reset code, wrong code
+- [x] AUTH-9 New password
+- [x] AUTH-10 Password changed
+- [x] AUTH-11 App lock
+- [x] AUTH-12 PIN entry
+- [x] AUTH-13 Create a PIN
+
+### B. Overview
+
+- [x] OV-1 Overview, one payment
+- [x] OV-2 Overview, two payments
+- [x] OV-3 Overview, first launch
+- [x] OV-4 Choose a debt
+
+### C. Salary, fixed items and history
+
+- [x] SAL-1 Salary, one payment
+- [x] SAL-1b Salary, editing a saved month
+- [x] SAL-1c Delete month
+- [x] SAL-2 Salary, two payments
+- [x] SAL-3 Month picker
+- [x] SAL-4 Switch to one payment
+- [x] SAL-5 Switch to two payments
+- [x] SAL-6 Salary history, one payment
+- [x] SAL-7 Salary history, two payments
+- [x] SAL-8 Compare months
+- [x] SAL-9 Compare parts
+- [x] SAL-10 Month saved
+- [x] FIX-1 Fixed items, one payment
+- [x] FIX-2 Fixed items, two payments
+- [x] FIX-3 Add fixed item
+- [x] FIX-4 Edit fixed item
+- [x] FIX-5 Delete fixed item
+
+### D. Transactions
+
+- [x] TX-1 Transactions, one payment
+- [x] TX-2 Transactions, two payments
+- [x] TX-3 Filters
+- [x] TX-3b Filters, two payments
+- [x] TX-4 Add transaction
+- [x] TX-5 Edit transaction
+- [x] TX-6 Choose account
+- [x] TX-7 Delete transaction
+- [x] TX-8 Transactions, no results
+
+### E. Debts
+
+- [x] DB-1 Debts
+- [x] DB-2 Add debt
+- [x] DB-3 Debt details
+- [x] DB-4 Add repayment
+- [x] DB-5 Edit repayment
+- [x] DB-6 Delete repayment
+- [x] DB-7 Delete debt
+- [x] DB-8 Edit debt
+
+### F. Reports
+
+- [x] RP-1 Reports, Categories
+- [x] RP-2 Reports, Categories by part
+- [x] RP-3 Reports, Month vs month
+- [x] RP-4 Reports, Part vs part
+- [x] RP-5 Reports, Debts
+
+### G. Settings, account and data
+
+- [x] ST-1 Settings
+- [x] ST-2 Account
+- [x] ST-3 Pay schedule
+- [x] ST-4 Categories
+- [x] ST-4b Add or edit category
+- [x] ST-5 Accounts
+- [x] ST-5b Add or edit account
+- [x] ST-6 Change password
+- [x] ST-7 Export CSV
+- [x] ST-8 Import CSV
+- [x] ST-8b Import result
+- [x] ST-9 Default currency
+- [x] ST-10 Sign out
+- [x] ST-11 Delete account
+
+### H. Loading, empty, error and no connection
+
+- [x] OV-5 Overview, loading
+- [x] OV-6 Overview, error
+- [x] OV-7 Overview, no connection
+- [x] SAL-11 Salary, new empty month
+- [x] SAL-12 Salary, loading
+- [x] SAL-13 Salary, error
+- [x] SAL-14 Salary, no connection
+- [x] SAL-15 Salary history, empty
+- [x] FIX-6 Fixed items, empty
+- [x] TX-9 Transactions, loading
+- [x] TX-10 Transactions, empty
+- [x] TX-11 Transactions, error
+- [x] TX-12 Transactions, no connection
+- [x] DB-9 Debts, loading
+- [x] DB-10 Debts, empty
+- [x] DB-11 Debts, error
+- [x] DB-12 Debts, no connection
+- [x] RP-6 Reports, loading
+- [x] RP-7 Reports, empty
+- [x] RP-8 Reports, error
+- [x] RP-9 Reports, no connection
+- [x] NC-1 No connection, full screen
+- [x] ERR-1 Could not save
+- [x] ERR-2 Something went wrong
+
+### I. Arabic (right-to-left) screens
+
+- [x] AR-1 Overview (Arabic)
+- [x] AR-2 Salary (Arabic)
+- [x] AR-3 Transactions (Arabic)
+- [x] AR-4 Add transaction (Arabic)
+- [x] AR-5 Debts (Arabic)
+- [x] AR-6 Settings (Arabic)
+- [x] AR-7 Sign in (Arabic)
+- [x] AR-8 Verify email (Arabic)
+
+### J. Tablet and web layouts
+
+- [x] TB-1 Transactions, wide
+- [x] TB-2 Overview, wide
+- [x] TB-3 Sign in, web
+- [x] Web 1: pushed screens framed as one centred column, the authentication pages split with the brand panel
+- [x] Web 2: list and detail for Debts, sections list for Settings
+- [x] Web 3: Reports in two columns
+
+### K. Dark mode, app icon and fix-ups
+
+- [x] DK-1 Dark mode: every screen checked in dark
+- [x] IC-1 App icon (already in the app)
+
+## 7. Backend connection
+
+The server is the Django backend. The app pins one release of its API contract and generates its client from it; the full guide is [`backend-api.md`](backend-api.md). Do the steps in order, one pull request each unless noted.
+
+Done in the repository:
+
+- [x] Contract tooling: pin a backend release, generate the client, check it in CI, weekly reminder workflow
+
+To do:
+
+- [ ] Backend: first release with `openapi.yaml` attached and immutable releases on (backend repository)
+- [ ] Add the client packages with `flutter pub add`, every version pinned exactly
+- [ ] Create `api/BACKEND_REPO`, sign in with `gh auth login`, run `scripts/sync-api.sh vX.Y.Z`, commit `api/` and `lib/core/api/`
+- [ ] `API_BASE_URL` per environment in `env/staging.json` and `env/production.json`, and in the launch configurations
+- [ ] Local backend: debug-only cleartext exception for the emulator; CORS and allowed hosts on the backend
+- [ ] Dio instance, token interceptor and one error parser in `core/network/`
+- [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
+- [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
+- [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

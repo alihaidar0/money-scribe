@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/app/theme/app_typography.dart';
+import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 
+const _taglineEnglish = 'Your salary, purchases and debts in one place.';
+const _taglineArabic = 'راتبك ومشترياتك وديونك في مكان واحد.';
+
 TextDirection _direction(WidgetTester tester) {
-  return Directionality.of(tester.element(find.byType(OverviewScreen)));
+  return Directionality.of(tester.element(find.byType(WelcomeScreen)));
+}
+
+String? _fontOf(WidgetTester tester, String text) {
+  return tester.widget<Text>(find.text(text)).style?.fontFamily;
 }
 
 void _setDeviceLanguage(WidgetTester tester, String languageCode) {
@@ -18,11 +26,22 @@ void _setDeviceLanguage(WidgetTester tester, String languageCode) {
 }
 
 void main() {
-  testWidgets('the app starts on the overview screen', (tester) async {
+  testWidgets('a signed-out person starts on the Welcome screen', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildApp());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(find.byType(OverviewScreen), findsNothing);
+  });
+
+  testWidgets('a signed-in person starts on the Overview', (tester) async {
+    await tester.pumpWidget(buildApp(signedIn: true));
+    await tester.pumpAndSettle();
 
     expect(find.byType(OverviewScreen), findsOneWidget);
-    expect(find.text('Overview'), findsOneWidget);
+    expect(find.byType(WelcomeScreen), findsNothing);
   });
 
   testWidgets('the app follows the system between the light and dark themes', (
@@ -49,26 +68,23 @@ void main() {
     ) async {
       _setDeviceLanguage(tester, 'ar');
       await tester.pumpWidget(buildApp());
+      await tester.pumpAndSettle();
 
-      expect(find.text('نظرة عامة'), findsOneWidget);
+      expect(find.text(_taglineArabic), findsOneWidget);
       expect(_direction(tester), TextDirection.rtl);
     });
 
     testWidgets('shows Arabic in the Arabic font and English in Inter', (
       tester,
     ) async {
-      String? fontOf(String text) {
-        final context = tester.element(find.text(text));
-        return DefaultTextStyle.of(context).style.fontFamily;
-      }
-
       _setDeviceLanguage(tester, 'ar');
       await tester.pumpWidget(buildApp());
-      expect(fontOf('نظرة عامة'), AppTypography.arabicFontFamily);
+      await tester.pumpAndSettle();
+      expect(_fontOf(tester, _taglineArabic), AppTypography.arabicFontFamily);
 
       _setDeviceLanguage(tester, 'en');
       await tester.pumpAndSettle();
-      expect(fontOf('Overview'), AppTypography.fontFamily);
+      expect(_fontOf(tester, _taglineEnglish), AppTypography.fontFamily);
     });
 
     testWidgets('falls back to English on an unsupported device language', (
@@ -76,8 +92,9 @@ void main() {
     ) async {
       _setDeviceLanguage(tester, 'fr');
       await tester.pumpWidget(buildApp());
+      await tester.pumpAndSettle();
 
-      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text(_taglineEnglish), findsOneWidget);
       expect(_direction(tester), TextDirection.ltr);
     });
 
@@ -90,8 +107,9 @@ void main() {
           languageRepository: FakeLanguageRepository(AppLanguage.arabic),
         ),
       );
+      await tester.pumpAndSettle();
 
-      expect(find.text('نظرة عامة'), findsOneWidget);
+      expect(find.text(_taglineArabic), findsOneWidget);
       expect(_direction(tester), TextDirection.rtl);
     });
   });
