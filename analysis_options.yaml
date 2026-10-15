@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - build/**
     - lib/core/l10n/generated/**
+    # The API client, written by scripts/generate-api.sh (docs/backend-api.md).
+    - lib/core/api/**
     - android/**
     - ios/**
     - web/**

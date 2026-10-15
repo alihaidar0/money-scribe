@@ -14,7 +14,7 @@ lib/
                              # BlocObserver (wires everything)
   core/                      # shared and feature-independent: money, environment, routing
                              # paths, l10n, clipboard, formatting, theme extensions, errors,
-                             # demo settings, time, widgets
+                             # demo settings, time, widgets, the generated API client (api/)
   features/<feature>/
     domain/                  # entities, value objects, repository interfaces (plain Dart)
     data/                    # repository implementations, data sources
@@ -29,6 +29,8 @@ Dependencies point inward:
 - A feature imports `core/` and itself, never `app/`. Inside a feature, `domain/` imports
   nothing else (and no Flutter), `data/` implements `domain/`, a Bloc depends on `domain/`
   only (no Flutter, no `data/`, no `presentation/`), and `presentation/` uses the Bloc.
+- Only a feature's `data/` uses the generated API client in `core/api/`; `domain/`, a Bloc and
+  `presentation/` never import it ([`backend-api.md`](backend-api.md)).
 - A feature reaches another one only through its screens (for example Settings shows the
   Notifications section); never through its Bloc, data or domain.
 
@@ -77,7 +79,9 @@ with **events everywhere**: even a simple feature has event and state classes (n
   screens and the Settings) are the link tests: every button leads where the design says.
 - `test/render/screens_render_test.dart` draws every screen and state to `build/screens/` in English and
   Arabic, light and dark, at phone and 1280 x 800 sizes, to be looked at. A floating button shows a hard
-  black outline there: the test renderer draws elevation shadows that way, the app does not.
+  black outline there: the test renderer draws elevation shadows that way, the app does not. It takes
+  about three minutes, so `flutter test`, the commit hook and CI skip it (`dart_test.yaml`); run it when a
+  screen changes: `flutter test --run-skipped --tags render test/render`.
 - `test/architecture_test.dart` enforces the dependency rules above.
 
 ## Data
@@ -92,7 +96,8 @@ implementations with invented data; the device keeps only simple settings in
 - `data/fake/` holds the in-memory implementation and its seed (invented figures only). It
   simulates a short delay and can be told to be empty, slow, failing or offline, so every
   loading, empty, error and no-connection state can be tried without a server.
-- `main` chooses the implementations. To connect the server, add `data/remote/` next to
+- `main` chooses the implementations. The remote implementations use the client generated from the
+  backend's contract ([`backend-api.md`](backend-api.md)). To connect the server, add `data/remote/` next to
   `data/fake/`, switch the feature in `main`, and delete its `data/fake/` folder. Nothing in
   `bloc/` or `presentation/` changes.
 - `core/demo/` holds `DemoController`, the plain-Dart switchboard the fake data sources read on every

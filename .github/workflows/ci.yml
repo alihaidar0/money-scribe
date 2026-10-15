@@ -12,6 +12,9 @@
 #   Tier 1  no pubspec.yaml               all Flutter jobs are skipped
 #   Tier 2  pubspec.yaml, no lock file    flutter doctor only
 #   Tier 3  pubspec.yaml + pubspec.lock   format, analyze, test, audit, doctor
+#
+# Tier 3 plus a pinned backend contract (api/openapi.yaml) also checks that the
+# generated API client in lib/core/api is current (docs/backend-api.md).
 name: CI
 
 on:
@@ -59,6 +62,7 @@ jobs:
     outputs:
       tier: ${{ steps.check.outputs.tier }}
       flutter_version: ${{ steps.flutter-version.outputs.version }}
+      api_contract: ${{ steps.api.outputs.present }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +71,7 @@ jobs:
             pubspec.yaml
             pubspec.lock
             docker-compose.yml
+            api/openapi.yaml
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -83,6 +88,19 @@ jobs:
             echo "tier=1" >> "$GITHUB_OUTPUT"
             echo "Tier 1 — no pubspec.yaml: all Flutter checks are skipped"
             echo "Run 'flutter create .' inside the container to initialise the project."
+          fi
+
+      # A pinned backend contract (scripts/sync-api.sh) switches on the check that
+      # the generated API client is current. No contract, no check.
+      - name: Detect a pinned API contract
+        id: api
+        run: |
+          if [[ -f "api/openapi.yaml" ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "API contract found (api/openapi.yaml): the API client check is active"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No api/openapi.yaml: the API client check is skipped"
           fi
 
       # A project pins its Flutter version in pubspec.yaml (environment: flutter:
@@ -168,11 +186,14 @@ jobs:
 
       # The platform folders are written by `flutter create` (some of their files
       # have no final newline), so only the line-ending check covers them; the
-      # whitespace and final-newline checks skip them.
+      # whitespace and final-newline checks skip them. api/openapi.yaml is a
+      # verbatim copy of the backend's release asset and must stay byte-identical
+      # to it (its attestation is checked against the exact bytes), so it is
+      # skipped there too.
       - name: Check line endings, trailing whitespace and final newline
         run: |
           status=0
-          generated=(':!android' ':!ios' ':!web' ':!macos' ':!linux' ':!windows')
+          generated=(':!android' ':!ios' ':!web' ':!macos' ':!linux' ':!windows' ':!api/openapi.yaml')
 
           crlf=$(git ls-files --eol | awk '$1 == "i/crlf" || $1 == "i/mixed" { print $NF }')
           if [ -n "$crlf" ]; then
@@ -377,6 +398,50 @@ jobs:
           scan-args: |-
             --lockfile=pubspec.lock
 
+  # Active only once a backend contract is pinned (api/openapi.yaml, written by
+  # scripts/sync-api.sh). The generated client in lib/core/api is committed; this
+  # job regenerates it from the contract and fails when the result differs, so the
+  # contract and the client can never drift apart unnoticed.
+  api-client:
+    name: API client is current
+    needs: detect
+    if: >-
+      needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.api_contract == 'true' &&
+      (github.event.pull_request.draft == false || github.event_name != 'pull_request')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: ./.github/actions/setup-flutter
+        with:
+          flutter-version: ${{ needs.detect.outputs.flutter_version }}
+
+      # Fails if pubspec.lock does not match pubspec.yaml, so the generator runs
+      # with exactly the package versions that are committed.
+      - run: flutter pub get --enforce-lockfile
+
+      - name: Regenerate the API client
+        run: bash scripts/generate-api.sh
+
+      # `git status` (not only `git diff`) also reports a generated file that was
+      # never committed.
+      - name: Fail if lib/core/api differs from the committed client
+        run: |
+          changes="$(git status --porcelain -- lib/core/api)"
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            git --no-pager diff --stat -- lib/core/api
+            echo "::error title=API client is out of date::lib/core/api does not match api/openapi.yaml. Run scripts/generate-api.sh (or scripts/sync-api.sh <tag>) and commit the result."
+            exit 1
+          fi
+          echo "lib/core/api matches api/openapi.yaml"
+
   flutter-doctor:
     name: Flutter doctor
     needs: detect
@@ -414,6 +479,7 @@ jobs:
       - flutter-analyze
       - flutter-test
       - flutter-audit
+      - api-client
       - flutter-doctor
     runs-on: ubuntu-24.04
     timeout-minutes: 2

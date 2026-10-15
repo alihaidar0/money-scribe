@@ -1,0 +1,23 @@
+# swagger_parser.yaml
+#
+# Settings of the API client generator (https://pub.dev/packages/swagger_parser),
+# run by scripts/generate-api.sh. See docs/backend-api.md.
+#
+# Never edit the generated client by hand: change this file or the contract and
+# regenerate.
+swagger_parser:
+  # The contract pinned by scripts/sync-api.sh (a copy of a backend release).
+  schema_path: api/openapi.yaml
+
+  # Shared code, so it sits in `core/` (see docs/architecture.md). Committed, so
+  # a contract change shows up as a reviewable diff, and checked by the "API
+  # client is current" job in ci.yml. Keep in step with scripts/generate-api.sh.
+  output_directory: lib/core/api
+
+  language: dart
+
+  # json_serializable | freezed | dart_mappable. The app does not use freezed.
+  json_serializer: json_serializable
+
+  # One RestClient that groups the generated per-tag clients.
+  root_client: true

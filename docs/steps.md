@@ -39,7 +39,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Recurring monthly income and expenses
 - [ ] Transactions and purchases
 - [ ] Debts: borrowed and lent, partial repayments, settled status
-- [ ] Backend and sign-in, with the server as the only place the data is stored (provider chosen when needed)
+- [ ] Backend and sign-in, with the server as the only place the data is stored (the Django backend; steps in section 7)
 - [ ] Decide on crash reporting and opt-in analytics (none until then; never amounts or personal data)
 - [ ] Notifications: local reminders first (for example debts due); push messages through Firebase Cloud Messaging are tested from the Firebase console until the backend can send them
 
@@ -243,5 +243,25 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
+
+## 7. Backend connection
+
+The server is the Django backend. The app pins one release of its API contract and generates its client from it; the full guide is [`backend-api.md`](backend-api.md). Do the steps in order, one pull request each unless noted.
+
+Done in the repository:
+
+- [x] Contract tooling: pin a backend release, generate the client, check it in CI, weekly reminder workflow
+
+To do:
+
+- [ ] Backend: first release with `openapi.yaml` attached and immutable releases on (backend repository)
+- [ ] Add the client packages with `flutter pub add`, every version pinned exactly
+- [ ] Create `api/BACKEND_REPO`, sign in with `gh auth login`, run `scripts/sync-api.sh vX.Y.Z`, commit `api/` and `lib/core/api/`
+- [ ] `API_BASE_URL` per environment in `env/staging.json` and `env/production.json`, and in the launch configurations
+- [ ] Local backend: debug-only cleartext exception for the emulator; CORS and allowed hosts on the backend
+- [ ] Dio instance, token interceptor and one error parser in `core/network/`
+- [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
+- [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
+- [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

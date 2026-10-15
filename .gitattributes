@@ -22,6 +22,12 @@
 # ── Dart / Flutter ────────────────────────────────────────────────────────────
 *.dart    text eol=lf
 
+# ── Generated API client ──────────────────────────────────────────────────────
+# lib/core/api is written by scripts/generate-api.sh from the pinned backend
+# contract (api/openapi.yaml, the file to review). GitHub folds generated files
+# in pull request diffs, so the contract change stays the focus.
+lib/core/api/** linguist-generated=true
+
 # ── Binary files: do not diff or modify ──────────────────────────────────────
 *.png     binary
 *.jpg     binary
