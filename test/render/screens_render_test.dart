@@ -1,3 +1,11 @@
+// The render check: every screen and state is drawn to a picture in English
+// and Arabic, light and dark, into `build/screens/`, to be looked at. The test
+// also fails if a screen throws. It takes about three minutes, so
+// `flutter test` skips it (`dart_test.yaml`); run it with:
+//   flutter test --run-skipped --tags render test/render
+@Tags(['render'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -18,10 +26,6 @@ import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 import '../support/fake_push_messaging_repository.dart';
 import '../support/render_screen.dart';
-
-/// The render check: every screen and state is drawn to a picture in English
-/// and Arabic, light and dark, into `build/screens/`, to be looked at. The test
-/// also fails if a screen throws.
 
 typedef _Setup = Future<void> Function(
   WidgetTester tester,
