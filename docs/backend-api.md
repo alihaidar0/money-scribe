@@ -249,6 +249,106 @@ Release builds, staging and production included, keep the default (HTTPS only). 
 the approach in its
 [network policy](https://docs.flutter.dev/release/breaking-changes/network-policy-ios-android) note.
 
+## 7. Authentication (contract pinned, app not connected yet)
+
+The first API step is authentication: register, verify email, resend the code, sign in, refresh, sign
+out and read the profile. It was agreed with the backend in `alihaidar0/money-scribe-backend#13`. The
+contract is pinned (`api/BACKEND_VERSION` says at which backend commit) and **the contract wins** over
+this summary. The app is not connected yet: the screens still use the fake repository.
+
+All paths are under `/api/v1/auth/`.
+
+| Call | Sends | Answers |
+| --- | --- | --- |
+| `register/` | `name`, `email`, `password`, `language`, `time_zone` | `201` with `email`, `code_expires_in`, `resend_available_in`; no session; the same answer for a new, a pending and a registered address |
+| `verify-email/` | `email`, `code`, `device`, `language`, `time_zone` | `200` with the tokens and `user`; a correct code creates the session |
+| `resend-code/` | `email` | `200` with `code_expires_in`, `resend_available_in`; the same for any address |
+| `sign-in/` | `email`, `password`, `device`, `language`, `time_zone` | `200`, the same body as verify email |
+| `refresh/` | `refresh_token`, `device` | `200` with the tokens (no `user`) |
+| `sign-out/` | the access token, or `{"refresh_token"}` in the body | `204` |
+| `profile/` (`GET`) | the access token | `id`, `name`, `email` and the read-only `language`, `time_zone` |
+
+- **Tokens.** `access_token`, `refresh_token` (optional in the schema: the web form will use an
+  HttpOnly cookie later), `token_type` (`Bearer`), `expires_in` (seconds) and `user` (`id` as a UUID,
+  `name`, `email`). On mobile a missing `refresh_token` is a failure.
+- **`device`** goes with verify email, sign in and every refresh: `device_id` (a random UUID created
+  once and kept in secure storage), `device_name` (the model name, at most 100 characters, never the
+  name the user gave the device), `platform` (`android`, `ios` or `web`), `os_version` (optional, left out
+  on the web) and `app_version` (for example `1.0.0+1`).
+- **`language`** is `en` or `ar`; **`time_zone`** is an IANA name and is left out when the device cannot
+  read it.
+- **The email code** has 6 digits and is kept as text, so a leading zero survives. The same length is
+  used to verify an email, to reset a password and to change an email. The 4-digit PIN of the app lock
+  is a different thing and does not change.
+- **Passwords.** The server owns the policy and the app enforces **no** password rule: no minimum, no
+  maximum, no checklist and no numbers in its hints. Sign-in never applies a policy, because an older
+  account may have a password that no longer meets the current one. The app sends the text as typed,
+  without trimming or normalising it (the server normalises it). The only check on the device is that
+  the two fields match. The app has its own message per `password_*` code; the limit in the message
+  comes from `min_length` on `password_too_short` and `max_length` on `password_too_long`, so a policy
+  change needs no app release. For a `password_*` code the app does not know, it shows the English
+  `detail` as it is.
+- **Waits** are never constants in the app: they come from `Retry-After` (whole seconds),
+  `resend_available_in` and `code_expires_in`. The schema declares `Retry-After` on every `429` and
+  `503`, but the generated client does not return response headers, so the data layer reads it from
+  the HTTP response of the failed call.
+
+### Errors the screens handle
+
+| Code | Status | What the app does |
+| --- | --- | --- |
+| field errors with `attr` | 400 | shows the message under the field; the `password_*` codes are described above |
+| `code_invalid` | 400 | wrong code; `attempts_left` (optional) says how many tries remain |
+| `code_expired` | 400 | offers "send a new code"; also the answer for an address that never had a code |
+| `code_attempts_exceeded` | 429 | the code is dead; `Retry-After` is the wait until a new code may be requested |
+| `resend_too_soon` | 429 | countdown from `Retry-After`; also the answer to a second register inside the 60 s cooldown |
+| `resend_limit_reached` | 429 | countdown from `Retry-After` (up to an hour) for the limit of 5 resends per hour |
+| `invalid_credentials` | 401 | one message for an unknown email and a wrong password |
+| `email_not_verified` | 403 | only for a correct password; opens the verify screen and does not resend by itself |
+| `sign_in_locked` | 429 | lock countdown from `Retry-After`, also for a correct password |
+| `service_unavailable` | 503 | "try again shortly", with the wait from `Retry-After`; only register, resend, verify and sign in can answer it, and the body `type` is `server_error` (a separate schema from the other error bodies) |
+| `token_expired` | 401 | the only code that triggers a refresh |
+| `token_invalid`, `session_expired`, `session_signed_out`, `session_revoked_by_user`, `session_password_changed`, `session_email_changed`, `session_token_reuse` | 401 | final: drop the tokens and show sign-in with the reason |
+
+### How the app behaves
+
+- **Register** always opens the verify screen, with the hint "No code? You may already have an account:
+  sign in or reset your password." A second register inside the 60 s cooldown answers `429`, which the
+  register screen shows as a countdown on its button, not as an error. There is no "address is taken"
+  message any more.
+- **Refresh.** Only `401 token_expired` triggers it. One refresh runs at a time. The new pair is stored
+  before it is used, and a lost response is retried once with the same token (the server accepts it for
+  30 seconds). Any failure of refresh other than a `401` keeps the tokens.
+- **Sign out** clears the tokens on the device even if the call fails. The app sends the refresh token
+  in the body: then the only possible `401` is `token_invalid`, and a session that has already ended
+  answers `204`, so no refresh is needed first. Sent with the access token alone, an already ended
+  session answers `401 session_signed_out` (or another `session_*` code); the app treats that as
+  success too, because the device is signed out either way.
+
+### Limits (server settings, so the screens match)
+
+Email code valid 10 minutes with 5 attempts per code; resend after 60 seconds, at most 5 per hour;
+sign-in lock after 5 failures in 15 minutes, counted per account and per client address; access token
+10 minutes; refresh token 30 days, renewed at each rotation; a session ends 90 days after sign-in at the
+latest.
+
+### For the privacy policy and the store forms
+
+The server checks a new password against a public list of leaked passwords (Pwned Passwords) by sending
+the first five characters of the password's hash, never the password, the full hash or any user data.
+The privacy policy needs one sentence on it, for example: "To protect accounts, we check new passwords
+against a public list of leaked passwords without sending the password or its full hash."
+
+### Not covered yet
+
+Reset password, change password, change email, delete account and edit name come as their own request
+issues in the next step. The profile call is part of this step.
+
+### What the app needs for this step
+
+Secure storage for the tokens and the device id, device and app version information, and the time zone
+name. Each is a package added with `flutter pub add` at an exact version (the owner runs it).
+
 ## Checklist for a change that touches the API
 
 - [ ] `api/openapi.yaml` comes from a release (or an approved commit) and `api/BACKEND_VERSION` says which

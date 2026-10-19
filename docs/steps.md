@@ -264,4 +264,15 @@ To do:
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
 - [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
 
+Authentication step (agreed with the backend, summary in [`backend-api.md`](backend-api.md) section 7). It waits until the backend merges its schema:
+
+- [x] Backend: merge `openapi/schema.yaml` for register, verify email, resend, sign in, refresh, sign out and profile
+- [x] Pin the schema, generate the client on a scratch copy first, and check the optional fields and the extra error members
+- [ ] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
+- [ ] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
+- [ ] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
+- [ ] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
+- [ ] Add the leaked-password sentence to the privacy policy and the store forms
+- [ ] Next request issues: reset password, change password, change email, delete account, edit name
+
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
