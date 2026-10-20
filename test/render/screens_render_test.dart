@@ -168,6 +168,14 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'auth-2d-sign-in-busy',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
     'nc-1-no-connection',
     AppRoutes.signIn,
     setup: (tester, demo) async {
@@ -204,7 +212,55 @@ final _scenes = <_Scene>[
       demo.update(const DemoSettings(registration: DemoRegistration.rejected));
       final fields = find.byType(TextField);
       await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex');
+      await tester.enterText(fields.at(2), 'short one');
+      await tester.enterText(fields.at(3), 'short one');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3c-register-mismatch',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
       await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'one passphrase');
+      await tester.enterText(fields.at(3), 'another passphrase');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3d-register-wait',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(registration: DemoRegistration.tooSoon));
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'password1');
+      await tester.enterText(fields.at(3), 'password1');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3e-register-busy',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(registration: DemoRegistration.unavailable),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'password1');
+      await tester.enterText(fields.at(3), 'password1');
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await _tapPrimary(tester);
@@ -213,14 +269,14 @@ final _scenes = <_Scene>[
   _Scene(
     'auth-4-verify-email',
     AppRoutes.verifyEmail,
-    setup: (tester, demo) => _typeCode(tester, '48'),
+    setup: (tester, demo) => _typeCode(tester, '482'),
   ),
   _Scene(
     'auth-4b-verify-wrong',
     AppRoutes.verifyEmail,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.wrong));
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
     },
   ),
   _Scene(
@@ -228,7 +284,32 @@ final _scenes = <_Scene>[
     AppRoutes.verifyEmail,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.expired));
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4d-verify-dead',
+    AppRoutes.verifyEmail,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.attemptsExceeded));
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4e-verify-busy',
+    AppRoutes.verifyEmail,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4f-verify-from-sign-in',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotVerified));
+      await tester.enterText(find.byType(TextField).first, 'alex@example.com');
+      await _tapPrimary(tester);
     },
   ),
   const _Scene(
@@ -250,14 +331,14 @@ final _scenes = <_Scene>[
   _Scene(
     'auth-8-reset-code',
     AppRoutes.resetCode,
-    setup: (tester, demo) => _typeCode(tester, '6'),
+    setup: (tester, demo) => _typeCode(tester, '62'),
   ),
   _Scene(
     'auth-8b-reset-wrong',
     AppRoutes.resetCode,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.wrong));
-      await _typeCode(tester, '6205');
+      await _typeCode(tester, '620517');
     },
   ),
   _Scene(

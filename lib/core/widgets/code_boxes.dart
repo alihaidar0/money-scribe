@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:money_scribe/core/formatting/western_digits_input_formatter.dart';
 
-/// Four large rounded boxes for a 4-digit code, filled from a numeric
+/// Large rounded boxes for a code of [length] digits, filled from a numeric
 /// keypad. One invisible text field takes the typing, so paste, auto-fill and
 /// the delete key all work; the boxes only show its digits. The digits keep
-/// their left-to-right order in every language.
+/// their left-to-right order in every language. The boxes get narrower when
+/// the width is short, so a longer code still fits a small phone.
 class CodeBoxes extends StatelessWidget {
   const new({
+    required this.length,
     required this.controller,
     required this.focusNode,
     required this.semanticLabel,
@@ -17,7 +19,16 @@ class CodeBoxes extends StatelessWidget {
     super.key,
   });
 
-  static const length = 4;
+  /// The widest a box grows.
+  static const boxWidth = 56.0;
+
+  /// The narrowest a box shrinks to, to make room for a long code.
+  static const minBoxWidth = 36.0;
+
+  static const _gap = 8.0;
+
+  /// How many digits the code has.
+  final int length;
 
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -42,9 +53,16 @@ class CodeBoxes extends StatelessWidget {
         child: Stack(
           children: [
             ExcludeSemantics(
-              child: ListenableBuilder(
-                listenable: Listenable.merge([controller, focusNode]),
-                builder: (context, _) => _boxes(context),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final room =
+                      (constraints.maxWidth - _gap * (length - 1)) / length;
+                  final width = room.clamp(minBoxWidth, boxWidth);
+                  return ListenableBuilder(
+                    listenable: Listenable.merge([controller, focusNode]),
+                    builder: (context, _) => _boxes(context, width),
+                  );
+                },
               ),
             ),
             Positioned.fill(
@@ -84,7 +102,7 @@ class CodeBoxes extends StatelessWidget {
     );
   }
 
-  Widget _boxes(BuildContext context) {
+  Widget _boxes(BuildContext context, double width) {
     final colors = Theme.of(context).colorScheme;
     final digits = controller.text;
     final focusedIndex = focusNode.hasFocus && enabled
@@ -95,8 +113,9 @@ class CodeBoxes extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var index = 0; index < length; index++) ...[
-          if (index > 0) const SizedBox(width: 12),
+          if (index > 0) const SizedBox(width: _gap),
           _Box(
+            width: width,
             digit: index < digits.length ? digits[index] : '',
             borderColor: hasError
                 ? colors.error
@@ -118,12 +137,14 @@ class CodeBoxes extends StatelessWidget {
 
 class _Box extends StatelessWidget {
   const new({
+    required this.width,
     required this.digit,
     required this.borderColor,
     required this.borderWidth,
     required this.textColor,
   });
 
+  final double width;
   final String digit;
   final Color borderColor;
   final double borderWidth;
@@ -132,7 +153,7 @@ class _Box extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 56,
+      width: width,
       height: 64,
       alignment: Alignment.center,
       decoration: BoxDecoration(

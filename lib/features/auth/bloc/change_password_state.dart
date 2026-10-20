@@ -33,16 +33,14 @@ final class ChangePasswordState extends Equatable {
   final String next;
   final String confirmation;
 
-  /// Whether the new password is long enough.
-  bool get hasMinLength => next.length >= ChangePasswordBloc.minLength;
-
   /// Whether the confirmation differs from the new password. Nothing typed in
   /// the confirmation yet is not a mismatch.
   bool get mismatch => confirmation.isNotEmpty && confirmation != next;
 
-  /// Whether the form can be saved.
+  /// Whether the form can be saved: the current password and a new one are
+  /// typed, and the confirmation is the same text.
   bool get isValid =>
-      current.isNotEmpty && hasMinLength && confirmation == next;
+      current.isNotEmpty && next.isNotEmpty && confirmation == next;
 
   ChangePasswordState copyWith({ChangePasswordStatus? status}) {
     return ChangePasswordState(

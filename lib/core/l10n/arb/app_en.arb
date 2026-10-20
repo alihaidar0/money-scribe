@@ -175,6 +175,14 @@
   "@errorMessage": {
     "description": "Explanation under the Something went wrong title."
   },
+  "unavailableTitle": "The service is busy",
+  "@unavailableTitle": {
+    "description": "Title of the full-screen state shown when the server is busy and refused the request."
+  },
+  "unavailableMessage": "Please try again shortly.",
+  "@unavailableMessage": {
+    "description": "Sentence under the title of the busy state."
+  },
   "continueAction": "Continue",
   "@continueAction": {
     "description": "Button that moves to the next step of a flow."
@@ -262,10 +270,6 @@
   "@registerSentence": {
     "description": "Sentence under the title of the Create account screen."
   },
-  "passwordRuleLength": "At least 8 characters",
-  "@passwordRuleLength": {
-    "description": "Rule for a new password: helper text under the password field and an item of the checklist on the New password screen."
-  },
   "registerAgreement": "I agree to the {terms} and the {privacy}",
   "@registerAgreement": {
     "description": "Label of the checkbox on the Create account screen. The two placeholders are the names of the Terms and the Privacy Policy, shown as links.",
@@ -278,20 +282,62 @@
   "@alreadyHaveAccount": {
     "description": "Question at the bottom of the Create account screen, followed by the Sign in button."
   },
-  "registerEmailTaken": "This email is already registered. {signIn} instead.",
-  "@registerEmailTaken": {
-    "description": "Error under the email field of the Create account screen. The placeholder is the word Sign in, shown as a link that opens the Sign in screen.",
-    "placeholders": {
-      "signIn": {"type": "String"}
-    }
-  },
-  "registerPasswordTooShort": "Use at least 8 characters.",
-  "@registerPasswordTooShort": {
-    "description": "Error under the password field of the Create account screen."
-  },
   "registerPasswordsMismatch": "Passwords do not match.",
   "@registerPasswordsMismatch": {
     "description": "Error under the confirm password field of the Create account screen."
+  },
+  "registerEmailInvalid": "Enter a valid email address.",
+  "@registerEmailInvalid": {
+    "description": "Error under the email field of the Create account screen when the server does not accept the address."
+  },
+  "registerNameInvalid": "Check your name.",
+  "@registerNameInvalid": {
+    "description": "Error under the name field of the Create account screen when the server does not accept the name."
+  },
+  "tryAgainIn": "Try again in {time}",
+  "@tryAgainIn": {
+    "description": "Label of the disabled Create account button while the server asks to wait before the account is sent again. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "passwordErrorTooShort": "Your password is too short.",
+  "@passwordErrorTooShort": {
+    "description": "Error under the password field when the server says the password is too short and gives no length."
+  },
+  "passwordErrorTooShortLimit": "Your password is too short. Use at least {count} characters.",
+  "@passwordErrorTooShortLimit": {
+    "description": "Error under the password field when the server says the password is too short. The placeholder is the shortest length the server accepts.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "passwordErrorTooLong": "Your password is too long.",
+  "@passwordErrorTooLong": {
+    "description": "Error under the password field when the server says the password is too long and gives no length."
+  },
+  "passwordErrorTooLongLimit": "Your password is too long. Use at most {count} characters.",
+  "@passwordErrorTooLongLimit": {
+    "description": "Error under the password field when the server says the password is too long. The placeholder is the longest length the server accepts.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "passwordErrorTooSimilar": "Your password is too similar to your name or email. Choose a different one.",
+  "@passwordErrorTooSimilar": {
+    "description": "Error under the password field when the server says the password resembles the name or the email."
+  },
+  "passwordErrorTooCommon": "This password is too common. Choose a different one.",
+  "@passwordErrorTooCommon": {
+    "description": "Error under the password field when the server says the password is one of the most common ones."
+  },
+  "passwordErrorCompromised": "This password appeared in a data breach. Choose a different one.",
+  "@passwordErrorCompromised": {
+    "description": "Error under the password field when the server says the password was found in a known data breach."
+  },
+  "passwordErrorRejected": "This password cannot be used. Choose a different one.",
+  "@passwordErrorRejected": {
+    "description": "Error under the password field when the server refuses the password for a reason the app does not know and gives no text."
   },
   "verifyEmailTitle": "Verify your email",
   "@verifyEmailTitle": {
@@ -301,16 +347,16 @@
   "@enterCodeTitle": {
     "description": "Title of the screen where the code sent to reset a password is typed."
   },
-  "codeSentTo": "We sent a 4-digit code to {email}.",
+  "codeSentTo": "We sent a 6-digit code to {email}.",
   "@codeSentTo": {
     "description": "Text under the title of the code screens. The placeholder is the email address the code was sent to.",
     "placeholders": {
       "email": {"type": "String"}
     }
   },
-  "codeFieldLabel": "4-digit code",
+  "codeFieldLabel": "6-digit code",
   "@codeFieldLabel": {
-    "description": "Spoken label of the field where the 4-digit code is typed, for screen readers."
+    "description": "Spoken label of the field where the 6-digit code is typed, for screen readers."
   },
   "resendCodeIn": "Resend code in {time}",
   "@resendCodeIn": {
@@ -345,6 +391,44 @@
   "codeExpired": "This code has expired.",
   "@codeExpired": {
     "description": "Banner on the code screens when the code is no longer valid."
+  },
+  "codeIncorrect": "The code is incorrect.",
+  "@codeIncorrect": {
+    "description": "Error under the code boxes after a wrong code, when the server does not say how many tries remain."
+  },
+  "codeAttemptsExceeded": "Too many incorrect codes. This code no longer works.",
+  "@codeAttemptsExceeded": {
+    "description": "Banner on the code screens when too many wrong codes were typed and a new code is needed."
+  },
+  "tooManyAttemptsTryAgain": "Too many attempts. Try again in {time}.",
+  "@tooManyAttemptsTryAgain": {
+    "description": "Banner on the code screens while the server asks to wait before the code is checked again. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "emailNotVerifiedMessage": "Your email address {email} is not verified yet. Send a new code to verify it.",
+  "@emailNotVerifiedMessage": {
+    "description": "Text under the title of the Verify your email screen when it opens from sign-in, before any code was sent. The placeholder is the email address.",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "verifyEmailHint": "No code? You may already have an account: {signIn} or {resetPassword}.",
+  "@verifyEmailHint": {
+    "description": "Hint under the code boxes of the Verify your email screen after creating an account. The two placeholders are links: to sign in, and to reset the password.",
+    "placeholders": {
+      "signIn": {"type": "String"},
+      "resetPassword": {"type": "String"}
+    }
+  },
+  "verifyHintSignIn": "sign in",
+  "@verifyHintSignIn": {
+    "description": "Link inside the verify email hint, in lower case: opens the Sign in screen."
+  },
+  "verifyHintResetPassword": "reset your password",
+  "@verifyHintResetPassword": {
+    "description": "Link inside the verify email hint, in lower case: opens the Forgot password screen."
   },
   "emailVerifiedTitle": "Email verified",
   "@emailVerifiedTitle": {
@@ -398,13 +482,13 @@
   "@decrease": {
     "description": "Tooltip of the minus button of a number stepper."
   },
-  "forgotPasswordMessage": "Enter your email and we will send you a 4-digit code.",
+  "forgotPasswordMessage": "Enter your email and we will send you a 6-digit code.",
   "@forgotPasswordMessage": {
     "description": "Text under the title of the Forgot password screen."
   },
   "sendCode": "Send code",
   "@sendCode": {
-    "description": "Button that sends the 4-digit code by email."
+    "description": "Button that sends the 6-digit code by email."
   },
   "backToSignIn": "Back to sign in",
   "@backToSignIn": {
@@ -413,14 +497,6 @@
   "newPasswordTitle": "Create a new password",
   "@newPasswordTitle": {
     "description": "Title of the screen where a new password is chosen."
-  },
-  "passwordRuleNumber": "One number",
-  "@passwordRuleNumber": {
-    "description": "Rule for a new password: it contains at least one digit. An item of the checklist."
-  },
-  "passwordRuleMatch": "Passwords match",
-  "@passwordRuleMatch": {
-    "description": "Rule for a new password: the two fields are equal. An item of the checklist."
   },
   "savePassword": "Save password",
   "@savePassword": {

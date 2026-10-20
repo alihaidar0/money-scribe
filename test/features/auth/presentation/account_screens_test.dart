@@ -222,7 +222,7 @@ void main() {
   });
 
   group('changing the password (ST-6)', () {
-    testWidgets('has the three fields, the rule and the buttons', (
+    testWidgets('has the three fields and the buttons, and no password rule', (
       tester,
     ) async {
       await openAccount(tester);
@@ -233,7 +233,8 @@ void main() {
       expect(find.text('Current password'), findsOneWidget);
       expect(find.text('New password'), findsOneWidget);
       expect(find.text('Confirm new password'), findsOneWidget);
-      expect(find.text('At least 8 characters'), findsOneWidget);
+      // The server owns the password policy: no hint about length or content.
+      expect(find.textContaining('characters'), findsNothing);
       expect(find.text('Forgot your password?'), findsOneWidget);
       expect(savePassword(), findsOneWidget);
       expect(tester.widget<FilledButton>(savePassword()).onPressed, isNull);

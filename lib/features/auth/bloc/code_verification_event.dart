@@ -7,7 +7,8 @@ sealed class CodeVerificationEvent extends Equatable {
   List<Object> get props => [];
 }
 
-/// The screen opened: start the wait before a new code can be asked for.
+/// The screen opened: carry on counting the wait before a new code can be
+/// asked for, if the server asked for one.
 final class CodeVerificationStarted extends CodeVerificationEvent {
   const new();
 }
@@ -34,6 +35,16 @@ final class CodeResendRequested extends CodeVerificationEvent {
 
 /// A second of the wait for a new code passed.
 final class _CodeResendTicked extends CodeVerificationEvent {
+  const new(this.secondsLeft);
+
+  final int secondsLeft;
+
+  @override
+  List<Object> get props => [secondsLeft];
+}
+
+/// A second of the wait before the code can be checked again passed.
+final class _CodeWaitTicked extends CodeVerificationEvent {
   const new(this.secondsLeft);
 
   final int secondsLeft;

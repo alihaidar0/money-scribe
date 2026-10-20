@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
-import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/password_field.dart';
@@ -11,7 +10,8 @@ import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/new_password_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
-/// AUTH-9: choose a new password, with a checklist of its rules.
+/// AUTH-9: choose a new password, typed twice. The app checks only that the
+/// two fields are the same: the server owns every other password rule.
 class NewPasswordScreen extends StatelessWidget {
   const new({super.key});
 
@@ -98,6 +98,7 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
               controller: _confirmation,
               label: l10n.confirmPasswordLabel,
               enabled: !isBusy,
+              errorText: state.mismatch ? l10n.registerPasswordsMismatch : null,
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.newPassword],
               onChanged: _changed,
@@ -105,10 +106,6 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
                 if (state.isValid && !isBusy) _submit();
               },
             ),
-            const SizedBox(height: 16),
-            _Rule(met: state.hasMinLength, label: l10n.passwordRuleLength),
-            _Rule(met: state.hasNumber, label: l10n.passwordRuleNumber),
-            _Rule(met: state.matches, label: l10n.passwordRuleMatch),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: state.isValid && !isBusy ? _submit : null,
@@ -117,48 +114,6 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
           ],
         );
       },
-    );
-  }
-}
-
-/// One line of the checklist. Met rules also differ by icon, not by colour
-/// alone.
-class _Rule extends StatelessWidget {
-  const new({required this.met, required this.label});
-
-  final bool met;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = met
-        ? context.moneyColors.income.color
-        : theme.colorScheme.onSurfaceVariant;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Semantics(
-        checked: met,
-        child: Row(
-          children: [
-            ExcludeSemantics(
-              child: Icon(
-                met ? Icons.check_circle : Icons.radio_button_unchecked,
-                size: 20,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(color: color),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

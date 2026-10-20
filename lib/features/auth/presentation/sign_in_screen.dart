@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -13,8 +15,11 @@ import 'package:money_scribe/core/widgets/password_field.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/sign_in_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/verify_email_screen.dart';
 
-/// AUTH-2, AUTH-2b and AUTH-2c: sign in with an email and a password.
+/// AUTH-2, AUTH-2b and AUTH-2c: sign in with an email and a password. The
+/// password is sent as typed and never checked against a policy: only the
+/// server knows whether it is right.
 class SignInScreen extends StatelessWidget {
   const new({super.key});
 
@@ -62,8 +67,21 @@ class _SignInViewState extends State<_SignInView> {
     return BlocConsumer<SignInBloc, SignInState>(
       listenWhen: (previous, current) =>
           previous.status != current.status &&
-          current.status == SignInStatus.success,
-      listener: (context, state) => context.go(AppRoutes.overview),
+          (current.status == SignInStatus.success ||
+              current.status == SignInStatus.emailNotVerified),
+      listener: (context, state) {
+        if (state.status == SignInStatus.success) {
+          context.go(AppRoutes.overview);
+        } else {
+          // The password was right: the address still has to be verified.
+          unawaited(
+            context.push<void>(
+              AppRoutes.verifyEmail,
+              extra: VerifyEmailOrigin.signIn,
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         final isLocked = state.status == SignInStatus.locked;
         final isBusy = state.status == SignInStatus.submitting;
@@ -74,6 +92,7 @@ class _SignInViewState extends State<_SignInView> {
         return FlowPage(
           failure: switch (state.status) {
             SignInStatus.noConnection => FailureKind.noConnection,
+            SignInStatus.unavailable => FailureKind.unavailable,
             SignInStatus.failure => FailureKind.error,
             _ => null,
           },

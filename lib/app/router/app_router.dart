@@ -68,7 +68,11 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.verifyEmail,
-        builder: (context, state) => const VerifyEmailScreen(),
+        builder: (context, state) => VerifyEmailScreen(
+          origin: state.extra is VerifyEmailOrigin
+              ? state.extra! as VerifyEmailOrigin
+              : VerifyEmailOrigin.registration,
+        ),
       ),
       GoRoute(
         path: AppRoutes.emailVerified,

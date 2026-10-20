@@ -13,8 +13,16 @@ enum SignInStatus {
   /// The email or the password is wrong.
   wrongCredentials,
 
-  /// Too many wrong attempts: sign-in is locked until the countdown ends.
+  /// The password is right but the email address is not verified yet: the
+  /// Verify your email screen follows.
+  emailNotVerified,
+
+  /// The server asked to wait (too many wrong attempts, or too many
+  /// requests): sign-in is locked until the countdown ends.
   locked,
+
+  /// The server is busy: try again shortly.
+  unavailable,
 
   /// The server could not be reached.
   noConnection,

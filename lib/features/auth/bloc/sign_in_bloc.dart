@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/time/duration_seconds.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
@@ -12,7 +13,8 @@ part 'sign_in_event.dart';
 part 'sign_in_state.dart';
 
 /// The Sign in screen: sends the email and password, and counts down while
-/// sign-in is locked after too many wrong attempts.
+/// the server asks to wait (sign-in locked after too many wrong attempts, or
+/// too many requests). It never checks the password against a policy.
 class SignInBloc extends Bloc<SignInEvent, SignInState> {
   new({required this._repository, required this._ticker})
     : super(_initialState(_repository)) {
@@ -31,12 +33,8 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     if (locked == null) return const SignInState();
     return SignInState(
       status: SignInStatus.locked,
-      lockSecondsLeft: _wholeSeconds(locked),
+      lockSecondsLeft: locked.ceilSeconds,
     );
-  }
-
-  static int _wholeSeconds(Duration duration) {
-    return (duration.inMilliseconds / 1000).ceil();
   }
 
   void _onStarted(SignInStarted event, Emitter<SignInState> emit) {
@@ -55,10 +53,15 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       emit(const SignInState(status: SignInStatus.success));
     } on WrongCredentialsException {
       emit(const SignInState(status: SignInStatus.wrongCredentials));
-    } on TooManyAttemptsException catch (error) {
-      final seconds = _wholeSeconds(error.retryAfter);
+    } on EmailNotVerifiedException {
+      // The right password, but the address still has to be verified.
+      emit(const SignInState(status: SignInStatus.emailNotVerified));
+    } on RateLimitedException catch (error) {
+      final seconds = error.retryAfter.ceilSeconds;
       emit(SignInState(status: SignInStatus.locked, lockSecondsLeft: seconds));
       _startLockTimer(seconds);
+    } on ServiceUnavailableException {
+      emit(const SignInState(status: SignInStatus.unavailable));
     } on NoConnectionException {
       emit(const SignInState(status: SignInStatus.noConnection));
     } on Exception catch (error, stackTrace) {

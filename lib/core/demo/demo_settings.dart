@@ -10,13 +10,46 @@ import 'package:money_scribe/core/payments/payment_mode.dart';
 enum DemoScenario { normal, loading, empty, error, noConnection }
 
 /// What the next sign-in attempt does.
-enum DemoSignIn { accepted, wrongPassword, locked }
+enum DemoSignIn {
+  accepted,
+  wrongPassword,
+  locked,
+
+  /// The password is right but the email address is not verified yet.
+  emailNotVerified,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
 
 /// What the next attempt to create an account does.
-enum DemoRegistration { accepted, rejected }
+enum DemoRegistration {
+  accepted,
 
-/// What a code typed on the verification screens does.
-enum DemoCode { accepted, wrong, expired }
+  /// The server refuses the email address and the password.
+  rejected,
+
+  /// The same address was registered a moment ago: wait before sending again.
+  tooSoon,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
+/// What a code typed on the verification screens, or a new code asked for,
+/// does.
+enum DemoCode {
+  accepted,
+  wrong,
+  expired,
+
+  /// Too many wrong codes: the code is dead and a new one can be asked for
+  /// after a wait.
+  attemptsExceeded,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
 
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
