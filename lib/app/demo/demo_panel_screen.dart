@@ -73,7 +73,7 @@ class DemoPanelScreen extends StatelessWidget {
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(registration: value)),
               ),
-              const _Heading('4-digit codes'),
+              const _Heading('6-digit codes and new codes'),
               _Choice<DemoCode>(
                 values: DemoCode.values,
                 selected: settings.code,
@@ -147,17 +147,23 @@ class DemoPanelScreen extends StatelessWidget {
     DemoSignIn.accepted => 'Accepted (any email and password)',
     DemoSignIn.wrongPassword => 'Wrong password (locks after 5)',
     DemoSignIn.locked => 'Too many attempts (locked)',
+    DemoSignIn.emailNotVerified => 'Email not verified',
+    DemoSignIn.unavailable => 'Server busy (try again shortly)',
   };
 
   static String _registrationLabel(DemoRegistration value) => switch (value) {
     DemoRegistration.accepted => 'Accepted (any data)',
     DemoRegistration.rejected => 'Rejected (field errors)',
+    DemoRegistration.tooSoon => 'Too soon (wait, then send again)',
+    DemoRegistration.unavailable => 'Server busy (try again shortly)',
   };
 
   static String _codeLabel(DemoCode value) => switch (value) {
     DemoCode.accepted => 'Accepted (any code)',
-    DemoCode.wrong => 'Wrong (expires after 3 tries)',
+    DemoCode.wrong => 'Wrong (dead after 5 tries)',
     DemoCode.expired => 'Expired',
+    DemoCode.attemptsExceeded => 'Too many tries (dead, wait for a new one)',
+    DemoCode.unavailable => 'Server busy (try again shortly)',
   };
 }
 

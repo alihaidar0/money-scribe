@@ -20,3 +20,13 @@ final class ServerException extends DataException {
   @override
   String toString() => 'ServerException';
 }
+
+/// The server is working but cannot take the request right now (the answer
+/// `503`). It refused the request before changing anything, so asking again
+/// shortly is safe.
+final class ServiceUnavailableException extends DataException {
+  const new();
+
+  @override
+  String toString() => 'ServiceUnavailableException';
+}

@@ -116,6 +116,10 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-11 App lock
 - [x] AUTH-12 PIN entry
 - [x] AUTH-13 Create a PIN
+- [x] Sign in with an unverified email: opens Verify email, no code sent
+- [x] Register: passwords differ, and the countdown on the button while the server asks to wait
+- [x] Verify email: 6 digits, the hint for an existing account, and the dead code after too many tries
+- [x] "Try again shortly" state when the server is busy (sign in, register, verify email)
 
 ### B. Overview
 
@@ -264,12 +268,12 @@ To do:
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
 - [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
 
-Authentication step (agreed with the backend, summary in [`backend-api.md`](backend-api.md) section 7). It waits until the backend merges its schema:
+Authentication step (agreed with the backend, summary in [`backend-api.md`](backend-api.md) section 7). The contract is pinned; the screens and the fake account follow it first, then the app connects to the server:
 
 - [x] Backend: merge `openapi/schema.yaml` for register, verify email, resend, sign in, refresh, sign out and profile
 - [x] Pin the schema, generate the client on a scratch copy first, and check the optional fields and the extra error members
-- [ ] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
-- [ ] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
+- [x] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
+- [x] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
 - [ ] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
 - [ ] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
 - [ ] Add the leaked-password sentence to the privacy policy and the store forms

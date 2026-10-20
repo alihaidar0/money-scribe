@@ -4,8 +4,22 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/bloc/sign_in_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 
 import '../../../support/fake_ticker.dart';
+
+/// A server that says there are too many requests, without locking the account.
+class _ThrottledAuth extends FakeAuthRepository {
+  new(DemoController demo, {this.wait = const Duration(seconds: 17)})
+    : super(demo: demo);
+
+  final Duration wait;
+
+  @override
+  Future<void> signIn({required String email, required String password}) {
+    throw RateLimitedException(RateLimitReason.throttled, wait);
+  }
+}
 
 void main() {
   late DemoController demo;
@@ -56,6 +70,62 @@ void main() {
         SignInState(status: SignInStatus.locked, lockSecondsLeft: 300),
       ],
       verify: (_) => expect(ticker.started, [300]),
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'locks too when the server only says there are too many requests',
+      build: () => SignInBloc(repository: _ThrottledAuth(demo), ticker: ticker),
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.locked, lockSecondsLeft: 17),
+      ],
+      verify: (_) => expect(ticker.started, [17]),
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'rounds a wait up to whole seconds, so it never ends early',
+      build: () => SignInBloc(
+        repository: _ThrottledAuth(
+          demo,
+          wait: const Duration(milliseconds: 1200),
+        ),
+        ticker: ticker,
+      ),
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.locked, lockSecondsLeft: 2),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'opens the code step when the address is not verified, and sends nothing',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.emailNotVerified)),
+      build: build,
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.emailNotVerified),
+      ],
+      verify: (_) {
+        expect(auth.isSignedIn, isFalse);
+        expect(auth.pendingEmail, 'a@b.c');
+        expect(auth.resendWaitRemaining, Duration.zero);
+      },
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'asks to try again shortly when the server is busy',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.unavailable)),
+      build: build,
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.unavailable),
+      ],
     );
 
     blocTest<SignInBloc, SignInState>(

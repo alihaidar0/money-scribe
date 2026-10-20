@@ -1,7 +1,7 @@
 part of 'new_password_bloc.dart';
 
 enum NewPasswordStatus {
-  /// Waiting for a password that follows the rules.
+  /// Waiting for a password typed twice.
   editing,
 
   /// The password is being saved.
@@ -20,30 +20,30 @@ enum NewPasswordStatus {
 final class NewPasswordState extends Equatable {
   const new({
     this.status = NewPasswordStatus.editing,
-    this.hasMinLength = false,
-    this.hasNumber = false,
     this.matches = false,
+    this.mismatch = false,
   });
 
   final NewPasswordStatus status;
 
-  /// The rules of the checklist under the fields.
-  final bool hasMinLength;
-  final bool hasNumber;
+  /// A password is typed and the confirmation is the same text.
   final bool matches;
 
-  /// Whether the password follows every rule and can be saved.
-  bool get isValid => hasMinLength && hasNumber && matches;
+  /// The confirmation differs from the password. Nothing typed in the
+  /// confirmation yet is not a mismatch.
+  final bool mismatch;
+
+  /// Whether the password can be saved.
+  bool get isValid => matches;
 
   NewPasswordState copyWith({NewPasswordStatus? status}) {
     return NewPasswordState(
       status: status ?? this.status,
-      hasMinLength: hasMinLength,
-      hasNumber: hasNumber,
       matches: matches,
+      mismatch: mismatch,
     );
   }
 
   @override
-  List<Object> get props => [status, hasMinLength, hasNumber, matches];
+  List<Object> get props => [status, matches, mismatch];
 }

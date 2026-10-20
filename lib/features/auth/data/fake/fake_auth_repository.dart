@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 /// An account that lives in memory, until the server exists. It accepts any
 /// email and password and any code, unless the demo panel says otherwise (see
-/// [DemoSettings]), so every screen of the flow can be reached.
+/// [DemoSettings]), so every screen of the flow can be reached. It answers the
+/// way the server does: the same waits, the same refusals.
 class FakeAuthRepository implements AuthRepository {
   new({required this._demo, this._now = DateTime.now, bool signedIn = false})
     : _isSignedIn = signedIn;
@@ -16,8 +19,14 @@ class FakeAuthRepository implements AuthRepository {
   static const maxSignInAttempts = 5;
   static const signInLockDuration = Duration(minutes: 5);
 
-  /// Wrong codes before the code expires.
-  static const maxCodeAttempts = 3;
+  /// Wrong codes before the code is dead.
+  static const maxCodeAttempts = 5;
+
+  /// How long a new code cannot be asked for after one was sent.
+  static const resendWait = Duration(seconds: 60);
+
+  /// The shortest password the demo server accepts, to show its message.
+  static const demoMinimumPasswordLength = 15;
 
   final DemoController _demo;
   final DateTime Function() _now;
@@ -27,6 +36,7 @@ class FakeAuthRepository implements AuthRepository {
   // A sample address, so the code screens have one to show when they are
   // opened from the demo panel; registering or resetting replaces it.
   String? _pendingEmail = 'alex@example.com';
+  DateTime? _resendAvailableAt;
   // The sample account the demo opens with; registering or signing in with
   // another address replaces it.
   AccountProfile _profile = const AccountProfile(
@@ -36,6 +46,7 @@ class FakeAuthRepository implements AuthRepository {
   int _wrongPasswords = 0;
   DateTime? _lockedUntil;
   int _wrongCodes = 0;
+  bool _codeDead = false;
 
   // The demo outcomes the counters above were counted for: a new outcome
   // starts counting again.
@@ -52,6 +63,14 @@ class FakeAuthRepository implements AuthRepository {
   String? get pendingEmail => _pendingEmail;
 
   @override
+  Duration get resendWaitRemaining {
+    final availableAt = _resendAvailableAt;
+    if (availableAt == null) return Duration.zero;
+    final remaining = availableAt.difference(_now());
+    return remaining > Duration.zero ? remaining : Duration.zero;
+  }
+
+  @override
   Duration? get signInLockRemaining {
     _restartCountsOnNewOutcome();
     final lockedUntil = _lockedUntil;
@@ -64,7 +83,9 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> signIn({required String email, required String password}) async {
     await _demo.simulateRequest();
     final locked = signInLockRemaining;
-    if (locked != null) throw TooManyAttemptsException(locked);
+    if (locked != null) {
+      throw RateLimitedException(RateLimitReason.signInLocked, locked);
+    }
 
     switch (_demo.settings.signIn) {
       case DemoSignIn.accepted:
@@ -79,12 +100,27 @@ class FakeAuthRepository implements AuthRepository {
         _wrongPasswords++;
         if (_wrongPasswords >= maxSignInAttempts) {
           _lockedUntil = _now().add(signInLockDuration);
-          throw const TooManyAttemptsException(signInLockDuration);
+          throw const RateLimitedException(
+            RateLimitReason.signInLocked,
+            signInLockDuration,
+          );
         }
         throw const WrongCredentialsException();
       case DemoSignIn.locked:
         _lockedUntil = _now().add(signInLockDuration);
-        throw const TooManyAttemptsException(signInLockDuration);
+        throw const RateLimitedException(
+          RateLimitReason.signInLocked,
+          signInLockDuration,
+        );
+      case DemoSignIn.emailNotVerified:
+        // No code is sent by the sign-in: the person asks for one.
+        _pendingEmail = email.trim();
+        _resendAvailableAt = null;
+        _wrongCodes = 0;
+        _codeDead = false;
+        throw const EmailNotVerifiedException();
+      case DemoSignIn.unavailable:
+        throw const ServiceUnavailableException();
     }
   }
 
@@ -95,16 +131,39 @@ class FakeAuthRepository implements AuthRepository {
     required String password,
   }) async {
     await _demo.simulateRequest();
-    if (_demo.settings.registration == DemoRegistration.rejected) {
-      throw const RegistrationRejectedException({
-        RegistrationProblem.emailTaken,
-        RegistrationProblem.passwordTooShort,
-        RegistrationProblem.passwordsDoNotMatch,
-      });
+    switch (_demo.settings.registration) {
+      case DemoRegistration.accepted:
+        break;
+      case DemoRegistration.rejected:
+        throw const RegistrationRejectedException(
+          password: PasswordProblem(
+            PasswordIssue.tooShort,
+            limit: demoMinimumPasswordLength,
+          ),
+          emailInvalid: true,
+        );
+      case DemoRegistration.tooSoon:
+        throw const RateLimitedException(
+          RateLimitReason.resendTooSoon,
+          resendWait,
+        );
+      case DemoRegistration.unavailable:
+        throw const ServiceUnavailableException();
     }
-    _pendingEmail = email;
+
+    // The wait is kept per address, like the server does: the same address
+    // again inside it is refused, whatever the answer was before.
+    final address = email.trim().toLowerCase();
+    final wait = resendWaitRemaining;
+    if (wait > Duration.zero && address == _pendingEmail?.toLowerCase()) {
+      throw RateLimitedException(RateLimitReason.resendTooSoon, wait);
+    }
+
+    _pendingEmail = email.trim();
+    _resendAvailableAt = _now().add(resendWait);
     _profile = AccountProfile(name: name.trim(), email: email.trim());
     _wrongCodes = 0;
+    _codeDead = false;
     // A new account has no data yet: the app shows its first-launch screens.
     _demo.update(_demo.settings.copyWith(scenario: DemoScenario.empty));
   }
@@ -116,29 +175,52 @@ class FakeAuthRepository implements AuthRepository {
 
     switch (_demo.settings.code) {
       case DemoCode.accepted:
+        if (_codeDead) throw const CodeExpiredException();
         _wrongCodes = 0;
         if (purpose == CodePurpose.verifyEmail) _setSignedIn(value: true);
       case DemoCode.wrong:
+        if (_codeDead) throw const CodeExpiredException();
         _wrongCodes++;
         final attemptsLeft = maxCodeAttempts - _wrongCodes;
-        if (attemptsLeft <= 0) throw const CodeExpiredException();
+        if (attemptsLeft <= 0) {
+          _killCode();
+          throw const RateLimitedException(
+            RateLimitReason.codeAttemptsExceeded,
+            resendWait,
+          );
+        }
         throw WrongCodeException(attemptsLeft);
       case DemoCode.expired:
         throw const CodeExpiredException();
+      case DemoCode.attemptsExceeded:
+        _killCode();
+        throw const RateLimitedException(
+          RateLimitReason.codeAttemptsExceeded,
+          resendWait,
+        );
+      case DemoCode.unavailable:
+        throw const ServiceUnavailableException();
     }
   }
 
   @override
   Future<void> resendCode(CodePurpose purpose) async {
     await _demo.simulateRequest();
-    _wrongCodes = 0;
+    if (_demo.settings.code == DemoCode.unavailable) {
+      throw const ServiceUnavailableException();
+    }
+    final wait = resendWaitRemaining;
+    if (wait > Duration.zero) {
+      throw RateLimitedException(RateLimitReason.resendTooSoon, wait);
+    }
+    _startNewCode();
   }
 
   @override
   Future<void> requestPasswordReset(String email) async {
     await _demo.simulateRequest();
     _pendingEmail = email;
-    _wrongCodes = 0;
+    _startNewCode();
   }
 
   @override
@@ -183,6 +265,20 @@ class FakeAuthRepository implements AuthRepository {
     }
   }
 
+  /// A new code replaces every earlier one, and a new wait starts.
+  void _startNewCode() {
+    _resendAvailableAt = _now().add(resendWait);
+    _wrongCodes = 0;
+    _codeDead = false;
+  }
+
+  /// Too many wrong codes: the code is dead, and a new one can be asked for
+  /// once the wait is over.
+  void _killCode() {
+    _codeDead = true;
+    _resendAvailableAt = _now().add(resendWait);
+  }
+
   /// Signs in as [email]: the sample account keeps its name, any other address
   /// gets a name made from it.
   void _useAccount(String email) {
@@ -216,6 +312,7 @@ class FakeAuthRepository implements AuthRepository {
     if (_countedCode != settings.code) {
       _countedCode = settings.code;
       _wrongCodes = 0;
+      _codeDead = false;
     }
   }
 }

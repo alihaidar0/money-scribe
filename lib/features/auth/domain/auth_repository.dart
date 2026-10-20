@@ -1,11 +1,16 @@
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 
-/// What a 4-digit code is for.
+/// What a 6-digit code sent by email is for.
 enum CodePurpose { verifyEmail, resetPassword }
 
-/// The account of the person using the app: sign-in, registration, the 4-digit
+/// The account of the person using the app: sign-in, registration, the 6-digit
 /// codes and the session. Every method can also throw a `DataException` when
-/// the server cannot be reached or fails.
+/// the server cannot be reached, fails, or is busy
+/// (`ServiceUnavailableException`).
+///
+/// The server decides every wait. A repository never uses a wait of its own:
+/// [resendWaitRemaining] and [signInLockRemaining] are what the server last
+/// said, counted down.
 abstract interface class AuthRepository {
   /// Whether a person is signed in.
   bool get isSignedIn;
@@ -13,28 +18,39 @@ abstract interface class AuthRepository {
   /// Emits whenever [isSignedIn] changes.
   Stream<bool> get signedInChanges;
 
-  /// The address the last 4-digit code was sent to, if any.
+  /// The address the last 6-digit code was sent to, if any.
   String? get pendingEmail;
+
+  /// How long until a new code may be asked for; [Duration.zero] when it may be
+  /// asked for now.
+  Duration get resendWaitRemaining;
 
   /// How long sign-in stays locked after too many wrong attempts, or `null`.
   Duration? get signInLockRemaining;
 
-  /// Throws `WrongCredentialsException` or `TooManyAttemptsException`.
+  /// Throws `WrongCredentialsException`, `EmailNotVerifiedException` (the
+  /// address becomes [pendingEmail] and no code is sent) or
+  /// `RateLimitedException`. The password is sent as typed: sign-in never
+  /// applies a password policy.
   Future<void> signIn({required String email, required String password});
 
-  /// Creates the account and sends a code to `email`. Throws
-  /// `RegistrationRejectedException`.
+  /// Creates the account and sends a code to `email`. The answer is the same
+  /// for a new, a pending and an already registered address. Throws
+  /// `RegistrationRejectedException`, or `RateLimitedException` when the same
+  /// address was registered a moment ago.
   Future<void> register({
     required String name,
     required String email,
     required String password,
   });
 
-  /// Throws `WrongCodeException` or `CodeExpiredException`. A correct code for
-  /// `CodePurpose.verifyEmail` also signs the person in.
+  /// Throws `WrongCodeException`, `CodeExpiredException` or
+  /// `RateLimitedException`. A correct code for `CodePurpose.verifyEmail` also
+  /// signs the person in. The code is text, so a leading zero survives.
   Future<void> verifyCode(CodePurpose purpose, String code);
 
-  /// Sends a new code to `pendingEmail`.
+  /// Sends a new code to `pendingEmail` and starts a new wait: read
+  /// [resendWaitRemaining]. Throws `RateLimitedException`.
   Future<void> resendCode(CodePurpose purpose);
 
   /// Sends a code to `email` to reset its password.

@@ -109,7 +109,6 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
                         controller: _next,
                         label: l10n.newPasswordLabel,
                         enabled: !isBusy,
-                        helperText: l10n.passwordRuleLength,
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.newPassword],
                         onChanged: _edited,

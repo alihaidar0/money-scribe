@@ -66,19 +66,32 @@ void main() {
     }
 
     blocTest<NewPasswordBloc, NewPasswordState>(
-      'ticks the rules as they are met',
+      'follows whether the two fields are the same text',
       build: build,
       act: (bloc) => bloc
         ..add(typed('abc', ''))
-        ..add(typed('abcdefgh', ''))
-        ..add(typed('abcdefg1', ''))
-        ..add(typed('abcdefg1')),
+        ..add(typed('abc', 'ab'))
+        ..add(typed('abc')),
       expect: () => const [
         NewPasswordState(),
-        NewPasswordState(hasMinLength: true),
-        NewPasswordState(hasMinLength: true, hasNumber: true),
-        NewPasswordState(hasMinLength: true, hasNumber: true, matches: true),
+        NewPasswordState(mismatch: true),
+        NewPasswordState(matches: true),
       ],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'applies no length or content rule: the server owns them',
+      build: build,
+      act: (bloc) => bloc.add(typed('x')),
+      expect: () => const [NewPasswordState(matches: true)],
+      verify: (bloc) => expect(bloc.state.isValid, isTrue),
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'spaces are part of the password: it is never trimmed',
+      build: build,
+      act: (bloc) => bloc.add(typed(' a ', 'a')),
+      expect: () => const [NewPasswordState(mismatch: true)],
     );
 
     test('empty passwords do not match', () async {
@@ -91,36 +104,21 @@ void main() {
       await pumpEventQueue();
 
       expect(bloc.state.matches, isFalse);
-    });
-
-    test('is valid only when every rule is met', () {
-      expect(const NewPasswordState().isValid, isFalse);
-      expect(
-        const NewPasswordState(
-          hasMinLength: true,
-          hasNumber: true,
-          matches: true,
-        ).isValid,
-        isTrue,
-      );
-      expect(
-        const NewPasswordState(hasMinLength: true, hasNumber: true).isValid,
-        isFalse,
-      );
+      expect(bloc.state.isValid, isFalse);
     });
 
     blocTest<NewPasswordBloc, NewPasswordState>(
-      'does not save a password that breaks a rule',
+      'does not save two fields that differ',
       build: build,
       act: (bloc) => bloc
-        ..add(typed('short'))
-        ..add(const NewPasswordSubmitted('short')),
+        ..add(typed('one', 'two'))
+        ..add(const NewPasswordSubmitted('one')),
       // Only the typing changes the state: the save is refused.
-      expect: () => const [NewPasswordState(matches: true)],
+      expect: () => const [NewPasswordState(mismatch: true)],
     );
 
     blocTest<NewPasswordBloc, NewPasswordState>(
-      'saves a valid password',
+      'saves a password typed twice',
       build: build,
       act: (bloc) async {
         bloc.add(typed('abcdefg1'));
@@ -129,18 +127,8 @@ void main() {
       },
       skip: 1,
       expect: () => const [
-        NewPasswordState(
-          status: NewPasswordStatus.saving,
-          hasMinLength: true,
-          hasNumber: true,
-          matches: true,
-        ),
-        NewPasswordState(
-          status: NewPasswordStatus.saved,
-          hasMinLength: true,
-          hasNumber: true,
-          matches: true,
-        ),
+        NewPasswordState(status: NewPasswordStatus.saving, matches: true),
+        NewPasswordState(status: NewPasswordStatus.saved, matches: true),
       ],
     );
 

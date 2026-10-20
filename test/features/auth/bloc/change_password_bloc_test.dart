@@ -33,19 +33,41 @@ void main() {
 
   group('the rules', () {
     blocTest<ChangePasswordBloc, ChangePasswordState>(
-      'a short new password cannot be saved',
+      'the app applies no length rule: only the server does',
       build: build,
       act: (bloc) => bloc.add(
         const ChangePasswordEdited(
           current: 'old',
-          next: 'short',
-          confirmation: 'short',
+          next: 'x',
+          confirmation: 'x',
         ),
       ),
       verify: (bloc) {
-        expect(bloc.state.hasMinLength, isFalse);
-        expect(bloc.state.isValid, isFalse);
+        expect(bloc.state.mismatch, isFalse);
+        expect(bloc.state.isValid, isTrue);
       },
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'an empty new password cannot be saved',
+      build: build,
+      act: (bloc) => bloc.add(
+        const ChangePasswordEdited(current: 'old', next: '', confirmation: ''),
+      ),
+      verify: (bloc) => expect(bloc.state.isValid, isFalse),
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'spaces are part of the password: it is never trimmed',
+      build: build,
+      act: (bloc) => bloc.add(
+        const ChangePasswordEdited(
+          current: 'old',
+          next: ' a b ',
+          confirmation: 'a b',
+        ),
+      ),
+      verify: (bloc) => expect(bloc.state.mismatch, isTrue),
     );
 
     blocTest<ChangePasswordBloc, ChangePasswordState>(

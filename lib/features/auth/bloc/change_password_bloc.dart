@@ -9,7 +9,8 @@ part 'change_password_event.dart';
 part 'change_password_state.dart';
 
 /// The Change password screen: the current password, and a new one typed
-/// twice.
+/// twice. The app applies no password rule of its own: the server owns the
+/// policy.
 class ChangePasswordBloc
     extends Bloc<ChangePasswordEvent, ChangePasswordState> {
   new({required this._repository}) : super(const ChangePasswordState()) {
@@ -17,9 +18,6 @@ class ChangePasswordBloc
     // A second press while the first is being saved is ignored.
     on<ChangePasswordSubmitted>(_onSubmitted, transformer: droppable());
   }
-
-  /// The fewest characters a password may have.
-  static const minLength = 8;
 
   final AuthRepository _repository;
 
