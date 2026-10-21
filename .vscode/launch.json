@@ -3,14 +3,15 @@
   "configurations": [
     {
       // The emulator runs on the host; the task connects the container's adb to
-      // it first (see scripts/connect-emulator.sh).
+      // it first (see scripts/connect-emulator.sh). The address of the server
+      // comes from .env.staging (ignored by Git; see .env.example).
       "name": "Flutter (Android — host emulator)",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
       "flutterMode": "debug",
       "deviceId": "host.docker.internal:5555",
-      "args": ["--flavor", "staging"],
+      "args": ["--flavor", "staging", "--dart-define-from-file=.env.staging"],
       "preLaunchTask": "Connect host emulator"
     },
     {
@@ -21,7 +22,11 @@
       "program": "lib/main.dart",
       "flutterMode": "debug",
       "deviceId": "host.docker.internal:5555",
-      "args": ["--flavor", "production"],
+      "args": [
+        "--flavor",
+        "production",
+        "--dart-define-from-file=.env.production"
+      ],
       "preLaunchTask": "Connect host emulator"
     },
     {

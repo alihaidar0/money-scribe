@@ -40,6 +40,11 @@ configuration for each flavor on the host emulator.
 
 The web build has no flavors: it uses `--dart-define=APP_ENV=<environment>` only.
 
+**The address of the server** (`API_BASE_URL`) is a variable of the GitHub environment and a line in
+the local, ignored file `.env.<environment>`; the signed Android build writes the file from the
+variable. An empty value means "no server": the app keeps its fake data. See
+[`backend-api.md`](backend-api.md), section 6.
+
 ## What the build does
 
 The **Build** workflow (`.github/workflows/build.yml`) decides by event:
