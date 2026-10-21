@@ -11,8 +11,14 @@
 #
 # The environment names are also the Android flavors, the GitHub environments and
 # the APP_ENV value: every build passes --dart-define=APP_ENV=<environment> (web
-# builds have no flavors); if the project has an env/<environment>.json file it is
-# passed as --dart-define-from-file as well. Read it in Dart with AppEnvironment.
+# builds have no flavors). Read it in Dart with AppEnvironment.
+#
+# The address of the server (API_BASE_URL) is a variable of the GitHub
+# environment, so only the signed Android build, which runs in that environment,
+# gets it: the job writes it to .env.<environment> (ignored by Git, never
+# printed) and passes the file with --dart-define-from-file. Test builds, the web
+# build and the iOS check have no address, so the app keeps its fake data
+# (docs/backend-api.md, section 6).
 #
 # Signing:
 #   - Pull request builds are test builds signed with the debug key; they never
@@ -52,7 +58,6 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
-      - "env/**"
       - "pubspec.yaml"
       - "pubspec.lock"
       - "android/**"
@@ -66,7 +71,6 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
-      - "env/**"
       - "pubspec.yaml"
       - "pubspec.lock"
       - "android/**"
@@ -193,9 +197,6 @@ jobs:
           APP_ENV: ${{ needs.detect.outputs.environment }}
         run: |
           args=(--release "--dart-define=APP_ENV=${APP_ENV}")
-          if [[ -f "env/${APP_ENV}.json" ]]; then
-            args+=("--dart-define-from-file=env/${APP_ENV}.json")
-          fi
           flutter build web "${args[@]}"
 
       - name: Upload Web
@@ -274,9 +275,6 @@ jobs:
           APP_ENV: ${{ needs.detect.outputs.environment }}
         run: |
           args=(--release --flavor "$APP_ENV" "--dart-define=APP_ENV=${APP_ENV}")
-          if [[ -f "env/${APP_ENV}.json" ]]; then
-            args+=("--dart-define-from-file=env/${APP_ENV}.json")
-          fi
           flutter build "$TARGET" "${args[@]}"
 
       - name: Upload ${{ matrix.name }}
@@ -361,6 +359,23 @@ jobs:
             exit 1
           fi
 
+      # The address of the server comes from the variable API_BASE_URL of the
+      # GitHub environment. It is public once the app is built, but it is kept
+      # out of the repository, so it is written here, to a file Git ignores, and
+      # never printed. An empty variable means "no server": the app keeps its
+      # fake data. Anything but a bare https address stops the build.
+      - name: Write the build configuration
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$API_BASE_URL" && ! "$API_BASE_URL" =~ ^https://[^/?#@[:space:]]+$ ]]; then
+            echo "::error::The ${APP_ENV} variable API_BASE_URL must be an https address with no path, such as https://api.example.com."
+            exit 1
+          fi
+          printf 'API_BASE_URL=%s\n' "$API_BASE_URL" > ".env.${APP_ENV}"
+
       # One APK per CPU type and the App Bundle, obfuscated. The symbol files in
       # build/symbols turn an obfuscated stack trace back into readable names.
       - name: Build signed release
@@ -368,10 +383,7 @@ jobs:
           APP_ENV: ${{ needs.detect.outputs.environment }}
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          args=(--release --flavor "$APP_ENV" "--build-number=${BUILD_NUMBER}" "--dart-define=APP_ENV=${APP_ENV}" --obfuscate --split-debug-info=build/symbols)
-          if [[ -f "env/${APP_ENV}.json" ]]; then
-            args+=("--dart-define-from-file=env/${APP_ENV}.json")
-          fi
+          args=(--release --flavor "$APP_ENV" "--build-number=${BUILD_NUMBER}" "--dart-define=APP_ENV=${APP_ENV}" "--dart-define-from-file=.env.${APP_ENV}" --obfuscate --split-debug-info=build/symbols)
           flutter build apk --split-per-abi "${args[@]}"
           flutter build appbundle "${args[@]}"
 
@@ -632,9 +644,6 @@ jobs:
           APP_ENV: ${{ needs.detect.outputs.environment }}
         run: |
           args=(--release --no-codesign "--dart-define=APP_ENV=${APP_ENV}")
-          if [[ -f "env/${APP_ENV}.json" ]]; then
-            args+=("--dart-define-from-file=env/${APP_ENV}.json")
-          fi
           flutter build ios "${args[@]}"
 
       - name: Upload iOS build

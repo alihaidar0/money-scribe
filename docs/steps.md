@@ -259,11 +259,11 @@ Done in the repository:
 To do:
 
 - [ ] Backend: first release with `openapi.yaml` attached and immutable releases on (backend repository)
-- [ ] Add the client packages with `flutter pub add`, every version pinned exactly
+- [x] Add the client packages with `flutter pub add`, every version pinned exactly
 - [ ] Create `api/BACKEND_REPO`, sign in with `gh auth login`, run `scripts/sync-api.sh vX.Y.Z`, commit `api/` and `lib/core/api/`
-- [ ] `API_BASE_URL` per environment in `env/staging.json` and `env/production.json`, and in the launch configurations
+- [x] `API_BASE_URL` per environment: ignored `.env.staging` and `.env.production`, a variable of each GitHub environment, and the launch configurations
 - [ ] Local backend: debug-only cleartext exception for the emulator; CORS and allowed hosts on the backend
-- [ ] Dio instance, token interceptor and one error parser in `core/network/`
+- [x] Dio instance, token interceptor and one error parser in `core/network/`
 - [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
 - [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
@@ -274,8 +274,9 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Pin the schema, generate the client on a scratch copy first, and check the optional fields and the extra error members
 - [x] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
 - [x] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
-- [ ] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
+- [x] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
 - [ ] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
+- [ ] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
 - [ ] Add the leaked-password sentence to the privacy policy and the store forms
 - [ ] Next request issues: reset password, change password, change email, delete account, edit name
 

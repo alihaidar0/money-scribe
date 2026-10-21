@@ -139,9 +139,10 @@ The generated client is shared code, so it lives in `core/` and follows the laye
 
 ### Tokens and errors
 
-- **Authentication** is the app's own code, outside the generated folder: a Dio `Interceptor`
-  (for example in `lib/core/network/`) that attaches the access token and refreshes it on `401`.
-  Tokens live in the platform's secure storage, never in `shared_preferences` or the repository.
+- **Authentication** is the app's own code, outside the generated folder: `AuthInterceptor` in
+  `lib/core/network/` attaches the access token and refreshes it on `401 token_expired`
+  ([`architecture.md`](architecture.md), *The network layer*). Tokens live in the platform's secure
+  storage, never in `shared_preferences` or the repository.
 - **Errors.** The backend returns one documented body for every error raised inside an API view:
 
   ```json
@@ -200,17 +201,33 @@ The generated client is shared code, so it lives in `core/` and follows the laye
 ### The base URL
 
 The URL differs per environment, so it is a build-time value and never written in the source.
-Read it with `String.fromEnvironment('API_BASE_URL')` where the Dio instance is built (next to
-`AppEnvironment`, `lib/core/environment/`), and list the name in `.env.example`.
+`ApiConfig` (`lib/core/environment/api_config.dart`) reads `API_BASE_URL` and the name is listed in
+`.env.example`. Both repositories are public, so the value is kept out of Git, in two places that
+hold the same name:
 
-- **Staging and production builds.** `build.yml` passes `--dart-define-from-file=env/<environment>.json`
-  when the file exists, for the APK, the App Bundle and the web build alike. Put the public value
-  there: `env/staging.json` with `{"API_BASE_URL": "https://..."}` and the production one in
-  `env/production.json`. A `--dart-define` value is compiled into the app and can be read from it,
-  so it must never hold a secret.
-- **Local runs.** Add the define to the arguments of the launch configurations in
-  `.vscode/launch.json` (next to `--flavor`), or pass `--dart-define=API_BASE_URL=...` to
-  `flutter run`.
+- **On your machine:** one file per environment at the root, `.env.staging` and `.env.production`.
+  Git ignores them (`.env.*`), and the tools that guard secrets refuse to read them. A new container
+  needs them created again from `.env.example`. The launch configurations, the "Run app on
+  emulator" task and `flutter run --flavor staging --dart-define-from-file=.env.staging` pass the
+  file to the build.
+- **In CI:** a variable named `API_BASE_URL` on each GitHub environment (`staging`, `production`).
+  Only the signed Android build runs in an environment, so only it gets the address: it writes
+  `.env.<environment>` from the variable, never prints it, and stops the build if the value is not a
+  bare https address. Test builds, the web build and the iOS check have none.
+
+The value is **the server only**: `https://host`, no path and no trailing slash. The generated
+client already writes `/api/v1/...` in every path, so an address with `/api/v1` would call
+`/api/v1/api/v1/...`. `ApiConfig` refuses plain HTTP (except `http://localhost`, `127.0.0.1` and
+`10.0.2.2` in a debug build), a path, a query and a login, and stops the app at start with a
+message that does not repeat the value, so a mistake is found at once.
+
+An **empty value means "no server"**. The app then keeps its fake repositories: this is how the
+production build behaves until the production backend exists, and how every test build behaves.
+
+The address is public once the app is built: it is compiled in, and obfuscation does not hide
+strings. Keeping it out of Git is about not advertising hosts in a public repository and about
+changing one without a code change. It is not a secret store: never put a key, a password or a
+token in these files.
 
 ### A backend running on your machine
 
