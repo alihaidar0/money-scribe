@@ -140,6 +140,11 @@ contract, which only a feature's `data/` imports.
   seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
   Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
   imports `core/api/`: the feature that owns the paths builds it with its generated client.
+- **`SlowRequestMonitor`** notices a request that has waited more than 5 seconds, and `MonitoredHttpAdapter`
+  tells it about every real request (below the interceptors, so a request sent again after a refresh counts
+  once). The `connection` feature turns this into a note above the screen, in staging builds only: the free
+  staging server sleeps after 15 minutes and its first request takes about a minute, while a production
+  server does not sleep. `warmUpServer` sends one `GET /healthz` at start in staging, to wake it early.
 - **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
   optional field as `null`, and the server wants it left out.
 - **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
