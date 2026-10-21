@@ -14,7 +14,8 @@ lib/
                              # BlocObserver (wires everything)
   core/                      # shared and feature-independent: money, environment, routing
                              # paths, l10n, clipboard, formatting, theme extensions, errors,
-                             # demo settings, time, widgets, the generated API client (api/)
+                             # demo settings, time, widgets, the generated API client (api/),
+                             # network (Dio, session), device, secure storage
   features/<feature>/
     domain/                  # entities, value objects, repository interfaces (plain Dart)
     data/                    # repository implementations, data sources
@@ -120,6 +121,32 @@ implementations with invented data; the device keeps only simple settings in
 - A repository throws a `DataException` (`core/errors/`) when the server cannot be reached or fails;
   a Bloc turns it into a state, and the screen shows the full-screen "No connection" or
   "Something went wrong" view (`FlowPage` keeps the form underneath, so nothing typed is lost).
+
+### The network layer
+
+`core/network/` is what every remote repository shares; `core/api/` is the client generated from the
+contract, which only a feature's `data/` imports.
+
+- **`createPlainDio` / `createAuthenticatedDio`** build the Dio of the server from `ApiConfig`
+  (`core/environment/`): JSON only, long timeouts (the free staging server wakes slowly), and no
+  logging interceptor, ever, because requests hold personal and financial data.
+- **`AuthInterceptor`** puts the access token on the requests a feature says need it and keeps the
+  session alive. Only `401 token_expired` refreshes, and the request is sent again once. One refresh
+  runs at a time, and requests that expire together wait for it. The new pair is stored before it is
+  used. A refresh whose answer is lost is sent again with the same token inside the server's 30
+  seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
+  Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
+  imports `core/api/`: the feature that owns the paths builds it with its generated client.
+- **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
+  `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
+  A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,
+  `ServiceUnavailableException` (a `503`) and `ServerException`.
+- **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
+  one value. A value that cannot be read is no session. The Android manifest turns automatic backup
+  off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.
+- **`core/device/`** describes the device for the server (a random UUID kept in the secure storage,
+  the model name, the system and app versions) and reads the time zone as an IANA name. The plugins
+  are used in one place each, behind small interfaces.
 
 ## Navigation
 
