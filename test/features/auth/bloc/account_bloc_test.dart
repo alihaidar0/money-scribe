@@ -4,6 +4,8 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 
+import '../../../support/not_available_auth_repository.dart';
+
 void main() {
   late DemoController demo;
   late FakeAuthRepository repository;
@@ -148,4 +150,17 @@ void main() {
       verify: (bloc) => expect(bloc.state.action, AccountAction.none),
     );
   });
+
+  blocTest<AccountBloc, AccountState>(
+    'deleting the account says so when the server does not offer it yet',
+    build: () => AccountBloc(
+      repository: NotAvailableAuthRepository(
+        demo: DemoController(latency: Duration.zero),
+        signedIn: true,
+      ),
+    ),
+    act: (bloc) => bloc.add(const DeleteAccountConfirmed('secret')),
+    verify: (bloc) =>
+        expect(bloc.state.action, AccountAction.deleteNotAvailable),
+  );
 }

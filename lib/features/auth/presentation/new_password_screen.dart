@@ -71,6 +71,7 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
 
         return FlowPage(
           failure: switch (state.status) {
+            NewPasswordStatus.notAvailable => FailureKind.notAvailable,
             NewPasswordStatus.noConnection => FailureKind.noConnection,
             NewPasswordStatus.failure => FailureKind.error,
             _ => null,

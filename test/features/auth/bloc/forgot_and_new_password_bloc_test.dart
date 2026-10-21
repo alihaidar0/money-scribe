@@ -6,6 +6,8 @@ import 'package:money_scribe/features/auth/bloc/forgot_password_bloc.dart';
 import 'package:money_scribe/features/auth/bloc/new_password_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 
+import '../../../support/not_available_auth_repository.dart';
+
 void main() {
   late DemoController demo;
   late FakeAuthRepository auth;
@@ -171,6 +173,36 @@ void main() {
         ),
       ],
       errors: () => [isA<ServerException>()],
+    );
+  });
+
+  group('a server that does not offer it yet', () {
+    blocTest<ForgotPasswordBloc, ForgotPasswordState>(
+      'the reset code is reported as not available',
+      build: () => ForgotPasswordBloc(
+        repository: NotAvailableAuthRepository(demo: demo),
+      ),
+      act: (bloc) => bloc.add(const ForgotPasswordSubmitted('me@b.c')),
+      expect: () => const [
+        ForgotPasswordState(status: ForgotPasswordStatus.submitting),
+        ForgotPasswordState(status: ForgotPasswordStatus.notAvailable),
+      ],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'saving the new password is reported as not available',
+      build: () =>
+          NewPasswordBloc(repository: NotAvailableAuthRepository(demo: demo)),
+      act: (bloc) async {
+        bloc.add(const NewPasswordChanged(password: 'x', confirmation: 'x'));
+        await pumpEventQueue();
+        bloc.add(const NewPasswordSubmitted('x'));
+      },
+      skip: 1,
+      expect: () => const [
+        NewPasswordState(status: NewPasswordStatus.saving, matches: true),
+        NewPasswordState(status: NewPasswordStatus.notAvailable, matches: true),
+      ],
     );
   });
 }

@@ -49,6 +49,8 @@ class ChangePasswordBloc
       emit(state.copyWith(status: ChangePasswordStatus.saved));
     } on WrongCredentialsException {
       emit(state.copyWith(status: ChangePasswordStatus.wrongCurrent));
+    } on FeatureNotAvailableException {
+      emit(state.copyWith(status: ChangePasswordStatus.notAvailable));
     } on NoConnectionException {
       emit(state.copyWith(status: ChangePasswordStatus.noConnection));
     } on Exception catch (error, stackTrace) {

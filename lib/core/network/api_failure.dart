@@ -52,13 +52,18 @@ final class ApiFailure {
     this.items = const [],
     this.retryAfter,
     this.reachedServer = true,
+    this.cause,
   });
 
   /// Reads the answer of the server, or notes that there was none.
   factory from(DioException error) {
     final response = error.response;
+    final cause = error.error;
     if (response == null) {
-      return const ApiFailure(reachedServer: false);
+      return ApiFailure(
+        reachedServer: false,
+        cause: cause is DataException ? cause : null,
+      );
     }
     return ApiFailure(
       statusCode: response.statusCode,
@@ -81,6 +86,10 @@ final class ApiFailure {
   /// timeout or any failure before an answer.
   final bool reachedServer;
 
+  /// A failure that was not the network's (the secure storage, an answer that
+  /// broke the contract), already worded as the exception to report.
+  final DataException? cause;
+
   /// The first error of the body, which names the problem.
   ApiErrorItem? get first => items.isEmpty ? null : items.first;
 
@@ -100,6 +109,8 @@ final class ApiFailure {
   /// The failure as the exceptions every repository shares: no connection, a
   /// busy server (`503`), or a server that failed.
   DataException toDataException() {
+    final cause = this.cause;
+    if (cause != null) return cause;
     if (!reachedServer) return const NoConnectionException();
     if (statusCode == 503) return const ServiceUnavailableException();
     return const ServerException();

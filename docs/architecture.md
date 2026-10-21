@@ -121,6 +121,9 @@ implementations with invented data; the device keeps only simple settings in
 - A repository throws a `DataException` (`core/errors/`) when the server cannot be reached or fails;
   a Bloc turns it into a state, and the screen shows the full-screen "No connection" or
   "Something went wrong" view (`FlowPage` keeps the form underneath, so nothing typed is lost).
+  The other kinds are "The service is busy" (`ServiceUnavailableException`, a `503`) and "Not available
+  yet" (`FeatureNotAvailableException`: the screen exists and the server side is still to come; the
+  only way out is Go back).
 
 ### The network layer
 
@@ -137,6 +140,8 @@ contract, which only a feature's `data/` imports.
   seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
   Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
   imports `core/api/`: the feature that owns the paths builds it with its generated client.
+- **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
+  optional field as `null`, and the server wants it left out.
 - **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
   `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
   A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,

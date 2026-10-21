@@ -40,6 +40,8 @@ class NewPasswordBloc extends Bloc<NewPasswordEvent, NewPasswordState> {
     try {
       await _repository.resetPassword(event.password);
       emit(state.copyWith(status: NewPasswordStatus.saved));
+    } on FeatureNotAvailableException {
+      emit(state.copyWith(status: NewPasswordStatus.notAvailable));
     } on NoConnectionException {
       emit(state.copyWith(status: NewPasswordStatus.noConnection));
     } on Exception catch (error, stackTrace) {

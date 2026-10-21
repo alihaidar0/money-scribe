@@ -62,6 +62,7 @@ class _ForgotPasswordViewState extends State<_ForgotPasswordView> {
 
         return FlowPage(
           failure: switch (state.status) {
+            ForgotPasswordStatus.notAvailable => FailureKind.notAvailable,
             ForgotPasswordStatus.noConnection => FailureKind.noConnection,
             ForgotPasswordStatus.failure => FailureKind.error,
             _ => null,

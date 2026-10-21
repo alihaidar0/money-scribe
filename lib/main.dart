@@ -1,11 +1,21 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/app/bloc/app_bloc_observer.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/device/platform_device_info_source.dart';
+import 'package:money_scribe/core/device/time_zone_source.dart';
+import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/network/token_store.dart';
+import 'package:money_scribe/core/storage/secure_value_store.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
+import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
@@ -30,18 +40,27 @@ Future<void> main() async {
   );
   final pushMessaging = await createPushMessagingRepository();
 
-  // The server does not exist yet: the account and the pay schedule are fake
-  // and live in memory. Connecting the server replaces them here and deletes
-  // their `data/fake/` folders (`docs/architecture.md`).
-  final demo = DemoController();
+  // A build with a server address (`API_BASE_URL`) has the real account; one
+  // without keeps the fake one. Everything else is still fake and lives in
+  // memory: connecting a feature replaces it here and deletes its `data/fake/`
+  // folder (`docs/architecture.md`). A wrong address stops the app here, with
+  // a message, rather than falling back to fake data.
+  final apiConfig = ApiConfig.current;
+  final demo = DemoController(fakeAccount: apiConfig == null);
   final transactions = FakeTransactionsRepository(demo: demo);
+  final languageRepository = SharedPreferencesLanguageRepository(preferences);
+  final authRepository = await _createAuthRepository(
+    apiConfig: apiConfig,
+    demo: demo,
+    languageRepository: languageRepository,
+  );
 
   runApp(
     MoneyScribeApp(
-      languageRepository: SharedPreferencesLanguageRepository(preferences),
+      languageRepository: languageRepository,
       themeRepository: SharedPreferencesThemeRepository(preferences),
       pushMessagingRepository: pushMessaging,
-      authRepository: FakeAuthRepository(demo: demo),
+      authRepository: authRepository,
       appLockRepository: FakeAppLockRepository(),
       payScheduleRepository: FakePayScheduleRepository(demo: demo),
       defaultCurrencyRepository: FakeDefaultCurrencyRepository(demo: demo),
@@ -64,4 +83,34 @@ Future<void> main() async {
       environment: AppEnvironment.current,
     ),
   );
+}
+
+/// The account of this build: the real one when there is a server address,
+/// else the fake one.
+Future<AuthRepository> _createAuthRepository({
+  required ApiConfig? apiConfig,
+  required DemoController demo,
+  required SharedPreferencesLanguageRepository languageRepository,
+}) async {
+  if (apiConfig == null) return FakeAuthRepository(demo: demo);
+
+  const secureStore = PlatformSecureValueStore();
+  final remote = RemoteAuth.create(
+    config: apiConfig,
+    tokens: const SecureTokenStore(secureStore),
+    device: PlatformDeviceInfoSource(secureStore),
+    timeZone: const PlatformTimeZoneSource(),
+    language: () {
+      // The server knows English and Arabic; any other language is English.
+      final locale =
+          languageRepository.read().locale ??
+          PlatformDispatcher.instance.locale;
+      return locale.languageCode == 'ar' ? 'ar' : 'en';
+    },
+  );
+  // The session of the last run, from the secure storage: no network, so the
+  // app opens on the right screen. The server is asked in the background.
+  await remote.repository.restore();
+  unawaited(remote.repository.validateSession());
+  return remote.repository;
 }

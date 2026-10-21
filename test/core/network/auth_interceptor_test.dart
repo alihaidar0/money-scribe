@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
 import 'package:money_scribe/core/network/token_store.dart';
@@ -475,7 +477,13 @@ void main() {
 
       await expectLater(
         dio.get<void>('/api/v1/things/'),
-        throwsA(isA<DioException>()),
+        throwsA(
+          isA<DioException>().having(
+            (error) => ApiFailure.from(error).toDataException(),
+            'reported as',
+            isA<ServerException>(),
+          ),
+        ),
       );
     });
   });

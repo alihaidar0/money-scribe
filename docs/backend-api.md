@@ -266,12 +266,14 @@ Release builds, staging and production included, keep the default (HTTPS only). 
 the approach in its
 [network policy](https://docs.flutter.dev/release/breaking-changes/network-policy-ios-android) note.
 
-## 7. Authentication (contract pinned, app not connected yet)
+## 7. Authentication (connected)
 
 The first API step is authentication: register, verify email, resend the code, sign in, refresh, sign
 out and read the profile. It was agreed with the backend in `alihaidar0/money-scribe-backend#13`. The
 contract is pinned (`api/BACKEND_VERSION` says at which backend commit) and **the contract wins** over
-this summary. The app is not connected yet: the screens still use the fake repository.
+this summary. A build with a server address (`API_BASE_URL`, section 6) uses the real account,
+`RemoteAuthRepository`; a build without one keeps the fake repository. The rest of the app is still
+fake.
 
 All paths are under `/api/v1/auth/`.
 
@@ -336,6 +338,10 @@ All paths are under `/api/v1/auth/`.
 - **Refresh.** Only `401 token_expired` triggers it. One refresh runs at a time. The new pair is stored
   before it is used, and a lost response is retried once with the same token (the server accepts it for
   30 seconds). Any failure of refresh other than a `401` keeps the tokens.
+- **Session restore.** The tokens are read from the secure storage before the first screen, with no
+  network, so the app opens on the right screen. The server is then asked about the session once, in the
+  background (the profile): a session it ended signs the person out, a lost connection keeps them
+  signed in.
 - **Sign out** clears the tokens on the device even if the call fails. The app sends the refresh token
   in the body: then the only possible `401` is `token_invalid`, and a session that has already ended
   answers `204`, so no refresh is needed first. Sent with the access token alone, an already ended
@@ -359,12 +365,27 @@ against a public list of leaked passwords without sending the password or its fu
 ### Not covered yet
 
 Reset password, change password, change email, delete account and edit name come as their own request
-issues in the next step. The profile call is part of this step.
+issues in the next step. The profile call is part of this step. Until they exist, the real account
+answers `FeatureNotAvailableException` for resetting and changing a password and for deleting the
+account, and each of those screens shows "Not available yet" with a Go back button.
 
-### What the app needs for this step
+### What the app uses for this step
 
-Secure storage for the tokens and the device id, device and app version information, and the time zone
-name. Each is a package added with `flutter pub add` at an exact version (the owner runs it).
+Secure storage for the tokens and the device id (`flutter_secure_storage`), the device model and system
+version (`device_info_plus`), the app version (`package_info_plus`) and the time zone name
+(`flutter_timezone`), all at exact versions. The code is in `core/storage/`, `core/device/` and
+`core/network/` ([`architecture.md`](architecture.md), *The network layer*), and in
+`features/auth/data/remote/`.
+
+### Notes on the generated client
+
+- **Missing optional fields.** The generated models write a field they do not have as `null`
+  (`"time_zone": null`), but the server wants it left out. `OmitNullsInterceptor` drops every `null` from a
+  request body, so no generated file is edited.
+- **`Retry-After`** is not returned by the generated methods: the data layer reads it from the failed
+  call (`ApiFailure`). A `429` without it (the contract says it always has one) gets a wait of 30
+  seconds, so the screen never counts down from zero.
+- **The platform** is only `android` or `ios`; the contract lists `web`, which the app never sends.
 
 ## Checklist for a change that touches the API
 

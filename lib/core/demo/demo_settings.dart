@@ -110,10 +110,16 @@ class DemoController {
   new({
     DemoSettings initial = const DemoSettings(),
     this.latency = const Duration(milliseconds: 500),
+    this.fakeAccount = true,
   }) : _settings = initial;
 
   /// How long a fake request takes, so loading states can be seen.
   final Duration latency;
+
+  /// Whether the account (sign in, register, the codes) is fake. A build with
+  /// a server address has the real account, so the switches that force its
+  /// answers do nothing and the demo panel leaves them out.
+  final bool fakeAccount;
 
   final _changes = StreamController<DemoSettings>.broadcast();
   final _scheduleChanges = StreamController<void>.broadcast();

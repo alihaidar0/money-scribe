@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
+import 'package:money_scribe/core/network/omit_nulls_interceptor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 
 /// The time a request may take. The free staging server sleeps after 15
@@ -12,14 +13,15 @@ abstract final class ApiTimeouts {
   static const receive = Duration(seconds: 90);
 }
 
-/// A Dio for the server, with no interceptors. It talks JSON only. It is the
+/// A Dio for the server, with no session handling. It talks JSON only and
+/// leaves out any field that is `null` (see [OmitNullsInterceptor]). It is the
 /// Dio of the calls that need no token (register, sign in, the code calls) and
 /// of the refresh itself.
 ///
 /// Nothing is logged: requests and answers hold personal and financial data,
 /// so no logging interceptor is ever added.
 Dio createPlainDio(ApiConfig config) {
-  return Dio(
+  final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl,
       connectTimeout: ApiTimeouts.connect,
@@ -29,6 +31,8 @@ Dio createPlainDio(ApiConfig config) {
       headers: {Headers.acceptHeader: Headers.jsonContentType},
     ),
   );
+  dio.interceptors.add(const OmitNullsInterceptor());
+  return dio;
 }
 
 /// A Dio that sends the access token and keeps the session alive (see

@@ -183,6 +183,18 @@
   "@unavailableMessage": {
     "description": "Sentence under the title of the busy state."
   },
+  "notAvailableTitle": "Not available yet",
+  "@notAvailableTitle": {
+    "description": "Title of the full-screen state shown when the server does not offer a feature yet, such as resetting a password."
+  },
+  "notAvailableMessage": "This part of your account is not ready on the server yet. It will be added soon.",
+  "@notAvailableMessage": {
+    "description": "Sentence under the title of the not available yet state."
+  },
+  "goBackAction": "Go back",
+  "@goBackAction": {
+    "description": "Button of the not available yet state that returns to the previous screen."
+  },
   "continueAction": "Continue",
   "@continueAction": {
     "description": "Button that moves to the next step of a flow."
@@ -1704,6 +1716,10 @@
   "deleteMyAccountFailed": "Couldn''t delete your account. Check your connection and try again.",
   "@deleteMyAccountFailed": {
     "description": "Banner in the delete account dialog when the server could not be reached or failed."
+  },
+  "deleteMyAccountNotAvailable": "Deleting your account is not available yet.",
+  "@deleteMyAccountNotAvailable": {
+    "description": "Banner in the delete account dialog when the server does not offer deleting an account yet."
   },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
