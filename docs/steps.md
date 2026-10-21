@@ -120,6 +120,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Register: passwords differ, and the countdown on the button while the server asks to wait
 - [x] Verify email: 6 digits, the hint for an existing account, and the dead code after too many tries
 - [x] "Try again shortly" state when the server is busy (sign in, register, verify email)
+- [x] "Not available yet" state for resetting or changing a password and deleting the account, until the server offers them
 
 ### B. Overview
 
@@ -275,7 +276,8 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
 - [x] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
 - [x] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
-- [ ] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
+- [x] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
+- [ ] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
 - [ ] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
 - [ ] Add the leaked-password sentence to the privacy policy and the store forms
 - [ ] Next request issues: reset password, change password, change email, delete account, edit name
