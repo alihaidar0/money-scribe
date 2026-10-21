@@ -19,6 +19,9 @@ import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/connection/bloc/server_wake_bloc.dart';
+import 'package:money_scribe/features/connection/domain/server_activity.dart';
+import 'package:money_scribe/features/connection/presentation/server_wake_banner.dart';
 import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/domain/overview_repository.dart';
@@ -61,6 +64,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.reportsRepository,
     required this.demo,
     required this.environment,
+    this.serverActivity,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
     this.clock = const SystemClock(),
@@ -88,6 +92,11 @@ class MoneyScribeApp extends StatefulWidget {
   final DemoController demo;
 
   final AppEnvironment environment;
+
+  /// How fast the server answers. `null` for a build with no server. Staging
+  /// builds use it to tell the person the free server is starting.
+  final ServerActivity? serverActivity;
+
   final TextClipboard textClipboard;
   final Ticker ticker;
   final Clock clock;
@@ -117,6 +126,11 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
     _signInChanges.dispose();
     super.dispose();
   }
+
+  /// Whether to tell the person that the server is starting: only staging
+  /// builds have a server that sleeps, and only a build with a server.
+  bool get _showServerNotice =>
+      widget.serverActivity != null && !widget.environment.isProduction;
 
   @override
   Widget build(BuildContext context) {
@@ -152,8 +166,14 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
             BlocProvider(
               create: (_) => ThemeBloc(repository: widget.themeRepository),
             ),
+            if (_showServerNotice)
+              BlocProvider(
+                create: (_) =>
+                    ServerWakeBloc(activity: widget.serverActivity!)
+                      ..add(const ServerWakeStarted()),
+              ),
           ],
-          child: _AppView(router: _router),
+          child: _AppView(router: _router, showServerNotice: _showServerNotice),
         ),
       ),
     );
@@ -161,9 +181,10 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
 }
 
 class _AppView extends StatelessWidget {
-  const new({required this.router});
+  const new({required this.router, required this.showServerNotice});
 
   final GoRouter router;
+  final bool showServerNotice;
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +222,7 @@ class _AppView extends StatelessWidget {
                 child: Stack(
                   children: [
                     child!,
+                    if (showServerNotice) const ServerWakeBanner(),
                     if (showDemoPanel) DemoHandle(onPressed: _openDemoPanel),
                   ],
                 ),

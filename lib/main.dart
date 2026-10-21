@@ -10,12 +10,16 @@ import 'package:money_scribe/core/device/platform_device_info_source.dart';
 import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/network/dio_factory.dart';
+import 'package:money_scribe/core/network/server_warm_up.dart';
+import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/storage/secure_value_store.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/connection/data/monitored_server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
@@ -49,11 +53,19 @@ Future<void> main() async {
   final demo = DemoController(fakeAccount: apiConfig == null);
   final transactions = FakeTransactionsRepository(demo: demo);
   final languageRepository = SharedPreferencesLanguageRepository(preferences);
+  final monitor = SlowRequestMonitor();
   final authRepository = await _createAuthRepository(
     apiConfig: apiConfig,
     demo: demo,
     languageRepository: languageRepository,
+    monitor: monitor,
   );
+  // The free staging server sleeps after 15 minutes without a request: one
+  // request at start wakes it, so it is often awake when the person signs in.
+  // A production server does not sleep, so it is not asked.
+  if (apiConfig != null && !AppEnvironment.current.isProduction) {
+    unawaited(warmUpServer(createPlainDio(apiConfig, monitor: monitor)));
+  }
 
   runApp(
     MoneyScribeApp(
@@ -81,6 +93,9 @@ Future<void> main() async {
       reportsRepository: FakeReportsRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,
+      serverActivity: apiConfig == null
+          ? null
+          : MonitoredServerActivity(monitor),
     ),
   );
 }
@@ -91,6 +106,7 @@ Future<AuthRepository> _createAuthRepository({
   required ApiConfig? apiConfig,
   required DemoController demo,
   required SharedPreferencesLanguageRepository languageRepository,
+  required SlowRequestMonitor monitor,
 }) async {
   if (apiConfig == null) return FakeAuthRepository(demo: demo);
 
@@ -100,6 +116,7 @@ Future<AuthRepository> _createAuthRepository({
     tokens: const SecureTokenStore(secureStore),
     device: PlatformDeviceInfoSource(secureStore),
     timeZone: const PlatformTimeZoneSource(),
+    monitor: monitor,
     language: () {
       // The server knows English and Arabic; any other language is English.
       final locale =

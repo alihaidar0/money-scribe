@@ -8,6 +8,7 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
@@ -45,6 +46,7 @@ Widget buildApp({
   Clock? clock,
   bool signedIn = false,
   AppEnvironment environment = AppEnvironment.staging,
+  ServerActivity? serverActivity,
 }) {
   final demoController = demo ?? DemoController(latency: Duration.zero);
   final transactions = FakeTransactionsRepository(demo: demoController);
@@ -82,5 +84,6 @@ Widget buildApp({
     ticker: ticker ?? FakeTicker(),
     clock: clock ?? FixedClock(DateTime(2026, 10, 11)),
     environment: environment,
+    serverActivity: serverActivity,
   );
 }

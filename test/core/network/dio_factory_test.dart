@@ -4,6 +4,7 @@ import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
+import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 
 import '../../support/in_memory_secure_value_store.dart';
@@ -35,6 +36,19 @@ void main() {
       expect(dio.options.sendTimeout, const Duration(seconds: 30));
     });
 
+    test('watches every request when given a monitor', () {
+      final dio = createPlainDio(config, monitor: SlowRequestMonitor());
+
+      expect(dio.httpClientAdapter, isA<MonitoredHttpAdapter>());
+    });
+
+    test('does not watch requests without a monitor', () {
+      expect(
+        createPlainDio(config).httpClientAdapter,
+        isNot(isA<MonitoredHttpAdapter>()),
+      );
+    });
+
     test('has no session interceptor and no logging', () {
       final interceptors = createPlainDio(config).interceptors;
 
@@ -60,6 +74,19 @@ void main() {
       expect(interceptors.whereType<AuthInterceptor>(), hasLength(1));
       // Requests and answers hold personal and financial data.
       expect(interceptors.whereType<LogInterceptor>(), isEmpty);
+    });
+
+    test('watches every request when given a monitor', () {
+      final dio = createAuthenticatedDio(
+        config: config,
+        tokens: SecureTokenStore(InMemorySecureValueStore()),
+        refresh: (token) async =>
+            const SessionTokens(accessToken: 'a', refreshToken: 'r'),
+        needsAuth: (options) => true,
+        monitor: SlowRequestMonitor(),
+      );
+
+      expect(dio.httpClientAdapter, isA<MonitoredHttpAdapter>());
     });
 
     test('shares the settings of the plain one', () {

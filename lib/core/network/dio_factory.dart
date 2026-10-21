@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
 import 'package:money_scribe/core/network/omit_nulls_interceptor.dart';
+import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 
 /// The time a request may take. The free staging server sleeps after 15
@@ -18,9 +19,12 @@ abstract final class ApiTimeouts {
 /// Dio of the calls that need no token (register, sign in, the code calls) and
 /// of the refresh itself.
 ///
+/// With a [monitor], every request that goes out is watched, so the app can
+/// tell the person when the server is slow to answer.
+///
 /// Nothing is logged: requests and answers hold personal and financial data,
 /// so no logging interceptor is ever added.
-Dio createPlainDio(ApiConfig config) {
+Dio createPlainDio(ApiConfig config, {SlowRequestMonitor? monitor}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl,
@@ -32,6 +36,12 @@ Dio createPlainDio(ApiConfig config) {
     ),
   );
   dio.interceptors.add(const OmitNullsInterceptor());
+  if (monitor != null) {
+    dio.httpClientAdapter = MonitoredHttpAdapter(
+      dio.httpClientAdapter,
+      monitor,
+    );
+  }
   return dio;
 }
 
@@ -44,8 +54,9 @@ Dio createAuthenticatedDio({
   required RefreshSession refresh,
   required bool Function(RequestOptions options) needsAuth,
   SessionEnded? onSessionEnded,
+  SlowRequestMonitor? monitor,
 }) {
-  final dio = createPlainDio(config);
+  final dio = createPlainDio(config, monitor: monitor);
   dio.interceptors.add(
     AuthInterceptor(
       dio: dio,
