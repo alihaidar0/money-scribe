@@ -33,9 +33,13 @@ class DemoPanelScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
-              const _Note(
-                'Staging builds only. The server does not exist yet, so '
-                'these switches decide what the fake data answers.',
+              _Note(
+                demo.fakeAccount
+                    ? 'Staging builds only. The server does not exist yet, so '
+                          'these switches decide what the fake data answers.'
+                    : 'Staging builds only. The account is on the real '
+                          'server; these switches decide what the fake data '
+                          'of the other screens answers.',
               ),
               const _Heading('Language'),
               const _LanguagePicker(),
@@ -57,30 +61,32 @@ class DemoPanelScreen extends StatelessWidget {
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(paymentMode: value)),
               ),
-              const _Heading('Sign in, next attempt'),
-              _Choice<DemoSignIn>(
-                values: DemoSignIn.values,
-                selected: settings.signIn,
-                label: _signInLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(signIn: value)),
-              ),
-              const _Heading('Create account, next attempt'),
-              _Choice<DemoRegistration>(
-                values: DemoRegistration.values,
-                selected: settings.registration,
-                label: _registrationLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(registration: value)),
-              ),
-              const _Heading('6-digit codes and new codes'),
-              _Choice<DemoCode>(
-                values: DemoCode.values,
-                selected: settings.code,
-                label: _codeLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(code: value)),
-              ),
+              if (demo.fakeAccount) ...[
+                const _Heading('Sign in, next attempt'),
+                _Choice<DemoSignIn>(
+                  values: DemoSignIn.values,
+                  selected: settings.signIn,
+                  label: _signInLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(signIn: value)),
+                ),
+                const _Heading('Create account, next attempt'),
+                _Choice<DemoRegistration>(
+                  values: DemoRegistration.values,
+                  selected: settings.registration,
+                  label: _registrationLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(registration: value)),
+                ),
+                const _Heading('6-digit codes and new codes'),
+                _Choice<DemoCode>(
+                  values: DemoCode.values,
+                  selected: settings.code,
+                  label: _codeLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(code: value)),
+                ),
+              ],
               const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
                 values: DemoSave.values,
