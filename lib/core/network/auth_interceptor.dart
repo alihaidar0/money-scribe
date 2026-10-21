@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
 import 'package:money_scribe/core/network/token_store.dart';
@@ -128,8 +129,14 @@ class AuthInterceptor extends Interceptor {
     } on DioException catch (error) {
       handler.next(error);
     } on Object catch (error) {
-      // The secure storage failed: report it as a failed request.
-      handler.next(DioException(requestOptions: request, error: error));
+      // The secure storage failed, or the refresh answer broke the contract:
+      // a failed request, but not a lost connection.
+      handler.next(
+        DioException(
+          requestOptions: request,
+          error: error is DataException ? error : const ServerException(),
+        ),
+      );
     }
   }
 

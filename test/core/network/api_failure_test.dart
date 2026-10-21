@@ -119,6 +119,25 @@ void main() {
       expect(failure.toDataException(), isA<NoConnectionException>());
     });
 
+    test('a failure that was not the network carries its own cause', () {
+      final failure = ApiFailure.from(
+        DioException(
+          requestOptions: _options,
+          error: const ServiceUnavailableException(),
+        ),
+      );
+
+      expect(failure.toDataException(), isA<ServiceUnavailableException>());
+    });
+
+    test('an unknown error with no cause is a lost connection', () {
+      final failure = ApiFailure.from(
+        DioException(requestOptions: _options, error: StateError('x')),
+      );
+
+      expect(failure.toDataException(), isA<NoConnectionException>());
+    });
+
     test('a 503 is a busy server', () {
       expect(
         ApiFailure.from(failedCall(503)).toDataException(),
