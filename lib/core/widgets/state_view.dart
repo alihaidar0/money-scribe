@@ -13,6 +13,10 @@ enum FailureKind {
   /// The server is busy and refused the request before changing anything:
   /// asking again shortly is safe.
   unavailable,
+
+  /// The server does not offer this yet. Trying again does not help: the only
+  /// way out is back.
+  notAvailable,
 }
 
 /// A centred icon, title, sentence and one button: the pattern of every
@@ -87,7 +91,8 @@ class StateView extends StatelessWidget {
 }
 
 /// The full-screen state for a failure: "No connection", "Something went
-/// wrong" or "The service is busy", each with a "Try again" button.
+/// wrong" or "The service is busy", each with a "Try again" button, or "Not
+/// available yet", with a "Go back" button.
 class FailureView extends StatelessWidget {
   const new({
     required this.kind,
@@ -129,6 +134,13 @@ class FailureView extends StatelessWidget {
         message: l10n.unavailableMessage,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
+      ),
+      FailureKind.notAvailable => StateView(
+        icon: Icons.construction_outlined,
+        title: l10n.notAvailableTitle,
+        message: l10n.notAvailableMessage,
+        actionLabel: l10n.goBackAction,
+        onAction: () => Navigator.of(context).maybePop(),
       ),
     };
   }

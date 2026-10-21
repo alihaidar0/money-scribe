@@ -34,6 +34,9 @@ enum AccountAction {
   /// The server could not be reached, or failed, so the account is still there.
   deleteFailed,
 
+  /// The server does not offer deleting an account yet, so it is still there.
+  deleteNotAvailable,
+
   /// The account was deleted.
   deleted,
 }

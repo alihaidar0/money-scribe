@@ -95,6 +95,14 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
+                if (state.action == AccountAction.deleteNotAvailable) ...[
+                  MessageBanner(
+                    icon: Icons.construction_outlined,
+                    text: l10n.deleteMyAccountNotAvailable,
+                    tone: BannerTone.info,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 PasswordField(
                   controller: _password,
                   label: l10n.passwordLabel,

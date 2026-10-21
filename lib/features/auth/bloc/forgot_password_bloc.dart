@@ -25,6 +25,10 @@ class ForgotPasswordBloc
     try {
       await _repository.requestPasswordReset(event.email);
       emit(const ForgotPasswordState(status: ForgotPasswordStatus.success));
+    } on FeatureNotAvailableException {
+      emit(
+        const ForgotPasswordState(status: ForgotPasswordStatus.notAvailable),
+      );
     } on NoConnectionException {
       emit(
         const ForgotPasswordState(status: ForgotPasswordStatus.noConnection),

@@ -4,6 +4,8 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/bloc/change_password_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 
+import '../../../support/not_available_auth_repository.dart';
+
 void main() {
   late DemoController demo;
 
@@ -168,4 +170,18 @@ void main() {
       verify: (bloc) => expect(bloc.state.status, ChangePasswordStatus.failure),
     );
   });
+
+  blocTest<ChangePasswordBloc, ChangePasswordState>(
+    'a server that does not offer it yet says so',
+    build: () => ChangePasswordBloc(
+      repository: NotAvailableAuthRepository(demo: demo, signedIn: true),
+    ),
+    act: (bloc) async {
+      bloc.add(valid);
+      await pumpEventQueue();
+      bloc.add(const ChangePasswordSubmitted());
+    },
+    verify: (bloc) =>
+        expect(bloc.state.status, ChangePasswordStatus.notAvailable),
+  );
 }

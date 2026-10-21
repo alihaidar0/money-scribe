@@ -74,6 +74,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
       },
       builder: (context, state) {
         final failure = switch (state.status) {
+          ChangePasswordStatus.notAvailable => FailureKind.notAvailable,
           ChangePasswordStatus.noConnection => FailureKind.noConnection,
           ChangePasswordStatus.failure => FailureKind.error,
           _ => null,

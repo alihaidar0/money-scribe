@@ -13,6 +13,9 @@ enum ChangePasswordStatus {
   /// The current password is not the password.
   wrongCurrent,
 
+  /// The server does not offer this yet: there is nothing to try again.
+  notAvailable,
+
   /// The server could not be reached.
   noConnection,
 

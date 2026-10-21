@@ -67,6 +67,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       emit(state.copyWith(action: AccountAction.deleted));
     } on WrongCredentialsException {
       emit(state.copyWith(action: AccountAction.wrongPassword));
+    } on FeatureNotAvailableException {
+      emit(state.copyWith(action: AccountAction.deleteNotAvailable));
     } on NoConnectionException {
       emit(state.copyWith(action: AccountAction.deleteFailed));
     } on Exception catch (error, stackTrace) {

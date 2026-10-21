@@ -21,6 +21,16 @@ final class ServerException extends DataException {
   String toString() => 'ServerException';
 }
 
+/// The server does not offer this yet: the screen exists, the server side is
+/// still to come (resetting or changing a password, deleting the account). It
+/// goes away with the server's own endpoint, and no retry helps.
+final class FeatureNotAvailableException extends DataException {
+  const new();
+
+  @override
+  String toString() => 'FeatureNotAvailableException';
+}
+
 /// The server is working but cannot take the request right now (the answer
 /// `503`). It refused the request before changing anything, so asking again
 /// shortly is safe.

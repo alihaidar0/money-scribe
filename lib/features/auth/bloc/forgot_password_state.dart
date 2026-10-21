@@ -10,6 +10,9 @@ enum ForgotPasswordStatus {
   /// The code was sent.
   success,
 
+  /// The server does not offer this yet: there is nothing to try again.
+  notAvailable,
+
   /// The server could not be reached.
   noConnection,
 
