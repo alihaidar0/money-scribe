@@ -4,6 +4,7 @@ import 'package:money_scribe/core/device/device_info.dart';
 import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
+import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth_repository.dart';
@@ -27,7 +28,8 @@ final class RemoteAuth {
 
   /// Wires the repository and the client to each other: the client renews the
   /// session through the repository, and the repository hears when the server
-  /// ended it. [httpAdapter] replaces the network, for tests.
+  /// ended it. A [monitor] watches every request. [httpAdapter] replaces the
+  /// network, for tests.
   factory create({
     required ApiConfig config,
     required TokenStore tokens,
@@ -35,9 +37,10 @@ final class RemoteAuth {
     required TimeZoneSource timeZone,
     required String Function() language,
     Clock clock = const SystemClock(),
+    SlowRequestMonitor? monitor,
     HttpClientAdapter? httpAdapter,
   }) {
-    final plain = createPlainDio(config);
+    final plain = createPlainDio(config, monitor: monitor);
     late final RemoteAuthRepository repository;
     final dio = createAuthenticatedDio(
       config: config,
@@ -45,10 +48,14 @@ final class RemoteAuth {
       refresh: (refreshToken) => repository.refreshSession(refreshToken),
       needsAuth: (options) => !authPublicPaths.contains(options.path),
       onSessionEnded: (code) => repository.sessionEnded(code),
+      monitor: monitor,
     );
     if (httpAdapter != null) {
-      plain.httpClientAdapter = httpAdapter;
-      dio.httpClientAdapter = httpAdapter;
+      final adapter = monitor == null
+          ? httpAdapter
+          : MonitoredHttpAdapter(httpAdapter, monitor);
+      plain.httpClientAdapter = adapter;
+      dio.httpClientAdapter = adapter;
     }
     repository = RemoteAuthRepository(
       plain: AuthClient(plain),

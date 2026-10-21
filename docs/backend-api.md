@@ -229,6 +229,20 @@ strings. Keeping it out of Git is about not advertising hosts in a public reposi
 changing one without a code change. It is not a secret store: never put a key, a password or a
 token in these files.
 
+### The free staging server sleeps
+
+The staging server runs on a free instance that **sleeps after 15 minutes without a request**; the first
+request afterwards takes about a minute. The production server will not sleep. So in staging builds
+(and only there):
+
+- a request that has waited more than about 5 seconds makes the app show a note above the screen,
+  "The server is starting", which says why and that the production server does not sleep. It never blocks
+  the screen underneath and disappears when the server answers;
+- the app sends one silent `GET /healthz` at start (no data, no token, the answer is ignored), so the
+  server is often awake by the time the person signs in. A build with no server address sends nothing.
+
+The timeouts are long for the same reason (90 seconds to connect and to receive).
+
 ### A backend running on your machine
 
 The app runs on the **emulator** or in the **browser**, both on your host, never in the dev

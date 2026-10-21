@@ -25,6 +25,7 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 import '../support/fake_push_messaging_repository.dart';
+import '../support/fake_server_activity.dart';
 import '../support/not_available_auth_repository.dart';
 import '../support/render_screen.dart';
 
@@ -41,6 +42,7 @@ class _Scene {
     this.setup,
     this.size = const Size(412, 915),
     this.authNotAvailable = false,
+    this.serverWaking = false,
   });
 
   final String name;
@@ -50,6 +52,9 @@ class _Scene {
   /// The account is one whose server does not offer resetting or changing a
   /// password or deleting the account yet.
   final bool authNotAvailable;
+
+  /// The server is slow to answer: the staging note above the screen shows.
+  final bool serverWaking;
   final _Setup? setup;
   final Size size;
 }
@@ -189,6 +194,12 @@ final _scenes = <_Scene>[
       await tester.enterText(find.byType(TextField), 'alex@example.com');
       await _tapPrimary(tester);
     },
+  ),
+  const _Scene('err-5-server-starting', AppRoutes.signIn, serverWaking: true),
+  const _Scene(
+    'err-5b-server-starting-register',
+    AppRoutes.register,
+    serverWaking: true,
   ),
   _Scene(
     'nc-1-no-connection',
@@ -1486,9 +1497,13 @@ void main() {
                     : FakeAuthRepository(demo: demo, signedIn: scene.signedIn),
                 // The demo panel handle belongs to staging builds only and
                 // would sit on top of every picture.
-                environment: scene.route == AppRoutes.demo
+                environment: scene.route == AppRoutes.demo || scene.serverWaking
                     ? AppEnvironment.staging
                     : AppEnvironment.production,
+                // The note about the sleeping server belongs to staging.
+                serverActivity: scene.serverWaking
+                    ? FakeServerActivity(isSlow: true)
+                    : null,
               ),
             ),
           );

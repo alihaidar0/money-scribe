@@ -278,7 +278,7 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
 - [x] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
 - [ ] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
-- [ ] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
+- [x] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
 - [ ] Add the leaked-password sentence to the privacy policy and the store forms
 - [ ] Next request issues: reset password, change password, change email, delete account, edit name
 

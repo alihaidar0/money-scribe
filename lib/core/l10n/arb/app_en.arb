@@ -195,6 +195,10 @@
   "@goBackAction": {
     "description": "Button of the not available yet state that returns to the previous screen."
   },
+  "serverStartingMessage": "The server is starting. This free staging server sleeps after 15 minutes without use, so the first request can take up to a minute. The production server does not sleep.",
+  "@serverStartingMessage": {
+    "description": "Note above the screen, in staging builds only, while a request waits for the server. It explains that the free test server sleeps when it is not used and that the real server does not."
+  },
   "continueAction": "Continue",
   "@continueAction": {
     "description": "Button that moves to the next step of a flow."

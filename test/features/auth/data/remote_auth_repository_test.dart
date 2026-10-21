@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/device/device_info.dart';
@@ -5,6 +7,7 @@ import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
+import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth_repository.dart';
@@ -15,6 +18,7 @@ import 'package:money_scribe/features/auth/domain/password_problem.dart';
 import '../../../support/fake_clock.dart';
 import '../../../support/fake_http_adapter.dart';
 import '../../../support/in_memory_secure_value_store.dart';
+import '../../../support/manual_timers.dart';
 
 const _deviceId = '0b9f2a8e-5c1d-4e7a-9a43-2f6d8c1e7b10';
 
@@ -1045,6 +1049,36 @@ void main() {
       );
 
       expect(server.requests, isEmpty);
+    });
+  });
+
+  group('a server that is slow to answer', () {
+    test('is reported to the monitor while a real request waits', () async {
+      final timers = ManualTimers();
+      final monitor = SlowRequestMonitor(timer: timers.create);
+      final answer = Completer<ResponseBody>();
+      final slowServer = FakeHttpAdapter((options) => answer.future);
+      final slow = RemoteAuth.create(
+        config: ApiConfig.parse('https://api.test', allowCleartext: false)!,
+        tokens: tokens,
+        device: _Device(),
+        timeZone: zone,
+        language: () => language,
+        monitor: monitor,
+        httpAdapter: slowServer,
+      ).repository;
+
+      final call = slow.signIn(email: 'a@b.c', password: 'x');
+      await pumpEventQueue();
+      expect(timers.active, hasLength(1));
+      expect(monitor.isSlow, isFalse);
+
+      timers.active.single.fire();
+      expect(monitor.isSlow, isTrue, reason: 'the server is starting');
+
+      answer.complete(jsonBody(200, _signedIn()));
+      await call;
+      expect(monitor.isSlow, isFalse);
     });
   });
 
