@@ -15,6 +15,7 @@ SignInRequest _$SignInRequestFromJson(Map<String, dynamic> json) =>
           ? null
           : LanguageEnum.fromJson(json['language'] as String),
       timeZone: json['time_zone'] as String?,
+      captchaToken: json['captcha_token'] as String?,
     );
 
 Map<String, dynamic> _$SignInRequestToJson(SignInRequest instance) =>
@@ -23,6 +24,7 @@ Map<String, dynamic> _$SignInRequestToJson(SignInRequest instance) =>
       'time_zone': instance.timeZone,
       'email': instance.email,
       'password': instance.password,
+      'captcha_token': instance.captchaToken,
       'device': instance.device,
     };
 

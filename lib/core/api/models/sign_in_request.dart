@@ -18,6 +18,7 @@ class SignInRequest {
     required this.device,
     this.language,
     this.timeZone,
+    this.captchaToken,
   });
 
   factory SignInRequest.fromJson(Map<String, Object?> json) =>
@@ -34,6 +35,10 @@ class SignInRequest {
   final String? timeZone;
   final String email;
   final String password;
+
+  /// The token of a solved Cloudflare Turnstile widget created with the action `sign_in`. Required only after `captcha_required`; it is single use and lives five minutes.
+  @JsonKey(name: 'captcha_token')
+  final String? captchaToken;
   final DeviceRequest device;
 
   Map<String, Object?> toJson() => _$SignInRequestToJson(this);
