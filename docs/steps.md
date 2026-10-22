@@ -279,6 +279,10 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
 - [ ] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
 - [x] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
+- [x] Request to the backend (`alihaidar0/money-scribe-backend#35`): separate sign-in errors for an unknown email and a wrong password
+- [ ] Pin the contract that has them, and generate the client on a scratch copy first
+- [ ] Sign in names the field at fault: email not registered under the email, wrong password under the password, email first
+- [ ] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
 - [ ] Add the leaked-password sentence to the privacy policy and the store forms
 - [ ] Next request issues: reset password, change password, change email, delete account, edit name
 
