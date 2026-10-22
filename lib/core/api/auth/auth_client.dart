@@ -5,13 +5,23 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
+import '../models/change_password_request.dart';
 import '../models/code_sent.dart';
+import '../models/delete_account_request.dart';
+import '../models/email_change_confirm_request.dart';
+import '../models/email_change_request_request.dart';
+import '../models/email_change_response.dart';
+import '../models/password_reset_confirm_request.dart';
+import '../models/password_reset_request_request.dart';
+import '../models/password_reset_verify_request.dart';
+import '../models/patched_profile_update_request.dart';
 import '../models/profile.dart';
 import '../models/refresh_request.dart';
 import '../models/refresh_response.dart';
 import '../models/register_request.dart';
 import '../models/register_response.dart';
 import '../models/resend_code_request.dart';
+import '../models/reset_token_response.dart';
 import '../models/sign_in_request.dart';
 import '../models/sign_out_request.dart';
 import '../models/signed_in_response.dart';
@@ -23,11 +33,79 @@ part 'auth_client.g.dart';
 abstract class AuthClient {
   factory AuthClient(Dio dio, {String? baseUrl}) = _AuthClient;
 
+  /// Delete the account.
+  ///
+  /// Needs the password. Deletes the account and **all** its data at once and for good, in one transaction, and every session ends with it (the tokens stop working at once). Nothing is kept: no soft delete and no anonymised copy. The address is used only for a confirmation email. It is `POST` with a body, not `DELETE`, because a `DELETE` body has no defined meaning and proxies may drop it. Errors: `400` `invalid_password` (`attr` `password`); `429` `password_attempts_exceeded` (shared with the password change) or `throttled`, each with `Retry-After`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/account/delete/')
+  Future<void> authAccountDelete({@Body() required DeleteAccountRequest body});
+
+  /// Start an email change.
+  ///
+  /// Step 1 of 2. Emails a 6-digit code to the **new** address; the old one stays in force until the code is accepted by `auth_email_change_confirm`. Needs the current password. A new request replaces the earlier pending change. Errors: `400` `invalid_password` (`attr` `current_password`), `email_unchanged` (`attr` `email`: the account already has it), or `invalid` for a malformed address; `409` `email_already_registered` (a signed-in caller who has proved the password may be told; no other call says so); `429` `password_attempts_exceeded` (the password lock shared with the password change), `resend_too_soon` (60 second cooldown for the new address), `resend_limit_reached` (5 codes per hour for the address, and 5 changes per hour for the account) or `throttled`, each with `Retry-After`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/email-change/')
+  Future<EmailChangeResponse> authEmailChangeRequest({
+    @Body() required EmailChangeRequestRequest body,
+  });
+
+  /// Cancel the pending email change.
+  ///
+  /// Drops the pending change, so its code stops working. It answers `204` also when nothing is pending.
+  @DELETE('/api/v1/auth/email-change/')
+  Future<void> authEmailChangeCancel();
+
+  /// Confirm the email change.
+  ///
+  /// Step 2 of 2. A correct code switches the sign-in address to the new one, ends every **other** session (this one continues, with the same tokens), tells the old address by email and answers the updated profile. Errors: `400` `code_invalid` (the error item carries `attempts_left`) or `code_expired` (also when no change is pending); `409` `email_already_registered` (the address was taken meanwhile; the code is kept); `429` `code_attempts_exceeded` (the code is dead; `Retry-After` is the wait before a new one may be requested) or `throttled`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/email-change/confirm/')
+  Future<Profile> authEmailChangeConfirm({
+    @Body() required EmailChangeConfirmRequest body,
+  });
+
+  /// Set the new password.
+  ///
+  /// Step 3 of 3. Sets the new password with the `reset_token` and ends **all** the user's sessions, so the app returns to the sign-in screen (it signs nobody in). The owner gets an email about the change. Errors: `400` `reset_token_invalid` (`attr` `reset_token`: unknown, used or expired; ask for a new code), or a password rule on `attr` `password` (`password_too_short`, `password_too_long`, `password_too_similar`, `password_too_common`, `password_compromised`), after which the same token may be used again until it expires. A new password equal to the current one is allowed here: the reset proves the mailbox, not the old password. `429` `throttled` with `Retry-After`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/password-reset/confirm/')
+  Future<void> authPasswordResetConfirm({
+    @Body() required PasswordResetConfirmRequest body,
+  });
+
+  /// Ask for a password reset code.
+  ///
+  /// Step 1 of 3. Emails a 6-digit code to a registered, verified address. The answer is the same for every address, whether it has an account or not, so it reveals nothing; the app always goes on to the code screen. The code lives 10 minutes and shares the hourly budget of the other codes. Errors: `429` `resend_too_soon` (the 60 second cooldown), `resend_limit_reached` (5 codes per hour) or `throttled`, each with `Retry-After`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/password-reset/request/')
+  Future<CodeSent> authPasswordResetRequest({
+    @Body() required PasswordResetRequestRequest body,
+  });
+
+  /// Check the password reset code.
+  ///
+  /// Step 2 of 3. A correct code is spent and answered with a single-use `reset_token` that lives 10 minutes. It does not sign anyone in. Errors: `400` `code_invalid` (the error item carries `attempts_left`) or `code_expired`, `429` `code_attempts_exceeded` (the code is dead; `Retry-After` is the wait before a new one may be requested) or `throttled`; `503` `service_unavailable` while the limit store is down, with `Retry-After`. The answers are the same for an address with no account.
+  @POST('/api/v1/auth/password-reset/verify/')
+  Future<ResetTokenResponse> authPasswordResetVerify({
+    @Body() required PasswordResetVerifyRequest body,
+  });
+
+  /// Change the password.
+  ///
+  /// Needs the current password. Ends every **other** session; this one continues with the new token pair in the answer, and the previous refresh token is retired. The owner gets an email about the change. Errors: `400` `invalid_password` (`attr` `current_password`: it is `400`, not `401`, so the app's session handling is not triggered), `password_unchanged` (`attr` `password`: the new password equals the current one), or a password rule on `attr` `password` (`password_too_short`, `password_too_long`, `password_too_similar`, `password_too_common`, `password_compromised`); `429` `password_attempts_exceeded` (5 wrong current passwords lock this operation and the account deletion for 15 minutes; `Retry-After` is the remaining time; sign-in is unaffected) or `throttled`; `503` `service_unavailable` while the limit store is down, with `Retry-After`.
+  @POST('/api/v1/auth/password/change/')
+  Future<RefreshResponse> authPasswordChange({
+    @Body() required ChangePasswordRequest body,
+  });
+
   /// Read the profile.
   ///
   /// The name and email of the signed-in user, and the `language` and `time_zone` stored from the device they last signed in on (read-only here). The app reads it after a restart, because the tokens carry no profile.
   @GET('/api/v1/auth/profile/')
   Future<Profile> authProfile();
+
+  /// Edit the name.
+  ///
+  /// Changes the display name and answers the updated profile. Only `name` can be sent: any other field, such as `email`, `language` or `time_zone`, is refused with `400` and the code `read_only` on that field (the email changes only through `auth_email_change_request`). Errors: `400` `blank`, `required` or `max_length` on `name`.
+  @PATCH('/api/v1/auth/profile/')
+  Future<Profile> authProfileUpdate({
+    @Body() PatchedProfileUpdateRequest? body,
+  });
 
   /// Refresh the tokens.
   ///
