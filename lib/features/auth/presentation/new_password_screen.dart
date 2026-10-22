@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/password_field.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/new_password_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/password_problem_text.dart';
 
 /// AUTH-9: choose a new password, typed twice. The app checks only that the
-/// two fields are the same: the server owns every other password rule.
+/// two fields are the same: the server owns every other password rule and says
+/// what is wrong after the password is sent.
 class NewPasswordScreen extends StatelessWidget {
   const new({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          NewPasswordBloc(repository: context.read<AuthRepository>()),
+      create: (context) => NewPasswordBloc(
+        repository: context.read<AuthRepository>(),
+        ticker: context.read<Ticker>(),
+      ),
       child: const _NewPasswordView(),
     );
   }
@@ -64,14 +70,27 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
     return BlocConsumer<NewPasswordBloc, NewPasswordState>(
       listenWhen: (previous, current) =>
           previous.status != current.status &&
-          current.status == NewPasswordStatus.saved,
-      listener: (context, state) => context.go(AppRoutes.passwordChanged),
+          (current.status == NewPasswordStatus.saved ||
+              current.status == NewPasswordStatus.expired),
+      listener: (context, state) {
+        if (state.status == NewPasswordStatus.saved) {
+          context.go(AppRoutes.passwordChanged);
+          return;
+        }
+        // The reset ran out: it starts again from the email.
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.resetExpired)));
+        context.go(AppRoutes.forgotPassword);
+      },
       builder: (context, state) {
         final isBusy = state.status == NewPasswordStatus.saving;
+        final isWaiting = state.status == NewPasswordStatus.waiting;
+        final problem = state.passwordProblem;
 
         return FlowPage(
           failure: switch (state.status) {
-            NewPasswordStatus.notAvailable => FailureKind.notAvailable,
+            NewPasswordStatus.unavailable => FailureKind.unavailable,
             NewPasswordStatus.noConnection => FailureKind.noConnection,
             NewPasswordStatus.failure => FailureKind.error,
             _ => null,
@@ -90,6 +109,9 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
               controller: _password,
               label: l10n.newPasswordLabel,
               enabled: !isBusy,
+              errorText: problem == null
+                  ? null
+                  : passwordProblemText(l10n, problem),
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.newPassword],
               onChanged: _changed,
@@ -104,13 +126,22 @@ class _NewPasswordViewState extends State<_NewPasswordView> {
               autofillHints: const [AutofillHints.newPassword],
               onChanged: _changed,
               onSubmitted: (_) {
-                if (state.isValid && !isBusy) _submit();
+                if (state.isValid && !isBusy && !isWaiting) _submit();
               },
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: state.isValid && !isBusy ? _submit : null,
-              child: isBusy ? const ButtonSpinner() : Text(l10n.savePassword),
+              onPressed: state.isValid && !isBusy && !isWaiting
+                  ? _submit
+                  : null,
+              child: switch (state.status) {
+                NewPasswordStatus.saving => const ButtonSpinner(),
+                // The server asked to wait: the button counts down.
+                NewPasswordStatus.waiting => Text(
+                  l10n.tryAgainIn(time: formatCountdown(state.waitSecondsLeft)),
+                ),
+                _ => Text(l10n.savePassword),
+              },
             ),
           ],
         );

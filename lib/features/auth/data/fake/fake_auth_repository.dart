@@ -236,13 +236,45 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> requestPasswordReset(String email) async {
     await _demo.simulateRequest();
-    _pendingEmail = email;
+    if (_demo.settings.code == DemoCode.unavailable) {
+      throw const ServiceUnavailableException();
+    }
+    // The wait is kept per address, like the server does: the same address
+    // again inside it is refused.
+    final wait = resendWaitRemaining;
+    if (wait > Duration.zero &&
+        email.trim().toLowerCase() == _pendingEmail?.toLowerCase()) {
+      throw RateLimitedException(RateLimitReason.resendTooSoon, wait);
+    }
+    _pendingEmail = email.trim();
     _startNewCode();
   }
 
   @override
   Future<void> resetPassword(String newPassword) async {
     await _demo.simulateRequest();
+    switch (_demo.settings.passwordReset) {
+      case DemoPasswordReset.accepted:
+        break;
+      case DemoPasswordReset.passwordRefused:
+        throw const PasswordRejectedException(
+          PasswordProblem(
+            PasswordIssue.tooShort,
+            limit: demoMinimumPasswordLength,
+          ),
+        );
+      case DemoPasswordReset.tokenInvalid:
+        throw const ResetTokenInvalidException();
+      case DemoPasswordReset.tooSoon:
+        throw const RateLimitedException(
+          RateLimitReason.throttled,
+          Duration(seconds: 30),
+        );
+      case DemoPasswordReset.unavailable:
+        throw const ServiceUnavailableException();
+    }
+    // Like the server, a reset ends every session, this one included.
+    _setSignedIn(value: false);
   }
 
   @override

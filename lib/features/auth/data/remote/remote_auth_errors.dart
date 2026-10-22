@@ -79,6 +79,21 @@ Exception mapVerifyFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Set the new password after a password reset: `400 reset_token_invalid`
+/// (ask for a new code), or a refused password (`password_*`, the token stays
+/// valid), `429 throttled`.
+Exception mapPasswordResetConfirmFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    if (failure.hasCode('reset_token_invalid')) {
+      return const ResetTokenInvalidException();
+    }
+    final problem = _passwordProblem(failure);
+    if (problem != null) return PasswordRejectedException(problem);
+    return const ServerException();
+  }
+  return mapCommonFailure(failure);
+}
+
 RateLimitReason _reason(String? code) {
   return switch (code) {
     'sign_in_locked' => RateLimitReason.signInLocked,

@@ -802,6 +802,362 @@ void main() {
     });
   });
 
+  group('password reset', () {
+    const requestPath = '/api/v1/auth/password-reset/request/';
+    const verifyPath = '/api/v1/auth/password-reset/verify/';
+    const confirmPath = '/api/v1/auth/password-reset/confirm/';
+
+    setUp(() {
+      routes[requestPath] = (_) =>
+          jsonBody(200, {'code_expires_in': 600, 'resend_available_in': 60});
+      routes[verifyPath] = (_) =>
+          jsonBody(200, {'reset_token': 'reset-1', 'expires_in': 600});
+      routes[confirmPath] = (_) => jsonBody(204);
+    });
+
+    /// Asks for a code and has it accepted, so the new password can be sent.
+    Future<void> reachNewPassword() async {
+      await auth.requestPasswordReset('me@b.c');
+      await auth.verifyCode(CodePurpose.resetPassword, '012345');
+    }
+
+    test('asks for a code with the address, and no access token', () async {
+      await auth.requestPasswordReset('me@b.c');
+
+      expect(bodyOf(requestPath), {'email': 'me@b.c'});
+      expect(lastRequest(requestPath).headers['Authorization'], isNull);
+      expect(auth.pendingEmail, 'me@b.c');
+    });
+
+    test('starts the wait the server gave', () async {
+      routes[requestPath] = (_) =>
+          jsonBody(200, {'code_expires_in': 600, 'resend_available_in': 42});
+
+      await auth.requestPasswordReset('me@b.c');
+
+      expect(auth.resendWaitRemaining, const Duration(seconds: 42));
+    });
+
+    test('too soon counts down the time the server gave', () async {
+      routes[requestPath] = (_) =>
+          jsonBody(429, errorBody('resend_too_soon'), {'retry-after': '25'});
+
+      await expectLater(
+        auth.requestPasswordReset('me@b.c'),
+        throwsA(
+          isA<RateLimitedException>()
+              .having((e) => e.reason, 'reason', RateLimitReason.resendTooSoon)
+              .having(
+                (e) => e.retryAfter,
+                'retryAfter',
+                const Duration(seconds: 25),
+              ),
+        ),
+      );
+
+      expect(auth.resendWaitRemaining, const Duration(seconds: 25));
+    });
+
+    test('a busy server is reported', () async {
+      routes[requestPath] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+
+      await expectLater(
+        auth.requestPasswordReset('me@b.c'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+    });
+
+    test('a new code is asked for the same address', () async {
+      await auth.requestPasswordReset('me@b.c');
+      clock.time = clock.time.add(const Duration(seconds: 60));
+
+      await auth.resendCode(CodePurpose.resetPassword);
+
+      expect(server.requests.where((r) => r.path == requestPath), hasLength(2));
+      expect(bodyOf(requestPath), {'email': 'me@b.c'});
+      expect(auth.resendWaitRemaining, const Duration(seconds: 60));
+    });
+
+    test('a new code with no address is expired', () async {
+      await expectLater(
+        auth.resendCode(CodePurpose.resetPassword),
+        throwsA(isA<CodeExpiredException>()),
+      );
+      expect(server.requests, isEmpty);
+    });
+
+    test('the code is sent as text with the address', () async {
+      await reachNewPassword();
+
+      expect(bodyOf(verifyPath), {'email': 'me@b.c', 'code': '012345'});
+      expect(lastRequest(verifyPath).headers['Authorization'], isNull);
+    });
+
+    test('a correct code signs nobody in', () async {
+      await reachNewPassword();
+
+      expect(auth.isSignedIn, isFalse);
+      expect(await tokens.read(), isNull);
+      expect(auth.resendWaitRemaining, Duration.zero);
+    });
+
+    test('a wrong code says how many tries are left', () async {
+      routes[verifyPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'code_invalid',
+          type: 'validation_error',
+          attr: 'code',
+          extra: {'attempts_left': 3},
+        ),
+      );
+      await auth.requestPasswordReset('me@b.c');
+
+      await expectLater(
+        auth.verifyCode(CodePurpose.resetPassword, '000000'),
+        throwsA(
+          isA<WrongCodeException>().having(
+            (e) => e.attemptsLeft,
+            'attemptsLeft',
+            3,
+          ),
+        ),
+      );
+    });
+
+    test('a code that ran out, or never existed, is expired', () async {
+      routes[verifyPath] = (_) => jsonBody(
+        400,
+        errorBody('code_expired', type: 'validation_error', attr: 'code'),
+      );
+      await auth.requestPasswordReset('me@b.c');
+
+      await expectLater(
+        auth.verifyCode(CodePurpose.resetPassword, '000000'),
+        throwsA(isA<CodeExpiredException>()),
+      );
+    });
+
+    test('too many wrong codes kills the code and starts the wait', () async {
+      routes[verifyPath] = (_) => jsonBody(
+        429,
+        errorBody('code_attempts_exceeded'),
+        {'retry-after': '40'},
+      );
+      await auth.requestPasswordReset('me@b.c');
+
+      await expectLater(
+        auth.verifyCode(CodePurpose.resetPassword, '000000'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.codeAttemptsExceeded,
+          ),
+        ),
+      );
+
+      expect(auth.resendWaitRemaining, const Duration(seconds: 40));
+    });
+
+    test('a code with no address is expired', () async {
+      await expectLater(
+        auth.verifyCode(CodePurpose.resetPassword, '123456'),
+        throwsA(isA<CodeExpiredException>()),
+      );
+      expect(server.requests, isEmpty);
+    });
+
+    test('the new password is sent with the token, exactly as typed', () async {
+      await reachNewPassword();
+
+      await auth.resetPassword('  a long pass phrase  ');
+
+      expect(bodyOf(confirmPath), {
+        'reset_token': 'reset-1',
+        'password': '  a long pass phrase  ',
+      });
+      expect(lastRequest(confirmPath).headers['Authorization'], isNull);
+    });
+
+    test('a saved password ends the reset and the session', () async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'a', refreshToken: 'r'),
+      );
+      await auth.restore();
+      await reachNewPassword();
+
+      await auth.resetPassword('new passphrase');
+
+      expect(auth.isSignedIn, isFalse);
+      expect(await tokens.read(), isNull);
+      expect(auth.pendingEmail, isNull);
+      // The token works once: it is gone.
+      await expectLater(
+        auth.resetPassword('another one'),
+        throwsA(isA<ResetTokenInvalidException>()),
+      );
+      expect(server.requests.where((r) => r.path == confirmPath), hasLength(1));
+    });
+
+    test('with no accepted code the reset has to start again', () async {
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ResetTokenInvalidException>()),
+      );
+      expect(server.requests, isEmpty);
+    });
+
+    test('a new code ends a reset that was going on', () async {
+      await reachNewPassword();
+      await auth.requestPasswordReset('me@b.c');
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ResetTokenInvalidException>()),
+      );
+    });
+
+    test('a token the server refuses is of no use any more', () async {
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'reset_token_invalid',
+          type: 'validation_error',
+          attr: 'reset_token',
+        ),
+      );
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ResetTokenInvalidException>()),
+      );
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ResetTokenInvalidException>()),
+      );
+      expect(server.requests.where((r) => r.path == confirmPath), hasLength(1));
+    });
+
+    test('a refused password keeps the token for another try', () async {
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'password_too_short',
+          type: 'validation_error',
+          attr: 'password',
+          extra: {'min_length': 15},
+        ),
+      );
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('short'),
+        throwsA(
+          isA<PasswordRejectedException>().having(
+            (e) => e.problem,
+            'problem',
+            const PasswordProblem(PasswordIssue.tooShort, limit: 15),
+          ),
+        ),
+      );
+
+      routes[confirmPath] = (_) => jsonBody(204);
+      await auth.resetPassword('a much longer passphrase');
+
+      expect(bodyOf(confirmPath)['reset_token'], 'reset-1');
+    });
+
+    test('a refused password does not end the session', () async {
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'password_compromised',
+          type: 'validation_error',
+          attr: 'password',
+        ),
+      );
+      await tokens.write(
+        const SessionTokens(accessToken: 'a', refreshToken: 'r'),
+      );
+      await auth.restore();
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<PasswordRejectedException>()),
+      );
+
+      expect(auth.isSignedIn, isTrue);
+      expect(await tokens.read(), isNotNull);
+    });
+
+    test('too many requests is a wait', () async {
+      routes[confirmPath] = (_) =>
+          jsonBody(429, errorBody('throttled'), {'retry-after': '17'});
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(
+          isA<RateLimitedException>()
+              .having((e) => e.reason, 'reason', RateLimitReason.throttled)
+              .having(
+                (e) => e.retryAfter,
+                'retryAfter',
+                const Duration(seconds: 17),
+              ),
+        ),
+      );
+    });
+
+    test('a busy server is reported, and the token is kept', () async {
+      routes[confirmPath] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+
+      routes[confirmPath] = (_) => jsonBody(204);
+      await auth.resetPassword('x');
+      expect(server.requests.where((r) => r.path == confirmPath), hasLength(2));
+    });
+
+    test('a lost connection is reported', () async {
+      routes[confirmPath] = (options) => throw connectionLost(options);
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+
+    test('a 400 that names no password problem is a server failure', () async {
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody('invalid', type: 'validation_error', attr: 'other'),
+      );
+      await reachNewPassword();
+
+      await expectLater(
+        auth.resetPassword('x'),
+        throwsA(isA<ServerException>()),
+      );
+    });
+  });
+
   group('sign out', () {
     setUp(() async {
       await tokens.write(
@@ -1077,27 +1433,11 @@ void main() {
   group('what the server does not offer yet', () {
     test('says so, without calling the server', () async {
       await expectLater(
-        auth.requestPasswordReset('a@b.c'),
-        throwsA(isA<FeatureNotAvailableException>()),
-      );
-      await expectLater(
-        auth.resetPassword('x'),
-        throwsA(isA<FeatureNotAvailableException>()),
-      );
-      await expectLater(
         auth.changePassword(current: 'a', next: 'b'),
         throwsA(isA<FeatureNotAvailableException>()),
       );
       await expectLater(
         auth.deleteAccount(password: 'a'),
-        throwsA(isA<FeatureNotAvailableException>()),
-      );
-      await expectLater(
-        auth.verifyCode(CodePurpose.resetPassword, '123456'),
-        throwsA(isA<FeatureNotAvailableException>()),
-      );
-      await expectLater(
-        auth.resendCode(CodePurpose.resetPassword),
         throwsA(isA<FeatureNotAvailableException>()),
       );
 
@@ -1140,6 +1480,6 @@ void main() {
       expect(path, startsWith('/api/v1/auth/'));
     }
     expect(authPublicPaths, isNot(contains('/api/v1/auth/profile/')));
-    expect(authPublicPaths, hasLength(6));
+    expect(authPublicPaths, hasLength(9));
   });
 }

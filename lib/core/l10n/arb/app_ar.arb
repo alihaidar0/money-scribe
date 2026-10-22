@@ -125,6 +125,7 @@
   "sendCode": "إرسال الرمز",
   "backToSignIn": "العودة إلى تسجيل الدخول",
   "newPasswordTitle": "أنشئ كلمة مرور جديدة",
+  "resetExpired": "انتهت صلاحية إعادة التعيين. اطلب رمزًا جديدًا.",
   "savePassword": "حفظ كلمة المرور",
   "passwordChangedTitle": "تم تغيير كلمة المرور",
   "passwordChangedMessage": "سجّل الدخول بكلمة المرور الجديدة.",

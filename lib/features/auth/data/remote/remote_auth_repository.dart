@@ -19,8 +19,8 @@ import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 /// The session tokens live in the secure storage; this class never keeps them
 /// itself. Every wait it reports comes from an answer of the server
 /// (`Retry-After`, `resend_available_in`), counted down with the clock.
-/// Resetting or changing a password and deleting the account are not built on
-/// the server yet and fail with [FeatureNotAvailableException].
+/// Changing the password and deleting the account are not built on the server
+/// yet and fail with [FeatureNotAvailableException].
 class RemoteAuthRepository implements AuthRepository {
   new({
     required this._plain,
@@ -54,6 +54,10 @@ class RemoteAuthRepository implements AuthRepository {
   String? _pendingEmail;
   DateTime? _resendAvailableAt;
   DateTime? _lockedUntil;
+
+  /// The single-use token of a password reset whose code was accepted. Only in
+  /// memory: a reset the app was closed in the middle of starts again.
+  String? _resetToken;
 
   @override
   bool get isSignedIn => _isSignedIn;
@@ -163,10 +167,13 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   Future<void> verifyCode(CodePurpose purpose, String code) async {
-    _requireEmailPurpose(purpose);
     final email = _pendingEmail;
     // No address to verify: the code cannot be valid.
     if (email == null) throw const CodeExpiredException();
+    if (purpose == CodePurpose.resetPassword) {
+      await _verifyResetCode(email, code);
+      return;
+    }
 
     final body = VerifyEmailRequest(
       email: email,
@@ -194,9 +201,12 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   Future<void> resendCode(CodePurpose purpose) async {
-    _requireEmailPurpose(purpose);
     final email = _pendingEmail;
     if (email == null) throw const CodeExpiredException();
+    if (purpose == CodePurpose.resetPassword) {
+      await _requestResetCode(email);
+      return;
+    }
 
     final answer = await _call(
       () => _plain.authResendCode(body: ResendCodeRequest(email: email)),
@@ -211,10 +221,36 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> requestPasswordReset(String email) => _notAvailable();
+  Future<void> requestPasswordReset(String email) => _requestResetCode(email);
 
   @override
-  Future<void> resetPassword(String newPassword) => _notAvailable();
+  Future<void> resetPassword(String newPassword) async {
+    final token = _resetToken;
+    // No accepted code: the reset has to start again.
+    if (token == null) throw const ResetTokenInvalidException();
+
+    await _call(
+      () => _plain.authPasswordResetConfirm(
+        // Sent as typed: never trimmed, never checked against a policy.
+        body: PasswordResetConfirmRequest(
+          resetToken: token,
+          password: newPassword,
+        ),
+      ),
+      mapPasswordResetConfirmFailure,
+      onFailure: (failure, exception) {
+        // A refused password leaves the token valid; a token the server does
+        // not accept is of no use any more.
+        if (exception is ResetTokenInvalidException) _resetToken = null;
+      },
+    );
+    _resetToken = null;
+    _pendingEmail = null;
+    _resendAvailableAt = null;
+    // The server ended every session of the account, this one included.
+    await _tokens.clear();
+    _setSignedIn(value: false);
+  }
 
   @override
   Future<void> signOut() async {
@@ -326,10 +362,44 @@ class RemoteAuthRepository implements AuthRepository {
     return Future<void>.error(const FeatureNotAvailableException());
   }
 
-  void _requireEmailPurpose(CodePurpose purpose) {
-    if (purpose == CodePurpose.resetPassword) {
-      throw const FeatureNotAvailableException();
-    }
+  /// Asks for a code to reset the password of [email]. The answer is the same
+  /// for every address, so the person always goes on to the code screen.
+  Future<void> _requestResetCode(String email) async {
+    final answer = await _call(
+      () => _plain.authPasswordResetRequest(
+        body: PasswordResetRequestRequest(email: email),
+      ),
+      mapCommonFailure,
+      onFailure: (failure, exception) {
+        if (exception is RateLimitedException) {
+          _resendAvailableAt = _clock.now().add(exception.retryAfter);
+        }
+      },
+    );
+    // A new code ends any reset that was going on.
+    _resetToken = null;
+    _pendingEmail = email;
+    _setResendWait(answer.resendAvailableIn);
+  }
+
+  /// Trades the code for the single-use token that sets the new password.
+  Future<void> _verifyResetCode(String email, String code) async {
+    final answer = await _call(
+      () => _plain.authPasswordResetVerify(
+        // Text, so a leading zero survives.
+        body: PasswordResetVerifyRequest(email: email, code: code),
+      ),
+      mapVerifyFailure,
+      onFailure: (failure, exception) {
+        if (exception is RateLimitedException &&
+            exception.reason == RateLimitReason.codeAttemptsExceeded) {
+          // The code is dead: the wait is the time until a new one.
+          _resendAvailableAt = _clock.now().add(exception.retryAfter);
+        }
+      },
+    );
+    _resetToken = answer.resetToken;
+    _resendAvailableAt = null;
   }
 
   void _setSignedIn({required bool value}) {

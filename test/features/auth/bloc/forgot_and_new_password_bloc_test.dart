@@ -5,20 +5,24 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/bloc/forgot_password_bloc.dart';
 import 'package:money_scribe/features/auth/bloc/new_password_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
-import '../../../support/not_available_auth_repository.dart';
+import '../../../support/fake_ticker.dart';
 
 void main() {
   late DemoController demo;
   late FakeAuthRepository auth;
+  late FakeTicker ticker;
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
     auth = FakeAuthRepository(demo: demo);
+    ticker = FakeTicker();
   });
 
   group('ForgotPasswordBloc', () {
-    ForgotPasswordBloc build() => ForgotPasswordBloc(repository: auth);
+    ForgotPasswordBloc build() =>
+        ForgotPasswordBloc(repository: auth, ticker: ticker);
 
     blocTest<ForgotPasswordBloc, ForgotPasswordState>(
       'sends the code and remembers the email',
@@ -29,6 +33,57 @@ void main() {
         ForgotPasswordState(status: ForgotPasswordStatus.success),
       ],
       verify: (_) => expect(auth.pendingEmail, 'me@b.c'),
+    );
+
+    blocTest<ForgotPasswordBloc, ForgotPasswordState>(
+      'asking again at once is a wait the server gave, counted down',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const ForgotPasswordSubmitted('me@b.c'));
+        await pumpEventQueue();
+        bloc.add(const ForgotPasswordSubmitted('me@b.c'));
+        await pumpEventQueue();
+        ticker.tick(59);
+        await pumpEventQueue();
+        ticker.tick(0);
+      },
+      skip: 2,
+      expect: () => const [
+        ForgotPasswordState(status: ForgotPasswordStatus.submitting),
+        ForgotPasswordState(
+          status: ForgotPasswordStatus.waiting,
+          waitSecondsLeft: 60,
+        ),
+        ForgotPasswordState(
+          status: ForgotPasswordStatus.waiting,
+          waitSecondsLeft: 59,
+        ),
+        ForgotPasswordState(),
+      ],
+      verify: (_) => expect(ticker.started, [60]),
+    );
+
+    blocTest<ForgotPasswordBloc, ForgotPasswordState>(
+      'does not ask while the wait is on',
+      build: build,
+      seed: () => const ForgotPasswordState(
+        status: ForgotPasswordStatus.waiting,
+        waitSecondsLeft: 30,
+      ),
+      act: (bloc) => bloc.add(const ForgotPasswordSubmitted('me@b.c')),
+      expect: () => const <ForgotPasswordState>[],
+      verify: (_) => expect(auth.pendingEmail, 'alex@example.com'),
+    );
+
+    blocTest<ForgotPasswordBloc, ForgotPasswordState>(
+      'reports a busy server',
+      setUp: () => demo.update(const DemoSettings(code: DemoCode.unavailable)),
+      build: build,
+      act: (bloc) => bloc.add(const ForgotPasswordSubmitted('me@b.c')),
+      expect: () => const [
+        ForgotPasswordState(status: ForgotPasswordStatus.submitting),
+        ForgotPasswordState(status: ForgotPasswordStatus.unavailable),
+      ],
     );
 
     blocTest<ForgotPasswordBloc, ForgotPasswordState>(
@@ -58,13 +113,21 @@ void main() {
   });
 
   group('NewPasswordBloc', () {
-    NewPasswordBloc build() => NewPasswordBloc(repository: auth);
+    NewPasswordBloc build() =>
+        NewPasswordBloc(repository: auth, ticker: ticker);
 
     NewPasswordChanged typed(String password, [String? confirmation]) {
       return NewPasswordChanged(
         password: password,
         confirmation: confirmation ?? password,
       );
+    }
+
+    /// Types a matching password, then sends it.
+    Future<void> typeAndSave(NewPasswordBloc bloc) async {
+      bloc.add(typed('abcdefg1'));
+      await pumpEventQueue();
+      bloc.add(const NewPasswordSubmitted('abcdefg1'));
     }
 
     blocTest<NewPasswordBloc, NewPasswordState>(
@@ -120,17 +183,126 @@ void main() {
     );
 
     blocTest<NewPasswordBloc, NewPasswordState>(
-      'saves a password typed twice',
+      'saves a password typed twice and signs the person out',
+      setUp: () => auth = FakeAuthRepository(demo: demo, signedIn: true),
       build: build,
-      act: (bloc) async {
-        bloc.add(typed('abcdefg1'));
-        await pumpEventQueue();
-        bloc.add(const NewPasswordSubmitted('abcdefg1'));
-      },
+      act: typeAndSave,
       skip: 1,
       expect: () => const [
         NewPasswordState(status: NewPasswordStatus.saving, matches: true),
         NewPasswordState(status: NewPasswordStatus.saved, matches: true),
+      ],
+      verify: (_) => expect(auth.isSignedIn, isFalse),
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'a refused password says why, and typing again clears it',
+      setUp: () => demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.passwordRefused),
+      ),
+      build: build,
+      act: (bloc) async {
+        await typeAndSave(bloc);
+        await pumpEventQueue();
+        bloc.add(typed('abcdefg12'));
+      },
+      skip: 2,
+      expect: () => const [
+        NewPasswordState(
+          status: NewPasswordStatus.rejected,
+          matches: true,
+          passwordProblem: PasswordProblem(
+            PasswordIssue.tooShort,
+            limit: FakeAuthRepository.demoMinimumPasswordLength,
+          ),
+        ),
+        NewPasswordState(matches: true),
+      ],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'a reset that ran out is reported, to start again',
+      setUp: () => demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tokenInvalid),
+      ),
+      build: build,
+      act: typeAndSave,
+      skip: 2,
+      expect: () => const [
+        NewPasswordState(status: NewPasswordStatus.expired, matches: true),
+      ],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'a wait is counted down and the button works again at the end',
+      setUp: () => demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tooSoon),
+      ),
+      build: build,
+      act: (bloc) async {
+        await typeAndSave(bloc);
+        await pumpEventQueue();
+        ticker.tick(29);
+        await pumpEventQueue();
+        ticker.tick(0);
+      },
+      skip: 2,
+      expect: () => const [
+        NewPasswordState(
+          status: NewPasswordStatus.waiting,
+          matches: true,
+          waitSecondsLeft: 30,
+        ),
+        NewPasswordState(
+          status: NewPasswordStatus.waiting,
+          matches: true,
+          waitSecondsLeft: 29,
+        ),
+        NewPasswordState(matches: true),
+      ],
+      verify: (_) => expect(ticker.started, [30]),
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'does not save while the wait is on',
+      build: build,
+      seed: () => const NewPasswordState(
+        status: NewPasswordStatus.waiting,
+        matches: true,
+        waitSecondsLeft: 12,
+      ),
+      act: (bloc) => bloc.add(const NewPasswordSubmitted('abcdefg1')),
+      expect: () => const <NewPasswordState>[],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'typing during a wait keeps the wait',
+      build: build,
+      seed: () => const NewPasswordState(
+        status: NewPasswordStatus.waiting,
+        matches: true,
+        waitSecondsLeft: 12,
+      ),
+      act: (bloc) => bloc.add(typed('abc', 'ab')),
+      expect: () => const [
+        NewPasswordState(
+          status: NewPasswordStatus.waiting,
+          mismatch: true,
+          waitSecondsLeft: 12,
+        ),
+      ],
+    );
+
+    blocTest<NewPasswordBloc, NewPasswordState>(
+      'reports a busy server',
+      setUp: () => demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.unavailable),
+      ),
+      build: build,
+      act: typeAndSave,
+      skip: 2,
+      expect: () => const [
+        NewPasswordState(status: NewPasswordStatus.unavailable, matches: true),
       ],
     );
 
@@ -139,11 +311,7 @@ void main() {
       setUp: () =>
           demo.update(const DemoSettings(scenario: DemoScenario.noConnection)),
       build: build,
-      act: (bloc) async {
-        bloc.add(typed('abcdefg1'));
-        await pumpEventQueue();
-        bloc.add(const NewPasswordSubmitted('abcdefg1'));
-      },
+      act: typeAndSave,
       skip: 2,
       expect: () => [
         isA<NewPasswordState>().having(
@@ -159,11 +327,7 @@ void main() {
       setUp: () =>
           demo.update(const DemoSettings(scenario: DemoScenario.error)),
       build: build,
-      act: (bloc) async {
-        bloc.add(typed('abcdefg1'));
-        await pumpEventQueue();
-        bloc.add(const NewPasswordSubmitted('abcdefg1'));
-      },
+      act: typeAndSave,
       skip: 2,
       expect: () => [
         isA<NewPasswordState>().having(
@@ -173,36 +337,6 @@ void main() {
         ),
       ],
       errors: () => [isA<ServerException>()],
-    );
-  });
-
-  group('a server that does not offer it yet', () {
-    blocTest<ForgotPasswordBloc, ForgotPasswordState>(
-      'the reset code is reported as not available',
-      build: () => ForgotPasswordBloc(
-        repository: NotAvailableAuthRepository(demo: demo),
-      ),
-      act: (bloc) => bloc.add(const ForgotPasswordSubmitted('me@b.c')),
-      expect: () => const [
-        ForgotPasswordState(status: ForgotPasswordStatus.submitting),
-        ForgotPasswordState(status: ForgotPasswordStatus.notAvailable),
-      ],
-    );
-
-    blocTest<NewPasswordBloc, NewPasswordState>(
-      'saving the new password is reported as not available',
-      build: () =>
-          NewPasswordBloc(repository: NotAvailableAuthRepository(demo: demo)),
-      act: (bloc) async {
-        bloc.add(const NewPasswordChanged(password: 'x', confirmation: 'x'));
-        await pumpEventQueue();
-        bloc.add(const NewPasswordSubmitted('x'));
-      },
-      skip: 1,
-      expect: () => const [
-        NewPasswordState(status: NewPasswordStatus.saving, matches: true),
-        NewPasswordState(status: NewPasswordStatus.notAvailable, matches: true),
-      ],
     );
   });
 }

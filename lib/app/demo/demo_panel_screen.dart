@@ -86,6 +86,14 @@ class DemoPanelScreen extends StatelessWidget {
                   onSelected: (value) =>
                       demo.update(demo.settings.copyWith(code: value)),
                 ),
+                const _Heading('New password after a reset, next attempt'),
+                _Choice<DemoPasswordReset>(
+                  values: DemoPasswordReset.values,
+                  selected: settings.passwordReset,
+                  label: _passwordResetLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(passwordReset: value)),
+                ),
               ],
               const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
@@ -165,6 +173,14 @@ class DemoPanelScreen extends StatelessWidget {
     DemoRegistration.rejected => 'Rejected (field errors)',
     DemoRegistration.tooSoon => 'Too soon (wait, then send again)',
     DemoRegistration.unavailable => 'Server busy (try again shortly)',
+  };
+
+  static String _passwordResetLabel(DemoPasswordReset value) => switch (value) {
+    DemoPasswordReset.accepted => 'Accepted (any password)',
+    DemoPasswordReset.passwordRefused => 'Password refused (too short)',
+    DemoPasswordReset.tokenInvalid => 'Reset ran out (start again)',
+    DemoPasswordReset.tooSoon => 'Too many requests (wait)',
+    DemoPasswordReset.unavailable => 'Server busy (try again shortly)',
   };
 
   static String _codeLabel(DemoCode value) => switch (value) {

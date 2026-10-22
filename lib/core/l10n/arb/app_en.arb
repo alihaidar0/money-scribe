@@ -340,7 +340,7 @@
   },
   "tryAgainIn": "Try again in {time}",
   "@tryAgainIn": {
-    "description": "Label of the disabled Create account button while the server asks to wait before the account is sent again. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "description": "Label of a disabled button (Create account, Send code, Save password) while the server asks to wait before the same request is sent again. The placeholder is the time left as minutes and seconds, such as 0:42.",
     "placeholders": {
       "time": {"type": "String"}
     }
@@ -541,6 +541,10 @@
   "newPasswordTitle": "Create a new password",
   "@newPasswordTitle": {
     "description": "Title of the screen where a new password is chosen."
+  },
+  "resetExpired": "This reset has expired. Ask for a new code.",
+  "@resetExpired": {
+    "description": "Message shown on the Forgot password screen when the reset ran out while the new password was being saved, so a new code has to be asked for."
   },
   "savePassword": "Save password",
   "@savePassword": {

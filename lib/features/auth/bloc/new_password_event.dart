@@ -24,3 +24,13 @@ final class NewPasswordSubmitted extends NewPasswordEvent {
   @override
   List<Object> get props => [password];
 }
+
+/// A second of the wait before the password can be sent again passed.
+final class _NewPasswordWaitTicked extends NewPasswordEvent {
+  const new(this.secondsLeft);
+
+  final int secondsLeft;
+
+  @override
+  List<Object> get props => [secondsLeft];
+}
