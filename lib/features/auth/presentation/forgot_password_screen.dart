@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/navigation_extensions.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
@@ -18,8 +20,10 @@ class ForgotPasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          ForgotPasswordBloc(repository: context.read<AuthRepository>()),
+      create: (context) => ForgotPasswordBloc(
+        repository: context.read<AuthRepository>(),
+        ticker: context.read<Ticker>(),
+      ),
       child: const _ForgotPasswordView(),
     );
   }
@@ -59,10 +63,11 @@ class _ForgotPasswordViewState extends State<_ForgotPasswordView> {
       listener: (context, state) => context.push(AppRoutes.resetCode),
       builder: (context, state) {
         final isBusy = state.status == ForgotPasswordStatus.submitting;
+        final isWaiting = state.status == ForgotPasswordStatus.waiting;
 
         return FlowPage(
           failure: switch (state.status) {
-            ForgotPasswordStatus.notAvailable => FailureKind.notAvailable,
+            ForgotPasswordStatus.unavailable => FailureKind.unavailable,
             ForgotPasswordStatus.noConnection => FailureKind.noConnection,
             ForgotPasswordStatus.failure => FailureKind.error,
             _ => null,
@@ -88,13 +93,20 @@ class _ForgotPasswordViewState extends State<_ForgotPasswordView> {
               autofillHints: const [AutofillHints.email],
               textDirection: TextDirection.ltr,
               onSubmitted: (_) {
-                if (!isBusy) _submit();
+                if (!isBusy && !isWaiting) _submit();
               },
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: isBusy ? null : _submit,
-              child: isBusy ? const ButtonSpinner() : Text(l10n.sendCode),
+              onPressed: isBusy || isWaiting ? null : _submit,
+              child: switch (state.status) {
+                ForgotPasswordStatus.submitting => const ButtonSpinner(),
+                // The server asked to wait: the button counts down.
+                ForgotPasswordStatus.waiting => Text(
+                  l10n.tryAgainIn(time: formatCountdown(state.waitSecondsLeft)),
+                ),
+                _ => Text(l10n.sendCode),
+              },
             ),
             const SizedBox(height: 8),
             TextButton(

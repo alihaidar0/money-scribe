@@ -389,6 +389,70 @@ void main() {
       expect(auth.resendWaitRemaining, FakeAuthRepository.resendWait);
     });
 
+    test(
+      'asking for the same reset code again inside the wait is refused',
+      () async {
+        await auth.requestPasswordReset('me@b.c');
+
+        await expectLater(
+          auth.requestPasswordReset(' ME@b.c '),
+          throwsA(
+            isA<RateLimitedException>().having(
+              (e) => e.reason,
+              'reason',
+              RateLimitReason.resendTooSoon,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('another address is not held by the wait', () async {
+      await auth.requestPasswordReset('me@b.c');
+      await auth.requestPasswordReset('other@b.c');
+
+      expect(auth.pendingEmail, 'other@b.c');
+    });
+
+    test('a busy server refuses a reset code', () async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+
+      await expectLater(
+        auth.requestPasswordReset('me@b.c'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+    });
+
+    group('the new password after a reset', () {
+      test('is accepted, and ends the session like the server does', () async {
+        auth = FakeAuthRepository(demo: demo, signedIn: true);
+
+        await auth.resetPassword('anything');
+
+        expect(auth.isSignedIn, isFalse);
+      });
+
+      for (final entry in {
+        DemoPasswordReset.passwordRefused: isA<PasswordRejectedException>(),
+        DemoPasswordReset.tokenInvalid: isA<ResetTokenInvalidException>(),
+        DemoPasswordReset.tooSoon: isA<RateLimitedException>(),
+        DemoPasswordReset.unavailable: isA<ServiceUnavailableException>(),
+      }.entries) {
+        test('${entry.key.name} is answered like the server does', () async {
+          auth = FakeAuthRepository(demo: demo, signedIn: true);
+          demo.update(DemoSettings(passwordReset: entry.key));
+
+          await expectLater(
+            auth.resetPassword('anything'),
+            throwsA(entry.value),
+          );
+
+          // Refused: nothing happened to the session.
+          expect(auth.isSignedIn, isTrue);
+        });
+      }
+    });
+
     test('a busy server asks to try again shortly', () async {
       demo.update(const DemoSettings(code: DemoCode.unavailable));
 

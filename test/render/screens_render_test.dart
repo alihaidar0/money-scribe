@@ -214,10 +214,15 @@ final _scenes = <_Scene>[
   ),
   _Scene(
     'err-4-not-available',
-    AppRoutes.forgotPassword,
+    AppRoutes.changePassword,
+    signedIn: true,
     authNotAvailable: true,
     setup: (tester, demo) async {
-      await tester.enterText(find.byType(TextField), 'alex@example.com');
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-1');
+      await tester.pumpAndSettle();
       await _tapPrimary(tester);
     },
   ),
@@ -381,6 +386,26 @@ final _scenes = <_Scene>[
   ),
   const _Scene('auth-7-forgot-password', AppRoutes.forgotPassword),
   _Scene(
+    'auth-7b-forgot-wait',
+    AppRoutes.forgotPassword,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField), 'alex@example.com');
+      await _tapPrimary(tester);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-7c-forgot-busy',
+    AppRoutes.forgotPassword,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await tester.enterText(find.byType(TextField), 'alex@example.com');
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
     'auth-8-reset-code',
     AppRoutes.resetCode,
     setup: (tester, demo) => _typeCode(tester, '62'),
@@ -401,6 +426,32 @@ final _scenes = <_Scene>[
       await tester.enterText(fields.at(0), 'secret123');
       await tester.enterText(fields.at(1), 'secret123');
       await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'auth-9b-new-password-refused',
+    AppRoutes.newPassword,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.passwordRefused),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'secret123');
+      await tester.enterText(fields.at(1), 'secret123');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-9c-new-password-wait',
+    AppRoutes.newPassword,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(passwordReset: DemoPasswordReset.tooSoon));
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'secret123');
+      await tester.enterText(fields.at(1), 'secret123');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
     },
   ),
   const _Scene('auth-10-password-changed', AppRoutes.passwordChanged),

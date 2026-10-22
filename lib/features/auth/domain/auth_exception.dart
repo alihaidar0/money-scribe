@@ -136,3 +136,23 @@ final class CodeExpiredException extends AuthException {
   @override
   String toString() => 'CodeExpiredException';
 }
+
+/// The new password was refused (resetting a password): [problem] says why.
+/// The server owns the password policy; the app only words it.
+final class PasswordRejectedException extends AuthException {
+  const new(this.problem);
+
+  final PasswordProblem problem;
+
+  @override
+  String toString() => 'PasswordRejectedException';
+}
+
+/// The reset cannot go on: its token is unknown, was used, or ran out, or the
+/// app lost it. A new code has to be asked for from the start.
+final class ResetTokenInvalidException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'ResetTokenInvalidException';
+}

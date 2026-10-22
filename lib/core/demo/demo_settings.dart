@@ -62,6 +62,23 @@ enum DemoCode {
   unavailable,
 }
 
+/// What the next attempt to set a new password after a reset does.
+enum DemoPasswordReset {
+  accepted,
+
+  /// The server refuses the password (the token stays valid).
+  passwordRefused,
+
+  /// The reset ran out: a new code has to be asked for.
+  tokenInvalid,
+
+  /// Too many requests: wait before the password is sent again.
+  tooSoon,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
 
@@ -73,6 +90,7 @@ final class DemoSettings extends Equatable {
     this.signIn = DemoSignIn.accepted,
     this.registration = DemoRegistration.accepted,
     this.code = DemoCode.accepted,
+    this.passwordReset = DemoPasswordReset.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
   });
@@ -81,6 +99,7 @@ final class DemoSettings extends Equatable {
   final DemoSignIn signIn;
   final DemoRegistration registration;
   final DemoCode code;
+  final DemoPasswordReset passwordReset;
   final DemoSave save;
 
   /// How the fake account is paid: one payment or two a month.
@@ -91,6 +110,7 @@ final class DemoSettings extends Equatable {
     DemoSignIn? signIn,
     DemoRegistration? registration,
     DemoCode? code,
+    DemoPasswordReset? passwordReset,
     DemoSave? save,
     PaymentMode? paymentMode,
   }) {
@@ -99,6 +119,7 @@ final class DemoSettings extends Equatable {
       signIn: signIn ?? this.signIn,
       registration: registration ?? this.registration,
       code: code ?? this.code,
+      passwordReset: passwordReset ?? this.passwordReset,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
     );
@@ -110,6 +131,7 @@ final class DemoSettings extends Equatable {
     signIn,
     registration,
     code,
+    passwordReset,
     save,
     paymentMode,
   ];

@@ -18,6 +18,9 @@ const authPublicPaths = {
   '/api/v1/auth/sign-in/',
   '/api/v1/auth/refresh/',
   '/api/v1/auth/sign-out/',
+  '/api/v1/auth/password-reset/request/',
+  '/api/v1/auth/password-reset/verify/',
+  '/api/v1/auth/password-reset/confirm/',
 };
 
 /// The real authentication, built from the pieces it needs: the account

@@ -122,7 +122,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Register: passwords differ, and the countdown on the button while the server asks to wait
 - [x] Verify email: 6 digits, the hint for an existing account, and the dead code after too many tries
 - [x] "Try again shortly" state when the server is busy (sign in, register, verify email)
-- [x] "Not available yet" state for resetting or changing a password and deleting the account, until the server offers them
+- [x] "Not available yet" state for changing a password and deleting the account, until the server offers them
 
 ### B. Overview
 
@@ -287,7 +287,7 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
 - [x] Write the leaked-password and bot-check sentences for the privacy policy and the store forms (wording in `backend-api.md`)
 - [x] Account endpoints (`alihaidar0/money-scribe-backend#40`): pin the contract and generate the client
-- [ ] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
+- [x] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
 - [ ] Change password on the server: the new tokens replace the stored ones
 - [ ] Delete account on the server, and the deletion wording for the privacy policy and the store forms
 - [ ] Edit the name

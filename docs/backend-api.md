@@ -412,8 +412,8 @@ check against the Play Data safety and Apple App Privacy forms when they are fil
   the first five characters of its SHA-1 hash to the Pwned Passwords range service. The password and the
   full hash never leave the server, and the service never receives the email or the device. The app
   itself sends nothing to that service. The check is skipped when the service cannot be reached, so the
-  wording must not promise that every password is checked. It runs at registration today; the change
-  and reset flows will use it when they are built.
+  wording must not promise that every password is checked. It runs at registration and when a password is
+  reset today; the change flow will use it when it is built.
   Sentence: "When you choose a password, we may check it against a public list of leaked passwords. Only
   the first five characters of its hash are sent, never the password or the full hash." The data sent
   identifies no one, so this is a sentence for the policy rather than an entry for the forms.
@@ -425,11 +425,27 @@ check against the Play Data safety and Apple App Privacy forms when they are fil
   programs." This is data going from the app to a third party, so check it against the "shared data"
   wording of the store forms, and against Cloudflare's own terms, before publishing.
 
+### Resetting a password
+
+Three calls, none of which signs anyone in: ask for a code (`password-reset/request/`, the same answer for
+every address, so the app always goes on to the code screen), check the code (`password-reset/verify/`,
+which answers a single-use `reset_token`), and set the new password (`password-reset/confirm/`, `204`).
+
+- The app keeps the reset token in memory only and uses it once. A new code ends the reset that was going
+  on. `reset_token_invalid` (or an app that lost the token) goes back to the first screen with a message.
+- A refused password (`password_*`) leaves the token valid: the person types another one on the same
+  screen, worded by the app from the code, the numbers coming from `min_length` / `max_length`.
+- A new password equal to the current one is allowed here: the reset proves the mailbox, not the old
+  password.
+- Every wait is the server's: `Retry-After` on a `429`, and `resend_available_in` after a code. The
+  buttons count it down. A `503` shows the "try again shortly" state.
+- A saved reset ends every session of the account, this device's included: the app clears its tokens and
+  goes to the "password changed" screen, then to sign-in.
+
 ### Not covered yet
 
-Reset password, change password, change email, delete account and edit name come as their own request
-issues in the next step. The profile call is part of this step. Until they exist, the real account
-answers `FeatureNotAvailableException` for resetting and changing a password and for deleting the
+Change password, change email, delete account and edit name come as their own branches. Until they exist,
+the real account answers `FeatureNotAvailableException` for changing a password and for deleting the
 account, and each of those screens shows "Not available yet" with a Go back button.
 
 ### What the app uses for this step

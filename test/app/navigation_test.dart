@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
@@ -853,6 +854,135 @@ void main() {
         find.text('The code is incorrect. 4 attempts left.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('Forgot password: what the server answers', () {
+    testWidgets('asking for a code again at once counts down the wait', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _go(tester, AppRoutes.forgotPassword);
+      await _typeInField(tester, 0, 'me@example.com');
+      await _tapText(tester, 'Send code');
+      expect(find.byType(ResetCodeScreen), findsOneWidget);
+      await _back(tester);
+
+      await _tapText(tester, 'Send code');
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.text('Try again in 1:00'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Try again in 1:00'),
+            )
+            .onPressed,
+        isNull,
+      );
+
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Send code'), findsOneWidget);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      await _go(tester, AppRoutes.forgotPassword);
+      _demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await _typeInField(tester, 0, 'me@example.com');
+
+      await _tapText(tester, 'Send code');
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.byType(FailureView), findsOneWidget);
+      expect(find.byType(ResetCodeScreen), findsNothing);
+    });
+  });
+
+  group('New password: what the server answers', () {
+    Future<void> save(WidgetTester tester) async {
+      await _go(tester, AppRoutes.newPassword);
+      await _typeInField(tester, 0, 'secret123');
+      await _typeInField(tester, 1, 'secret123');
+      await _tapText(tester, 'Save password');
+    }
+
+    testWidgets('a refused password is explained under the field', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.passwordRefused),
+      );
+
+      await save(tester);
+
+      expect(find.byType(NewPasswordScreen), findsOneWidget);
+      expect(
+        find.text('Your password is too short. Use at least 15 characters.'),
+        findsOneWidget,
+      );
+
+      // The reset is still open: typing again clears the message.
+      _demo.update(const DemoSettings());
+      await _typeInField(tester, 0, 'a much longer passphrase');
+      await _typeInField(tester, 1, 'a much longer passphrase');
+      expect(find.textContaining('too short'), findsNothing);
+      await _tapText(tester, 'Save password');
+      expect(find.byType(PasswordChangedScreen), findsOneWidget);
+    });
+
+    testWidgets('a reset that ran out starts again from the email', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tokenInvalid),
+      );
+
+      await save(tester);
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(
+        find.text('This reset has expired. Ask for a new code.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('too many requests counts down on the button', (tester) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tooSoon),
+      );
+
+      await save(tester);
+
+      expect(find.text('Try again in 0:30'), findsOneWidget);
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Save password'), findsOneWidget);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.unavailable),
+      );
+
+      await save(tester);
+
+      expect(find.byType(NewPasswordScreen), findsOneWidget);
+      expect(find.byType(FailureView), findsOneWidget);
+    });
+
+    testWidgets('saving it signs a signed-in person out', (tester) async {
+      await _pumpApp(tester, signedIn: true);
+
+      await save(tester);
+
+      expect(find.byType(PasswordChangedScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
     });
   });
 
