@@ -286,6 +286,11 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Sign in names the field at fault: email not registered under the email, wrong password under the password, email first
 - [x] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
 - [x] Write the leaked-password and bot-check sentences for the privacy policy and the store forms (wording in `backend-api.md`)
-- [ ] Next request issues: reset password, change password, change email, delete account, edit name
+- [x] Account endpoints (`alihaidar0/money-scribe-backend#40`): pin the contract and generate the client
+- [ ] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
+- [ ] Change password on the server: the new tokens replace the stored ones
+- [ ] Delete account on the server, and the deletion wording for the privacy policy and the store forms
+- [ ] Edit the name
+- [ ] Change email: new address, code, cancel
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
