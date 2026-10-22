@@ -33,7 +33,16 @@ abstract interface class AuthRepository {
   /// `EmailNotVerifiedException` (the address becomes [pendingEmail] and no
   /// code is sent) or `RateLimitedException`. The password is sent as typed:
   /// sign-in never applies a password policy.
-  Future<void> signIn({required String email, required String password});
+  ///
+  /// After repeated failures the server asks for a bot challenge first
+  /// (`ChallengeRequiredException`); [challengeToken] is the token of the
+  /// solved challenge, used once, and `ChallengeRejectedException` says it was
+  /// not accepted.
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  });
 
   /// Creates the account and sends a code to `email`. The answer is the same
   /// for a new, a pending and an already registered address. Throws

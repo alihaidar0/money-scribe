@@ -5,11 +5,14 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/app/bloc/app_bloc_observer.dart';
+import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
+import 'package:money_scribe/core/challenge/turnstile_challenge_view_factory.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/device/platform_device_info_source.dart';
 import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
+import 'package:money_scribe/core/environment/turnstile_config.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
 import 'package:money_scribe/core/network/server_warm_up.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
@@ -19,6 +22,7 @@ import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.da
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/data/monitored_server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
@@ -93,10 +97,21 @@ Future<void> main() async {
       reportsRepository: FakeReportsRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,
+      challengeViewFactory: _createChallengeViewFactory(apiConfig),
       serverActivity: apiConfig == null
           ? null
           : MonitoredServerActivity(monitor),
     ),
+  );
+}
+
+/// The bot challenge of this build: Cloudflare Turnstile when there is a
+/// server, else the demo button that goes with the fake account.
+ChallengeViewFactory _createChallengeViewFactory(ApiConfig? apiConfig) {
+  if (apiConfig == null) return const DemoChallengeViewFactory();
+  return TurnstileChallengeViewFactory(
+    siteKey: TurnstileConfig.current?.siteKey,
+    baseUrl: apiConfig.baseUrl,
   );
 }
 

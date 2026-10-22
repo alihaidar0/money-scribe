@@ -179,6 +179,24 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'auth-2f-sign-in-challenge',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2g-sign-in-challenge-refused',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected));
+      await _tapPrimary(tester);
+      await tester.tap(find.byType(OutlinedButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'auth-2c-sign-in-locked',
     AppRoutes.signIn,
     setup: (tester, demo) async {

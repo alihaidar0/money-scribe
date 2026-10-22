@@ -55,6 +55,27 @@ void main() {
       expect(auth.isSignedIn, isFalse);
     });
 
+    test('asks for a challenge first, then signs in with its token', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+
+      await expectLater(signIn(), throwsA(isA<ChallengeRequiredException>()));
+      expect(auth.isSignedIn, isFalse);
+
+      await auth.signIn(email: 'a@b.c', password: 'x', challengeToken: 't');
+      expect(auth.isSignedIn, isTrue);
+    });
+
+    test('refuses every token when the demo says so', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected));
+
+      await expectLater(signIn(), throwsA(isA<ChallengeRequiredException>()));
+      await expectLater(
+        auth.signIn(email: 'a@b.c', password: 'x', challengeToken: 't'),
+        throwsA(isA<ChallengeRejectedException>()),
+      );
+      expect(auth.isSignedIn, isFalse);
+    });
+
     test('refuses an email without an account', () async {
       demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
 

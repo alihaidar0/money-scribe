@@ -45,6 +45,10 @@ the local, ignored file `.env.<environment>`; the signed Android build writes th
 variable. An empty value means "no server": the app keeps its fake data. See
 [`backend-api.md`](backend-api.md), section 6.
 
+**The public Turnstile site key** (`TURNSTILE_SITE_KEY`) of the sign-in bot check is kept the same way:
+a variable (not a secret) of the GitHub environment and a line in `.env.<environment>`. Its secret
+key belongs to the backend alone.
+
 ## What the build does
 
 The **Build** workflow (`.github/workflows/build.yml`) decides by event:

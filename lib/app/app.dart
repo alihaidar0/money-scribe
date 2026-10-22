@@ -7,6 +7,7 @@ import 'package:money_scribe/app/demo/demo_handle.dart';
 import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/app/router/stream_listenable.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
+import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/clipboard/system_text_clipboard.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
@@ -64,6 +65,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.reportsRepository,
     required this.demo,
     required this.environment,
+    required this.challengeViewFactory,
     this.serverActivity,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
@@ -96,6 +98,9 @@ class MoneyScribeApp extends StatefulWidget {
   /// How fast the server answers. `null` for a build with no server. Staging
   /// builds use it to tell the person the free server is starting.
   final ServerActivity? serverActivity;
+
+  /// Shows the bot challenge the server may ask for at sign-in.
+  final ChallengeViewFactory challengeViewFactory;
 
   final TextClipboard textClipboard;
   final Ticker ticker;
@@ -156,6 +161,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),
+          RepositoryProvider.value(value: widget.challengeViewFactory),
         ],
         child: MultiBlocProvider(
           providers: [

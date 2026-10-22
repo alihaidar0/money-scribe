@@ -215,6 +215,14 @@ hold the same name:
   `.env.<environment>` from the variable, never prints it, and stops the build if the value is not a
   bare https address. Test builds, the web build and the iOS check have none.
 
+The sign-in bot check has one more build-time value of the same kind, `TURNSTILE_SITE_KEY` (section 7):
+the **public** site key of the Cloudflare Turnstile widget of that environment, read by
+`TurnstileConfig` (`lib/core/environment/turnstile_config.dart`). It lives in the same two places, as
+a **variable** (never a secret) of the GitHub environment and a line of `.env.<environment>`, and the
+build stops if it holds anything but letters, digits, `-` and `_`. The secret key of Turnstile
+belongs to the backend alone and never comes near this repository or the app. Without a key the
+check cannot be shown and the sign-in says to try again later.
+
 The value is **the server only**: `https://host`, no path and no trailing slash. The generated
 client already writes `/api/v1/...` in every path, so an address with `/api/v1` would call
 `/api/v1/api/v1/...`. `ApiConfig` refuses plain HTTP (except `http://localhost`, `127.0.0.1` and
@@ -342,10 +350,24 @@ All paths are under `/api/v1/auth/`.
 | `email_not_verified` | 403 | only for a correct password; opens the verify screen and does not resend by itself |
 | `sign_in_locked` | 429 | lock countdown from `Retry-After`, also for a correct password |
 | `service_unavailable` | 503 | "try again shortly", with the wait from `Retry-After`; only register, resend, verify and sign in can answer it, and the body `type` is `server_error` (a separate schema from the other error bodies) |
+| `captcha_required` | 400 | sign-in only, `attr` `captcha_token`, after 5 failed sign-ins from one address: shows the bot check and sends the same sign-in again with its token |
+| `captcha_invalid` | 400 | sign-in only: the token was wrong, expired (5 minutes) or used; shows a new bot check |
 | `token_expired` | 401 | the only code that triggers a refresh |
 | `token_invalid`, `session_expired`, `session_signed_out`, `session_revoked_by_user`, `session_password_changed`, `session_email_changed`, `session_token_reuse` | 401 | final: drop the tokens and show sign-in with the reason |
 
 ### How the app behaves
+
+- **Sign-in bot check.** After 5 failed sign-ins from one address the server answers
+  `400 captcha_required` until the sign-in is sent again with `captcha_token`, the token of a
+  Cloudflare Turnstile widget created with the action `sign_in`. The app shows the widget in a bottom
+  sheet (`features/auth/presentation/sign_in_challenge_sheet.dart`). It is the official
+  `webview_flutter` showing a small page of our own (`core/challenge/turnstile_page.dart`), loaded
+  with the address of the server as its base, which is the host the site key allows; the web view
+  cannot leave that page and only the widget's script and frames of Cloudflare run in it. The token is
+  single use and lives five minutes, so it is sent once, as soon as the widget returns it, and a
+  refused token (`captcha_invalid`) opens a new widget. The person solving the widget is the only
+  trigger: the app never sends a sign-in again by itself. Android and iOS only; on the web build the
+  sheet says the check is not available. Builds with the fake account show a demo button instead.
 
 - **Register** always opens the verify screen, with the hint "No code? You may already have an account:
   sign in or reset your password." A second register inside the 60 s cooldown answers `429`, which the
@@ -373,10 +395,23 @@ latest.
 
 ### For the privacy policy and the store forms
 
-The server checks a new password against a public list of leaked passwords (Pwned Passwords) by sending
-the first five characters of the password's hash, never the password, the full hash or any user data.
-The privacy policy needs one sentence on it, for example: "To protect accounts, we check new passwords
-against a public list of leaked passwords without sending the password or its full hash."
+Two things in the sign-in flow involve a third party, and the privacy policy needs one sentence on each.
+There is no policy yet (it comes with Google Play); this is the wording to use then, and the points to
+check against the Play Data safety and Apple App Privacy forms when they are filled in.
+
+- **Leaked-password check (done by the server).** The server checks a new password against a public list
+  of leaked passwords (Pwned Passwords) by sending the first five characters of the password's hash,
+  never the password, the full hash or any user data. The app itself sends nothing to that service.
+  Sentence: "To protect accounts, we check new passwords against a public list of leaked passwords
+  without sending the password or its full hash." The data sent identifies no one, so this is a
+  sentence for the policy rather than an entry for the forms.
+- **Bot check at sign-in (done by the app).** After repeated failed sign-ins the app shows a Cloudflare
+  Turnstile widget, which runs in a web view on the device. Cloudflare receives technical information
+  such as the IP address and browser characteristics to tell people from automated programs.
+  Sentence: "After repeated failed sign-ins we ask you to complete a security check provided by
+  Cloudflare, which processes technical information about your device to tell people from automated
+  programs." This is data going from the app to a third party, so check it against the "shared data"
+  wording of the store forms, and against Cloudflare's own terms, before publishing.
 
 ### Not covered yet
 

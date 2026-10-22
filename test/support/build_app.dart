@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
+import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
@@ -8,6 +9,7 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
@@ -47,6 +49,7 @@ Widget buildApp({
   bool signedIn = false,
   AppEnvironment environment = AppEnvironment.staging,
   ServerActivity? serverActivity,
+  ChallengeViewFactory? challengeViewFactory,
 }) {
   final demoController = demo ?? DemoController(latency: Duration.zero);
   final transactions = FakeTransactionsRepository(demo: demoController);
@@ -59,6 +62,8 @@ Widget buildApp({
     authRepository:
         authRepository ??
         FakeAuthRepository(demo: demoController, signedIn: signedIn),
+    challengeViewFactory:
+        challengeViewFactory ?? const DemoChallengeViewFactory(),
     appLockRepository: FakeAppLockRepository(),
     payScheduleRepository: FakePayScheduleRepository(demo: demoController),
     defaultCurrencyRepository: FakeDefaultCurrencyRepository(

@@ -17,6 +17,14 @@ enum SignInStatus {
   /// field.
   wrongPassword,
 
+  /// The server wants a bot challenge to be solved before it checks the email
+  /// and password: the challenge opens, and its token goes with the next send.
+  challengeRequired,
+
+  /// The token of the challenge was refused (wrong, expired or used): a new
+  /// challenge opens.
+  challengeRejected,
+
   /// The server refused the sign-in without naming a field (a deactivated
   /// account, for instance): said in a banner.
   wrongCredentials,

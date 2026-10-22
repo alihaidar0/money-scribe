@@ -283,6 +283,26 @@
   "@signInWrongPassword": {
     "description": "Error under the password field of the Sign in screen when the account exists but the password is wrong."
   },
+  "challengeTitle": "Security check",
+  "@challengeTitle": {
+    "description": "Title of the bottom sheet that asks the person to complete a bot check before signing in. The server asks for it after several failed sign-ins."
+  },
+  "challengeBody": "Complete the check to sign in.",
+  "@challengeBody": {
+    "description": "Sentence under the title of the security check sheet of the Sign in screen."
+  },
+  "challengeRejected": "The check did not work. Try again.",
+  "@challengeRejected": {
+    "description": "Error in the security check sheet when the server did not accept the result of the check, for example because it expired."
+  },
+  "challengeLoadFailed": "The check could not load. Check your connection and try again.",
+  "@challengeLoadFailed": {
+    "description": "Error in the security check sheet when the check itself could not be shown."
+  },
+  "challengeUnavailable": "The security check is not available right now. Try again later.",
+  "@challengeUnavailable": {
+    "description": "Notice in the security check sheet when this version of the app cannot show the check."
+  },
   "signInLocked": "Too many attempts. Try again in {time}.",
   "@signInLocked": {
     "description": "Banner on the Sign in screen while sign-in is locked. The placeholder is the time left as minutes and seconds, such as 4:59.",

@@ -33,6 +33,7 @@ printcert
 pubspec
 rhysd
 shellcheck
+sitekey
 sshkey
 storetype
 tolower

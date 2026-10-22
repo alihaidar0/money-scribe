@@ -21,6 +21,10 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     on<SignInStarted>(_onStarted, transformer: droppable());
     // A second press while the first is being sent is ignored.
     on<SignInSubmitted>(_onSubmitted, transformer: droppable());
+    on<SignInChallengeDismissed>(
+      _onChallengeDismissed,
+      transformer: sequential(),
+    );
     on<SignInEmailEdited>(_onEmailEdited, transformer: sequential());
     on<SignInPasswordEdited>(_onPasswordEdited, transformer: sequential());
     on<_SignInLockTicked>(_onLockTicked, transformer: sequential());
@@ -51,8 +55,16 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
   ) async {
     emit(const SignInState(status: SignInStatus.submitting));
     try {
-      await _repository.signIn(email: event.email, password: event.password);
+      await _repository.signIn(
+        email: event.email,
+        password: event.password,
+        challengeToken: event.challengeToken,
+      );
       emit(const SignInState(status: SignInStatus.success));
+    } on ChallengeRequiredException {
+      emit(const SignInState(status: SignInStatus.challengeRequired));
+    } on ChallengeRejectedException {
+      emit(const SignInState(status: SignInStatus.challengeRejected));
     } on EmailNotRegisteredException {
       emit(const SignInState(status: SignInStatus.emailNotRegistered));
     } on WrongPasswordException {
@@ -73,6 +85,17 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(const SignInState(status: SignInStatus.failure));
+    }
+  }
+
+  void _onChallengeDismissed(
+    SignInChallengeDismissed event,
+    Emitter<SignInState> emit,
+  ) {
+    // Nothing is sent: the person decides whether to press Sign in again.
+    if (state.status == SignInStatus.challengeRequired ||
+        state.status == SignInStatus.challengeRejected) {
+      emit(const SignInState());
     }
   }
 
