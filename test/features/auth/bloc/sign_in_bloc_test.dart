@@ -16,7 +16,11 @@ class _ThrottledAuth extends FakeAuthRepository {
   final Duration wait;
 
   @override
-  Future<void> signIn({required String email, required String password}) {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  }) {
     throw RateLimitedException(RateLimitReason.throttled, wait);
   }
 }
@@ -26,7 +30,11 @@ class _RefusedAuth extends FakeAuthRepository {
   new(DemoController demo) : super(demo: demo);
 
   @override
-  Future<void> signIn({required String email, required String password}) {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  }) {
     throw const WrongCredentialsException();
   }
 }
@@ -38,9 +46,17 @@ class _CountingAuth extends FakeAuthRepository {
   int sent = 0;
 
   @override
-  Future<void> signIn({required String email, required String password}) {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  }) {
     sent++;
-    return super.signIn(email: email, password: password);
+    return super.signIn(
+      email: email,
+      password: password,
+      challengeToken: challengeToken,
+    );
   }
 }
 
@@ -94,6 +110,80 @@ void main() {
         SignInState(status: SignInStatus.submitting),
         SignInState(status: SignInStatus.emailNotRegistered),
       ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'asks for the bot challenge before looking at the email and password',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired)),
+      build: build,
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.challengeRequired),
+      ],
+      verify: (_) => expect(auth.isSignedIn, isFalse),
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'signs in once the challenge is solved and its token is sent',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired)),
+      build: build,
+      act: (bloc) => bloc.add(
+        const SignInSubmitted(
+          email: 'a@b.c',
+          password: 'x',
+          challengeToken: 'token',
+        ),
+      ),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.success),
+      ],
+      verify: (_) => expect(auth.isSignedIn, isTrue),
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'asks for a new challenge when the token is refused',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected)),
+      build: build,
+      act: (bloc) => bloc.add(
+        const SignInSubmitted(
+          email: 'a@b.c',
+          password: 'x',
+          challengeToken: 'token',
+        ),
+      ),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.challengeRejected),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'goes back to the form, sending nothing, when the challenge is closed',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired)),
+      build: () => SignInBloc(repository: _CountingAuth(demo), ticker: ticker),
+      act: (bloc) async {
+        bloc.add(submit);
+        await pumpEventQueue();
+        bloc.add(const SignInChallengeDismissed());
+      },
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.challengeRequired),
+        SignInState(),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'ignores a closed challenge when none is open',
+      build: build,
+      act: (bloc) => bloc.add(const SignInChallengeDismissed()),
+      expect: () => const <SignInState>[],
     );
 
     blocTest<SignInBloc, SignInState>(

@@ -18,6 +18,12 @@ enum DemoSignIn {
 
   /// The account exists but the password is wrong (locks after 5).
   wrongPassword,
+
+  /// The server asks for a bot challenge; any solved challenge signs in.
+  challengeRequired,
+
+  /// The server asks for a bot challenge and refuses every token.
+  challengeRejected,
   locked,
 
   /// The password is right but the email address is not verified yet.

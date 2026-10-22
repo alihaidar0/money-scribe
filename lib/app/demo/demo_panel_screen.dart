@@ -153,6 +153,8 @@ class DemoPanelScreen extends StatelessWidget {
     DemoSignIn.accepted => 'Accepted (any email and password)',
     DemoSignIn.emailNotRegistered => 'Email not registered',
     DemoSignIn.wrongPassword => 'Wrong password (locks after 5)',
+    DemoSignIn.challengeRequired => 'Bot check (any solution signs in)',
+    DemoSignIn.challengeRejected => 'Bot check (every solution refused)',
     DemoSignIn.locked => 'Too many attempts (locked)',
     DemoSignIn.emailNotVerified => 'Email not verified',
     DemoSignIn.unavailable => 'Server busy (try again shortly)',

@@ -13,9 +13,10 @@
 # the APP_ENV value: every build passes --dart-define=APP_ENV=<environment> (web
 # builds have no flavors). Read it in Dart with AppEnvironment.
 #
-# The address of the server (API_BASE_URL) is a variable of the GitHub
+# The address of the server (API_BASE_URL) and the public site key of the
+# sign-in bot check (TURNSTILE_SITE_KEY) are variables of the GitHub
 # environment, so only the signed Android build, which runs in that environment,
-# gets it: the job writes it to .env.<environment> (ignored by Git, never
+# gets them: the job writes it to .env.<environment> (ignored by Git, never
 # printed) and passes the file with --dart-define-from-file. Test builds, the web
 # build and the iOS check have no address, so the app keeps its fake data
 # (docs/backend-api.md, section 6).
@@ -363,18 +364,29 @@ jobs:
       # GitHub environment. It is public once the app is built, but it is kept
       # out of the repository, so it is written here, to a file Git ignores, and
       # never printed. An empty variable means "no server": the app keeps its
-      # fake data. Anything but a bare https address stops the build.
+      # fake data. Anything but a bare https address stops the build. The
+      # Turnstile site key is public once the app is built, but is kept out of
+      # the repository the same way; empty means "no bot check", and anything
+      # but letters, digits, - and _ stops the build.
       - name: Write the build configuration
         env:
           APP_ENV: ${{ needs.detect.outputs.environment }}
           API_BASE_URL: ${{ vars.API_BASE_URL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
         run: |
           set -euo pipefail
           if [[ -n "$API_BASE_URL" && ! "$API_BASE_URL" =~ ^https://[^/?#@[:space:]]+$ ]]; then
             echo "::error::The ${APP_ENV} variable API_BASE_URL must be an https address with no path, such as https://api.example.com."
             exit 1
           fi
-          printf 'API_BASE_URL=%s\n' "$API_BASE_URL" > ".env.${APP_ENV}"
+          if [[ -n "$TURNSTILE_SITE_KEY" && ! "$TURNSTILE_SITE_KEY" =~ ^[0-9A-Za-z_-]{1,64}$ ]]; then
+            echo "::error::The ${APP_ENV} variable TURNSTILE_SITE_KEY must be a Cloudflare Turnstile site key."
+            exit 1
+          fi
+          {
+            printf 'API_BASE_URL=%s\n' "$API_BASE_URL"
+            printf 'TURNSTILE_SITE_KEY=%s\n' "$TURNSTILE_SITE_KEY"
+          } > ".env.${APP_ENV}"
 
       # One APK per CPU type and the App Bundle, obfuscated. The symbol files in
       # build/symbols turn an obfuscated stack trace back into readable names.

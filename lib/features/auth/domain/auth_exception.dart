@@ -35,6 +35,25 @@ final class WrongPasswordException extends AuthException {
   String toString() => 'WrongPasswordException';
 }
 
+/// Sign-in: the server wants a solved bot challenge before it looks at the
+/// email and password (after repeated failed sign-ins from one address). The
+/// same sign-in is sent again with the token of the solved challenge.
+final class ChallengeRequiredException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'ChallengeRequiredException';
+}
+
+/// Sign-in: the token of the challenge was refused (wrong, expired after five
+/// minutes, or already used). A new challenge gives a new token.
+final class ChallengeRejectedException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'ChallengeRejectedException';
+}
+
 /// The password is right but the email address was never verified: the person
 /// has to type the code sent to it. Nothing was sent by the sign-in itself.
 final class EmailNotVerifiedException extends AuthException {

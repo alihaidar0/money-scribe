@@ -80,15 +80,28 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  }) async {
     await _demo.simulateRequest();
     final locked = signInLockRemaining;
     if (locked != null) {
       throw RateLimitedException(RateLimitReason.signInLocked, locked);
     }
 
-    switch (_demo.settings.signIn) {
-      case DemoSignIn.accepted:
+    final outcome = _demo.settings.signIn;
+    final asksChallenge =
+        outcome == DemoSignIn.challengeRequired ||
+        outcome == DemoSignIn.challengeRejected;
+    // Like the server, ask before looking at the email and password.
+    if (asksChallenge && challengeToken == null) {
+      throw const ChallengeRequiredException();
+    }
+
+    switch (outcome) {
+      case DemoSignIn.accepted || DemoSignIn.challengeRequired:
         _wrongPasswords = 0;
         _useAccount(email);
         // An existing account has data.
@@ -108,6 +121,8 @@ class FakeAuthRepository implements AuthRepository {
         throw const WrongPasswordException();
       case DemoSignIn.emailNotRegistered:
         throw const EmailNotRegisteredException();
+      case DemoSignIn.challengeRejected:
+        throw const ChallengeRejectedException();
       case DemoSignIn.locked:
         _lockedUntil = _now().add(signInLockDuration);
         throw const RateLimitedException(

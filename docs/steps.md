@@ -279,13 +279,13 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
 - [x] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
 - [x] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
-- [ ] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
+- [x] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
 - [x] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
 - [x] Request to the backend (`alihaidar0/money-scribe-backend#35`): separate sign-in errors for an unknown email and a wrong password
 - [x] Pin the contract that has them, and generate the client on a scratch copy first
 - [x] Sign in names the field at fault: email not registered under the email, wrong password under the password, email first
-- [ ] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
-- [ ] Add the leaked-password sentence to the privacy policy and the store forms
+- [x] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
+- [x] Write the leaked-password and bot-check sentences for the privacy policy and the store forms (wording in `backend-api.md`)
 - [ ] Next request issues: reset password, change password, change email, delete account, edit name
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

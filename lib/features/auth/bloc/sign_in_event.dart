@@ -4,7 +4,7 @@ sealed class SignInEvent extends Equatable {
   const new();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// The Sign in screen opened: carry on counting if sign-in is still locked.
@@ -14,13 +14,22 @@ final class SignInStarted extends SignInEvent {
 
 /// The user pressed Sign in.
 final class SignInSubmitted extends SignInEvent {
-  const new({required this.email, required this.password});
+  const new({required this.email, required this.password, this.challengeToken});
 
   final String email;
   final String password;
 
+  /// The token of a solved bot challenge, when the server asked for one. It
+  /// is single use: a new attempt needs a new token.
+  final String? challengeToken;
+
   @override
-  List<Object> get props => [email, password];
+  List<Object?> get props => [email, password, challengeToken];
+}
+
+/// The person closed the bot challenge without solving it.
+final class SignInChallengeDismissed extends SignInEvent {
+  const new();
 }
 
 /// The person changed the email address: a refusal of the old one no longer

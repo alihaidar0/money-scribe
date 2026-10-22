@@ -23,12 +23,18 @@ Exception mapCommonFailure(ApiFailure failure) {
   return failure.toDataException();
 }
 
-/// Sign in: `401 email_not_registered` (the email is checked first),
+/// Sign in: `400 captcha_required` or `captcha_invalid` (the bot challenge,
+/// asked for before the email is looked up), `401 email_not_registered` (the
+/// email is checked first),
 /// `401 wrong_password`, `401 invalid_credentials` for any other refusal,
 /// `403 email_not_verified` (only after the right password),
 /// `429 sign_in_locked` or `throttled`.
 Exception mapSignInFailure(ApiFailure failure) {
   switch (failure.statusCode) {
+    case 400 when failure.hasCode('captcha_required'):
+      return const ChallengeRequiredException();
+    case 400 when failure.hasCode('captcha_invalid'):
+      return const ChallengeRejectedException();
     case 401 when failure.hasCode('email_not_registered'):
       return const EmailNotRegisteredException();
     case 401 when failure.hasCode('wrong_password'):

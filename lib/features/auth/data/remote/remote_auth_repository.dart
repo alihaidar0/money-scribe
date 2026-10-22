@@ -106,7 +106,11 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    String? challengeToken,
+  }) async {
     final body = SignInRequest(
       email: email,
       // Sent as typed: never trimmed, never checked against a policy.
@@ -114,6 +118,7 @@ class RemoteAuthRepository implements AuthRepository {
       device: await _deviceRequest(),
       language: _languageEnum(),
       timeZone: await _timeZone.read(),
+      captchaToken: challengeToken,
     );
     final answer = await _call(
       () => _plain.authSignIn(body: body),

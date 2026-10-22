@@ -200,6 +200,37 @@ void main() {
       },
     );
 
+    test('a bot challenge is asked for, and then the token is sent', () async {
+      routes['/api/v1/auth/sign-in/'] = (_) =>
+          jsonBody(400, errorBody('captcha_required', attr: 'captcha_token'));
+
+      await expectLater(
+        auth.signIn(email: 'a@b.c', password: 'x'),
+        throwsA(isA<ChallengeRequiredException>()),
+      );
+      expect(
+        bodyOf('/api/v1/auth/sign-in/').containsKey('captcha_token'),
+        false,
+      );
+
+      routes['/api/v1/auth/sign-in/'] = (_) => jsonBody(200, _signedIn());
+      await auth.signIn(email: 'a@b.c', password: 'x', challengeToken: 'tok');
+
+      expect(bodyOf('/api/v1/auth/sign-in/')['captcha_token'], 'tok');
+      expect(auth.isSignedIn, isTrue);
+    });
+
+    test('a refused challenge token is told apart', () async {
+      routes['/api/v1/auth/sign-in/'] = (_) =>
+          jsonBody(400, errorBody('captcha_invalid', attr: 'captcha_token'));
+
+      await expectLater(
+        auth.signIn(email: 'a@b.c', password: 'x', challengeToken: 'tok'),
+        throwsA(isA<ChallengeRejectedException>()),
+      );
+      expect(auth.isSignedIn, isFalse);
+    });
+
     test('an email without an account is named', () async {
       routes['/api/v1/auth/sign-in/'] = (_) =>
           jsonBody(401, errorBody('email_not_registered', attr: 'email'));

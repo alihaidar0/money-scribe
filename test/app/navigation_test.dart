@@ -208,6 +208,58 @@ void main() {
       expect(find.text('Wrong password.'), findsNothing);
     });
 
+    testWidgets('a bot challenge opens, and solving it signs in once', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('Security check'), findsOneWidget);
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+
+      await _tapText(tester, 'I am not a robot (demo)');
+
+      expect(find.byType(SignInScreen), findsNothing);
+      expect(_auth.isSignedIn, isTrue);
+    });
+
+    testWidgets('closing the challenge sends nothing and keeps the form', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+      await _tapButton(tester, FilledButton);
+
+      await _tapText(tester, 'Cancel');
+
+      expect(find.text('Security check'), findsNothing);
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('a refused token opens a new challenge with a message', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected));
+      await _tapButton(tester, FilledButton);
+      await _tapText(tester, 'I am not a robot (demo)');
+
+      expect(find.text('Security check'), findsOneWidget);
+      expect(find.text('The check did not work. Try again.'), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+    });
+
     testWidgets('five wrong passwords lock sign-in with a countdown', (
       tester,
     ) async {

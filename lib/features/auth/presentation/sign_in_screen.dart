@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -15,6 +16,7 @@ import 'package:money_scribe/core/widgets/password_field.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/sign_in_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/sign_in_challenge_sheet.dart';
 import 'package:money_scribe/features/auth/presentation/verify_email_screen.dart';
 
 /// AUTH-2, AUTH-2b and AUTH-2c: sign in with an email and a password. The
@@ -53,10 +55,32 @@ class _SignInViewState extends State<_SignInView> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit({String? challengeToken}) {
     context.read<SignInBloc>().add(
-      SignInSubmitted(email: _email.text.trim(), password: _password.text),
+      SignInSubmitted(
+        email: _email.text.trim(),
+        password: _password.text,
+        challengeToken: challengeToken,
+      ),
     );
+  }
+
+  /// Shows the bot challenge and, once it is solved, sends the same sign-in
+  /// again with its token: the person solved it to sign in, so this is the
+  /// sign-in they asked for, sent once.
+  Future<void> _askChallenge({required bool rejected}) async {
+    final bloc = context.read<SignInBloc>();
+    final token = await showSignInChallengeSheet(
+      context,
+      factory: context.read<ChallengeViewFactory>(),
+      rejected: rejected,
+    );
+    if (!mounted) return;
+    if (token == null) {
+      bloc.add(const SignInChallengeDismissed());
+    } else {
+      _submit(challengeToken: token);
+    }
   }
 
   @override
@@ -68,10 +92,19 @@ class _SignInViewState extends State<_SignInView> {
       listenWhen: (previous, current) =>
           previous.status != current.status &&
           (current.status == SignInStatus.success ||
-              current.status == SignInStatus.emailNotVerified),
+              current.status == SignInStatus.emailNotVerified ||
+              current.status == SignInStatus.challengeRequired ||
+              current.status == SignInStatus.challengeRejected),
       listener: (context, state) {
         if (state.status == SignInStatus.success) {
           context.go(AppRoutes.overview);
+        } else if (state.status == SignInStatus.challengeRequired ||
+            state.status == SignInStatus.challengeRejected) {
+          unawaited(
+            _askChallenge(
+              rejected: state.status == SignInStatus.challengeRejected,
+            ),
+          );
         } else {
           // The password was right: the address still has to be verified.
           unawaited(
@@ -85,7 +118,10 @@ class _SignInViewState extends State<_SignInView> {
       builder: (context, state) {
         final isLocked = state.status == SignInStatus.locked;
         final isBusy = state.status == SignInStatus.submitting;
-        final canEdit = !isLocked && !isBusy;
+        final isChallenged =
+            state.status == SignInStatus.challengeRequired ||
+            state.status == SignInStatus.challengeRejected;
+        final canEdit = !isLocked && !isBusy && !isChallenged;
         final hasWrongCredentials =
             state.status == SignInStatus.wrongCredentials;
         final emailNotRegistered =
