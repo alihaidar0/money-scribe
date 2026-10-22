@@ -97,7 +97,8 @@ with **events everywhere**: even a simple feature has event and state classes (n
   cannot be found, or an error. `FULL_CHECKS=1` forces everything.
 - **CI.** A pull request into `develop` that changes nothing the Dart checks read skips the Flutter jobs
   (`CI passed` counts a skipped job as passed). Otherwise the whole suite runs, split over three runners
-  (`--total-shards`), so the required check never depends on the selection. A pull request into `main`, a
+  (`--total-shards`), at the same time as format and analyze, so the required check never depends on the
+  selection and the run lasts as long as the slowest check. A pull request into `main`, a
   manual run and a change CI cannot read run everything, and only then is coverage collected.
 
 ## Data

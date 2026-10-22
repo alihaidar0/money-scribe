@@ -20,6 +20,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 
 - [x] Pre-commit hook runs every CI check (format, analyze, tests, file hygiene)
 - [x] Smart checks: the commit hook runs only the tests a change can reach and skips non-Dart commits; CI skips Flutter jobs for non-Dart pull requests and splits the tests in three shards
+- [x] CI runs the test shards at the same time as format and analyze, not after them
 - [x] First smoke test in `test/`
 - [x] Spell checker configured (`cspell.json`, shared project word list)
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
