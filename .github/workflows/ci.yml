@@ -21,8 +21,9 @@
 # changes only documentation, other workflows or scripts skips them, and
 # "CI passed" counts a skipped job as passed. A pull request into main (the
 # release), a manual run and a pull request this check cannot read always run
-# everything. The tests run in three parallel shards; coverage is collected only
-# when everything runs.
+# everything. The tests run in three parallel shards, at the same time as format
+# and analyze (a failure of either shows up without waiting for the other);
+# coverage is collected only when everything runs.
 name: CI
 
 on:
@@ -379,18 +380,18 @@ jobs:
       - run: flutter analyze --fatal-infos
 
   # The suite is split over three runners (flutter test --total-shards), which
-  # cuts the wall-clock time to a third of the work plus the setup. Coverage is
+  # cuts the wall-clock time to a third of the work plus the setup. The shards do
+  # not wait for format and analyze: the three checks start together, so the
+  # run lasts as long as the slowest of them instead of the sum. Coverage is
   # collected only when everything runs (a pull request into main, a manual
   # run): it is not a gate, and a partial run would only mislead.
   flutter-test:
     name: Flutter test (shard ${{ matrix.shard }} of 3)
-    needs: [detect, flutter-format, flutter-analyze]
+    needs: detect
     if: >-
-      always() &&
       needs.detect.outputs.tier == '3' &&
       needs.detect.outputs.dart_changed == 'true' &&
-      needs.flutter-format.result == 'success' &&
-      needs.flutter-analyze.result == 'success'
+      (github.event.pull_request.draft == false || github.event_name != 'pull_request')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
