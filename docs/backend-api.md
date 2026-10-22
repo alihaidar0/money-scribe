@@ -365,7 +365,8 @@ All paths are under `/api/v1/auth/`.
   with the address of the server as its base, which is the host the site key allows; the web view
   cannot leave that page and only the widget's script and frames of Cloudflare run in it. The token is
   single use and lives five minutes, so it is sent once, as soon as the widget returns it, and a
-  refused token (`captcha_invalid`) opens a new widget. The person solving the widget is the only
+  refused token (`captcha_invalid`) opens a new widget. It appears when failures are spread over several
+  accounts or unknown emails: five wrong passwords on one account lock that account first (see Limits). The person solving the widget is the only
   trigger: the app never sends a sign-in again by itself. Android and iOS only; on the web build the
   sheet says the check is not available. Builds with the fake account show a demo button instead.
 
@@ -389,9 +390,17 @@ All paths are under `/api/v1/auth/`.
 ### Limits (server settings, so the screens match)
 
 Email code valid 10 minutes with 5 attempts per code; resend after 60 seconds, at most 5 per hour;
-sign-in lock after 5 failures in 15 minutes, counted per account and per client address; access token
-10 minutes; refresh token 30 days, renewed at each rotation; a session ends 90 days after sign-in at the
+access token 10 minutes; refresh token 30 days, renewed at each rotation; a session ends 90 days after sign-in at the
 latest.
+
+Sign-in limits (confirmed by the backend): every failed sign-in from one address (an unknown email, a
+wrong password, or a challenge that did not verify) counts in a 15-minute window. From 5 failures the
+sign-in answers `captcha_required` until a solved token is sent; from 15 the address is locked
+(`sign_in_locked`) for every account. Separately, 5 wrong passwords on one account from one address lock
+that account for that address. With a single account that lock comes at the same moment as the 5th
+failure of the address and is checked first, so the app sees `sign_in_locked` and never
+`captcha_required`: the bot check appears when the failures are spread over several accounts or unknown
+emails.
 
 ### For the privacy policy and the store forms
 
@@ -399,12 +408,15 @@ Two things in the sign-in flow involve a third party, and the privacy policy nee
 There is no policy yet (it comes with Google Play); this is the wording to use then, and the points to
 check against the Play Data safety and Apple App Privacy forms when they are filled in.
 
-- **Leaked-password check (done by the server).** The server checks a new password against a public list
-  of leaked passwords (Pwned Passwords) by sending the first five characters of the password's hash,
-  never the password, the full hash or any user data. The app itself sends nothing to that service.
-  Sentence: "To protect accounts, we check new passwords against a public list of leaked passwords
-  without sending the password or its full hash." The data sent identifies no one, so this is a
-  sentence for the policy rather than an entry for the forms.
+- **Leaked-password check (done by the server).** When a password is registered, the server sends only
+  the first five characters of its SHA-1 hash to the Pwned Passwords range service. The password and the
+  full hash never leave the server, and the service never receives the email or the device. The app
+  itself sends nothing to that service. The check is skipped when the service cannot be reached, so the
+  wording must not promise that every password is checked. It runs at registration today; the change
+  and reset flows will use it when they are built.
+  Sentence: "When you choose a password, we may check it against a public list of leaked passwords. Only
+  the first five characters of its hash are sent, never the password or the full hash." The data sent
+  identifies no one, so this is a sentence for the policy rather than an entry for the forms.
 - **Bot check at sign-in (done by the app).** After repeated failed sign-ins the app shows a Cloudflare
   Turnstile widget, which runs in a web view on the device. Cloudflare receives technical information
   such as the IP address and browser characteristics to tell people from automated programs.
