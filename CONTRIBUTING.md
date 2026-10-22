@@ -29,9 +29,11 @@ The branch model, repository settings and rulesets are described in [`docs/githu
 
 Open the repository in the dev container (**Dev Containers: Reopen in Container**). Flutter, Dart, the Android SDK, Node and pnpm come from the image, pinned in `docker-compose.yml`. The Husky hooks activate when the container is created (`postCreateCommand` runs `pnpm install`):
 
-- `pre-commit` runs the same checks as CI on every commit: line endings, trailing whitespace and final newlines of the staged files, executable scripts, `dart format`, `flutter analyze --fatal-infos` and `flutter test`.
+- `pre-commit` runs the checks CI would run on what the commit changes: line endings, trailing whitespace and final newlines of the staged files, executable scripts, and, when a file the Dart checks read changed, `dart format`, `flutter analyze --fatal-infos` and the tests the change can reach. A commit of documentation, workflows or scripts skips the last three.
 - `commit-msg` checks the Conventional Commit message.
-- `pre-push` blocks direct pushes to `main` and `develop` and runs `flutter analyze --fatal-infos` again.
+- `pre-push` blocks direct pushes to `main` and `develop` and runs `flutter analyze --fatal-infos` again, unless the pushed commits change nothing the analysis reads.
+
+The hook runs only the tests a change can reach: `tool/changed_scope.dart` follows the imports from the changed files to the tests that depend on them, and runs the whole suite when it cannot tell (a change to the dependencies, the strings or the assets, a deleted file, an error). `FULL_CHECKS=1 git commit` runs format, analyze and the whole suite whatever the commit holds. CI always runs the whole suite on a change the Dart checks read, so a mistake in the selection cannot reach `develop`.
 
 To register them again:
 
@@ -73,13 +75,15 @@ Valid types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `
 
 ## Checking your change locally
 
-The same checks CI runs on every pull request (the `pre-commit` hook runs them too):
+The same checks CI runs on a pull request that changes Dart files, strings, assets or settings (the `pre-commit` hook runs the part that your commit needs):
 
 ```bash
 dart format --set-exit-if-changed .
 flutter analyze --fatal-infos
 flutter test
 ```
+
+CI skips the Flutter jobs for a pull request into `develop` that changes only documentation, other workflows or scripts, and always runs everything for a pull request into `main`. `scripts/dart-affecting.sh` holds the list of files the Dart checks read; the hooks and `ci.yml` both use it.
 
 For changes to scripts, hooks or workflows, CI runs ShellCheck, actionlint and zizmor. The commands below use Docker; the dev container has none, so inside it run ShellCheck with `pnpm dlx shellcheck@latest --shell=sh .husky/commit-msg .husky/pre-commit .husky/pre-push` (and without `--shell=sh` on `scripts/*.sh`), and download the actionlint and zizmor release binaries from their GitHub releases pages.
 

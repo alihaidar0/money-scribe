@@ -15,6 +15,14 @@
 #
 # Tier 3 plus a pinned backend contract (api/openapi.yaml) also checks that the
 # generated API client in lib/core/api is current (docs/backend-api.md).
+#
+# The Flutter jobs only run when a file they read changed (scripts/dart-affecting.sh
+# keeps the list, the commit hooks use it too): a pull request into develop that
+# changes only documentation, other workflows or scripts skips them, and
+# "CI passed" counts a skipped job as passed. A pull request into main (the
+# release), a manual run and a pull request this check cannot read always run
+# everything. The tests run in three parallel shards; coverage is collected only
+# when everything runs.
 name: CI
 
 on:
@@ -63,17 +71,51 @@ jobs:
       tier: ${{ steps.check.outputs.tier }}
       flutter_version: ${{ steps.flutter-version.outputs.version }}
       api_contract: ${{ steps.api.outputs.present }}
+      dart_changed: ${{ steps.changed.outputs.dart_changed }}
     steps:
+      # Two commits are enough to see what a pull request changes: its checkout
+      # is a merge commit, whose first parent is the base branch.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           sparse-checkout: |
             pubspec.yaml
             pubspec.lock
             docker-compose.yml
             api/openapi.yaml
+            scripts/dart-affecting.sh
           sparse-checkout-cone-mode: false
           persist-credentials: false
+
+      # Do the Dart checks need to run? Everything runs unless this is a pull
+      # request into develop whose files none of the checks read.
+      - name: Detect what changed
+        id: changed
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT" != "pull_request" || "$BASE_REF" == "main" ]]; then
+            echo "dart_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Everything runs: this is not a pull request into develop"
+            exit 0
+          fi
+          if ! files="$(git diff --name-only --no-renames HEAD^1 HEAD)"; then
+            echo "dart_changed=true" >> "$GITHUB_OUTPUT"
+            echo "The changed files could not be read: everything runs"
+            exit 0
+          fi
+          echo "Changed files:"
+          printf '%s\n' "$files"
+          if printf '%s\n' "$files" | bash scripts/dart-affecting.sh; then
+            echo "dart_changed=true" >> "$GITHUB_OUTPUT"
+            echo "A file the Dart checks read changed: they run"
+          else
+            echo "dart_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No file the Dart checks read changed: format, analyze, tests, audit and the API client check are skipped"
+          fi
 
       - name: Determine project tier
         id: check
@@ -294,6 +336,7 @@ jobs:
     needs: detect
     if: >-
       needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.dart_changed == 'true' &&
       (github.event.pull_request.draft == false || github.event_name != 'pull_request')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -315,6 +358,7 @@ jobs:
     needs: detect
     if: >-
       needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.dart_changed == 'true' &&
       (github.event.pull_request.draft == false || github.event_name != 'pull_request')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -334,16 +378,25 @@ jobs:
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze --fatal-infos
 
+  # The suite is split over three runners (flutter test --total-shards), which
+  # cuts the wall-clock time to a third of the work plus the setup. Coverage is
+  # collected only when everything runs (a pull request into main, a manual
+  # run): it is not a gate, and a partial run would only mislead.
   flutter-test:
-    name: Flutter test
+    name: Flutter test (shard ${{ matrix.shard }} of 3)
     needs: [detect, flutter-format, flutter-analyze]
     if: >-
       always() &&
       needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.dart_changed == 'true' &&
       needs.flutter-format.result == 'success' &&
       needs.flutter-analyze.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -359,10 +412,18 @@ jobs:
       # resolves different package versions than the ones committed.
       - run: flutter pub get --enforce-lockfile
 
-      - name: Run tests with coverage
+      - name: Run this shard of the tests
+        env:
+          SHARD: ${{ matrix.shard }}
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           if [[ -d "test" ]]; then
-            flutter test --coverage
+            args=(--total-shards=3 "--shard-index=${SHARD}")
+            if [[ "$EVENT" != "pull_request" || "$BASE_REF" == "main" ]]; then
+              args+=(--coverage)
+            fi
+            flutter test "${args[@]}"
           else
             echo "No test/ directory — skipping flutter test"
             echo "Add tests under test/ when you are ready."
@@ -372,7 +433,7 @@ jobs:
         if: hashFiles('coverage/lcov.info') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-report
+          name: coverage-report-shard-${{ matrix.shard }}
           path: coverage/lcov.info
           retention-days: 7
 
@@ -383,6 +444,7 @@ jobs:
     needs: detect
     if: >-
       needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.dart_changed == 'true' &&
       (github.event.pull_request.draft == false || github.event_name != 'pull_request')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -407,6 +469,7 @@ jobs:
     needs: detect
     if: >-
       needs.detect.outputs.tier == '3' &&
+      needs.detect.outputs.dart_changed == 'true' &&
       needs.detect.outputs.api_contract == 'true' &&
       (github.event.pull_request.draft == false || github.event_name != 'pull_request')
     runs-on: ubuntu-24.04
@@ -445,7 +508,9 @@ jobs:
   flutter-doctor:
     name: Flutter doctor
     needs: detect
-    if: needs.detect.outputs.tier == '2' || needs.detect.outputs.tier == '3'
+    if: >-
+      (needs.detect.outputs.tier == '2' || needs.detect.outputs.tier == '3') &&
+      needs.detect.outputs.dart_changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

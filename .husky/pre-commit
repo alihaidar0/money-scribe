@@ -1,6 +1,8 @@
-# Every commit runs the same checks as CI, so a commit that would fail CI never
-# leaves the machine. Order: cheap file checks first, then format, analyze and
-# test. Fix the reported problem, stage it, and commit again.
+# Every commit runs the checks CI would run on what it changes, so a commit that
+# would fail CI never leaves the machine. Order: cheap file checks first, then
+# format, analyze and the tests the change can reach. A commit that changes no
+# Dart file, string, asset or setting skips the last three. Fix the reported
+# problem, stage it, and commit again.
 #
 # The toolchain (Node, pnpm, Flutter) lives in the dev container. When git runs
 # on the host (terminal or GUI) this hook is skipped; CI runs the same checks.
@@ -66,17 +68,58 @@ if [ -n "$not_executable" ]; then
   fail "Not executable in Git. Run: git update-index --chmod=+x <file>"
 fi
 
-# ── 3. Dart format (whole project, nothing is rewritten) ──────────────────────
+# ── 3. What does this commit change? ──────────────────────────────────────────
+# Format, analyze and the tests only matter when a file they read changed
+# (scripts/dart-affecting.sh keeps the list, CI uses it too): a commit of
+# documentation, workflows or scripts skips them. FULL_CHECKS=1 runs everything
+# whatever the commit holds.
+changes="$(git diff --cached --name-status --no-renames)"
+if [ -z "${FULL_CHECKS:-}" ]; then
+  if ! printf '%s\n' "$changes" | cut -f2- | bash scripts/dart-affecting.sh 2>/dev/null; then
+    echo "▸ no file that format, analyze or the tests read changed: skipped"
+    echo "✔ pre-commit checks passed"
+    exit 0
+  fi
+fi
+
+# ── 4. Dart format (whole project, nothing is rewritten) ──────────────────────
 echo "▸ dart format"
 dart format --output=none --set-exit-if-changed . >/dev/null \
   || fail "Dart files are not formatted. Run: dart format ."
 
-# ── 4. Static analysis (infos are errors, as in CI) ───────────────────────────
+# ── 5. Static analysis (infos are errors, as in CI) ───────────────────────────
 echo "▸ flutter analyze --fatal-infos"
 flutter analyze --fatal-infos || fail "flutter analyze reported issues."
 
-# ── 5. Tests ──────────────────────────────────────────────────────────────────
-echo "▸ flutter test"
-flutter test || fail "Tests failed."
+# ── 6. Tests: only the ones this change can reach ─────────────────────────────
+# tool/changed_scope.dart follows the imports from the changed files to the tests
+# that depend on them. When it cannot tell (the dependencies, the strings, a
+# deleted file, an error) the whole suite runs, so a doubt never skips a test.
+# CI always runs the whole suite.
+scope="full"
+reason="all tests"
+tests=""
+if [ -z "${FULL_CHECKS:-}" ]; then
+  selection="$(printf '%s\n' "$changes" | dart tool/changed_scope.dart 2>/dev/null)" || selection=""
+  scope="$(printf '%s\n' "$selection" | sed -n 's/^scope: //p' | head -n 1)"
+  reason="$(printf '%s\n' "$selection" | sed -n 's/^reason: //p' | head -n 1)"
+  tests="$(printf '%s\n' "$selection" | sed -n 's/^test: //p')"
+fi
+
+case "$scope" in
+  none)
+    echo "▸ flutter test skipped: $reason"
+    ;;
+  tests)
+    echo "▸ flutter test ($reason)"
+    # The names have no spaces: let the shell split them into arguments.
+    # shellcheck disable=SC2086
+    flutter test $tests || fail "Tests failed."
+    ;;
+  *)
+    echo "▸ flutter test (whole suite${reason:+: $reason})"
+    flutter test || fail "Tests failed."
+    ;;
+esac
 
 echo "✔ pre-commit checks passed"

@@ -85,6 +85,21 @@ with **events everywhere**: even a simple feature has event and state classes (n
   screen changes: `flutter test --run-skipped --tags render test/render`.
 - `test/architecture_test.dart` enforces the dependency rules above.
 
+### Which tests run when
+
+- **Commit hook.** `scripts/dart-affecting.sh` says whether a change can affect the Dart checks at all; if not,
+  format, analyze and the tests are skipped. Otherwise `tool/changed_scope.dart` reads the import graph of
+  `lib/`, `test/` and `tool/` (`part` files count as one unit with their library) and selects the tests that
+  import a changed file, directly or through a chain of imports. A change to a file of `lib/` always adds
+  `test/architecture_test.dart`, which reads every source file, and `docs/DESIGN.md` counts as a change to the
+  parser the theme tests read it with. The whole suite runs whenever the graph cannot say: a change to the
+  dependencies, the analyzer settings, the strings or the assets, a deleted Dart file, a changed file that
+  cannot be found, or an error. `FULL_CHECKS=1` forces everything.
+- **CI.** A pull request into `develop` that changes nothing the Dart checks read skips the Flutter jobs
+  (`CI passed` counts a skipped job as passed). Otherwise the whole suite runs, split over three runners
+  (`--total-shards`), so the required check never depends on the selection. A pull request into `main`, a
+  manual run and a change CI cannot read run everything, and only then is coverage collected.
+
 ## Data
 
 The data lives only on the server. Until the backend exists, repository interfaces have fake
