@@ -151,6 +151,7 @@ class DemoPanelScreen extends StatelessWidget {
 
   static String _signInLabel(DemoSignIn value) => switch (value) {
     DemoSignIn.accepted => 'Accepted (any email and password)',
+    DemoSignIn.emailNotRegistered => 'Email not registered',
     DemoSignIn.wrongPassword => 'Wrong password (locks after 5)',
     DemoSignIn.locked => 'Too many attempts (locked)',
     DemoSignIn.emailNotVerified => 'Email not verified',

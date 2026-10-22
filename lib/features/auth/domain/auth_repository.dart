@@ -28,10 +28,11 @@ abstract interface class AuthRepository {
   /// How long sign-in stays locked after too many wrong attempts, or `null`.
   Duration? get signInLockRemaining;
 
-  /// Throws `WrongCredentialsException`, `EmailNotVerifiedException` (the
-  /// address becomes [pendingEmail] and no code is sent) or
-  /// `RateLimitedException`. The password is sent as typed: sign-in never
-  /// applies a password policy.
+  /// Throws `EmailNotRegisteredException`, `WrongPasswordException`,
+  /// `WrongCredentialsException` (any other refusal),
+  /// `EmailNotVerifiedException` (the address becomes [pendingEmail] and no
+  /// code is sent) or `RateLimitedException`. The password is sent as typed:
+  /// sign-in never applies a password policy.
   Future<void> signIn({required String email, required String password});
 
   /// Creates the account and sends a code to `email`. The answer is the same

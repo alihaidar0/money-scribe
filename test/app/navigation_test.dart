@@ -162,7 +162,7 @@ void main() {
       expect(find.byType(SignInScreen), findsNothing);
     });
 
-    testWidgets('a wrong password shows the error and stays on the form', (
+    testWidgets('a wrong password is said under the password field', (
       tester,
     ) async {
       await _pumpApp(tester);
@@ -171,8 +171,41 @@ void main() {
 
       await _tapButton(tester, FilledButton);
 
-      expect(find.text('Email or password is incorrect.'), findsOneWidget);
+      expect(find.text('Wrong password.'), findsOneWidget);
+      expect(find.text('No account uses this email address.'), findsNothing);
       expect(find.byType(SignInScreen), findsOneWidget);
+    });
+
+    testWidgets('an email without an account is said under the email field, '
+        'and the message goes away when the email is edited', (tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('No account uses this email address.'), findsOneWidget);
+      expect(find.text('Wrong password.'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, 'other@b.c');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No account uses this email address.'), findsNothing);
+    });
+
+    testWidgets('the wrong password message goes away when it is edited', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await _tapButton(tester, FilledButton);
+      expect(find.text('Wrong password.'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).at(1), 'another');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wrong password.'), findsNothing);
     });
 
     testWidgets('five wrong passwords lock sign-in with a countdown', (

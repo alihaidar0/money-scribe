@@ -163,10 +163,18 @@ final _scenes = <_Scene>[
   const _Scene('auth-1-welcome', AppRoutes.welcome),
   const _Scene('auth-2-sign-in', AppRoutes.signIn),
   _Scene(
-    'auth-2b-sign-in-wrong',
+    'auth-2b-sign-in-wrong-password',
     AppRoutes.signIn,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2e-sign-in-no-account',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
       await _tapPrimary(tester);
     },
   ),

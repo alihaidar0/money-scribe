@@ -23,6 +23,17 @@ final class SignInSubmitted extends SignInEvent {
   List<Object> get props => [email, password];
 }
 
+/// The person changed the email address: a refusal of the old one no longer
+/// applies.
+final class SignInEmailEdited extends SignInEvent {
+  const new();
+}
+
+/// The person changed the password: a refusal of the old one no longer applies.
+final class SignInPasswordEdited extends SignInEvent {
+  const new();
+}
+
 /// A second of the lock passed.
 final class _SignInLockTicked extends SignInEvent {
   const new(this.secondsLeft);

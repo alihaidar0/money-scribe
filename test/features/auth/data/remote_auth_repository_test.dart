@@ -200,7 +200,29 @@ void main() {
       },
     );
 
-    test('a wrong password is refused', () async {
+    test('an email without an account is named', () async {
+      routes['/api/v1/auth/sign-in/'] = (_) =>
+          jsonBody(401, errorBody('email_not_registered', attr: 'email'));
+
+      await expectLater(
+        auth.signIn(email: 'a@b.c', password: 'x'),
+        throwsA(isA<EmailNotRegisteredException>()),
+      );
+      expect(auth.isSignedIn, isFalse);
+    });
+
+    test('a wrong password is named', () async {
+      routes['/api/v1/auth/sign-in/'] = (_) =>
+          jsonBody(401, errorBody('wrong_password', attr: 'password'));
+
+      await expectLater(
+        auth.signIn(email: 'a@b.c', password: 'x'),
+        throwsA(isA<WrongPasswordException>()),
+      );
+      expect(auth.isSignedIn, isFalse);
+    });
+
+    test('any other refusal names no field', () async {
       routes['/api/v1/auth/sign-in/'] = (_) =>
           jsonBody(401, errorBody('invalid_credentials'));
 

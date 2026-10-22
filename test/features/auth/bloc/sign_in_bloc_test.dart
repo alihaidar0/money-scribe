@@ -21,6 +21,29 @@ class _ThrottledAuth extends FakeAuthRepository {
   }
 }
 
+/// A server that refuses the sign-in without naming a field.
+class _RefusedAuth extends FakeAuthRepository {
+  new(DemoController demo) : super(demo: demo);
+
+  @override
+  Future<void> signIn({required String email, required String password}) {
+    throw const WrongCredentialsException();
+  }
+}
+
+/// Counts the sign-in requests that reach the server.
+class _CountingAuth extends FakeAuthRepository {
+  new(DemoController demo) : super(demo: demo);
+
+  int sent = 0;
+
+  @override
+  Future<void> signIn({required String email, required String password}) {
+    sent++;
+    return super.signIn(email: email, password: password);
+  }
+}
+
 void main() {
   late DemoController demo;
   late FakeAuthRepository auth;
@@ -49,16 +72,55 @@ void main() {
     );
 
     blocTest<SignInBloc, SignInState>(
-      'shows a wrong password',
+      'names the password when it is wrong',
       setUp: () =>
           demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword)),
       build: build,
       act: (bloc) => bloc.add(submit),
       expect: () => const [
         SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.wrongPassword),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'names the email when no account has it',
+      setUp: () => demo.update(
+        const DemoSettings(signIn: DemoSignIn.emailNotRegistered),
+      ),
+      build: build,
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.emailNotRegistered),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'shows a refusal that names no field in a banner',
+      build: () => SignInBloc(repository: _RefusedAuth(demo), ticker: ticker),
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
         SignInState(status: SignInStatus.wrongCredentials),
       ],
     );
+
+    test('sends nothing again by itself after a refusal', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      final counting = _CountingAuth(demo);
+      final bloc = SignInBloc(repository: counting, ticker: ticker);
+      addTearDown(bloc.close);
+
+      bloc.add(submit);
+      await pumpEventQueue();
+      bloc
+        ..add(const SignInEmailEdited())
+        ..add(const SignInPasswordEdited());
+      await pumpEventQueue();
+
+      expect(counting.sent, 1);
+    });
 
     blocTest<SignInBloc, SignInState>(
       'locks at once when the demo says so, and starts the countdown',
@@ -170,6 +232,66 @@ void main() {
         SignInState(status: SignInStatus.success),
       ],
     );
+  });
+
+  group('editing a field', () {
+    Future<SignInBloc> refusedBloc(DemoSignIn outcome) async {
+      demo.update(DemoSettings(signIn: outcome));
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(submit);
+      await bloc.stream.firstWhere(
+        (state) => state.status != SignInStatus.submitting,
+      );
+      return bloc;
+    }
+
+    test('the email clears the message about the email', () async {
+      final bloc = await refusedBloc(DemoSignIn.emailNotRegistered);
+
+      bloc.add(const SignInEmailEdited());
+      await pumpEventQueue();
+
+      expect(bloc.state, const SignInState());
+    });
+
+    test('the email clears the message about the password too', () async {
+      final bloc = await refusedBloc(DemoSignIn.wrongPassword);
+
+      bloc.add(const SignInEmailEdited());
+      await pumpEventQueue();
+
+      expect(bloc.state, const SignInState());
+    });
+
+    test('the password clears the message about the password', () async {
+      final bloc = await refusedBloc(DemoSignIn.wrongPassword);
+
+      bloc.add(const SignInPasswordEdited());
+      await pumpEventQueue();
+
+      expect(bloc.state, const SignInState());
+    });
+
+    test('the password keeps the message about the email', () async {
+      final bloc = await refusedBloc(DemoSignIn.emailNotRegistered);
+
+      bloc.add(const SignInPasswordEdited());
+      await pumpEventQueue();
+
+      expect(bloc.state.status, SignInStatus.emailNotRegistered);
+    });
+
+    test('a field edit does not unlock a locked sign-in', () async {
+      final bloc = await refusedBloc(DemoSignIn.locked);
+
+      bloc
+        ..add(const SignInEmailEdited())
+        ..add(const SignInPasswordEdited());
+      await pumpEventQueue();
+
+      expect(bloc.state.status, SignInStatus.locked);
+    });
   });
 
   group('the lock', () {
