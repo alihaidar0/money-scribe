@@ -15,6 +15,7 @@ frunw
 ftest
 genkey
 haidar
+healthz
 husky
 jarfile
 keyalg
