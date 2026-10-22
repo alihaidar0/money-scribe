@@ -105,7 +105,9 @@ class FakeAuthRepository implements AuthRepository {
             signInLockDuration,
           );
         }
-        throw const WrongCredentialsException();
+        throw const WrongPasswordException();
+      case DemoSignIn.emailNotRegistered:
+        throw const EmailNotRegisteredException();
       case DemoSignIn.locked:
         _lockedUntil = _now().add(signInLockDuration);
         throw const RateLimitedException(

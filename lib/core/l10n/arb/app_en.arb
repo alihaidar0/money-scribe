@@ -275,6 +275,14 @@
   "@signInWrongCredentials": {
     "description": "Error banner on the Sign in screen after a wrong email or password."
   },
+  "signInEmailNotRegistered": "No account uses this email address.",
+  "@signInEmailNotRegistered": {
+    "description": "Error under the email field of the Sign in screen when the server says no account has the address."
+  },
+  "signInWrongPassword": "Wrong password.",
+  "@signInWrongPassword": {
+    "description": "Error under the password field of the Sign in screen when the account exists but the password is wrong."
+  },
   "signInLocked": "Too many attempts. Try again in {time}.",
   "@signInLocked": {
     "description": "Banner on the Sign in screen while sign-in is locked. The placeholder is the time left as minutes and seconds, such as 4:59.",

@@ -51,14 +51,21 @@ void main() {
     test('refuses a wrong password', () async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
 
-      await expectLater(signIn(), throwsA(isA<WrongCredentialsException>()));
+      await expectLater(signIn(), throwsA(isA<WrongPasswordException>()));
+      expect(auth.isSignedIn, isFalse);
+    });
+
+    test('refuses an email without an account', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
+
+      await expectLater(signIn(), throwsA(isA<EmailNotRegisteredException>()));
       expect(auth.isSignedIn, isFalse);
     });
 
     test('locks for five minutes after five wrong passwords', () async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
       for (var attempt = 1; attempt < 5; attempt++) {
-        await expectLater(signIn(), throwsA(isA<WrongCredentialsException>()));
+        await expectLater(signIn(), throwsA(isA<WrongPasswordException>()));
       }
 
       await expectLater(

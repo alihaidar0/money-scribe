@@ -88,6 +88,9 @@ class _SignInViewState extends State<_SignInView> {
         final canEdit = !isLocked && !isBusy;
         final hasWrongCredentials =
             state.status == SignInStatus.wrongCredentials;
+        final emailNotRegistered =
+            state.status == SignInStatus.emailNotRegistered;
+        final wrongPassword = state.status == SignInStatus.wrongPassword;
 
         return FlowPage(
           failure: switch (state.status) {
@@ -130,6 +133,11 @@ class _SignInViewState extends State<_SignInView> {
               autofillHints: const [AutofillHints.email],
               textDirection: TextDirection.ltr,
               showErrorOutline: hasWrongCredentials,
+              errorText: emailNotRegistered
+                  ? l10n.signInEmailNotRegistered
+                  : null,
+              onChanged: (_) =>
+                  context.read<SignInBloc>().add(const SignInEmailEdited()),
             ),
             const SizedBox(height: 16),
             PasswordField(
@@ -137,6 +145,9 @@ class _SignInViewState extends State<_SignInView> {
               label: l10n.passwordLabel,
               enabled: canEdit,
               showErrorOutline: hasWrongCredentials,
+              errorText: wrongPassword ? l10n.signInWrongPassword : null,
+              onChanged: (_) =>
+                  context.read<SignInBloc>().add(const SignInPasswordEdited()),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
                 if (canEdit) _submit();

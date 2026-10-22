@@ -23,11 +23,16 @@ Exception mapCommonFailure(ApiFailure failure) {
   return failure.toDataException();
 }
 
-/// Sign in: `401 invalid_credentials` (an unknown email and a wrong password
-/// look the same), `403 email_not_verified` (only after the right password),
+/// Sign in: `401 email_not_registered` (the email is checked first),
+/// `401 wrong_password`, `401 invalid_credentials` for any other refusal,
+/// `403 email_not_verified` (only after the right password),
 /// `429 sign_in_locked` or `throttled`.
 Exception mapSignInFailure(ApiFailure failure) {
   switch (failure.statusCode) {
+    case 401 when failure.hasCode('email_not_registered'):
+      return const EmailNotRegisteredException();
+    case 401 when failure.hasCode('wrong_password'):
+      return const WrongPasswordException();
     case 401 || 400:
       // `400` is an empty or malformed field: nothing to show but the same
       // refusal.

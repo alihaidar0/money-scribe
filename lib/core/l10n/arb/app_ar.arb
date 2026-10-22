@@ -67,6 +67,8 @@
   "forgotPasswordLink": "نسيت كلمة المرور؟",
   "newToApp": "جديد في Money Scribe؟",
   "signInWrongCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+  "signInEmailNotRegistered": "لا يوجد حساب بهذا البريد الإلكتروني.",
+  "signInWrongPassword": "كلمة المرور غير صحيحة.",
   "signInLocked": "محاولات كثيرة جدًا. حاول مجددًا بعد {time}.",
   "registerSentence": "يستغرق الأمر دقيقة فقط.",
   "registerAgreement": "أوافق على {terms} و{privacy}",

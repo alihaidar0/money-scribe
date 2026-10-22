@@ -336,7 +336,9 @@ All paths are under `/api/v1/auth/`.
 | `code_attempts_exceeded` | 429 | the code is dead; `Retry-After` is the wait until a new code may be requested |
 | `resend_too_soon` | 429 | countdown from `Retry-After`; also the answer to a second register inside the 60 s cooldown |
 | `resend_limit_reached` | 429 | countdown from `Retry-After` (up to an hour) for the limit of 5 resends per hour |
-| `invalid_credentials` | 401 | one message for an unknown email and a wrong password |
+| `email_not_registered` | 401 | sign-in only, `attr` `email`: said under the email field. The server checks the email first, so a wrong-password answer never comes for an unknown address |
+| `wrong_password` | 401 | sign-in only, `attr` `password`: said under the password field |
+| `invalid_credentials` | 401 | sign-in: any other refusal (a deactivated account), said in a banner; change password and delete account: a wrong current password |
 | `email_not_verified` | 403 | only for a correct password; opens the verify screen and does not resend by itself |
 | `sign_in_locked` | 429 | lock countdown from `Retry-After`, also for a correct password |
 | `service_unavailable` | 503 | "try again shortly", with the wait from `Retry-After`; only register, resend, verify and sign in can answer it, and the body `type` is `server_error` (a separate schema from the other error bodies) |

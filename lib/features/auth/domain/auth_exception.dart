@@ -7,12 +7,32 @@ sealed class AuthException implements Exception {
   const new();
 }
 
-/// The email or the password is wrong.
+/// The email or the password is wrong, without saying which. Sign-in answers
+/// it only for a refusal that is neither of the two below (a deactivated
+/// account, for instance); changing the password and deleting the account use
+/// it for a wrong current password.
 final class WrongCredentialsException extends AuthException {
   const new();
 
   @override
   String toString() => 'WrongCredentialsException';
+}
+
+/// Sign-in: no account has this email address. The server checks the email
+/// first, so this is the only answer for an unknown address.
+final class EmailNotRegisteredException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'EmailNotRegisteredException';
+}
+
+/// Sign-in: the account exists but the password is wrong.
+final class WrongPasswordException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'WrongPasswordException';
 }
 
 /// The password is right but the email address was never verified: the person

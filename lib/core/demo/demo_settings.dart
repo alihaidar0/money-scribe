@@ -12,6 +12,11 @@ enum DemoScenario { normal, loading, empty, error, noConnection }
 /// What the next sign-in attempt does.
 enum DemoSignIn {
   accepted,
+
+  /// No account has the email address.
+  emailNotRegistered,
+
+  /// The account exists but the password is wrong (locks after 5).
   wrongPassword,
   locked,
 

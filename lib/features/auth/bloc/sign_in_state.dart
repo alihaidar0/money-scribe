@@ -10,7 +10,15 @@ enum SignInStatus {
   /// The person is signed in.
   success,
 
-  /// The email or the password is wrong.
+  /// No account has this email address: said under the email field.
+  emailNotRegistered,
+
+  /// The account exists but the password is wrong: said under the password
+  /// field.
+  wrongPassword,
+
+  /// The server refused the sign-in without naming a field (a deactivated
+  /// account, for instance): said in a banner.
   wrongCredentials,
 
   /// The password is right but the email address is not verified yet: the

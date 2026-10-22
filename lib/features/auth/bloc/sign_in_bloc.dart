@@ -21,6 +21,8 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     on<SignInStarted>(_onStarted, transformer: droppable());
     // A second press while the first is being sent is ignored.
     on<SignInSubmitted>(_onSubmitted, transformer: droppable());
+    on<SignInEmailEdited>(_onEmailEdited, transformer: sequential());
+    on<SignInPasswordEdited>(_onPasswordEdited, transformer: sequential());
     on<_SignInLockTicked>(_onLockTicked, transformer: sequential());
   }
 
@@ -51,6 +53,10 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     try {
       await _repository.signIn(email: event.email, password: event.password);
       emit(const SignInState(status: SignInStatus.success));
+    } on EmailNotRegisteredException {
+      emit(const SignInState(status: SignInStatus.emailNotRegistered));
+    } on WrongPasswordException {
+      emit(const SignInState(status: SignInStatus.wrongPassword));
     } on WrongCredentialsException {
       emit(const SignInState(status: SignInStatus.wrongCredentials));
     } on EmailNotVerifiedException {
@@ -69,6 +75,27 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       emit(const SignInState(status: SignInStatus.failure));
     }
   }
+
+  void _onEmailEdited(SignInEmailEdited event, Emitter<SignInState> emit) {
+    // Another address is another account: every message about the old one is
+    // stale, the password message too.
+    if (_isRefusal(state.status)) emit(const SignInState());
+  }
+
+  void _onPasswordEdited(
+    SignInPasswordEdited event,
+    Emitter<SignInState> emit,
+  ) {
+    if (state.status == SignInStatus.wrongPassword ||
+        state.status == SignInStatus.wrongCredentials) {
+      emit(const SignInState());
+    }
+  }
+
+  static bool _isRefusal(SignInStatus status) =>
+      status == SignInStatus.emailNotRegistered ||
+      status == SignInStatus.wrongPassword ||
+      status == SignInStatus.wrongCredentials;
 
   void _onLockTicked(_SignInLockTicked event, Emitter<SignInState> emit) {
     if (state.status != SignInStatus.locked) return;
