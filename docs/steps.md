@@ -291,7 +291,9 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Change password on the server: the new tokens replace the stored ones
 - [x] Delete account on the server, and the deletion wording for the privacy policy and the store forms
 - [x] Delete the push token of the device when the person signs out, the account is deleted or the session ends
-- [ ] Push token on the server (needs a backend change, request in `backend-api.md`): register after sign-in, remove on sign-out and with the account
+- [x] Push token rules agreed with the backend (one token per device, removed with the session and the account, 90-day retention; written in `backend-api.md`)
+- [ ] Push token on the server, when its endpoints are in a pinned contract: register after sign-in and on a new token, only while notifications are allowed; remove first on sign-out, with a short timeout
+- [ ] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
 - [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
 - [ ] Edit the name
 - [ ] Change email: new address, code, cancel
