@@ -11,6 +11,7 @@ import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/email_change_outcome.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_dialogs.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/edit_name_dialog.dart';
 
@@ -123,6 +124,13 @@ class _Content extends StatelessWidget {
           onTap: () => _editName(context, profile.name),
         ),
         ListTile(
+          leading: const Icon(Icons.alternate_email),
+          title: Text(l10n.changeEmail),
+          trailing: const _Chevron(),
+          enabled: !isBusy,
+          onTap: () => _changeEmail(context),
+        ),
+        ListTile(
           leading: const Icon(Icons.lock_outline),
           title: Text(l10n.changePasswordTitle),
           trailing: const _Chevron(),
@@ -154,6 +162,18 @@ class _Content extends StatelessWidget {
     if (updated == null || !context.mounted) return;
     bloc.add(AccountProfileChanged(updated));
     showSuccessSnackBar(context, context.l10n.nameUpdated);
+  }
+
+  Future<void> _changeEmail(BuildContext context) async {
+    final bloc = context.read<AccountBloc>();
+    final outcome = await context.push<EmailChangeOutcome>(
+      AppRoutes.changeEmail,
+    );
+    if (outcome != EmailChangeOutcome.changed || !context.mounted) return;
+    // The server ended every other session and gave the account its new
+    // address: read the profile again.
+    bloc.add(const AccountRetried());
+    showSuccessSnackBar(context, context.l10n.emailChanged);
   }
 
   Future<void> _signOut(BuildContext context) async {

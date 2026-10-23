@@ -296,6 +296,6 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [ ] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
 - [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
 - [x] Edit the name
-- [ ] Change email: new address, code, cancel
+- [x] Change email: new address, code, cancel (a new code asks for the password again)
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

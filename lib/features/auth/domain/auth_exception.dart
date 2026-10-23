@@ -184,3 +184,26 @@ final class NameRejectedException extends AuthException {
   @override
   String toString() => 'NameRejectedException($issue)';
 }
+
+/// Why the server refused the new email address of an email change.
+enum EmailIssue {
+  /// It is the address the account already has.
+  unchanged,
+
+  /// Not an email address.
+  invalid,
+
+  /// Another account uses it.
+  taken,
+}
+
+/// The new email address was refused: [issue] says why. The account keeps its
+/// address.
+final class EmailChangeRejectedException extends AuthException {
+  const new(this.issue);
+
+  final EmailIssue issue;
+
+  @override
+  String toString() => 'EmailChangeRejectedException($issue)';
+}

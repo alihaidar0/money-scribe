@@ -347,7 +347,9 @@ All paths are under `/api/v1/auth/`.
 | `email_not_registered` | 401 | sign-in only, `attr` `email`: said under the email field. The server checks the email first, so a wrong-password answer never comes for an unknown address |
 | `wrong_password` | 401 | sign-in only, `attr` `password`: said under the password field |
 | `invalid_credentials` | 401 | sign-in: any other refusal (a deactivated account), said in a banner |
-| `invalid_password` | 400 | change password, `attr` `current_password`: said under the current-password field (a `400`, so the session handling is not triggered) |
+| `invalid_password` | 400 | change password and change email, `attr` `current_password`: said under the current-password field (a `400`, so the session handling is not triggered) |
+| `email_unchanged` | 400 | change email, `attr` `email`: the account already has this address, said under the new-email field |
+| `email_already_registered` | 409 | change email: another account uses the address, said under the new-email field, or on the code screen when it was taken meanwhile |
 | `password_unchanged` | 400 | change password, `attr` `password`: the new password equals the current one, said under the new-password field |
 | `password_attempts_exceeded` | 429 | change password (and delete account): 5 wrong current passwords lock both for 15 minutes; the button counts down `Retry-After`; sign-in is not affected |
 | `email_not_verified` | 403 | only for a correct password; opens the verify screen and does not resend by itself |
@@ -564,9 +566,35 @@ One call, signed in (`profile/`, a `PATCH` with only `name`): the answer is the 
   person comes back to it. Any other field in the body (`email`, `language`, `time_zone`) is refused with
   `read_only`, so the app sends only `name`; the language and time zone have their own settings call.
 
-### Not covered yet
+### Changing the email
 
-Change email comes as its own branch.
+Three calls, signed in (`email-change/`): ask for a code, confirm it, or cancel.
+
+- **Ask** (`POST email-change/`): the new address and the current password, both sent as typed (the address
+  trimmed). The server mails a 6-digit code to the **new** address and keeps the old one in force until the code
+  is confirmed. A new request replaces the one that was pending. The answer has the wait before a new code
+  (`resend_available_in`) and how long the code lives (`code_expires_in`); the app counts the first one down.
+- **Confirm** (`POST email-change/confirm/`): the code as text. The account gets its new address, every other
+  session ends, and this one goes on with the same tokens. The Account screen reads the profile again and
+  says "Email changed".
+- **Cancel** (`DELETE email-change/`): drops the pending change, so its code stops working; it answers `204`
+  also when nothing is pending. If the call fails the app says so and stays on the code screen, because the
+  code would still work.
+- **Screens.** Account, "Change email" opens the form (ST-12): the new address and the current password, the
+  button "Send code". The code screen (ST-12b) reuses the code page of the sign-up and reset flows: six
+  boxes, the countdown to a new code, "Use another address" (back to the form, which asks for the password
+  again) and "Cancel email change".
+- **A new code asks for the password again** (Option A, the owner's decision): the server needs it for every
+  request, so the app asks in a small dialog instead of keeping the password in memory. A wrong one is said
+  on the code screen and the code that was sent still works.
+- **Errors.** `invalid_password` (`400`) under the password field; `email_unchanged` (`400`) and any other
+  refusal of the address under the new-email field; `email_already_registered` (`409`) under the field, or on
+  the code screen when the address was taken while the code was on its way (the code is kept, but useless, so
+  the person chooses another address). The waits are the server's: `password_attempts_exceeded` (the lock shared
+  with changing the password and deleting the account), `resend_too_soon`, `resend_limit_reached` and
+  `throttled` count down on the button; `code_attempts_exceeded` kills the code until a new one may be asked
+  for. `503` shows "try again shortly".
+- Nothing about the new address is checked by the app: the server says whether it is valid.
 
 ### What the app uses for this step
 

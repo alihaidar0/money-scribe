@@ -1380,6 +1380,33 @@ final _scenes = <_Scene>[
       await tester.pumpAndSettle();
     },
   ),
+  const _Scene('st-12-change-email', AppRoutes.changeEmail, signedIn: true),
+  _Scene(
+    'st-12b-change-email-taken',
+    AppRoutes.changeEmail,
+    signedIn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'taken@example.com');
+      await tester.enterText(fields.at(1), 'secret-password');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'st-12c-change-email-code',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.alternate_email));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'dana.whitfield@example.com');
+      await tester.enterText(fields.at(1), 'secret-password');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
   _Scene(
     'st-7-export-csv',
     AppRoutes.settings,

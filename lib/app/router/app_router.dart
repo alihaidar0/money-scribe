@@ -9,6 +9,8 @@ import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
+import 'package:money_scribe/features/auth/presentation/change_email_code_screen.dart';
+import 'package:money_scribe/features/auth/presentation/change_email_screen.dart';
 import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
@@ -124,6 +126,20 @@ GoRouter createAppRouter({
         builder: (context, state) => const WideFrame(
           width: FrameWidth.narrow,
           child: ChangePasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.changeEmail,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: ChangeEmailScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.changeEmailCode,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: ChangeEmailCodeScreen(),
         ),
       ),
       GoRoute(

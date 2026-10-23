@@ -139,6 +139,42 @@ Exception mapUpdateNameFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Start an email change: `400 invalid_password` (the current password is
+/// wrong, `attr` `current_password`), `400 email_unchanged` or another refusal
+/// of the address (`attr` `email`), `409 email_already_registered`, and the
+/// waits (`429`: the password lock, `resend_too_soon`, `resend_limit_reached`,
+/// `throttled`).
+Exception mapEmailChangeRequestFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    if (failure.hasCode('invalid_password')) {
+      return const WrongCredentialsException();
+    }
+    if (failure.hasCode('email_unchanged')) {
+      return const EmailChangeRejectedException(EmailIssue.unchanged);
+    }
+    if (failure.forField('email') != null) {
+      return const EmailChangeRejectedException(EmailIssue.invalid);
+    }
+    return const ServerException();
+  }
+  if (failure.statusCode == 409 &&
+      failure.hasCode('email_already_registered')) {
+    return const EmailChangeRejectedException(EmailIssue.taken);
+  }
+  return mapCommonFailure(failure);
+}
+
+/// Confirm an email change: the codes of [mapVerifyFailure], and
+/// `409 email_already_registered` when the address was taken meanwhile (the
+/// code is kept).
+Exception mapEmailChangeConfirmFailure(ApiFailure failure) {
+  if (failure.statusCode == 409 &&
+      failure.hasCode('email_already_registered')) {
+    return const EmailChangeRejectedException(EmailIssue.taken);
+  }
+  return mapVerifyFailure(failure);
+}
+
 RateLimitReason _reason(String? code) {
   return switch (code) {
     'sign_in_locked' => RateLimitReason.signInLocked,

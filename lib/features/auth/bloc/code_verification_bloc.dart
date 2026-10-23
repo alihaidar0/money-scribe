@@ -13,7 +13,8 @@ part 'code_verification_event.dart';
 part 'code_verification_state.dart';
 
 /// The screens that ask for the 6-digit code sent by email: verifying a new
-/// account and resetting a password. The purpose tells them apart. Every wait
+/// account, resetting a password and changing the email. The purpose tells
+/// them apart. Every wait
 /// comes from the server through the repository, never from a constant here.
 class CodeVerificationBloc
     extends Bloc<CodeVerificationEvent, CodeVerificationState> {
@@ -57,6 +58,7 @@ class CodeVerificationBloc
     // new one is sent.
     final clears = switch (state.status) {
       CodeVerificationStatus.wrong ||
+      CodeVerificationStatus.wrongPassword ||
       CodeVerificationStatus.noConnection ||
       CodeVerificationStatus.unavailable ||
       CodeVerificationStatus.failure => true,
@@ -73,6 +75,7 @@ class CodeVerificationBloc
     final blocked = switch (state.status) {
       CodeVerificationStatus.expired ||
       CodeVerificationStatus.attemptsExceeded ||
+      CodeVerificationStatus.emailTaken ||
       CodeVerificationStatus.rateLimited => true,
       _ => false,
     };
@@ -91,6 +94,8 @@ class CodeVerificationBloc
       );
     } on CodeExpiredException {
       emit(state.copyWith(status: CodeVerificationStatus.expired));
+    } on EmailChangeRejectedException {
+      emit(state.copyWith(status: CodeVerificationStatus.emailTaken));
     } on RateLimitedException catch (error) {
       final seconds = error.retryAfter.ceilSeconds;
       if (error.reason == RateLimitReason.codeAttemptsExceeded) {
@@ -129,7 +134,7 @@ class CodeVerificationBloc
     // The server decides when a new code may be asked for.
     if (state.resendSecondsLeft > 0) return;
     try {
-      await _repository.resendCode(_purpose);
+      await _repository.resendCode(_purpose, password: event.password);
       final seconds = _repository.resendWaitRemaining.ceilSeconds;
       emit(
         state.copyWith(
@@ -139,6 +144,8 @@ class CodeVerificationBloc
         ),
       );
       _startResendTimer(seconds);
+    } on WrongCredentialsException {
+      emit(state.copyWith(status: CodeVerificationStatus.wrongPassword));
     } on RateLimitedException catch (error) {
       // Too soon, too many codes this hour, or too many requests: the button
       // counts down until the server allows it.

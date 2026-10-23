@@ -28,9 +28,15 @@ final class CodeSubmitted extends CodeVerificationEvent {
   List<Object> get props => [code];
 }
 
-/// The user asked for a new code.
+/// The user asked for a new code. Changing the email needs the current
+/// [password] again; the other purposes send none.
 final class CodeResendRequested extends CodeVerificationEvent {
-  const new();
+  const new({this.password});
+
+  final String? password;
+
+  @override
+  List<Object> get props => [?password];
 }
 
 /// A second of the wait for a new code passed.

@@ -183,6 +183,11 @@ as Fixed items in the Salary tab: it is a child route of the tab and keeps the b
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
 
+The email change is two screens that hand their result back (`EmailChangeOutcome`): the form
+(`ChangeEmailBloc`) and the code screen, which reuses `CodeEntryPage` and `CodeVerificationBloc` with the
+purpose `CodePurpose.changeEmail`. A new code for it needs the password again, which the page asks for
+with a dialog and passes with the resend event; the password is never kept.
+
 Whenever the person is signed out (signing out, deleting the account, or a session the server ended),
 `PushTokenCleanup` (`app/push_token_cleanup.dart`) deletes the push token of the device through
 `PushMessagingRepository.forgetToken()`, so a signed-out device keeps no token that an earlier sign-in

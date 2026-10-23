@@ -271,6 +271,88 @@ void main() {
     });
   });
 
+  group('changing the email', () {
+    Future<void> startChange() async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      now = now.add(const Duration(seconds: 61));
+    }
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a correct code gives the account its new address',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) => bloc.add(const CodeSubmitted('123456')),
+      verify: (bloc) async {
+        expect(bloc.state.status, CodeVerificationStatus.verified);
+        expect((await auth.profile()).email, 'new@example.com');
+      },
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a new code takes the password, and shows the new wait',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) async {
+        bloc.add(const CodeResendRequested(password: 'secret'));
+        await pumpEventQueue();
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, CodeVerificationStatus.entering);
+        expect(bloc.state.resendSecondsLeft, 60);
+      },
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a wrong password for a new code is told, and the first code still works',
+      setUp: () async {
+        await startChange();
+        demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      },
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) async {
+        bloc.add(const CodeResendRequested(password: 'nope'));
+        await pumpEventQueue();
+        expect(bloc.state.status, CodeVerificationStatus.wrongPassword);
+        demo.update(const DemoSettings());
+        bloc.add(const CodeSubmitted('123456'));
+      },
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.verified),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'typing after a wrong password starts a new try',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      seed: () => const CodeVerificationState(
+        email: 'new@example.com',
+        resendSecondsLeft: 0,
+        status: CodeVerificationStatus.wrongPassword,
+      ),
+      act: (bloc) => bloc.add(const CodeEdited()),
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.entering),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'an address taken meanwhile is told, and no code is checked after that',
+      setUp: startChange,
+      build: () => CodeVerificationBloc(
+        purpose: CodePurpose.changeEmail,
+        repository: _TakenMeanwhileAuth(demo, () => now),
+        ticker: ticker,
+      ),
+      act: (bloc) async {
+        bloc.add(const CodeSubmitted('123456'));
+        await pumpEventQueue();
+        bloc.add(const CodeSubmitted('123456'));
+        await pumpEventQueue();
+      },
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.emailTaken),
+    );
+  });
+
   group('CodeEdited', () {
     blocTest<CodeVerificationBloc, CodeVerificationState>(
       'clears a wrong code error',
@@ -515,10 +597,21 @@ class _ResendLimitedAuth extends FakeAuthRepository {
   new(DemoController demo) : super(demo: demo);
 
   @override
-  Future<void> resendCode(CodePurpose purpose) {
+  Future<void> resendCode(CodePurpose purpose, {String? password}) {
     throw const RateLimitedException(
       RateLimitReason.resendLimitReached,
       Duration(hours: 1),
     );
+  }
+}
+
+/// An account whose new address is taken by the time the code is confirmed.
+class _TakenMeanwhileAuth extends FakeAuthRepository {
+  new(DemoController demo, DateTime Function() now)
+    : super(demo: demo, now: now);
+
+  @override
+  Future<void> verifyCode(CodePurpose purpose, String code) {
+    throw const EmailChangeRejectedException(EmailIssue.taken);
   }
 }

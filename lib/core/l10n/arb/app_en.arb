@@ -1789,6 +1789,54 @@
   "@nameUpdated": {
     "description": "Message after the display name was changed."
   },
+  "changeEmailMessage": "We will send a 6-digit code to the new address. Your email changes only after you enter it.",
+  "@changeEmailMessage": {
+    "description": "Text above the fields of the screen that changes the email address."
+  },
+  "newEmailLabel": "New email",
+  "@newEmailLabel": {
+    "description": "Label of the field for the new email address."
+  },
+  "changeEmailUnchanged": "This is already your email address.",
+  "@changeEmailUnchanged": {
+    "description": "Error under the new email field when it is the address the account already has."
+  },
+  "changeEmailTaken": "Another account already uses this email address.",
+  "@changeEmailTaken": {
+    "description": "Error under the new email field when another account has the address."
+  },
+  "changeEmailTakenMeanwhile": "Another account took this address in the meantime. Use another address.",
+  "@changeEmailTakenMeanwhile": {
+    "description": "Banner on the code screen when the new address was taken while the code was on its way."
+  },
+  "changeEmailCodeTitle": "Confirm your new email",
+  "@changeEmailCodeTitle": {
+    "description": "Title of the screen where the code sent to the new email address is typed."
+  },
+  "useAnotherAddress": "Use another address",
+  "@useAnotherAddress": {
+    "description": "Button on the code screen that goes back to type a different new email address."
+  },
+  "cancelEmailChange": "Cancel email change",
+  "@cancelEmailChange": {
+    "description": "Button on the code screen that drops the pending email change."
+  },
+  "cancelEmailChangeFailed": "Couldn''t cancel the change. Check your connection and try again.",
+  "@cancelEmailChangeFailed": {
+    "description": "Message when cancelling the pending email change failed."
+  },
+  "resendPasswordTitle": "Send a new code",
+  "@resendPasswordTitle": {
+    "description": "Title of the dialog that asks for the password before a new email-change code is sent."
+  },
+  "resendPasswordMessage": "For your security, enter your password to send a new code.",
+  "@resendPasswordMessage": {
+    "description": "Text of the dialog that asks for the password before a new email-change code is sent."
+  },
+  "emailChanged": "Email changed",
+  "@emailChanged": {
+    "description": "Message after the email address of the account was changed."
+  },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
     "description": "Message when signing out failed."

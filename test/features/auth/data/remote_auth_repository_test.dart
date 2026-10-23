@@ -1553,6 +1553,316 @@ void main() {
     });
   });
 
+  group('change email', () {
+    const requestPath = '/api/v1/auth/email-change/';
+    const confirmPath = '/api/v1/auth/email-change/confirm/';
+
+    Map<String, Object?> sent() => {
+      'code_expires_in': 900,
+      'resend_available_in': 60,
+      'email': 'new@example.com',
+    };
+
+    setUp(() async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+      await auth.restore();
+      routes[requestPath] = (options) =>
+          options.method == 'DELETE' ? jsonBody(204) : jsonBody(200, sent());
+      routes[confirmPath] = (_) => jsonBody(200, {
+        'id': '7d1f6a54-2b3c-4d5e-8f90-a1b2c3d4e5f6',
+        'name': 'Alex',
+        'email': 'new@example.com',
+        'language': 'en',
+        'time_zone': 'Europe/Berlin',
+      });
+    });
+
+    test(
+      'asks for a code with the address and the password as typed',
+      () async {
+        await auth.requestEmailChange(
+          email: ' new@example.com ',
+          password: '  a pass phrase ',
+        );
+
+        final request = lastRequest(requestPath);
+        expect(request.method, 'POST');
+        expect(request.data, {
+          'email': 'new@example.com',
+          'current_password': '  a pass phrase ',
+        });
+        expect(request.headers['Authorization'], 'Bearer access-1');
+      },
+    );
+
+    test(
+      "the code goes to the new address, and the wait is the server's",
+      () async {
+        await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+
+        expect(auth.pendingEmail, 'new@example.com');
+        expect(auth.resendWaitRemaining, const Duration(seconds: 60));
+        clock.time = clock.time.add(const Duration(seconds: 61));
+        expect(auth.resendWaitRemaining, Duration.zero);
+      },
+    );
+
+    test('a wrong password is told', () async {
+      routes[requestPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'invalid_password',
+          type: 'validation_error',
+          attr: 'current_password',
+        ),
+      );
+
+      await expectLater(
+        auth.requestEmailChange(email: 'new@example.com', password: 'wrong'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+      expect(auth.pendingEmail, isNull);
+    });
+
+    test(
+      'an address the account already has, or that is not one, is refused',
+      () async {
+        routes[requestPath] = (_) => jsonBody(
+          400,
+          errorBody('email_unchanged', type: 'validation_error', attr: 'email'),
+        );
+        await expectLater(
+          auth.requestEmailChange(email: 'alex@example.com', password: 'x'),
+          throwsA(
+            isA<EmailChangeRejectedException>().having(
+              (e) => e.issue,
+              'issue',
+              EmailIssue.unchanged,
+            ),
+          ),
+        );
+
+        routes[requestPath] = (_) => jsonBody(
+          400,
+          errorBody('invalid', type: 'validation_error', attr: 'email'),
+        );
+        await expectLater(
+          auth.requestEmailChange(email: 'nope', password: 'x'),
+          throwsA(
+            isA<EmailChangeRejectedException>().having(
+              (e) => e.issue,
+              'issue',
+              EmailIssue.invalid,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('an address another account uses is told', () async {
+      routes[requestPath] = (_) =>
+          jsonBody(409, errorBody('email_already_registered', attr: 'email'));
+
+      await expectLater(
+        auth.requestEmailChange(email: 'taken@example.com', password: 'x'),
+        throwsA(
+          isA<EmailChangeRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            EmailIssue.taken,
+          ),
+        ),
+      );
+    });
+
+    test('the waits are the ones the server gives', () async {
+      for (final (code, reason) in [
+        (
+          'password_attempts_exceeded',
+          RateLimitReason.passwordAttemptsExceeded,
+        ),
+        ('resend_too_soon', RateLimitReason.resendTooSoon),
+        ('resend_limit_reached', RateLimitReason.resendLimitReached),
+        ('throttled', RateLimitReason.throttled),
+      ]) {
+        routes[requestPath] = (_) =>
+            jsonBody(429, errorBody(code), {'retry-after': '42'});
+
+        await expectLater(
+          auth.requestEmailChange(email: 'new@example.com', password: 'x'),
+          throwsA(
+            isA<RateLimitedException>()
+                .having((e) => e.reason, 'reason', reason)
+                .having(
+                  (e) => e.retryAfter,
+                  'retryAfter',
+                  const Duration(seconds: 42),
+                ),
+          ),
+        );
+      }
+    });
+
+    test('a busy server and a lost connection are reported', () async {
+      routes[requestPath] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+      await expectLater(
+        auth.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+
+      routes[requestPath] = (options) => throw connectionLost(options);
+      await expectLater(
+        auth.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+
+    test(
+      'a new code asks for the password again, for the same address',
+      () async {
+        await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+        clock.time = clock.time.add(const Duration(seconds: 61));
+
+        await auth.resendCode(CodePurpose.changeEmail, password: 'again');
+
+        final request = lastRequest(requestPath);
+        expect(request.data, {
+          'email': 'new@example.com',
+          'current_password': 'again',
+        });
+        expect(auth.resendWaitRemaining, const Duration(seconds: 60));
+      },
+    );
+
+    test('a new code without a password is a programming error', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+
+      await expectLater(
+        auth.resendCode(CodePurpose.changeEmail),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test(
+      'the right code is sent as text and ends the pending change',
+      () async {
+        await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+
+        await auth.verifyCode(CodePurpose.changeEmail, '012345');
+
+        expect(bodyOf(confirmPath), {'code': '012345'});
+        expect(
+          lastRequest(confirmPath).headers['Authorization'],
+          'Bearer access-1',
+        );
+        expect(auth.pendingEmail, isNull);
+        expect(auth.isSignedIn, isTrue);
+        expect(
+          await tokens.read(),
+          const SessionTokens(
+            accessToken: 'access-1',
+            refreshToken: 'refresh-1',
+          ),
+        );
+      },
+    );
+
+    test('a wrong or old code is told, with the tries left', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody(
+          'code_invalid',
+          type: 'validation_error',
+          attr: 'code',
+          extra: {'attempts_left': 3},
+        ),
+      );
+      await expectLater(
+        auth.verifyCode(CodePurpose.changeEmail, '000000'),
+        throwsA(
+          isA<WrongCodeException>().having((e) => e.attemptsLeft, 'left', 3),
+        ),
+      );
+
+      routes[confirmPath] = (_) => jsonBody(
+        400,
+        errorBody('code_expired', type: 'validation_error', attr: 'code'),
+      );
+      await expectLater(
+        auth.verifyCode(CodePurpose.changeEmail, '000000'),
+        throwsA(isA<CodeExpiredException>()),
+      );
+      expect(auth.pendingEmail, 'new@example.com');
+    });
+
+    test('a dead code starts the wait for a new one', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      routes[confirmPath] = (_) => jsonBody(
+        429,
+        errorBody('code_attempts_exceeded'),
+        {'retry-after': '300'},
+      );
+
+      await expectLater(
+        auth.verifyCode(CodePurpose.changeEmail, '000000'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.codeAttemptsExceeded,
+          ),
+        ),
+      );
+      expect(auth.resendWaitRemaining, const Duration(seconds: 300));
+    });
+
+    test('an address taken meanwhile is told, and the code is kept', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      routes[confirmPath] = (_) =>
+          jsonBody(409, errorBody('email_already_registered'));
+
+      await expectLater(
+        auth.verifyCode(CodePurpose.changeEmail, '123456'),
+        throwsA(
+          isA<EmailChangeRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            EmailIssue.taken,
+          ),
+        ),
+      );
+      expect(auth.pendingEmail, 'new@example.com');
+    });
+
+    test('cancelling drops the pending change', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+
+      await auth.cancelEmailChange();
+
+      expect(lastRequest(requestPath).method, 'DELETE');
+      expect(auth.pendingEmail, isNull);
+      expect(auth.resendWaitRemaining, Duration.zero);
+    });
+
+    test('cancelling that fails leaves the change pending', () async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      routes[requestPath] = (options) => throw connectionLost(options);
+
+      await expectLater(
+        auth.cancelEmailChange(),
+        throwsA(isA<NoConnectionException>()),
+      );
+      expect(auth.pendingEmail, 'new@example.com');
+    });
+  });
+
   group('change password', () {
     const path = '/api/v1/auth/password/change/';
 

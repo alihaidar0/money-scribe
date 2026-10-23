@@ -35,6 +35,8 @@ const List<String> _screens = [
   AppRoutes.settings,
   AppRoutes.account,
   AppRoutes.changePassword,
+  AppRoutes.changeEmail,
+  AppRoutes.changeEmailCode,
   AppRoutes.paySchedule,
   AppRoutes.categories,
   AppRoutes.accounts,
