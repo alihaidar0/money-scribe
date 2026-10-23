@@ -26,7 +26,6 @@ import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 import '../support/fake_push_messaging_repository.dart';
 import '../support/fake_server_activity.dart';
-import '../support/not_available_auth_repository.dart';
 import '../support/render_screen.dart';
 
 typedef _Setup = Future<void> Function(
@@ -41,17 +40,12 @@ class _Scene {
     this.signedIn = false,
     this.setup,
     this.size = const Size(412, 915),
-    this.authNotAvailable = false,
     this.serverWaking = false,
   });
 
   final String name;
   final String route;
   final bool signedIn;
-
-  /// The account is one whose server does not offer resetting or changing a
-  /// password or deleting the account yet.
-  final bool authNotAvailable;
 
   /// The server is slow to answer: the staging note above the screen shows.
   final bool serverWaking;
@@ -209,20 +203,6 @@ final _scenes = <_Scene>[
     AppRoutes.signIn,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
-      await _tapPrimary(tester);
-    },
-  ),
-  _Scene(
-    'err-4-not-available',
-    AppRoutes.changePassword,
-    signedIn: true,
-    authNotAvailable: true,
-    setup: (tester, demo) async {
-      final fields = find.byType(TextField);
-      await tester.enterText(fields.at(0), 'old-password');
-      await tester.enterText(fields.at(1), 'new-password-1');
-      await tester.enterText(fields.at(2), 'new-password-1');
-      await tester.pumpAndSettle();
       await _tapPrimary(tester);
     },
   ),
@@ -1461,11 +1441,29 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
-    'st-11c-delete-account-not-available',
+    'st-11c-delete-account-locked',
     AppRoutes.account,
     signedIn: true,
-    authNotAvailable: true,
     setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-11d-delete-account-busy',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
       await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'secret');
@@ -1600,12 +1598,10 @@ void main() {
                 // notification rows.
                 pushMessaging: FakePushMessagingRepository(),
                 demo: demo,
-                authRepository: scene.authNotAvailable
-                    ? NotAvailableAuthRepository(
-                        demo: demo,
-                        signedIn: scene.signedIn,
-                      )
-                    : FakeAuthRepository(demo: demo, signedIn: scene.signedIn),
+                authRepository: FakeAuthRepository(
+                  demo: demo,
+                  signedIn: scene.signedIn,
+                ),
                 // The demo panel handle belongs to staging builds only and
                 // would sit on top of every picture.
                 environment: scene.route == AppRoutes.demo || scene.serverWaking

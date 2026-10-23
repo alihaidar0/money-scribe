@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/demo/demo_handle.dart';
+import 'package:money_scribe/app/push_token_cleanup.dart';
 import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/app/router/stream_listenable.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
@@ -111,10 +112,18 @@ class MoneyScribeApp extends StatefulWidget {
 }
 
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
+  late final PushTokenCleanup _pushTokenCleanup;
+
   @override
   void initState() {
     super.initState();
     WesternDigits.useInDateFormats();
+    // A signed-out device keeps no push token. It listens from the start, so
+    // it is built here and not on first use.
+    _pushTokenCleanup = PushTokenCleanup(
+      auth: widget.authRepository,
+      push: widget.pushMessagingRepository,
+    );
   }
 
   late final StreamListenable _signInChanges = StreamListenable(
@@ -129,6 +138,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
   void dispose() {
     _router.dispose();
     _signInChanges.dispose();
+    unawaited(_pushTokenCleanup.dispose());
     super.dispose();
   }
 

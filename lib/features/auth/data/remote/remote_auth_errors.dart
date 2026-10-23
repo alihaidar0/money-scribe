@@ -111,6 +111,19 @@ Exception mapChangePasswordFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Delete the account: `400 invalid_password` (the password is wrong, `attr`
+/// `password`), `429 password_attempts_exceeded` (the lock it shares with
+/// changing the password) or `throttled`.
+Exception mapDeleteAccountFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    if (failure.hasCode('invalid_password')) {
+      return const WrongCredentialsException();
+    }
+    return const ServerException();
+  }
+  return mapCommonFailure(failure);
+}
+
 RateLimitReason _reason(String? code) {
   return switch (code) {
     'sign_in_locked' => RateLimitReason.signInLocked,

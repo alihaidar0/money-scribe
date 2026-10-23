@@ -325,6 +325,18 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> deleteAccount({required String password}) async {
     await _demo.simulateSave();
     _requireRightPassword();
+    // The lock after wrong passwords is shared with changing the password.
+    switch (_demo.settings.passwordChange) {
+      case DemoPasswordChange.locked:
+        throw const RateLimitedException(
+          RateLimitReason.passwordAttemptsExceeded,
+          Duration(minutes: 15),
+        );
+      case DemoPasswordChange.unavailable:
+        throw const ServiceUnavailableException();
+      case DemoPasswordChange.accepted || DemoPasswordChange.passwordRefused:
+        break;
+    }
     // Nothing of the account is left: the next one starts empty.
     _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
     _setSignedIn(value: false);

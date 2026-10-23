@@ -152,6 +152,34 @@ void main() {
       expect(changes, [false]);
     });
 
+    test(
+      'shares the lock and the busy server with changing the password',
+      () async {
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.locked),
+        );
+        await expectLater(
+          repository.deleteAccount(password: 'secret'),
+          throwsA(
+            isA<RateLimitedException>().having(
+              (e) => e.reason,
+              'reason',
+              RateLimitReason.passwordAttemptsExceeded,
+            ),
+          ),
+        );
+
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+        );
+        await expectLater(
+          repository.deleteAccount(password: 'secret'),
+          throwsA(isA<ServiceUnavailableException>()),
+        );
+        expect(repository.isSignedIn, isTrue);
+      },
+    );
+
     test('refuses a wrong password and stays signed in', () async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
 

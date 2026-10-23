@@ -100,7 +100,10 @@ write access to the repository only.
   application IDs above. The build workflow writes the file from a secret of the GitHub
   environment; test builds of pull requests have no secrets and use a placeholder file with
   invented values. Until the backend can send messages, push messages are tested from the
-  Firebase console. A notification never contains amounts, names or other financial data.
+  Firebase console. A notification never contains amounts, names or other financial data. The app
+  deletes the push token of the device whenever the person is signed out (sign-out, account deletion, a
+  session the server ended); the Firebase installation ID is not deleted by that and is dropped by
+  Firebase when the installation is inactive.
 
   To build an Android flavor on your own machine, download its file from the Firebase
   console (Project settings → General → Your apps) and save it as

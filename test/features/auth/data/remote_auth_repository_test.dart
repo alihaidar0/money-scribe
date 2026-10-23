@@ -1665,14 +1665,144 @@ void main() {
     });
   });
 
-  group('what the server does not offer yet', () {
-    test('says so, without calling the server', () async {
-      await expectLater(
-        auth.deleteAccount(password: 'a'),
-        throwsA(isA<FeatureNotAvailableException>()),
+  group('delete account', () {
+    const path = '/api/v1/auth/account/delete/';
+
+    setUp(() async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+      await auth.restore();
+      routes[path] = (_) => jsonBody(204);
+    });
+
+    test(
+      'sends the password exactly as typed, with the access token',
+      () async {
+        await auth.deleteAccount(password: ' a pass phrase ');
+
+        expect(bodyOf(path), {'password': ' a pass phrase '});
+        expect(lastRequest(path).headers['Authorization'], 'Bearer access-1');
+      },
+    );
+
+    test(
+      'a deleted account signs the person out and forgets the tokens',
+      () async {
+        final changes = <bool>[];
+        final subscription = auth.signedInChanges.listen(changes.add);
+        addTearDown(subscription.cancel);
+
+        await auth.deleteAccount(password: 'secret');
+
+        expect(auth.isSignedIn, isFalse);
+        expect(changes, [false]);
+        expect(await tokens.read(), isNull);
+        expect(auth.pendingEmail, isNull);
+      },
+    );
+
+    test('a wrong password is told, and the account stays', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody(
+          'invalid_password',
+          type: 'validation_error',
+          attr: 'password',
+        ),
       );
 
-      expect(server.requests, isEmpty);
+      await expectLater(
+        auth.deleteAccount(password: 'wrong'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+
+      expect(auth.isSignedIn, isTrue);
+      expect(await tokens.read(), isNotNull);
+    });
+
+    test(
+      'five wrong passwords lock it, with the wait from the server',
+      () async {
+        routes[path] = (_) => jsonBody(
+          429,
+          errorBody('password_attempts_exceeded'),
+          {'retry-after': '900'},
+        );
+
+        await expectLater(
+          auth.deleteAccount(password: 'wrong'),
+          throwsA(
+            isA<RateLimitedException>()
+                .having(
+                  (e) => e.reason,
+                  'reason',
+                  RateLimitReason.passwordAttemptsExceeded,
+                )
+                .having(
+                  (e) => e.retryAfter,
+                  'retryAfter',
+                  const Duration(seconds: 900),
+                ),
+          ),
+        );
+
+        expect(auth.isSignedIn, isTrue);
+        expect(auth.signInLockRemaining, isNull);
+      },
+    );
+
+    test('too many requests is a wait', () async {
+      routes[path] = (_) =>
+          jsonBody(429, errorBody('throttled'), {'retry-after': '17'});
+
+      await expectLater(
+        auth.deleteAccount(password: 'x'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.throttled,
+          ),
+        ),
+      );
+    });
+
+    test('a busy server is reported, and the account stays', () async {
+      routes[path] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+
+      await expectLater(
+        auth.deleteAccount(password: 'x'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+      expect(auth.isSignedIn, isTrue);
+    });
+
+    test('a lost connection is reported, and the account stays', () async {
+      routes[path] = (options) => throw connectionLost(options);
+
+      await expectLater(
+        auth.deleteAccount(password: 'x'),
+        throwsA(isA<NoConnectionException>()),
+      );
+      expect(auth.isSignedIn, isTrue);
+      expect(await tokens.read(), isNotNull);
+    });
+
+    test('a 400 that is not a wrong password is a server failure', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody('invalid', type: 'validation_error', attr: 'password'),
+      );
+
+      await expectLater(
+        auth.deleteAccount(password: 'x'),
+        throwsA(isA<ServerException>()),
+      );
     });
   });
 

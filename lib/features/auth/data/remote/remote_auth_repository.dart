@@ -19,8 +19,6 @@ import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 /// The session tokens live in the secure storage; this class never keeps them
 /// itself. Every wait it reports comes from an answer of the server
 /// (`Retry-After`, `resend_available_in`), counted down with the clock.
-/// Deleting the account is not built on the server yet and fails with
-/// [FeatureNotAvailableException].
 class RemoteAuthRepository implements AuthRepository {
   new({
     required this._plain,
@@ -297,7 +295,22 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> deleteAccount({required String password}) => _notAvailable();
+  Future<void> deleteAccount({required String password}) async {
+    await _call(
+      () => _authenticated.authAccountDelete(
+        // Sent as typed: never trimmed.
+        body: DeleteAccountRequest(password: password),
+      ),
+      mapDeleteAccountFailure,
+    );
+    // The account and every session of it are gone: the tokens stop working.
+    _pendingEmail = null;
+    _resendAvailableAt = null;
+    _lockedUntil = null;
+    _resetToken = null;
+    await _tokens.clear();
+    _setSignedIn(value: false);
+  }
 
   /// Runs a call and turns its failure into the exceptions of the screens.
   /// [onFailure] sees the failure and its exception first, to remember what the
@@ -366,12 +379,6 @@ class RemoteAuthRepository implements AuthRepository {
     if (until == null) return null;
     final remaining = until.difference(_clock.now());
     return remaining > Duration.zero ? remaining : null;
-  }
-
-  /// A failed future, never a throw: these calls are not built on the server
-  /// yet, and a caller that awaits them gets the exception like any other.
-  Future<void> _notAvailable() {
-    return Future<void>.error(const FeatureNotAvailableException());
   }
 
   /// Asks for a code to reset the password of [email]. The answer is the same

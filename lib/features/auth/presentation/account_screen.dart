@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -19,9 +20,10 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          AccountBloc(repository: context.read<AuthRepository>())
-            ..add(const AccountStarted()),
+      create: (context) => AccountBloc(
+        repository: context.read<AuthRepository>(),
+        ticker: context.read<Ticker>(),
+      )..add(const AccountStarted()),
       child: const _AccountView(),
     );
   }

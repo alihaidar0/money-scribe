@@ -1757,9 +1757,9 @@
   "@deleteMyAccountFailed": {
     "description": "Banner in the delete account dialog when the server could not be reached or failed."
   },
-  "deleteMyAccountNotAvailable": "Deleting your account is not available yet.",
-  "@deleteMyAccountNotAvailable": {
-    "description": "Banner in the delete account dialog when the server does not offer deleting an account yet."
+  "deleteMyAccountUnavailable": "The service is busy. Please try again shortly.",
+  "@deleteMyAccountUnavailable": {
+    "description": "Banner in the delete account dialog when the server is busy and asks to try again shortly."
   },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
