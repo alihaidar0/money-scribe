@@ -277,6 +277,77 @@ void main() {
       expect(find.byType(ChangePasswordScreen), findsOneWidget);
     });
 
+    testWidgets('a refused new password is explained under its field', (
+      tester,
+    ) async {
+      final demo = await openAccount(tester);
+      await openChangePassword(tester);
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+      await fillPasswords(tester);
+
+      await tester.tap(savePassword());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Your password is too short. Use at least 15 characters.'),
+        findsOneWidget,
+      );
+      expect(find.byType(ChangePasswordScreen), findsOneWidget);
+    });
+
+    testWidgets('the same password as the current one is told', (tester) async {
+      await openAccount(tester);
+      await openChangePassword(tester);
+      await fillPasswords(
+        tester,
+        current: 'same-password-1',
+        next: 'same-password-1',
+        confirmation: 'same-password-1',
+      );
+
+      await tester.tap(savePassword());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The new password must be different from your current one.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a lock after wrong passwords counts down on the button', (
+      tester,
+    ) async {
+      final demo = await openAccount(tester);
+      await openChangePassword(tester);
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await fillPasswords(tester);
+
+      await tester.tap(savePassword());
+      await tester.pumpAndSettle();
+
+      final button = find.widgetWithText(FilledButton, 'Try again in 15:00');
+      expect(button, findsOneWidget);
+      expect(tester.widget<FilledButton>(button).onPressed, isNull);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      final demo = await openAccount(tester);
+      await openChangePassword(tester);
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
+      await fillPasswords(tester);
+
+      await tester.tap(savePassword());
+      await tester.pumpAndSettle();
+
+      expect(find.text('The service is busy'), findsOneWidget);
+    });
+
     testWidgets('no connection keeps what was typed, and Try again saves', (
       tester,
     ) async {

@@ -19,8 +19,8 @@ import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 /// The session tokens live in the secure storage; this class never keeps them
 /// itself. Every wait it reports comes from an answer of the server
 /// (`Retry-After`, `resend_available_in`), counted down with the clock.
-/// Changing the password and deleting the account are not built on the server
-/// yet and fail with [FeatureNotAvailableException].
+/// Deleting the account is not built on the server yet and fails with
+/// [FeatureNotAvailableException].
 class RemoteAuthRepository implements AuthRepository {
   new({
     required this._plain,
@@ -282,7 +282,19 @@ class RemoteAuthRepository implements AuthRepository {
   Future<void> changePassword({
     required String current,
     required String next,
-  }) => _notAvailable();
+  }) async {
+    final answer = await _call(
+      () => _authenticated.authPasswordChange(
+        // Sent as typed: never trimmed, never checked against a policy.
+        body: ChangePasswordRequest(currentPassword: current, password: next),
+      ),
+      mapChangePasswordFailure,
+    );
+    // The server ended every other session and retired the refresh token this
+    // one used: the new pair replaces the stored one, and the person stays
+    // signed in.
+    await _startSession(answer.accessToken, answer.refreshToken);
+  }
 
   @override
   Future<void> deleteAccount({required String password}) => _notAvailable();

@@ -13,8 +13,16 @@ enum ChangePasswordStatus {
   /// The current password is not the password.
   wrongCurrent,
 
-  /// The server does not offer this yet: there is nothing to try again.
-  notAvailable,
+  /// The server refused the new password: see
+  /// [ChangePasswordState.passwordProblem].
+  rejected,
+
+  /// The server asked to wait before the password is sent again: see
+  /// [ChangePasswordState.waitSecondsLeft].
+  waiting,
+
+  /// The server is busy: try again shortly.
+  unavailable,
 
   /// The server could not be reached.
   noConnection,
@@ -29,12 +37,22 @@ final class ChangePasswordState extends Equatable {
     this.current = '',
     this.next = '',
     this.confirmation = '',
+    this.passwordProblem,
+    this.waitSecondsLeft = 0,
   });
 
   final ChangePasswordStatus status;
   final String current;
   final String next;
   final String confirmation;
+
+  /// What the server found wrong with the new password, while [status] is
+  /// `rejected`.
+  final PasswordProblem? passwordProblem;
+
+  /// Seconds until the password can be sent again, while [status] is
+  /// `waiting`.
+  final int waitSecondsLeft;
 
   /// Whether the confirmation differs from the new password. Nothing typed in
   /// the confirmation yet is not a mismatch.
@@ -45,15 +63,29 @@ final class ChangePasswordState extends Equatable {
   bool get isValid =>
       current.isNotEmpty && next.isNotEmpty && confirmation == next;
 
-  ChangePasswordState copyWith({ChangePasswordStatus? status}) {
+  ChangePasswordState copyWith({
+    ChangePasswordStatus? status,
+    PasswordProblem? passwordProblem,
+    int? waitSecondsLeft,
+  }) {
     return ChangePasswordState(
       status: status ?? this.status,
       current: current,
       next: next,
       confirmation: confirmation,
+      // A refusal belongs to the attempt that got it.
+      passwordProblem: passwordProblem,
+      waitSecondsLeft: waitSecondsLeft ?? this.waitSecondsLeft,
     );
   }
 
   @override
-  List<Object> get props => [status, current, next, confirmation];
+  List<Object?> get props => [
+    status,
+    current,
+    next,
+    confirmation,
+    passwordProblem,
+    waitSecondsLeft,
+  ];
 }

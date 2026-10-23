@@ -3,19 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/bloc/change_password_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
-import '../../../support/not_available_auth_repository.dart';
+import '../../../support/fake_ticker.dart';
 
 void main() {
   late DemoController demo;
+  late FakeTicker ticker;
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
+    ticker = FakeTicker();
   });
 
   ChangePasswordBloc build() {
     return ChangePasswordBloc(
       repository: FakeAuthRepository(demo: demo, signedIn: true),
+      ticker: ticker,
     );
   }
 
@@ -171,17 +175,118 @@ void main() {
     );
   });
 
-  blocTest<ChangePasswordBloc, ChangePasswordState>(
-    'a server that does not offer it yet says so',
-    build: () => ChangePasswordBloc(
-      repository: NotAvailableAuthRepository(demo: demo, signedIn: true),
-    ),
-    act: (bloc) async {
+  group('what the server says', () {
+    Future<void> submit(ChangePasswordBloc bloc) async {
       bloc.add(valid);
       await pumpEventQueue();
       bloc.add(const ChangePasswordSubmitted());
-    },
-    verify: (bloc) =>
-        expect(bloc.state.status, ChangePasswordStatus.notAvailable),
-  );
+      await pumpEventQueue();
+    }
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'a refused new password is worded from the reason, and typing again '
+      'clears it',
+      setUp: () => demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      ),
+      build: build,
+      act: (bloc) async {
+        await submit(bloc);
+        expect(bloc.state.status, ChangePasswordStatus.rejected);
+        expect(
+          bloc.state.passwordProblem,
+          const PasswordProblem(
+            PasswordIssue.tooShort,
+            limit: FakeAuthRepository.demoMinimumPasswordLength,
+          ),
+        );
+        bloc.add(valid);
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, ChangePasswordStatus.editing);
+        expect(bloc.state.passwordProblem, isNull);
+      },
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'the same password as the current one is refused',
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          const ChangePasswordEdited(
+            current: 'same-password',
+            next: 'same-password',
+            confirmation: 'same-password',
+          ),
+        );
+        await pumpEventQueue();
+        bloc.add(const ChangePasswordSubmitted());
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, ChangePasswordStatus.rejected);
+        expect(
+          bloc.state.passwordProblem,
+          const PasswordProblem(PasswordIssue.unchanged),
+        );
+      },
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'a lock after wrong passwords is a wait the server gave, counted down',
+      setUp: () => demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      ),
+      build: build,
+      act: (bloc) async {
+        await submit(bloc);
+        ticker.tick(899);
+        await pumpEventQueue();
+        ticker.tick(0);
+      },
+      skip: 2,
+      expect: () => [
+        isA<ChangePasswordState>()
+            .having((s) => s.status, 'status', ChangePasswordStatus.waiting)
+            .having((s) => s.waitSecondsLeft, 'left', 900),
+        isA<ChangePasswordState>()
+            .having((s) => s.status, 'status', ChangePasswordStatus.waiting)
+            .having((s) => s.waitSecondsLeft, 'left', 899),
+        isA<ChangePasswordState>()
+            .having((s) => s.status, 'status', ChangePasswordStatus.editing)
+            .having((s) => s.waitSecondsLeft, 'left', 0),
+      ],
+      verify: (_) => expect(ticker.started, [900]),
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'typing during the wait keeps the wait, and nothing is sent',
+      setUp: () => demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      ),
+      build: build,
+      act: (bloc) async {
+        await submit(bloc);
+        bloc
+          ..add(valid)
+          ..add(const ChangePasswordSubmitted());
+        await pumpEventQueue();
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, ChangePasswordStatus.waiting);
+        expect(bloc.state.waitSecondsLeft, 900);
+        expect(ticker.started, [900]);
+      },
+    );
+
+    blocTest<ChangePasswordBloc, ChangePasswordState>(
+      'reports a busy server',
+      setUp: () => demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      ),
+      build: build,
+      act: submit,
+      verify: (bloc) =>
+          expect(bloc.state.status, ChangePasswordStatus.unavailable),
+    );
+  });
 }

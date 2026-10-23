@@ -78,6 +78,10 @@ enum RateLimitReason {
   /// Too many wrong codes: the code is dead and a new one is needed.
   codeAttemptsExceeded,
 
+  /// Too many wrong current passwords: changing the password and deleting
+  /// the account are locked for a while. Signing in is not affected.
+  passwordAttemptsExceeded,
+
   /// Too many requests from this device or network.
   throttled,
 }
@@ -137,7 +141,8 @@ final class CodeExpiredException extends AuthException {
   String toString() => 'CodeExpiredException';
 }
 
-/// The new password was refused (resetting a password): [problem] says why.
+/// The new password was refused (resetting or changing a password): [problem]
+/// says why.
 /// The server owns the password policy; the app only words it.
 final class PasswordRejectedException extends AuthException {
   const new(this.problem);

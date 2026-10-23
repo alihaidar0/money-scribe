@@ -4,6 +4,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
+import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 void main() {
   late DemoController demo;
@@ -79,6 +80,63 @@ void main() {
         repository.changePassword(current: 'old', next: 'new-password-1'),
         throwsA(isA<WrongCredentialsException>()),
       );
+    });
+
+    test('refuses a new password that is the current one', () async {
+      await expectLater(
+        repository.changePassword(current: 'same', next: 'same'),
+        throwsA(
+          isA<PasswordRejectedException>().having(
+            (e) => e.problem.issue,
+            'issue',
+            PasswordIssue.unchanged,
+          ),
+        ),
+      );
+    });
+
+    test('says what the demo panel asks for', () async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(
+          isA<RateLimitedException>()
+              .having(
+                (e) => e.reason,
+                'reason',
+                RateLimitReason.passwordAttemptsExceeded,
+              )
+              .having(
+                (e) => e.retryAfter,
+                'retryAfter',
+                const Duration(minutes: 15),
+              ),
+        ),
+      );
+
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(isA<PasswordRejectedException>()),
+      );
+    });
+
+    test('keeps the person signed in', () async {
+      await repository.changePassword(current: 'old', next: 'new-password-1');
+
+      expect(repository.isSignedIn, isTrue);
     });
   });
 

@@ -379,6 +379,10 @@
   "@passwordErrorCompromised": {
     "description": "Error under the password field when the server says the password was found in a known data breach."
   },
+  "passwordErrorUnchanged": "The new password must be different from your current one.",
+  "@passwordErrorUnchanged": {
+    "description": "Error under the new password field when changing the password and the server says it is the same as the current password."
+  },
   "passwordErrorRejected": "This password cannot be used. Choose a different one.",
   "@passwordErrorRejected": {
     "description": "Error under the password field when the server refuses the password for a reason the app does not know and gives no text."
