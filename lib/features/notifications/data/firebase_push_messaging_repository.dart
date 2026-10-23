@@ -24,10 +24,20 @@ class FirebasePushMessagingRepository implements PushMessagingRepository {
     return permissionFor(settings.authorizationStatus);
   }
 
+  // `getToken` and `deleteToken` are deprecated in firebase_messaging 17 in
+  // favour of `register()` and `unregister()`, which work with the Firebase
+  // installation ID instead of the FCM token. The backend and the Firebase
+  // console still address a device by its FCM token, so the move waits for
+  // the push endpoints (`docs/backend-api.md`, "The push token and the
+  // account"); until then the two calls work as before.
   @override
+  // The FCM token is what the backend and the console address, see above.
+  // ignore: deprecated_member_use
   Future<String?> token() => _messaging.getToken();
 
   @override
+  // The same: the FCM token is what has to stop working, see above.
+  // ignore: deprecated_member_use
   Future<void> forgetToken() => _messaging.deleteToken();
 
   @visibleForTesting

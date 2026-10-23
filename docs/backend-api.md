@@ -44,7 +44,7 @@ Done once, in its own pull request, when the backend has published its first rel
 
    ```bash
    flutter pub add dio:5.11.1 retrofit:4.10.0 json_annotation:4.12.0
-   flutter pub add --dev build_runner:2.16.1 json_serializable:6.14.1 retrofit_generator:10.2.12 swagger_parser:1.45.0
+   flutter pub add --dev build_runner:2.16.1 json_serializable:6.15.2 retrofit_generator:10.3.2 swagger_parser:1.45.0
    ```
 
 2. **Name the backend repository:**
@@ -501,6 +501,12 @@ What the app does when the endpoints exist:
   step, not with the profile update (`name` only) or the refresh request. The app calls it when the
   person changes the app language, so notifications follow without a new sign-in. When it sends a changed
   `time_zone` (the device zone differs from the last one sent) is decided with that step.
+
+**Installation ID instead of the FCM token (open).** `firebase_messaging` 17 deprecates `getToken` and
+`deleteToken` in favour of `register()` and `unregister()`, which give the Firebase installation ID (FID) as
+the direct-send target. Both still work, so the app keeps using the FCM token the rules above describe
+(the Firebase console also addresses a device by it). Which one the backend will send to is decided with
+the push endpoints; moving the app to the FID then is one repository (`PushMessagingRepository`).
 
 The server cleanup is the guarantee and the app cleanup an extra: the app cannot always tell that a
 session ended, and the remove call needs a valid session.
