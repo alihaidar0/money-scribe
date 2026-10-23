@@ -142,6 +142,110 @@ void main() {
     });
   });
 
+  group('editing the name (ST-2)', () {
+    Finder nameField() => inDialog(find.byType(TextField));
+    Finder saveButton() => inDialog(find.widgetWithText(FilledButton, 'Save'));
+
+    Future<void> openDialog(WidgetTester tester) async {
+      await tester.tap(find.text('Edit name'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('opens with the current name, and Save waits for a change', (
+      tester,
+    ) async {
+      await openAccount(tester);
+
+      await openDialog(tester);
+
+      expect(find.text('Edit your name'), findsOneWidget);
+      expect(tester.widget<TextField>(nameField()).controller?.text, 'Alex');
+      expect(tester.widget<FilledButton>(saveButton()).onPressed, isNull);
+
+      await tester.enterText(nameField(), 'Dana');
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(saveButton()).onPressed, isNotNull);
+    });
+
+    testWidgets('Cancel closes it and changes nothing', (tester) async {
+      await openAccount(tester);
+      await openDialog(tester);
+      await tester.enterText(nameField(), 'Dana');
+
+      await tester.tap(inDialog(find.text('Cancel')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Alex'), findsOneWidget);
+    });
+
+    testWidgets('Save shows the new name, with a message', (tester) async {
+      await openAccount(tester);
+      await openDialog(tester);
+      await tester.enterText(nameField(), 'Dana');
+      await tester.pumpAndSettle();
+
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Dana'), findsOneWidget);
+      expect(find.text('D'), findsOneWidget);
+      expect(find.text('Name updated'), findsOneWidget);
+    });
+
+    testWidgets('the field stops at 100 characters', (tester) async {
+      await openAccount(tester);
+      await openDialog(tester);
+
+      await tester.enterText(nameField(), 'x' * 150);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextField>(nameField()).controller?.text.length,
+        100,
+      );
+    });
+
+    testWidgets('no connection is told, and what was typed stays', (
+      tester,
+    ) async {
+      final demo = await openAccount(tester);
+      await openDialog(tester);
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await tester.enterText(nameField(), 'Dana');
+      await tester.pumpAndSettle();
+
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          "Couldn't save your name. Check your connection and try again.",
+        ),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(nameField()).controller?.text, 'Dana');
+    });
+
+    testWidgets('the Settings row shows the new name when coming back', (
+      tester,
+    ) async {
+      await openAccount(tester);
+      await openDialog(tester);
+      await tester.enterText(nameField(), 'Dana');
+      await tester.pumpAndSettle();
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dana'), findsOneWidget);
+      expect(find.text('Alex'), findsNothing);
+    });
+  });
+
   group('deleting the account (ST-11)', () {
     testWidgets('asks for the password, and Cancel closes the dialog', (
       tester,

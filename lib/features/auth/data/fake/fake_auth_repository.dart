@@ -28,6 +28,9 @@ class FakeAuthRepository implements AuthRepository {
   /// The shortest password the demo server accepts, to show its message.
   static const demoMinimumPasswordLength = 15;
 
+  /// The longest name the server accepts.
+  static const demoMaximumNameLength = 100;
+
   final DemoController _demo;
   final DateTime Function() _now;
   final _signedInChanges = StreamController<bool>.broadcast(sync: true);
@@ -286,6 +289,17 @@ class FakeAuthRepository implements AuthRepository {
   Future<AccountProfile> profile() async {
     await _demo.simulateRequest();
     return _profile;
+  }
+
+  @override
+  Future<AccountProfile> updateName(String name) async {
+    await _demo.simulateSave();
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw const NameRejectedException(NameIssue.blank);
+    if (trimmed.length > demoMaximumNameLength) {
+      throw const NameRejectedException(NameIssue.tooLong);
+    }
+    return _profile = AccountProfile(name: trimmed, email: _profile.email);
   }
 
   @override

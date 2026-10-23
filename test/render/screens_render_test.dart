@@ -1423,6 +1423,31 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'st-2b-edit-name',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Dana Whitfield');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-2c-edit-name-failed',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await tester.enterText(find.byType(TextField), 'Dana Whitfield');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'st-10-sign-out',
     AppRoutes.account,
     signedIn: true,

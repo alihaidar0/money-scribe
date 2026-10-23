@@ -295,7 +295,7 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [ ] Push token on the server, when its endpoints are in a pinned contract: register after sign-in and on a new token, only while notifications are allowed; remove first on sign-out, with a short timeout
 - [ ] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
 - [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
-- [ ] Edit the name
+- [x] Edit the name
 - [ ] Change email: new address, code, cancel
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
