@@ -48,6 +48,17 @@ Only the latest release (the newest tag on `main`) receives security fixes.
   renewal at a time; any other refusal ends the session on the device and
   clears the tokens. Signing out, deleting the account or a session the server
   ended also deletes the push token of the device.
+- The app lock keeps only a salted hash of the PIN (PBKDF2-HMAC-SHA256) in the platform's secure storage.
+  A 4-digit PIN can always be guessed if the storage is read, so what protects it is the limit on tries:
+  no pause for four wrong PINs, then 30 seconds, 1, 5, 15 and 15 minutes, and after ten in a row the PIN
+  stops working, the person is signed out and only the account password opens the app again. The count
+  is stored before a PIN is checked and survives a restart; a clock set back can shorten a pause but never
+  past 15 minutes. The fingerprint is checked by the system and the app never sees it. The lock turns off
+  and the PIN is forgotten whenever the person is signed out. Its limits: the Android fingerprint check
+  accepts the biometrics the system classes as strong or weak, and it guards the screen of the app, not the
+  session tokens, which the secure storage protects.
+- In the production Android build the window is secure (blank in the recent-apps list, no screenshots or
+  screen recordings).
 - Waits (after wrong passwords or codes) come from the server and are counted
   down; the app never retries a failed sign-in or a refused code by itself.
 - The bot check at sign-in runs in a web view and shares technical information

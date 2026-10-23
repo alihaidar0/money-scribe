@@ -1837,6 +1837,47 @@
   "@emailChanged": {
     "description": "Message after the email address of the account was changed."
   },
+  "unlockReason": "Unlock Money Scribe",
+  "@unlockReason": {
+    "description": "What the system fingerprint dialog says when it opens the locked app."
+  },
+  "appLockedHintPinOnly": "Enter your PIN to unlock.",
+  "@appLockedHintPinOnly": {
+    "description": "Hint on the lock screen of a device that has no fingerprint set up."
+  },
+  "pinPausedTryAgain": "Too many wrong PINs. Try again in {time}.",
+  "@pinPausedTryAgain": {
+    "description": "Message on the PIN screen while a pause after wrong PINs runs.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pinTooManyFailures": "Too many wrong PINs. Sign in with your password.",
+  "@pinTooManyFailures": {
+    "description": "Message after too many wrong PINs in a row signed the person out."
+  },
+  "lockTimeoutTitle": "Lock after",
+  "@lockTimeoutTitle": {
+    "description": "Title of the setting that says how long the app may stay in the background before it locks."
+  },
+  "lockTimeoutImmediately": "Immediately",
+  "@lockTimeoutImmediately": {
+    "description": "Lock timeout: lock as soon as the app leaves the screen."
+  },
+  "lockTimeoutThirtySeconds": "After 30 seconds",
+  "@lockTimeoutThirtySeconds": {
+    "description": "Lock timeout: 30 seconds."
+  },
+  "lockTimeoutOneMinute": "After 1 minute",
+  "@lockTimeoutOneMinute": {
+    "description": "Lock timeout: 1 minute."
+  },
+  "lockTimeoutFiveMinutes": "After 5 minutes",
+  "@lockTimeoutFiveMinutes": {
+    "description": "Lock timeout: 5 minutes."
+  },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
     "description": "Message when signing out failed."

@@ -19,6 +19,8 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Money Scribe uses Face ID to unlock the app.</string>
 	<key>CFBundleName</key>
 	<string>Money Scribe</string>
 	<key>CFBundlePackageType</key>

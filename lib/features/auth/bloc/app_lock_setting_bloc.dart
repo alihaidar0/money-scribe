@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
+import 'package:money_scribe/features/auth/domain/lock_timeout.dart';
 
 part 'app_lock_setting_event.dart';
 part 'app_lock_setting_state.dart';
@@ -14,6 +15,7 @@ class AppLockSettingBloc
   new({required this._repository}) : super(const AppLockSettingState()) {
     on<AppLockSettingRefreshed>(_onRefreshed, transformer: restartable());
     on<AppLockTurnedOff>(_onTurnedOff, transformer: droppable());
+    on<AppLockTimeoutChosen>(_onTimeoutChosen, transformer: sequential());
   }
 
   final AppLockRepository _repository;
@@ -23,7 +25,15 @@ class AppLockSettingBloc
     Emitter<AppLockSettingState> emit,
   ) async {
     try {
-      emit(AppLockSettingState(isEnabled: await _repository.isEnabled()));
+      final isEnabled = await _repository.isEnabled();
+      emit(
+        AppLockSettingState(
+          isEnabled: isEnabled,
+          timeout: isEnabled
+              ? await _repository.timeout()
+              : LockTimeout.standard,
+        ),
+      );
     } on Exception catch (error, stackTrace) {
       // The switch keeps what it showed.
       addError(error, stackTrace);
@@ -34,13 +44,32 @@ class AppLockSettingBloc
     AppLockTurnedOff event,
     Emitter<AppLockSettingState> emit,
   ) async {
-    emit(const AppLockSettingState(isEnabled: true, isBusy: true));
+    emit(
+      AppLockSettingState(
+        isEnabled: true,
+        isBusy: true,
+        timeout: state.timeout,
+      ),
+    );
     try {
       await _repository.disable();
       emit(const AppLockSettingState());
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(const AppLockSettingState(isEnabled: true));
+      emit(AppLockSettingState(isEnabled: true, timeout: state.timeout));
+    }
+  }
+
+  Future<void> _onTimeoutChosen(
+    AppLockTimeoutChosen event,
+    Emitter<AppLockSettingState> emit,
+  ) async {
+    try {
+      await _repository.setTimeout(event.timeout);
+      emit(state.copyWith(timeout: event.timeout));
+    } on Exception catch (error, stackTrace) {
+      // The row keeps the timeout it showed.
+      addError(error, stackTrace);
     }
   }
 }

@@ -93,6 +93,11 @@ write access to the repository only.
   it. The iOS bundle IDs will mirror the Android IDs.
 - **Google Play.** Later, a merge into `main` can also upload the App Bundle (first to an
   internal or closed track); see the end of [`android-signing.md`](android-signing.md).
+- **Secure window (Android).** The production build sets `FLAG_SECURE` on its window
+  (`SECURE_WINDOW` in `android/app/build.gradle.kts`, read by `MainActivity`): the app is blank in the
+  recent-apps list and cannot be captured by a screenshot or a screen recording. Staging builds leave it
+  off, so the screens can be checked. iOS has no flavors yet; hiding the app in its app switcher comes
+  with the iOS work.
 - **Firebase Cloud Messaging.** Firebase is used for push notifications only; the backend
   (sign-in and data storage) is still undecided, and Analytics and crash reporting stay off.
   Each flavor gets its own `google-services.json` in `android/app/src/<flavor>/` (the file

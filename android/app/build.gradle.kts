@@ -36,6 +36,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.alihaidar.moneyscribe"
         // You can update the following values to match your application needs.
@@ -77,11 +81,15 @@ android {
         create("staging") {
             dimension = "default"
             applicationIdSuffix = ".staging"
+            // Staging can be captured, so the screens can be checked.
+            buildConfigField("boolean", "SECURE_WINDOW", "false")
             signingConfig =
                 signingConfigs.findByName("staging") ?: signingConfigs.getByName("debug")
         }
         create("production") {
             dimension = "default"
+            // The window is secure: blank in the recent apps, no screenshots.
+            buildConfigField("boolean", "SECURE_WINDOW", "true")
             signingConfig =
                 signingConfigs.findByName("production") ?: signingConfigs.getByName("debug")
         }

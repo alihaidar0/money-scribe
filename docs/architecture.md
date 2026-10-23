@@ -188,6 +188,16 @@ The email change is two screens that hand their result back (`EmailChangeOutcome
 purpose `CodePurpose.changeEmail`. A new code for it needs the password again, which the page asks for
 with a dialog and passes with the resend event; the password is never kept.
 
+The app lock (`features/auth/`) has three parts. `AppLockRepository` is the device side: the PIN as a
+salted PBKDF2 hash in the secure storage (`SecureAppLockRepository`, `PinHasher`), the count of wrong PINs,
+the pause they started (`PinLockoutPolicy`: none for four, then 30 s, 1 min, 5 min, 15 min, 15 min, and the
+tenth wrong PIN in a row signs the person out) and the timeout; `BiometricAuthenticator` is the fingerprint
+through the system (`local_auth`). `AppLockGate` (`app/app_lock_gate.dart`) watches the app move to the
+background (`hidden` and `paused`, never `inactive`) and locks it after the timeout; it implements the
+domain interface `AppLockSession`, so the screens only report "unlocked". The router sends every screen of a
+locked app to the lock screen with a `from` address and goes back to it (`AppRoutes.returnTo` accepts only
+a screen of the app). Signing out for any reason turns the lock off and forgets the PIN.
+
 Whenever the person is signed out (signing out, deleting the account, or a session the server ended),
 `PushTokenCleanup` (`app/push_token_cleanup.dart`) deletes the push token of the device through
 `PushMessagingRepository.forgetToken()`, so a signed-out device keeps no token that an earlier sign-in

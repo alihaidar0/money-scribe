@@ -17,3 +17,14 @@ final class AppLockSettingRefreshed extends AppLockSettingEvent {
 final class AppLockTurnedOff extends AppLockSettingEvent {
   const new();
 }
+
+/// The user chose how long the app may stay in the background before it
+/// locks.
+final class AppLockTimeoutChosen extends AppLockSettingEvent {
+  const new(this.timeout);
+
+  final LockTimeout timeout;
+
+  @override
+  List<Object> get props => [timeout];
+}

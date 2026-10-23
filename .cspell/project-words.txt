@@ -16,6 +16,7 @@ ftest
 genkey
 haidar
 healthz
+hmac
 husky
 jarfile
 keyalg
