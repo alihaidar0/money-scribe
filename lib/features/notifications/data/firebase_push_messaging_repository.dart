@@ -27,6 +27,9 @@ class FirebasePushMessagingRepository implements PushMessagingRepository {
   @override
   Future<String?> token() => _messaging.getToken();
 
+  @override
+  Future<void> forgetToken() => _messaging.deleteToken();
+
   @visibleForTesting
   static NotificationPermission permissionFor(AuthorizationStatus status) {
     return switch (status) {

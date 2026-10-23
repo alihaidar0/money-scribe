@@ -94,7 +94,9 @@ class DemoPanelScreen extends StatelessWidget {
                   onSelected: (value) =>
                       demo.update(demo.settings.copyWith(passwordReset: value)),
                 ),
-                const _Heading('Change password, next attempt'),
+                const _Heading(
+                  'Change password and delete account, next attempt',
+                ),
                 _Choice<DemoPasswordChange>(
                   values: DemoPasswordChange.values,
                   selected: settings.passwordChange,

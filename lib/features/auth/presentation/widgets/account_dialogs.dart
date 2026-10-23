@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
@@ -75,9 +76,12 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
           previous.action != current.action &&
           current.action == AccountAction.deleted,
       listener: (context, state) => Navigator.of(context).pop(),
-      buildWhen: (previous, current) => previous.action != current.action,
+      buildWhen: (previous, current) =>
+          previous.action != current.action ||
+          previous.deleteWaitSecondsLeft != current.deleteWaitSecondsLeft,
       builder: (context, state) {
         final isBusy = state.isBusy;
+        final isWaiting = state.action == AccountAction.deleteWaiting;
 
         return AlertDialog(
           title: Text(l10n.deleteMyAccountTitle),
@@ -95,11 +99,10 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                if (state.action == AccountAction.deleteNotAvailable) ...[
+                if (state.action == AccountAction.deleteUnavailable) ...[
                   MessageBanner(
-                    icon: Icons.construction_outlined,
-                    text: l10n.deleteMyAccountNotAvailable,
-                    tone: BannerTone.info,
+                    icon: Icons.error_outline,
+                    text: l10n.deleteMyAccountUnavailable,
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -113,7 +116,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) {
-                    if (_password.text.isNotEmpty && !isBusy) _delete();
+                    if (_password.text.isNotEmpty && !isBusy && !isWaiting) {
+                      _delete();
+                    }
                   },
                 ),
               ],
@@ -129,10 +134,21 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                 backgroundColor: colors.error,
                 foregroundColor: colors.onError,
               ),
-              onPressed: _password.text.isEmpty || isBusy ? null : _delete,
+              onPressed: _password.text.isEmpty || isBusy || isWaiting
+                  ? null
+                  : _delete,
               child: isBusy
                   ? const ButtonSpinner()
-                  : Text(l10n.deleteMyAccountAction),
+                  // The server asked to wait: the button counts down.
+                  : Text(
+                      isWaiting
+                          ? l10n.tryAgainIn(
+                              time: formatCountdown(
+                                state.deleteWaitSecondsLeft,
+                              ),
+                            )
+                          : l10n.deleteMyAccountAction,
+                    ),
             ),
           ],
         );

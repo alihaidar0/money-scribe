@@ -21,4 +21,7 @@ class UnavailablePushMessagingRepository implements PushMessagingRepository {
 
   @override
   Future<String?> token() async => null;
+
+  @override
+  Future<void> forgetToken() async {}
 }

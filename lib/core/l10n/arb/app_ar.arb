@@ -367,7 +367,7 @@
   "deleteMyAccountMessage": "سيتم حذف جميع بياناتك نهائيًا من الخادم. لا يمكن التراجع عن ذلك.",
   "deleteMyAccountWrongPassword": "كلمة المرور غير صحيحة.",
   "deleteMyAccountFailed": "تعذّر حذف حسابك. تحقق من اتصالك وحاول مرة أخرى.",
-  "deleteMyAccountNotAvailable": "حذف حسابك غير متاح بعد.",
+  "deleteMyAccountUnavailable": "الخدمة مشغولة. يُرجى المحاولة مرة أخرى بعد قليل.",
   "couldNotSignOut": "تعذّر تسجيل الخروج. تحقق من اتصالك.",
   "currentPasswordLabel": "كلمة المرور الحالية",
   "confirmNewPasswordLabel": "تأكيد كلمة المرور الجديدة",

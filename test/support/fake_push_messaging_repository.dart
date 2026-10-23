@@ -23,6 +23,9 @@ class FakePushMessagingRepository implements PushMessagingRepository {
   /// How many times the user was asked.
   int requests = 0;
 
+  /// How many times the token was deleted.
+  int forgotten = 0;
+
   @override
   Future<NotificationPermission> permission() async {
     _throwIfFailing();
@@ -42,6 +45,12 @@ class FakePushMessagingRepository implements PushMessagingRepository {
   Future<String?> token() async {
     _throwIfFailing();
     return pushToken;
+  }
+
+  @override
+  Future<void> forgetToken() async {
+    forgotten++;
+    _throwIfFailing();
   }
 
   void _throwIfFailing() {

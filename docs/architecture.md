@@ -183,6 +183,11 @@ as Fixed items in the Salary tab: it is a child route of the tab and keeps the b
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
 
+Whenever the person is signed out (signing out, deleting the account, or a session the server ended),
+`PushTokenCleanup` (`app/push_token_cleanup.dart`) deletes the push token of the device through
+`PushMessagingRepository.forgetToken()`, so a signed-out device keeps no token that an earlier sign-in
+registered. A failure to delete it is logged by type only and never blocks the sign-out.
+
 A screen pushed above the shell is wrapped once, in the router, in `WideFrame` (`core/widgets/`), which
 centres the whole screen in a column on a window from 600 dp and changes nothing on a phone; it also gives
 its child the width of the column as the window width. A screen therefore never constrains its own width:

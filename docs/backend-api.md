@@ -408,6 +408,7 @@ emails.
 ### For the privacy policy and the store forms
 
 Two things in the sign-in flow involve a third party, and the privacy policy needs one sentence on each.
+Deleting the account has its own wording, at the end of this section.
 There is no policy yet (it comes with Google Play); this is the wording to use then, and the points to
 check against the Play Data safety and Apple App Privacy forms when they are filled in.
 
@@ -415,8 +416,8 @@ check against the Play Data safety and Apple App Privacy forms when they are fil
   the first five characters of its SHA-1 hash to the Pwned Passwords range service. The password and the
   full hash never leave the server, and the service never receives the email or the device. The app
   itself sends nothing to that service. The check is skipped when the service cannot be reached, so the
-  wording must not promise that every password is checked. It runs at registration and when a password is
-  reset today; the change flow will use it when it is built.
+  wording must not promise that every password is checked. It runs at registration, when a password is
+  reset and when it is changed.
   Sentence: "When you choose a password, we may check it against a public list of leaked passwords. Only
   the first five characters of its hash are sent, never the password or the full hash." The data sent
   identifies no one, so this is a sentence for the policy rather than an entry for the forms.
@@ -427,6 +428,44 @@ check against the Play Data safety and Apple App Privacy forms when they are fil
   Cloudflare, which processes technical information about your device to tell people from automated
   programs." This is data going from the app to a third party, so check it against the "shared data"
   wording of the store forms, and against Cloudflare's own terms, before publishing.
+- **Deleting the account (done by the app and the server).** Account deletion is inside the app
+  (Settings, Account, Delete account) and needs the password. The server deletes the account and all
+  the data it owns in one step and for good: there is no soft delete and no copy kept. Every session
+  ends with it, and a confirmation email goes to the address, which is used only for that email and then
+  forgotten. Sentence: "You can delete your account in the app at any time. Your account and all the data
+  in it are permanently deleted from our server at once, and we keep no copy. We send one confirmation
+  email to your address and then forget it." Limits of the wording: it covers the server only. The app
+  deletes the push token of the device when the account is deleted (and on every sign-out), but the
+  Firebase installation ID is not removed by that and Firebase drops it when the installation is inactive,
+  so say what Firebase keeps in the policy, and check the Play Data safety "data deletion" answers. Google
+  Play also asks for a web address where a person can request deletion without the app; that is a
+  publishing-time step for the owner.
+
+### The push token and the account
+
+Today the push token is not sent to the server: it is only copied by hand from staging builds to send a
+test message from the Firebase console. The app deletes the token of the device whenever the person is
+signed out (signing out, deleting the account, a session the server ended, a password reset), so a
+signed-out device keeps no token that an earlier sign-in registered. Deleting a token makes Firebase give
+the device a new, unrelated one the next time it is asked for.
+
+When pushes are sent by the backend, these points are the backend's to build (the request is in the
+backend repository; nothing here is applied before it exists):
+
+- A token belongs to a session and an account: stored under the user, one token per `device_id`
+  (replaced when the same device sends a new one), never shared between accounts.
+- The app registers its token after sign-in and unregisters it on sign-out. The server also removes the
+  token of a session when that session ends, for any reason (sign-out, revoked, password changed, expired),
+  and every token of an account when the account is deleted, in the same step as the rest of its data.
+- A token that Firebase reports as unregistered or invalid is removed at once.
+- Tokens are never written to logs, never returned by any endpoint, and never sent to a third party other
+  than Firebase.
+- The text of a notification contains no amounts, names or other financial data, and is worded in the
+  language stored for the device.
+- Registration and removal are idempotent and rate limited like the other authenticated calls.
+
+The app side of the registration (the call after sign-in and on a token refresh) is built together with
+that endpoint, behind `PushMessagingRepository`, and waits for the contract.
 
 ### Resetting a password
 
@@ -462,10 +501,22 @@ One call, signed in (`password/change/`): the current and the new password, both
   account. Signing in is not affected.
 - The owner of the account gets an email about the change from the server.
 
+### Deleting the account
+
+One call, signed in (`account/delete/`, a `POST` with the password in the body, answer `204`): the password
+is sent as typed.
+
+- The account and every session end at once. The app clears its tokens, forgets any pending code or
+  reset, and goes to the signed-out screens.
+- A wrong password is `400 invalid_password` and is said under the password field of the dialog, which
+  stays open.
+- The lock after 5 wrong passwords is the same one as for changing the password (`429
+  password_attempts_exceeded`, 15 minutes): the button counts down `Retry-After` and nothing is sent until
+  it ends. A busy server (`503`) and a lost connection are said in the dialog.
+
 ### Not covered yet
 
-Change email, delete account and edit name come as their own branches. Until they exist, the real account
-answers `FeatureNotAvailableException` for deleting the account, and that dialog shows "Not available yet".
+Change email and edit name come as their own branches.
 
 ### What the app uses for this step
 

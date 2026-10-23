@@ -79,8 +79,9 @@ enum DemoPasswordReset {
   unavailable,
 }
 
-/// What the next attempt to change the password does. A wrong current
-/// password comes from [DemoSignIn.wrongPassword].
+/// What the next attempt to change the password does; deleting the account
+/// shares the lock and the busy server. A wrong current password comes from
+/// [DemoSignIn.wrongPassword].
 enum DemoPasswordChange {
   accepted,
 

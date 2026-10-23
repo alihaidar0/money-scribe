@@ -289,7 +289,10 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Account endpoints (`alihaidar0/money-scribe-backend#40`): pin the contract and generate the client
 - [x] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
 - [x] Change password on the server: the new tokens replace the stored ones
-- [ ] Delete account on the server, and the deletion wording for the privacy policy and the store forms
+- [x] Delete account on the server, and the deletion wording for the privacy policy and the store forms
+- [x] Delete the push token of the device when the person signs out, the account is deleted or the session ends
+- [ ] Push token on the server (needs a backend change, request in `backend-api.md`): register after sign-in, remove on sign-out and with the account
+- [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
 - [ ] Edit the name
 - [ ] Change email: new address, code, cancel
 

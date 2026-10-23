@@ -184,6 +184,49 @@ void main() {
       expect(find.byType(AccountScreen), findsOneWidget);
     });
 
+    testWidgets('a lock after wrong passwords counts down on the button', (
+      tester,
+    ) async {
+      final demo = await openAccount(tester);
+      await tester.tap(find.text('Delete account'));
+      await tester.pumpAndSettle();
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+
+      await tester.enterText(inDialog(find.byType(TextField)), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(deleteButton());
+      await tester.pumpAndSettle();
+
+      final button = inDialog(
+        find.widgetWithText(FilledButton, 'Try again in 15:00'),
+      );
+      expect(button, findsOneWidget);
+      expect(tester.widget<FilledButton>(button).onPressed, isNull);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('a busy server is told in the dialog', (tester) async {
+      final demo = await openAccount(tester);
+      await tester.tap(find.text('Delete account'));
+      await tester.pumpAndSettle();
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
+
+      await tester.enterText(inDialog(find.byType(TextField)), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(deleteButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The service is busy. Please try again shortly.'),
+        findsOneWidget,
+      );
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
     testWidgets('no connection is told in the dialog', (tester) async {
       final demo = await openAccount(tester);
       await tester.tap(find.text('Delete account'));

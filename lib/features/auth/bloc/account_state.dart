@@ -34,8 +34,12 @@ enum AccountAction {
   /// The server could not be reached, or failed, so the account is still there.
   deleteFailed,
 
-  /// The server does not offer deleting an account yet, so it is still there.
-  deleteNotAvailable,
+  /// The server asked to wait before the password is sent again (too many
+  /// wrong passwords): see [AccountState.deleteWaitSecondsLeft].
+  deleteWaiting,
+
+  /// The server is busy: try again shortly.
+  deleteUnavailable,
 
   /// The account was deleted.
   deleted,
@@ -46,11 +50,16 @@ final class AccountState extends Equatable {
     this.status = AccountStatus.loading,
     this.profile,
     this.action = AccountAction.none,
+    this.deleteWaitSecondsLeft = 0,
   });
 
   final AccountStatus status;
   final AccountProfile? profile;
   final AccountAction action;
+
+  /// Seconds until the password can be sent again, while [action] is
+  /// `deleteWaiting`.
+  final int deleteWaitSecondsLeft;
 
   /// Whether a sign out or a delete is under way.
   bool get isBusy =>
@@ -60,14 +69,17 @@ final class AccountState extends Equatable {
     AccountStatus? status,
     AccountProfile? profile,
     AccountAction? action,
+    int? deleteWaitSecondsLeft,
   }) {
     return AccountState(
       status: status ?? this.status,
       profile: profile ?? this.profile,
       action: action ?? this.action,
+      deleteWaitSecondsLeft:
+          deleteWaitSecondsLeft ?? this.deleteWaitSecondsLeft,
     );
   }
 
   @override
-  List<Object?> get props => [status, profile, action];
+  List<Object?> get props => [status, profile, action, deleteWaitSecondsLeft];
 }
