@@ -550,9 +550,23 @@ is sent as typed.
   password_attempts_exceeded`, 15 minutes): the button counts down `Retry-After` and nothing is sent until
   it ends. A busy server (`503`) and a lost connection are said in the dialog.
 
+### Editing the name
+
+One call, signed in (`profile/`, a `PATCH` with only `name`): the answer is the updated profile.
+
+- The Account screen has an "Edit name" row that opens a dialog with the current name. Save is off while
+  the field is empty (spaces only) or the same as the current name; the field stops at 100 characters, the
+  limit of the contract. The server trims the name and decides the rest.
+- A refused name (`400` on `name`: `blank` or `required`, `max_length`, or any other code) is said under
+  the field in the app's own words. A busy server (`503`) and a lost connection are said in the dialog,
+  which keeps what was typed.
+- The Account screen shows the new name at once, and the Settings row reads the profile again when the
+  person comes back to it. Any other field in the body (`email`, `language`, `time_zone`) is refused with
+  `read_only`, so the app sends only `name`; the language and time zone have their own settings call.
+
 ### Not covered yet
 
-Change email and edit name come as their own branches.
+Change email comes as its own branch.
 
 ### What the app uses for this step
 

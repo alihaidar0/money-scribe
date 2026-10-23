@@ -74,6 +74,10 @@ abstract interface class AuthRepository {
   /// The name and the email of the signed-in person.
   Future<AccountProfile> profile();
 
+  /// Sets a new display name and returns the profile with it. Throws
+  /// `NameRejectedException` when the server refuses the name.
+  Future<AccountProfile> updateName(String name);
+
   /// Sets a new password after checking the current one. Throws
   /// `WrongCredentialsException` when [current] is not the password.
   Future<void> changePassword({required String current, required String next});

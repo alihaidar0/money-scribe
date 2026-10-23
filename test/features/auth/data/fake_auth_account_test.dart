@@ -68,6 +68,52 @@ void main() {
     });
   });
 
+  group('edit the name', () {
+    test('keeps the trimmed name and the email', () async {
+      final profile = await repository.updateName('  Dana ');
+
+      expect(
+        profile,
+        const AccountProfile(name: 'Dana', email: 'alex@example.com'),
+      );
+      expect(await repository.profile(), profile);
+    });
+
+    test('refuses an empty name and one that is too long', () async {
+      await expectLater(
+        repository.updateName('   '),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.blank,
+          ),
+        ),
+      );
+      await expectLater(
+        repository.updateName(
+          'x' * (FakeAuthRepository.demoMaximumNameLength + 1),
+        ),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.tooLong,
+          ),
+        ),
+      );
+    });
+
+    test('fails like the server does', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+
+      await expectLater(
+        repository.updateName('Dana'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+  });
+
   group('change password', () {
     test('is accepted', () async {
       await repository.changePassword(current: 'old', next: 'new-password-1');

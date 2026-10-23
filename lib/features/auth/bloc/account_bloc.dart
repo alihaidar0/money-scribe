@@ -28,6 +28,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       transformer: sequential(),
     );
     on<_DeleteWaitTicked>(_onDeleteWaitTicked, transformer: sequential());
+    on<AccountProfileChanged>(_onProfileChanged, transformer: sequential());
   }
 
   final AuthRepository _repository;
@@ -106,6 +107,13 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     // Opening the dialog again does not end a wait the server asked for.
     if (state.action == AccountAction.deleteWaiting) return;
     emit(state.copyWith(action: AccountAction.none));
+  }
+
+  void _onProfileChanged(
+    AccountProfileChanged event,
+    Emitter<AccountState> emit,
+  ) {
+    emit(state.copyWith(status: AccountStatus.ready, profile: event.profile));
   }
 
   void _onDeleteWaitTicked(

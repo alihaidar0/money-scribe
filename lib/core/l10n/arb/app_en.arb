@@ -1761,6 +1761,34 @@
   "@deleteMyAccountUnavailable": {
     "description": "Banner in the delete account dialog when the server is busy and asks to try again shortly."
   },
+  "editNameAction": "Edit name",
+  "@editNameAction": {
+    "description": "Row on the Account screen that opens the dialog to change the display name."
+  },
+  "editNameTitle": "Edit your name",
+  "@editNameTitle": {
+    "description": "Title of the dialog to change the display name."
+  },
+  "nameBlankError": "Enter your name.",
+  "@nameBlankError": {
+    "description": "Error under the name field when the name is empty."
+  },
+  "nameTooLongError": "This name is too long.",
+  "@nameTooLongError": {
+    "description": "Error under the name field when the server says the name is too long."
+  },
+  "editNameFailed": "Couldn''t save your name. Check your connection and try again.",
+  "@editNameFailed": {
+    "description": "Banner in the edit name dialog when the server could not be reached or failed."
+  },
+  "editNameUnavailable": "The service is busy. Please try again shortly.",
+  "@editNameUnavailable": {
+    "description": "Banner in the edit name dialog when the server is busy and asks to try again shortly."
+  },
+  "nameUpdated": "Name updated",
+  "@nameUpdated": {
+    "description": "Message after the display name was changed."
+  },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
     "description": "Message when signing out failed."

@@ -7,10 +7,12 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
+import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_dialogs.dart';
+import 'package:money_scribe/features/auth/presentation/widgets/edit_name_dialog.dart';
 
 /// ST-2: the account: who the person is, and the rows that change the
 /// password, sign out and delete the account (ST-6, ST-10, ST-11).
@@ -114,6 +116,13 @@ class _Content extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         ListTile(
+          leading: const Icon(Icons.badge_outlined),
+          title: Text(l10n.editNameAction),
+          trailing: const _Chevron(),
+          enabled: !isBusy,
+          onTap: () => _editName(context, profile.name),
+        ),
+        ListTile(
           leading: const Icon(Icons.lock_outline),
           title: Text(l10n.changePasswordTitle),
           trailing: const _Chevron(),
@@ -137,6 +146,14 @@ class _Content extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _editName(BuildContext context, String currentName) async {
+    final bloc = context.read<AccountBloc>();
+    final updated = await showEditNameDialog(context, currentName: currentName);
+    if (updated == null || !context.mounted) return;
+    bloc.add(AccountProfileChanged(updated));
+    showSuccessSnackBar(context, context.l10n.nameUpdated);
   }
 
   Future<void> _signOut(BuildContext context) async {

@@ -124,6 +124,21 @@ Exception mapDeleteAccountFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Edit the name: `400` on the field `name` (`blank` or `required` for an
+/// empty name, `max_length` for a name that is too long).
+Exception mapUpdateNameFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    final item = failure.forField('name');
+    if (item == null) return const ServerException();
+    return NameRejectedException(switch (item.code) {
+      'blank' || 'required' || 'null' => NameIssue.blank,
+      'max_length' => NameIssue.tooLong,
+      _ => NameIssue.invalid,
+    });
+  }
+  return mapCommonFailure(failure);
+}
+
 RateLimitReason _reason(String? code) {
   return switch (code) {
     'sign_in_locked' => RateLimitReason.signInLocked,

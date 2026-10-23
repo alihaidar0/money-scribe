@@ -28,6 +28,16 @@ class AccountSettingsTile extends StatelessWidget {
 class _AccountTile extends StatelessWidget {
   const new();
 
+  /// Opens the Account screen, and reads the profile again when the person
+  /// comes back, because the name may have been changed there.
+  Future<void> _open(BuildContext context) async {
+    final bloc = context.read<AccountBloc>();
+    await context.push<void>(AppRoutes.account);
+    // Settings may be gone by now: the person signed out or deleted the
+    // account on the Account screen.
+    if (!bloc.isClosed) bloc.add(const AccountRetried());
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -73,7 +83,7 @@ class _AccountTile extends StatelessWidget {
             ? Icons.chevron_left
             : Icons.chevron_right,
       ),
-      onTap: () => context.push(AppRoutes.account),
+      onTap: () => _open(context),
     );
   }
 }

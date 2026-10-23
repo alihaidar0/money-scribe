@@ -161,3 +161,26 @@ final class ResetTokenInvalidException extends AuthException {
   @override
   String toString() => 'ResetTokenInvalidException';
 }
+
+/// Why the server refused a new name.
+enum NameIssue {
+  /// Empty, or only spaces.
+  blank,
+
+  /// Longer than the server accepts.
+  tooLong,
+
+  /// Any other refusal of the name.
+  invalid,
+}
+
+/// The new display name was refused: [issue] says why. The name stays as it
+/// was.
+final class NameRejectedException extends AuthException {
+  const new(this.issue);
+
+  final NameIssue issue;
+
+  @override
+  String toString() => 'NameRejectedException($issue)';
+}

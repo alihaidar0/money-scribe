@@ -1430,6 +1430,129 @@ void main() {
     });
   });
 
+  group('edit the name', () {
+    const path = '/api/v1/auth/profile/';
+
+    setUp(() async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+      await auth.restore();
+      routes[path] = (_) => jsonBody(200, {
+        'id': '7d1f6a54-2b3c-4d5e-8f90-a1b2c3d4e5f6',
+        'name': 'Dana',
+        'email': 'alex@example.com',
+        'language': 'en',
+        'time_zone': 'Europe/Berlin',
+      });
+    });
+
+    test('sends only the name, as typed, with the access token', () async {
+      await auth.updateName('  Dana ');
+
+      final request = lastRequest(path);
+      expect(request.method, 'PATCH');
+      expect(request.data, {'name': '  Dana '});
+      expect(request.headers['Authorization'], 'Bearer access-1');
+    });
+
+    test('answers the profile the server returns', () async {
+      final profile = await auth.updateName('Dana');
+
+      expect(profile.name, 'Dana');
+      expect(profile.email, 'alex@example.com');
+    });
+
+    test('an empty or missing name is told', () async {
+      for (final code in ['blank', 'required']) {
+        routes[path] = (_) => jsonBody(
+          400,
+          errorBody(code, type: 'validation_error', attr: 'name'),
+        );
+
+        await expectLater(
+          auth.updateName(''),
+          throwsA(
+            isA<NameRejectedException>().having(
+              (e) => e.issue,
+              'issue',
+              NameIssue.blank,
+            ),
+          ),
+        );
+      }
+    });
+
+    test('a name that is too long is told', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody('max_length', type: 'validation_error', attr: 'name'),
+      );
+
+      await expectLater(
+        auth.updateName('x' * 101),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.tooLong,
+          ),
+        ),
+      );
+    });
+
+    test('any other refusal of the name is a general one', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody('invalid', type: 'validation_error', attr: 'name'),
+      );
+
+      await expectLater(
+        auth.updateName('x'),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.invalid,
+          ),
+        ),
+      );
+    });
+
+    test('a 400 that names no field is a server failure', () async {
+      routes[path] = (_) =>
+          jsonBody(400, errorBody('read_only', type: 'validation_error'));
+
+      await expectLater(auth.updateName('x'), throwsA(isA<ServerException>()));
+    });
+
+    test('a busy server and a lost connection are reported', () async {
+      routes[path] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+      await expectLater(
+        auth.updateName('x'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+
+      routes[path] = (options) => throw connectionLost(options);
+      await expectLater(
+        auth.updateName('x'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+
+    test('a session the server ended signs the person out', () async {
+      routes[path] = (_) => jsonBody(401, errorBody('session_expired'));
+
+      await expectLater(auth.updateName('x'), throwsA(isA<ServerException>()));
+      expect(auth.isSignedIn, isFalse);
+      expect(await tokens.read(), isNull);
+    });
+  });
+
   group('change password', () {
     const path = '/api/v1/auth/password/change/';
 

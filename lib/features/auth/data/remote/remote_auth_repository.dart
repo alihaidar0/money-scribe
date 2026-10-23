@@ -277,6 +277,18 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AccountProfile> updateName(String name) async {
+    final profile = await _call(
+      // Sent as typed: the server trims it.
+      () => _authenticated.authProfileUpdate(
+        body: PatchedProfileUpdateRequest(name: name),
+      ),
+      mapUpdateNameFailure,
+    );
+    return AccountProfile(name: profile.name, email: profile.email);
+  }
+
+  @override
   Future<void> changePassword({
     required String current,
     required String next,
