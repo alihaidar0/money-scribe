@@ -269,7 +269,7 @@ To do:
 - [x] Dio instance, token interceptor and one error parser in `core/network/`
 - [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
-- [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
+- [x] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
 
 Authentication step (agreed with the backend, summary in [`backend-api.md`](backend-api.md) section 7). The contract is pinned; the screens and the fake account follow it first, then the app connects to the server:
 

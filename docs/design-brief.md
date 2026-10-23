@@ -13,9 +13,9 @@ what a spreadsheet handles poorly: everyday purchases and debts.
 
 - **Server-backed:** the data lives on the server and the app needs a connection
   to show it, so every screen needs clear loading, error and "no connection"
-  states with a way to try again. No ads. Sign-in will be needed once the backend
-  exists; the backend is not chosen yet, and until then the app shows invented
-  sample data.
+  states with a way to try again. No ads. The person has an account (email and
+  password, section 3.9); the account screens talk to the real server, and the
+  other features still show invented sample data until the server offers them.
 - **Precise:** amounts are exact to the minor unit (kopecks, cents), and the user
   must be able to trust every number on screen.
 - **Private:** an optional app lock protects the data.
@@ -119,8 +119,29 @@ The home screen: one month at a glance, with month switching.
 
 ### 3.7 Settings
 
-Default currency, theme (system, light, dark), app lock, backup and CSV
-export/import, language.
+Account (section 3.9), default currency, theme (system, light, dark), app lock, CSV
+export/import, language, notifications.
+
+### 3.9 Account and sign-in
+
+Email and password; no social sign-in. The server decides what is wrong and the app only words it:
+the app has no password rule of its own, and a password is sent exactly as typed.
+
+- **Welcome, Sign in, Create account.** Sign in names the field at fault (an email that has no
+  account, a wrong password). After repeated failed sign-ins a security check (Cloudflare Turnstile) is
+  shown before the next try.
+- **Verify email, Forgot password, Enter the code, New password.** A 6-digit code is typed in six
+  boxes; every wait ("Resend code in 0:42", "Try again in 15:00") is the server's and counts down on
+  the button.
+- **Account** (opened from Settings): the initial in a circle, the name, the email, and the rows Edit
+  name, Change email, Change password, Sign out and Delete account (in the error colour).
+- **Edit name** is a dialog with the current name; Save waits for a change.
+- **Change email** is a form (new address and current password), then the code page for the new
+  address, with "Use another address" and "Cancel email change". A new code asks for the password
+  again in a small dialog.
+- **Change password** asks for the current password and the new one twice.
+- **Delete account** is a dialog that asks for the password and says everything is deleted for good.
+- Optional 4-digit PIN lock for the app (section 3.7).
 
 ### 3.8 States every screen needs
 
@@ -137,7 +158,7 @@ lead the user to enter their first salary month.
 - **Language:** English and Arabic. Arabic is right-to-left, so layouts must mirror
   cleanly (including icons that show direction), and text can be about 40% longer
   than English. Other languages may follow.
-- **Sign-in screens are not designed yet** (the backend is not chosen); no social features.
+- No social sign-in and no social features.
 
 ## 5. Accessibility
 

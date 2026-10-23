@@ -170,11 +170,20 @@ Adaptive layouts (built; the phone layout is never changed, a wider window only 
 ### 7.1 Navigation and screen anatomy
 
 - Five top-level screens: Overview (launch screen), Salary (segments: Month, Fixed items), Transactions, Debts, Reports. Bottom navigation bar on phones, navigation rail on tablet and web. Order is fixed. Settings is a gear icon in the top app bar of every top-level screen.
-- Top-level screens: small top app bar, title left-aligned and equal to the screen name (Overview, Salary, Transactions, Debts, Reports); no back arrow; no profile or avatar icon (accounts are not designed yet); bottom bar visible with the current item selected.
+- Top-level screens: small top app bar, title left-aligned and equal to the screen name (Overview, Salary, Transactions, Debts, Reports); no back arrow; no profile or avatar icon (the account is reached from Settings); bottom bar visible with the current item selected.
 - Secondary screens (Salary history, Add/Edit transaction, Add debt, Debt details, Settings): back arrow at the left, title, no bottom bar.
 - Arrows (‹ ›) appear only around the month name on Overview. Elsewhere a month is chosen from a chip with a down-chevron.
 - Salary history is reached from the History icon on Salary. Fixed items is the second segment on Salary. Debt details opens from a debt card. Add transaction opens from the Add button, the Overview "Add purchase" button, or a row tap (edit).
 - Use only the labels and numbers defined in this file and in the design brief; never invent formulas, multipliers, tax names, badges or watermarks. Never truncate text or amounts.
+
+### 7.2 Account, sign-in and the waits the server asks for
+
+- **Account screen** (Settings, Account): a 96 dp circle with the first letter of the name on `primaryContainer`, the name in `headlineSmall`, the email below it in `onSurfaceVariant` (an address always reads left to right, also in Arabic), then list tiles with a leading icon and a chevron that mirrors in Arabic: Edit name, Change email, Change password, Sign out. A divider, then Delete account with the error colour for icon and text.
+- **Dialogs** for one short question (Sign out, Delete account, Edit name, the password prompt before a new email code): `AlertDialog`, Cancel as a text button and the action as a filled button; a failure is a `MessageBanner` above the field, a wrong password is the error text under the password field. A delete is a filled button in `error`. The dialog stays open while the server answers and shows a spinner in the button.
+- **Forms** that change something about the account (Change password, Change email): a normal secondary screen with a back arrow, the fields, and the action in the pinned button bar at the bottom. What was typed stays when a failure view is shown.
+- **The code page** (verify email, reset code, new email): an icon circle, the title, the address the code went to (isolated left to right), six large rounded boxes, "Resend code in 0:42" as muted text that becomes a text button, a filled Verify button, and text buttons for the ways back. A wrong code is red text under the boxes with the tries left.
+- **A wait the server asks for** is never a constant: the button label becomes "Try again in M:SS" (disabled) and counts down; the screen never says why more than one short sentence. A busy server (`503`) is the "The service is busy" state with "Please try again shortly."
+- Every account screen has its loading (skeleton), error, no connection and busy states, English and Arabic, light and dark.
 
 ## 8. Do and don't
 
