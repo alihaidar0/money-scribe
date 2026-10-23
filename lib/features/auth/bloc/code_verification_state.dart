@@ -25,6 +25,14 @@ enum CodeVerificationStatus {
   /// [CodeVerificationState.waitSecondsLeft].
   rateLimited,
 
+  /// The password typed to ask for a new code (changing the email) is wrong.
+  /// The code that was sent still works.
+  wrongPassword,
+
+  /// Another account took the new address meanwhile (changing the email): the
+  /// code cannot be used, the person chooses another address.
+  emailTaken,
+
   /// The server is busy: try again shortly.
   unavailable,
 

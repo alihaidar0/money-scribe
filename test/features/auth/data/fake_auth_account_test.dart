@@ -4,6 +4,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
+import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 void main() {
@@ -111,6 +112,124 @@ void main() {
         repository.updateName('Dana'),
         throwsA(isA<NoConnectionException>()),
       );
+    });
+  });
+
+  group('change email', () {
+    test(
+      'a code goes to the new address, and confirming it changes the account',
+      () async {
+        await repository.requestEmailChange(
+          email: ' new@example.com ',
+          password: 'secret',
+        );
+        expect(repository.pendingEmail, 'new@example.com');
+        expect((await repository.profile()).email, 'alex@example.com');
+
+        await repository.verifyCode(CodePurpose.changeEmail, '123456');
+
+        expect((await repository.profile()).email, 'new@example.com');
+        expect(repository.pendingEmail, isNull);
+        expect(repository.isSignedIn, isTrue);
+      },
+    );
+
+    test(
+      'refuses an address that is not one, the same one, or a taken one',
+      () async {
+        for (final (address, issue) in [
+          ('nope', EmailIssue.invalid),
+          ('Alex@Example.com', EmailIssue.unchanged),
+          (FakeAuthRepository.demoTakenEmail, EmailIssue.taken),
+        ]) {
+          await expectLater(
+            repository.requestEmailChange(email: address, password: 'secret'),
+            throwsA(
+              isA<EmailChangeRejectedException>().having(
+                (e) => e.issue,
+                'issue',
+                issue,
+              ),
+            ),
+          );
+        }
+      },
+    );
+
+    test('refuses a wrong password, also for a new code', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+
+      await expectLater(
+        repository.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+      await expectLater(
+        repository.resendCode(CodePurpose.changeEmail, password: 'x'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+    });
+
+    test(
+      'shares the lock and the busy server with changing the password',
+      () async {
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.locked),
+        );
+        await expectLater(
+          repository.requestEmailChange(
+            email: 'new@example.com',
+            password: 'x',
+          ),
+          throwsA(
+            isA<RateLimitedException>().having(
+              (e) => e.reason,
+              'reason',
+              RateLimitReason.passwordAttemptsExceeded,
+            ),
+          ),
+        );
+
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+        );
+        await expectLater(
+          repository.requestEmailChange(
+            email: 'new@example.com',
+            password: 'x',
+          ),
+          throwsA(isA<ServiceUnavailableException>()),
+        );
+      },
+    );
+
+    test('the same address again inside the wait is refused', () async {
+      await repository.requestEmailChange(
+        email: 'new@example.com',
+        password: 'x',
+      );
+
+      await expectLater(
+        repository.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.resendTooSoon,
+          ),
+        ),
+      );
+    });
+
+    test('cancelling forgets the pending address', () async {
+      await repository.requestEmailChange(
+        email: 'new@example.com',
+        password: 'x',
+      );
+
+      await repository.cancelEmailChange();
+
+      expect(repository.pendingEmail, isNull);
+      expect(repository.resendWaitRemaining, Duration.zero);
     });
   });
 

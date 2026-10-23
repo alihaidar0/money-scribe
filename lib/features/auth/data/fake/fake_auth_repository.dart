@@ -28,6 +28,9 @@ class FakeAuthRepository implements AuthRepository {
   /// The shortest password the demo server accepts, to show its message.
   static const demoMinimumPasswordLength = 15;
 
+  /// An address the demo server says another account already uses.
+  static const demoTakenEmail = 'taken@example.com';
+
   /// The longest name the server accepts.
   static const demoMaximumNameLength = 100;
 
@@ -198,6 +201,7 @@ class FakeAuthRepository implements AuthRepository {
         if (_codeDead) throw const CodeExpiredException();
         _wrongCodes = 0;
         if (purpose == CodePurpose.verifyEmail) _setSignedIn(value: true);
+        if (purpose == CodePurpose.changeEmail) _applyPendingEmailChange();
       case DemoCode.wrong:
         if (_codeDead) throw const CodeExpiredException();
         _wrongCodes++;
@@ -224,10 +228,16 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> resendCode(CodePurpose purpose) async {
+  Future<void> resendCode(CodePurpose purpose, {String? password}) async {
     await _demo.simulateRequest();
     if (_demo.settings.code == DemoCode.unavailable) {
       throw const ServiceUnavailableException();
+    }
+    if (purpose == CodePurpose.changeEmail) {
+      // Like the server, a new code for an email change asks for the password
+      // again, and is held back by the lock shared with changing the password.
+      _requireRightPassword();
+      _throwSharedPasswordFailures();
     }
     final wait = resendWaitRemaining;
     if (wait > Duration.zero) {
@@ -292,6 +302,43 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> requestEmailChange({
+    required String email,
+    required String password,
+  }) async {
+    await _demo.simulateSave();
+    _requireRightPassword();
+    _throwSharedPasswordFailures();
+
+    final address = email.trim();
+    if (!_looksLikeAddress(address)) {
+      throw const EmailChangeRejectedException(EmailIssue.invalid);
+    }
+    if (address.toLowerCase() == _profile.email.toLowerCase()) {
+      throw const EmailChangeRejectedException(EmailIssue.unchanged);
+    }
+    if (address.toLowerCase() == demoTakenEmail) {
+      throw const EmailChangeRejectedException(EmailIssue.taken);
+    }
+    // The wait is kept per address, like the server does: the same address
+    // again inside it is refused.
+    final wait = resendWaitRemaining;
+    if (wait > Duration.zero &&
+        address.toLowerCase() == _pendingEmail?.toLowerCase()) {
+      throw RateLimitedException(RateLimitReason.resendTooSoon, wait);
+    }
+    _pendingEmail = address;
+    _startNewCode();
+  }
+
+  @override
+  Future<void> cancelEmailChange() async {
+    await _demo.simulateRequest();
+    _pendingEmail = null;
+    _resendAvailableAt = null;
+  }
+
+  @override
   Future<AccountProfile> updateName(String name) async {
     await _demo.simulateSave();
     final trimmed = name.trim();
@@ -339,7 +386,16 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> deleteAccount({required String password}) async {
     await _demo.simulateSave();
     _requireRightPassword();
-    // The lock after wrong passwords is shared with changing the password.
+    _throwSharedPasswordFailures();
+    // Nothing of the account is left: the next one starts empty.
+    _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
+    _setSignedIn(value: false);
+  }
+
+  /// The lock after wrong passwords and the busy server are shared by
+  /// changing the password, deleting the account and changing the email, as on
+  /// the server.
+  void _throwSharedPasswordFailures() {
     switch (_demo.settings.passwordChange) {
       case DemoPasswordChange.locked:
         throw const RateLimitedException(
@@ -351,9 +407,23 @@ class FakeAuthRepository implements AuthRepository {
       case DemoPasswordChange.accepted || DemoPasswordChange.passwordRefused:
         break;
     }
-    // Nothing of the account is left: the next one starts empty.
-    _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
-    _setSignedIn(value: false);
+  }
+
+  /// A rough check, enough for the demo to show the message for something
+  /// that is not an address.
+  static bool _looksLikeAddress(String value) {
+    final at = value.indexOf('@');
+    return at > 0 && value.indexOf('.', at) > at + 1 && !value.endsWith('.');
+  }
+
+  /// The code of an email change was right: the account has the new address.
+  void _applyPendingEmailChange() {
+    final address = _pendingEmail;
+    if (address != null) {
+      _profile = AccountProfile(name: _profile.name, email: address);
+    }
+    _pendingEmail = null;
+    _resendAvailableAt = null;
   }
 
   /// The fake server does not know the password: it is wrong when the demo

@@ -1,7 +1,7 @@
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 
 /// What a 6-digit code sent by email is for.
-enum CodePurpose { verifyEmail, resetPassword }
+enum CodePurpose { verifyEmail, resetPassword, changeEmail }
 
 /// The account of the person using the app: sign-in, registration, the 6-digit
 /// codes and the session. Every method can also throw a `DataException` when
@@ -56,12 +56,17 @@ abstract interface class AuthRepository {
 
   /// Throws `WrongCodeException`, `CodeExpiredException` or
   /// `RateLimitedException`. A correct code for `CodePurpose.verifyEmail` also
-  /// signs the person in. The code is text, so a leading zero survives.
+  /// signs the person in; one for `CodePurpose.changeEmail` gives the account
+  /// its new address (and `EmailChangeRejectedException` says another account
+  /// took it meanwhile). The code is text, so a leading zero survives.
   Future<void> verifyCode(CodePurpose purpose, String code);
 
   /// Sends a new code to `pendingEmail` and starts a new wait: read
-  /// [resendWaitRemaining]. Throws `RateLimitedException`.
-  Future<void> resendCode(CodePurpose purpose);
+  /// [resendWaitRemaining]. Throws `RateLimitedException`. Changing the email
+  /// asks for the current [password] again, because the server does for every
+  /// new code; the other purposes ignore it. A wrong one is
+  /// `WrongCredentialsException`.
+  Future<void> resendCode(CodePurpose purpose, {String? password});
 
   /// Sends a code to `email` to reset its password.
   Future<void> requestPasswordReset(String email);
@@ -73,6 +78,23 @@ abstract interface class AuthRepository {
 
   /// The name and the email of the signed-in person.
   Future<AccountProfile> profile();
+
+  /// Starts changing the sign-in address: the server emails a 6-digit code to
+  /// [email], which becomes `pendingEmail`, and the account keeps its address
+  /// until the code is confirmed with `verifyCode(CodePurpose.changeEmail)`.
+  /// A new request replaces the one that was pending. Throws
+  /// `WrongCredentialsException` (the current [password] is wrong),
+  /// `EmailChangeRejectedException` or `RateLimitedException` (the password
+  /// lock shared with changing the password, a code asked for too soon, too
+  /// many codes).
+  Future<void> requestEmailChange({
+    required String email,
+    required String password,
+  });
+
+  /// Drops the pending email change, so its code stops working. Does nothing
+  /// when none is pending.
+  Future<void> cancelEmailChange();
 
   /// Sets a new display name and returns the profile with it. Throws
   /// `NameRejectedException` when the server refuses the name.

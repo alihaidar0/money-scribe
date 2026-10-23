@@ -172,6 +172,10 @@ class RemoteAuthRepository implements AuthRepository {
       await _verifyResetCode(email, code);
       return;
     }
+    if (purpose == CodePurpose.changeEmail) {
+      await _confirmEmailChange(code);
+      return;
+    }
 
     final body = VerifyEmailRequest(
       email: email,
@@ -198,11 +202,19 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> resendCode(CodePurpose purpose) async {
+  Future<void> resendCode(CodePurpose purpose, {String? password}) async {
     final email = _pendingEmail;
     if (email == null) throw const CodeExpiredException();
     if (purpose == CodePurpose.resetPassword) {
       await _requestResetCode(email);
+      return;
+    }
+    if (purpose == CodePurpose.changeEmail) {
+      // A new request replaces the pending one, and needs the password again.
+      await requestEmailChange(
+        email: email,
+        password: password ?? (throw ArgumentError.notNull('password')),
+      );
       return;
     }
 
@@ -274,6 +286,39 @@ class RemoteAuthRepository implements AuthRepository {
   Future<AccountProfile> profile() async {
     final profile = await _call(_authenticated.authProfile, mapCommonFailure);
     return AccountProfile(name: profile.name, email: profile.email);
+  }
+
+  @override
+  Future<void> requestEmailChange({
+    required String email,
+    required String password,
+  }) async {
+    final answer = await _call(
+      // Sent as typed: the password is never trimmed.
+      () => _authenticated.authEmailChangeRequest(
+        body: EmailChangeRequestRequest(
+          email: email.trim(),
+          currentPassword: password,
+        ),
+      ),
+      mapEmailChangeRequestFailure,
+      onFailure: (failure, exception) {
+        if (exception is RateLimitedException &&
+            exception.reason != RateLimitReason.passwordAttemptsExceeded) {
+          // A code was asked for too soon, or too often: the wait is for a
+          // new code, and the code that is pending stays as it was.
+          _resendAvailableAt = _clock.now().add(exception.retryAfter);
+        }
+      },
+    );
+    _pendingEmail = answer.email;
+    _setResendWait(answer.resendAvailableIn);
+  }
+
+  @override
+  Future<void> cancelEmailChange() async {
+    await _call(_authenticated.authEmailChangeCancel, mapCommonFailure);
+    _clearPendingEmailChange();
   }
 
   @override
@@ -430,6 +475,32 @@ class RemoteAuthRepository implements AuthRepository {
       },
     );
     _resetToken = answer.resetToken;
+    _resendAvailableAt = null;
+  }
+
+  /// Trades the code mailed to the new address for the new sign-in address.
+  /// The server ends every other session and keeps this one on the same
+  /// tokens.
+  Future<void> _confirmEmailChange(String code) async {
+    await _call(
+      // Text, so a leading zero survives.
+      () => _authenticated.authEmailChangeConfirm(
+        body: EmailChangeConfirmRequest(code: code),
+      ),
+      mapEmailChangeConfirmFailure,
+      onFailure: (failure, exception) {
+        if (exception is RateLimitedException &&
+            exception.reason == RateLimitReason.codeAttemptsExceeded) {
+          // The code is dead: the wait is the time until a new one.
+          _resendAvailableAt = _clock.now().add(exception.retryAfter);
+        }
+      },
+    );
+    _clearPendingEmailChange();
+  }
+
+  void _clearPendingEmailChange() {
+    _pendingEmail = null;
     _resendAvailableAt = null;
   }
 

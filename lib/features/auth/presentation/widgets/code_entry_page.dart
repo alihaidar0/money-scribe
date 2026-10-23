@@ -27,6 +27,10 @@ class CodeEntryPage extends StatelessWidget {
     required this.onVerified,
     this.codeWasSent = true,
     this.showAccountHint = false,
+    this.askPassword,
+    this.backLabel,
+    this.cancelLabel,
+    this.onCancel,
     super.key,
   });
 
@@ -47,6 +51,20 @@ class CodeEntryPage extends StatelessWidget {
   /// Opens the screen that follows a correct code.
   final void Function(BuildContext context) onVerified;
 
+  /// Asks for the current password before a new code is sent, and answers it,
+  /// or `null` when the person gave up. Only changing the email needs it.
+  final Future<String?> Function(BuildContext context)? askPassword;
+
+  /// The label of the button that goes back to the previous screen. The
+  /// default is "Change email", which is what going back means after
+  /// registering.
+  final String? backLabel;
+
+  /// A second button that abandons the whole flow, with what it does. Both
+  /// are given or neither.
+  final String? cancelLabel;
+  final Future<void> Function(BuildContext context)? onCancel;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -61,6 +79,10 @@ class CodeEntryPage extends StatelessWidget {
         codeWasSent: codeWasSent,
         showAccountHint: showAccountHint,
         onVerified: onVerified,
+        askPassword: askPassword,
+        backLabel: backLabel,
+        cancelLabel: cancelLabel,
+        onCancel: onCancel,
       ),
     );
   }
@@ -73,6 +95,10 @@ class _CodeEntryView extends StatefulWidget {
     required this.codeWasSent,
     required this.showAccountHint,
     required this.onVerified,
+    required this.askPassword,
+    required this.backLabel,
+    required this.cancelLabel,
+    required this.onCancel,
   });
 
   final String title;
@@ -80,6 +106,10 @@ class _CodeEntryView extends StatefulWidget {
   final bool codeWasSent;
   final bool showAccountHint;
   final void Function(BuildContext context) onVerified;
+  final Future<String?> Function(BuildContext context)? askPassword;
+  final String? backLabel;
+  final String? cancelLabel;
+  final Future<void> Function(BuildContext context)? onCancel;
 
   @override
   State<_CodeEntryView> createState() => _CodeEntryViewState();
@@ -117,9 +147,17 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
     }
   }
 
-  void _resend() {
+  Future<void> _resend() async {
+    final askPassword = widget.askPassword;
+    String? password;
+    if (askPassword != null) {
+      password = await askPassword(context);
+      if (password == null || !mounted) return;
+    }
     _code.clear();
-    context.read<CodeVerificationBloc>().add(const CodeResendRequested());
+    context.read<CodeVerificationBloc>().add(
+      CodeResendRequested(password: password),
+    );
     _focus.requestFocus();
   }
 
@@ -152,9 +190,13 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
         final isWaiting = state.status == CodeVerificationStatus.rateLimited;
         final isWrong = state.status == CodeVerificationStatus.wrong;
         final isVerifying = state.status == CodeVerificationStatus.verifying;
-        // The code cannot be typed while it is dead, old or the server says
-        // to wait.
-        final canType = !isExpired && !isDead && !isWaiting && !isVerifying;
+        final isTaken = state.status == CodeVerificationStatus.emailTaken;
+        final isWrongPassword =
+            state.status == CodeVerificationStatus.wrongPassword;
+        // The code cannot be typed while it is dead, old, useless because the
+        // address was taken, or the server says to wait.
+        final canType =
+            !isExpired && !isDead && !isWaiting && !isVerifying && !isTaken;
 
         return FlowPage(
           failure: switch (state.status) {
@@ -199,6 +241,20 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
               MessageBanner(
                 icon: Icons.lock_outline,
                 text: l10n.codeAttemptsExceeded,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (isTaken) ...[
+              MessageBanner(
+                icon: Icons.error_outline,
+                text: l10n.changeEmailTakenMeanwhile,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (isWrongPassword) ...[
+              MessageBanner(
+                icon: Icons.error_outline,
+                text: l10n.changePasswordWrongCurrent,
               ),
               const SizedBox(height: 16),
             ],
@@ -247,7 +303,17 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
               },
             ),
             const SizedBox(height: 8),
-            TextButton(onPressed: context.pop, child: Text(l10n.changeEmail)),
+            TextButton(
+              onPressed: context.pop,
+              child: Text(widget.backLabel ?? l10n.changeEmail),
+            ),
+            if (widget.onCancel != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => widget.onCancel!(context),
+                child: Text(widget.cancelLabel!),
+              ),
+            ],
             if (widget.showAccountHint) ...[
               const SizedBox(height: 8),
               _AccountHint(style: theme.textTheme.bodyMedium),
