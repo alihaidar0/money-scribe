@@ -18,9 +18,11 @@ import 'package:money_scribe/core/network/server_warm_up.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/storage/secure_value_store.dart';
-import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/local_auth_biometric_authenticator.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
+import 'package:money_scribe/features/auth/data/secure_app_lock_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/data/monitored_server_activity.dart';
@@ -64,6 +66,14 @@ Future<void> main() async {
     languageRepository: languageRepository,
     monitor: monitor,
   );
+  // The app lock lives on the device. A signed-in person who has it on starts
+  // on the lock screen, which is known before the first frame so no screen of
+  // the app shows first.
+  final appLock = SecureAppLockRepository(
+    store: const PlatformSecureValueStore(),
+    biometrics: LocalAuthBiometricAuthenticator(),
+  );
+  final startsLocked = authRepository.isSignedIn && await _isAppLockOn(appLock);
   // The free staging server sleeps after 15 minutes without a request: one
   // request at start wakes it, so it is often awake when the person signs in.
   // A production server does not sleep, so it is not asked.
@@ -77,7 +87,8 @@ Future<void> main() async {
       themeRepository: SharedPreferencesThemeRepository(preferences),
       pushMessagingRepository: pushMessaging,
       authRepository: authRepository,
-      appLockRepository: FakeAppLockRepository(),
+      appLockRepository: appLock,
+      startsLocked: startsLocked,
       payScheduleRepository: FakePayScheduleRepository(demo: demo),
       defaultCurrencyRepository: FakeDefaultCurrencyRepository(demo: demo),
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
@@ -103,6 +114,17 @@ Future<void> main() async {
           : MonitoredServerActivity(monitor),
     ),
   );
+}
+
+/// Whether the app lock is on. A storage that cannot be read counts as off:
+/// the session tokens live in the same storage, so the person signs in again
+/// anyway.
+Future<bool> _isAppLockOn(AppLockRepository appLock) async {
+  try {
+    return await appLock.isEnabled();
+  } on Exception {
+    return false;
+  }
 }
 
 /// The bot challenge of this build: Cloudflare Turnstile when there is a

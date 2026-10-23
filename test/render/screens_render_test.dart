@@ -26,6 +26,7 @@ import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 import '../support/fake_push_messaging_repository.dart';
 import '../support/fake_server_activity.dart';
+import '../support/instant_app_lock_repository.dart';
 import '../support/render_screen.dart';
 
 typedef _Setup = Future<void> Function(
@@ -41,6 +42,9 @@ class _Scene {
     this.setup,
     this.size = const Size(412, 915),
     this.serverWaking = false,
+    this.sensor = false,
+    this.pinPause,
+    this.lockOn = false,
   });
 
   final String name;
@@ -49,6 +53,16 @@ class _Scene {
 
   /// The server is slow to answer: the staging note above the screen shows.
   final bool serverWaking;
+
+  /// The device has a fingerprint that does not match (the lock screen then
+  /// says so).
+  final bool sensor;
+
+  /// A pause after wrong PINs that is running when the PIN screen opens.
+  final Duration? pinPause;
+
+  /// The app lock is on (a PIN is saved).
+  final bool lockOn;
   final _Setup? setup;
   final Size size;
 }
@@ -436,6 +450,16 @@ final _scenes = <_Scene>[
   ),
   const _Scene('auth-10-password-changed', AppRoutes.passwordChanged),
   const _Scene('auth-11-app-lock', AppRoutes.appLock),
+  const _Scene(
+    'auth-11b-app-lock-fingerprint',
+    AppRoutes.appLock,
+    sensor: true,
+  ),
+  const _Scene(
+    'auth-12b-pin-paused',
+    AppRoutes.pinEntry,
+    pinPause: Duration(seconds: 30),
+  ),
   _Scene(
     'auth-12-pin-entry',
     AppRoutes.pinEntry,
@@ -446,6 +470,13 @@ final _scenes = <_Scene>[
     AppRoutes.createPin,
     signedIn: true,
     setup: (tester, demo) => _tapKeys(tester, [3]),
+  ),
+  const _Scene(
+    'st-1b-settings-app-lock-on',
+    AppRoutes.settings,
+    signedIn: true,
+    lockOn: true,
+    size: _tallPhone,
   ),
   const _Scene('ov-1-overview', AppRoutes.overview, signedIn: true),
   _Scene(
@@ -1653,6 +1684,12 @@ void main() {
                 authRepository: FakeAuthRepository(
                   demo: demo,
                   signedIn: scene.signedIn,
+                ),
+                appLockRepository: InstantAppLockRepository(
+                  biometricsAvailable: scene.sensor,
+                  biometricsMatch: false,
+                  pause: scene.pinPause,
+                  pin: scene.lockOn ? '1234' : null,
                 ),
                 // The demo panel handle belongs to staging builds only and
                 // would sit on top of every picture.

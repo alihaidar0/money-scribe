@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/pin_pad.dart';
 import 'package:money_scribe/features/auth/bloc/pin_bloc.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
 /// The page with the PIN dots and the numeric pad, for the PIN entry screen
@@ -32,7 +35,9 @@ class PinPage extends StatelessWidget {
         mode: mode,
         appLock: context.read<AppLockRepository>(),
         auth: context.read<AuthRepository>(),
-      ),
+        session: context.read<AppLockSession>(),
+        ticker: context.read<Ticker>(),
+      )..add(const PinStarted()),
       child: _PinView(
         mode: mode,
         onAccepted: onAccepted,
@@ -66,17 +71,28 @@ class _PinView extends StatelessWidget {
             onAccepted(context);
           case PinStatus.signedOut:
             onSignedOut?.call(context);
+          case PinStatus.tooManyFailures:
+            // The person is told on the screen they land on.
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(context.l10n.pinTooManyFailures)),
+              );
+            onSignedOut?.call(context);
           case PinStatus.entering ||
               PinStatus.checking ||
               PinStatus.wrong ||
+              PinStatus.paused ||
               PinStatus.mismatch:
             break;
         }
       },
       builder: (context, state) {
+        final isPaused = state.status == PinStatus.paused;
         final hasError =
             state.status == PinStatus.wrong ||
-            state.status == PinStatus.mismatch;
+            state.status == PinStatus.mismatch ||
+            isPaused;
         final title = switch (mode) {
           PinMode.unlock => l10n.enterPinTitle,
           PinMode.create =>
@@ -109,14 +125,19 @@ class _PinView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: SizedBox(
-                height: 20,
+                // Two lines: the pause message is the longest.
+                height: 40,
                 child: hasError
                     ? Semantics(
                         liveRegion: true,
                         child: Text(
-                          state.status == PinStatus.mismatch
-                              ? l10n.pinMismatch
-                              : l10n.pinIncorrect,
+                          switch (state.status) {
+                            PinStatus.mismatch => l10n.pinMismatch,
+                            PinStatus.paused => l10n.pinPausedTryAgain(
+                              time: formatCountdown(state.pauseSecondsLeft),
+                            ),
+                            _ => l10n.pinIncorrect,
+                          },
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.error,
                           ),

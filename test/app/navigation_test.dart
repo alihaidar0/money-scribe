@@ -5,6 +5,7 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
@@ -22,6 +23,7 @@ import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dar
 
 import '../support/build_app.dart';
 import '../support/fake_ticker.dart';
+import '../support/instant_app_lock_repository.dart';
 
 /// The link test: every button of the authentication flow leads where the
 /// design says, with the fake data accepting anything.
@@ -34,7 +36,11 @@ late FakeAuthRepository _auth;
 /// together with it when it waits for the server.
 late DateTime _now;
 
-Future<void> _pumpApp(WidgetTester tester, {bool signedIn = false}) async {
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  bool signedIn = false,
+  AppLockRepository? appLock,
+}) async {
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = const Size(412, 915);
@@ -44,7 +50,12 @@ Future<void> _pumpApp(WidgetTester tester, {bool signedIn = false}) async {
   _now = DateTime(2026, 10, 11, 9);
   _auth = FakeAuthRepository(demo: _demo, now: () => _now, signedIn: signedIn);
   await tester.pumpWidget(
-    buildApp(demo: _demo, ticker: _ticker, authRepository: _auth),
+    buildApp(
+      demo: _demo,
+      ticker: _ticker,
+      authRepository: _auth,
+      appLockRepository: appLock,
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -987,15 +998,45 @@ void main() {
   });
 
   group('App lock', () {
-    testWidgets('the fingerprint opens the app', (tester) async {
-      await _pumpApp(tester, signedIn: true);
+    testWidgets('the fingerprint is asked for at once, and opens the app', (
+      tester,
+    ) async {
+      final appLock = InstantAppLockRepository();
+      await _pumpApp(tester, signedIn: true, appLock: appLock);
+
+      await _go(tester, AppRoutes.appLock);
+
+      expect(appLock.biometricReasons, ['Unlock Money Scribe']);
+      expect(find.byType(OverviewScreen), findsOneWidget);
+    });
+
+    testWidgets('a fingerprint that does not match leaves the PIN', (
+      tester,
+    ) async {
+      final appLock = InstantAppLockRepository(biometricsMatch: false);
+      await _pumpApp(tester, signedIn: true, appLock: appLock);
       await _go(tester, AppRoutes.appLock);
       expect(find.byType(AppLockScreen), findsOneWidget);
+      expect(
+        find.text('Fingerprint not recognised. Try again or use your PIN.'),
+        findsOneWidget,
+      );
 
+      appLock.biometricsMatch = true;
       await tester.tap(find.byTooltip('Unlock with fingerprint'));
       await tester.pumpAndSettle();
 
       expect(find.byType(OverviewScreen), findsOneWidget);
+    });
+
+    testWidgets('a device with no fingerprint shows no sensor button', (
+      tester,
+    ) async {
+      await _pumpApp(tester, signedIn: true);
+      await _go(tester, AppRoutes.appLock);
+
+      expect(find.byTooltip('Unlock with fingerprint'), findsNothing);
+      expect(find.text('Enter your PIN to unlock.'), findsOneWidget);
     });
 
     testWidgets('Use PIN opens the pad; any PIN opens the app', (tester) async {

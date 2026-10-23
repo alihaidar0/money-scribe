@@ -50,7 +50,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Monthly overview
 - [ ] Reports: by category, month over month, debts summary
 - [ ] CSV export and import that round-trips without loss
-- [ ] App lock
+- [x] App lock: a salted hash of the PIN in secure storage, pauses and a limit on wrong PINs, the fingerprint through the system, a timeout the person chooses, and a secure window in production
 - [ ] Accessibility review
 
 ## 5. Release
@@ -118,6 +118,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-11 App lock
 - [x] AUTH-12 PIN entry
 - [x] AUTH-13 Create a PIN
+- [x] App lock for real: lock at start and after the time in the background, pauses after wrong PINs, sign-out after ten, "Lock after" in the Settings
 - [x] Sign in with an unverified email: opens Verify email, no code sent
 - [x] Register: passwords differ, and the countdown on the button while the server asks to wait
 - [x] Verify email: 6 digits, the hint for an existing account, and the dead code after too many tries

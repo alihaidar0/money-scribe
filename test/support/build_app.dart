@@ -6,8 +6,8 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
-import 'package:money_scribe/features/auth/data/fake/fake_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
@@ -32,6 +32,7 @@ import 'fake_language_repository.dart';
 import 'fake_text_clipboard.dart';
 import 'fake_theme_repository.dart';
 import 'fake_ticker.dart';
+import 'instant_app_lock_repository.dart';
 
 /// The whole app with the language kept in memory instead of on the device,
 /// a fake account that answers at once and starts signed out (or signed in
@@ -43,10 +44,12 @@ Widget buildApp({
   PushMessagingRepository? pushMessaging,
   TextClipboard? clipboard,
   AuthRepository? authRepository,
+  AppLockRepository? appLockRepository,
   DemoController? demo,
   Ticker? ticker,
   Clock? clock,
   bool signedIn = false,
+  bool locked = false,
   AppEnvironment environment = AppEnvironment.staging,
   ServerActivity? serverActivity,
   ChallengeViewFactory? challengeViewFactory,
@@ -64,7 +67,10 @@ Widget buildApp({
         FakeAuthRepository(demo: demoController, signedIn: signedIn),
     challengeViewFactory:
         challengeViewFactory ?? const DemoChallengeViewFactory(),
-    appLockRepository: FakeAppLockRepository(),
+    appLockRepository:
+        appLockRepository ??
+        InstantAppLockRepository(biometricsAvailable: false),
+    startsLocked: locked,
     payScheduleRepository: FakePayScheduleRepository(demo: demoController),
     defaultCurrencyRepository: FakeDefaultCurrencyRepository(
       demo: demoController,

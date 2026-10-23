@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/app/app_lock_gate.dart';
 import 'package:money_scribe/app/demo/demo_handle.dart';
 import 'package:money_scribe/app/push_token_cleanup.dart';
 import 'package:money_scribe/app/router/app_router.dart';
@@ -20,6 +21,7 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/connection/bloc/server_wake_bloc.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
@@ -67,6 +69,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.demo,
     required this.environment,
     required this.challengeViewFactory,
+    this.startsLocked = false,
     this.serverActivity,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
@@ -103,6 +106,11 @@ class MoneyScribeApp extends StatefulWidget {
   /// Shows the bot challenge the server may ask for at sign-in.
   final ChallengeViewFactory challengeViewFactory;
 
+  /// Whether the app opens on the lock screen: a person is signed in and has
+  /// the app lock on. Known before the first frame, so no screen of the app
+  /// shows first.
+  final bool startsLocked;
+
   final TextClipboard textClipboard;
   final Ticker ticker;
   final Clock clock;
@@ -113,6 +121,7 @@ class MoneyScribeApp extends StatefulWidget {
 
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
   late final PushTokenCleanup _pushTokenCleanup;
+  late final AppLockGate _lockGate;
 
   @override
   void initState() {
@@ -124,20 +133,34 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
       auth: widget.authRepository,
       push: widget.pushMessagingRepository,
     );
+    // The lock watches the app move to the background, and locks it after the
+    // time the person chose.
+    _lockGate = AppLockGate(
+      auth: widget.authRepository,
+      repository: widget.appLockRepository,
+      clock: widget.clock,
+      locked: widget.startsLocked,
+    )..start();
   }
 
   late final StreamListenable _signInChanges = StreamListenable(
     widget.authRepository.signedInChanges,
   );
+  late final StreamListenable _lockChanges = StreamListenable(
+    _lockGate.changes,
+  );
   late final GoRouter _router = createAppRouter(
     auth: widget.authRepository,
-    refreshListenable: _signInChanges,
+    lock: _lockGate,
+    refreshListenable: Listenable.merge([_signInChanges, _lockChanges]),
   );
 
   @override
   void dispose() {
     _router.dispose();
     _signInChanges.dispose();
+    _lockChanges.dispose();
+    unawaited(_lockGate.dispose());
     unawaited(_pushTokenCleanup.dispose());
     super.dispose();
   }
@@ -157,6 +180,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.textClipboard),
           RepositoryProvider.value(value: widget.authRepository),
           RepositoryProvider.value(value: widget.appLockRepository),
+          RepositoryProvider<AppLockSession>.value(value: _lockGate),
           RepositoryProvider.value(value: widget.payScheduleRepository),
           RepositoryProvider.value(value: widget.defaultCurrencyRepository),
           RepositoryProvider.value(value: widget.csvTransferRepository),
