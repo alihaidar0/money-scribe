@@ -449,23 +449,59 @@ signed out (signing out, deleting the account, a session the server ended, a pas
 signed-out device keeps no token that an earlier sign-in registered. Deleting a token makes Firebase give
 the device a new, unrelated one the next time it is asked for.
 
-When pushes are sent by the backend, these points are the backend's to build (the request is in the
-backend repository; nothing here is applied before it exists):
+The backend agreed the rules below (its own copy is in its `docs/api-fields.md`, "Push notifications").
+The endpoints are built with the notifications feature, after the salary and preferences steps, and are
+published in `openapi.yaml`; nothing is sent today.
 
-- A token belongs to a session and an account: stored under the user, one token per `device_id`
-  (replaced when the same device sends a new one), never shared between accounts.
-- The app registers its token after sign-in and unregisters it on sign-out. The server also removes the
-  token of a session when that session ends, for any reason (sign-out, revoked, password changed, expired),
-  and every token of an account when the account is deleted, in the same step as the rest of its data.
-- A token that Firebase reports as unregistered or invalid is removed at once.
-- Tokens are never written to logs, never returned by any endpoint, and never sent to a third party other
-  than Firebase.
-- The text of a notification contains no amounts, names or other financial data, and is worded in the
-  language stored for the device.
-- Registration and removal are idempotent and rate limited like the other authenticated calls.
+Server rules:
 
-The app side of the registration (the call after sign-in and on a token refresh) is built together with
-that endpoint, behind `PushMessagingRepository`, and waits for the contract.
+- A token belongs to one account and to the session that registered it, with one token per `device_id`:
+  a new token from the same device replaces the old one. It is never shared between accounts (a token
+  registered by another account is moved).
+- Two authenticated operations, both idempotent: register or replace the token, and remove it (it
+  succeeds when there is nothing to remove). Both use the standard error body and the rate limits. The
+  request carries no platform and no language: the platform comes from the session's device record, and a
+  registration from a `web` session is refused with a documented error, since web push is not planned.
+- Push is Android only for now: iOS comes later through the same endpoints, when the iOS work starts.
+- The server deletes the token of a session whenever that session ends, for any reason (sign-out,
+  revoked, password changed or reset, email changed, refresh-token reuse, expiry), and every token of an
+  account in the same step as the rest of its data when the account is deleted.
+- A token that Firebase reports as unregistered or invalid is deleted at once.
+- Tokens are never logged, never returned by any endpoint and sent only to Firebase.
+- A notification contains no amounts, names or other financial data. It is worded in the `language`
+  stored on the account, the setting the emails use; the app sends no language per device.
+- The server adds one data key, `screen`, so the app can open the right screen. Its value is one of a fixed
+  list of screen identifiers; the first list has only `salary` (pay-day reminders), and every new value is
+  added to the schema and the docs before the server sends it. There is no record id for now: pointing at
+  one record would be its own agreed change, with an opaque id. The app treats the data of a push as
+  untrusted input: it maps a value from a fixed list of screens, ignores any value it does not know, never
+  opens an address or a route taken from the message, and the data carries no amounts, names or record
+  contents.
+- Retention, for the privacy policy: a push token is kept until its session ends or expires, and at most
+  90 days.
+
+What the app does when the endpoints exist:
+
+- Registers the token after sign-in, whenever Firebase gives a new one, and only while notifications are
+  allowed. A registration that fails (offline, error) is tried again at the next start, return to the app
+  or new token; it is idempotent, so a repeat is safe.
+- Removes the token when the person turns notifications off while staying signed in. The switch is in the
+  system settings (the app's row only asks, and points to them), so the app notices it when it next
+  reads the permission, at start and on return to the app, not at the moment it happens.
+- Sign-out: call remove while the session is still valid, with a short timeout and ignoring any failure
+  (offline, timeout, error), then delete the local Firebase token, then end the session.
+- A session the server ended is any `401` other than `token_expired` (that includes `token_invalid`
+  and `not_authenticated`, not only `session_*`); `token_expired` is the only `401` that is refreshed. This
+  is part of the contract. The app then deletes the local token and does not call remove, which would be
+  refused.
+- Account deletion: delete the local token after the server confirms (already done).
+- Language: the account's `language` and `time_zone` change with the settings `PATCH` of the preferences
+  step, not with the profile update (`name` only) or the refresh request. The app calls it when the
+  person changes the app language, so notifications follow without a new sign-in. When it sends a changed
+  `time_zone` (the device zone differs from the last one sent) is decided with that step.
+
+The server cleanup is the guarantee and the app cleanup an extra: the app cannot always tell that a
+session ended, and the remove call needs a valid session.
 
 ### Resetting a password
 
@@ -525,6 +561,27 @@ version (`device_info_plus`), the app version (`package_info_plus`) and the time
 (`flutter_timezone`), all at exact versions. The code is in `core/storage/`, `core/device/` and
 `core/network/` ([`architecture.md`](architecture.md), *The network layer*), and in
 `features/auth/data/remote/`.
+
+### When a new call fails against staging
+
+The app logs only the name of the exception (never the answer, by design), so a failed call shows as
+`ServerException` and the screen says "Something went wrong". The usual cause right after pinning a new
+contract is a staging server that still runs an older backend build, which answers `404` for the new
+endpoint.
+
+1. Check the endpoint without signing in: an existing one answers `401`, a missing one `404`. Load the
+   address from your own ignored `.env.staging`; never paste it, or any token, into an issue or a pull
+   request.
+
+   ```bash
+   set -a; . ./.env.staging; set +a
+   curl -s -o /dev/null -w "%{http_code}\n" -X POST "$API_BASE_URL/<path>" \
+     -H 'Content-Type: application/json' -d '{}'
+   ```
+
+2. If it is `404`, ask the backend to deploy the pinned commit (`api/BACKEND_VERSION`) to staging, then try
+   again.
+3. To read what the app logged on a connected emulator: `adb -s <device> logcat -d -s flutter`.
 
 ### Notes on the generated client
 
