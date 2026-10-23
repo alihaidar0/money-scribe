@@ -68,6 +68,7 @@ To do, in this order, one step at a time:
 - [x] Add the four staging secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`) and the variable `ANDROID_CERT_SHA256`
 - [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
 - [x] Merge the environments pull request; check the first staging build and the "Staging" draft release
+- [x] Dependencies updated to the latest versions that resolve with Flutter 3.47.7 (Firebase 5.1.0 and 17.0.1, `go_router` 18.1.1, the code generators); the 13 packages held back by the SDK move with the Flutter update below
 - [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
@@ -294,6 +295,7 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Delete the push token of the device when the person signs out, the account is deleted or the session ends
 - [x] Push token rules agreed with the backend (one token per device, removed with the session and the account, 90-day retention; written in `backend-api.md`)
 - [ ] Push token on the server, when its endpoints are in a pinned contract: register after sign-in and on a new token, only while notifications are allowed; remove first on sign-out, with a short timeout
+- [ ] Decide with the backend whether push addresses a device by its FCM token or by its Firebase installation ID (`firebase_messaging` 17 deprecates the token calls), then update `PushMessagingRepository`
 - [ ] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
 - [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
 - [x] Edit the name
