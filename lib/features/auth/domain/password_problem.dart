@@ -19,6 +19,9 @@ enum PasswordIssue {
   /// Found in a known data breach.
   compromised,
 
+  /// The same as the current password (changing a password).
+  unchanged,
+
   /// A reason this version of the app does not know: show
   /// [PasswordProblem.detail], the server's own English text.
   other,

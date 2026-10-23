@@ -1367,6 +1367,40 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'st-6c-change-password-refused',
+    AppRoutes.changePassword,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'short');
+      await tester.enterText(fields.at(2), 'short');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-6d-change-password-locked',
+    AppRoutes.changePassword,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'st-7-export-csv',
     AppRoutes.settings,
     signedIn: true,

@@ -295,6 +295,30 @@ class FakeAuthRepository implements AuthRepository {
   }) async {
     await _demo.simulateSave();
     _requireRightPassword();
+    switch (_demo.settings.passwordChange) {
+      case DemoPasswordChange.accepted:
+        break;
+      case DemoPasswordChange.passwordRefused:
+        throw const PasswordRejectedException(
+          PasswordProblem(
+            PasswordIssue.tooShort,
+            limit: demoMinimumPasswordLength,
+          ),
+        );
+      case DemoPasswordChange.locked:
+        throw const RateLimitedException(
+          RateLimitReason.passwordAttemptsExceeded,
+          Duration(minutes: 15),
+        );
+      case DemoPasswordChange.unavailable:
+        throw const ServiceUnavailableException();
+    }
+    // Like the server, the new password has to differ from the current one.
+    if (current == next) {
+      throw const PasswordRejectedException(
+        PasswordProblem(PasswordIssue.unchanged),
+      );
+    }
   }
 
   @override

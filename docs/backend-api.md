@@ -346,7 +346,10 @@ All paths are under `/api/v1/auth/`.
 | `resend_limit_reached` | 429 | countdown from `Retry-After` (up to an hour) for the limit of 5 resends per hour |
 | `email_not_registered` | 401 | sign-in only, `attr` `email`: said under the email field. The server checks the email first, so a wrong-password answer never comes for an unknown address |
 | `wrong_password` | 401 | sign-in only, `attr` `password`: said under the password field |
-| `invalid_credentials` | 401 | sign-in: any other refusal (a deactivated account), said in a banner; change password and delete account: a wrong current password |
+| `invalid_credentials` | 401 | sign-in: any other refusal (a deactivated account), said in a banner |
+| `invalid_password` | 400 | change password, `attr` `current_password`: said under the current-password field (a `400`, so the session handling is not triggered) |
+| `password_unchanged` | 400 | change password, `attr` `password`: the new password equals the current one, said under the new-password field |
+| `password_attempts_exceeded` | 429 | change password (and delete account): 5 wrong current passwords lock both for 15 minutes; the button counts down `Retry-After`; sign-in is not affected |
 | `email_not_verified` | 403 | only for a correct password; opens the verify screen and does not resend by itself |
 | `sign_in_locked` | 429 | lock countdown from `Retry-After`, also for a correct password |
 | `service_unavailable` | 503 | "try again shortly", with the wait from `Retry-After`; only register, resend, verify and sign in can answer it, and the body `type` is `server_error` (a separate schema from the other error bodies) |
@@ -442,11 +445,27 @@ which answers a single-use `reset_token`), and set the new password (`password-r
 - A saved reset ends every session of the account, this device's included: the app clears its tokens and
   goes to the "password changed" screen, then to sign-in.
 
+### Changing the password
+
+One call, signed in (`password/change/`): the current and the new password, both sent as typed.
+
+- The answer is a new token pair. The server ended every other session and retired the refresh token this
+  device used, so the app replaces its stored pair and the person stays signed in. An answer without a
+  refresh token is a server failure.
+- A wrong current password is `400 invalid_password` and is said under the current-password field. It is
+  a `400`, not a `401`, so the app does not try to refresh or sign out.
+- The new password is worded like at registration (`password_*`, the numbers from `min_length` /
+  `max_length`), plus `password_unchanged` ("must be different from your current one"). The app checks only
+  that the two new fields match.
+- 5 wrong current passwords answer `429 password_attempts_exceeded` with the wait in `Retry-After`: the
+  button counts it down (15 minutes), and nothing is sent until it ends. The same lock covers deleting the
+  account. Signing in is not affected.
+- The owner of the account gets an email about the change from the server.
+
 ### Not covered yet
 
-Change password, change email, delete account and edit name come as their own branches. Until they exist,
-the real account answers `FeatureNotAvailableException` for changing a password and for deleting the
-account, and each of those screens shows "Not available yet" with a Go back button.
+Change email, delete account and edit name come as their own branches. Until they exist, the real account
+answers `FeatureNotAvailableException` for deleting the account, and that dialog shows "Not available yet".
 
 ### What the app uses for this step
 

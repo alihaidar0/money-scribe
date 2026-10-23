@@ -19,6 +19,7 @@ String passwordProblemText(AppLocalizations l10n, PasswordProblem problem) {
     PasswordIssue.tooSimilar => l10n.passwordErrorTooSimilar,
     PasswordIssue.tooCommon => l10n.passwordErrorTooCommon,
     PasswordIssue.compromised => l10n.passwordErrorCompromised,
+    PasswordIssue.unchanged => l10n.passwordErrorUnchanged,
     PasswordIssue.other => problem.detail ?? l10n.passwordErrorRejected,
   };
 }

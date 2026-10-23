@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/navigation_extensions.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/password_field.dart';
 import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/change_password_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/presentation/password_problem_text.dart';
 
 /// ST-6: change the password: the current one, and a new one typed twice.
 /// Saving goes back to the Account screen with a message.
@@ -19,8 +22,10 @@ class ChangePasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          ChangePasswordBloc(repository: context.read<AuthRepository>()),
+      create: (context) => ChangePasswordBloc(
+        repository: context.read<AuthRepository>(),
+        ticker: context.read<Ticker>(),
+      ),
       child: const _ChangePasswordView(),
     );
   }
@@ -74,12 +79,14 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
       },
       builder: (context, state) {
         final failure = switch (state.status) {
-          ChangePasswordStatus.notAvailable => FailureKind.notAvailable,
+          ChangePasswordStatus.unavailable => FailureKind.unavailable,
           ChangePasswordStatus.noConnection => FailureKind.noConnection,
           ChangePasswordStatus.failure => FailureKind.error,
           _ => null,
         };
         final isBusy = state.status == ChangePasswordStatus.saving;
+        final isWaiting = state.status == ChangePasswordStatus.waiting;
+        final problem = state.passwordProblem;
 
         return Scaffold(
           appBar: AppBar(title: Text(l10n.changePasswordTitle)),
@@ -111,6 +118,9 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
                         label: l10n.newPasswordLabel,
                         enabled: !isBusy,
                         textInputAction: TextInputAction.next,
+                        errorText: problem == null
+                            ? null
+                            : passwordProblemText(l10n, problem),
                         autofillHints: const [AutofillHints.newPassword],
                         onChanged: _edited,
                       ),
@@ -126,7 +136,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
                         autofillHints: const [AutofillHints.newPassword],
                         onChanged: _edited,
                         onSubmitted: (_) {
-                          if (state.isValid && !isBusy) _submit();
+                          if (state.isValid && !isBusy && !isWaiting) _submit();
                         },
                       ),
                       Align(
@@ -150,9 +160,16 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
           ),
           bottomNavigationBar: failure == null
               ? PinnedButtonBar(
-                  label: l10n.savePassword,
+                  // The server asked to wait: the button counts down.
+                  label: isWaiting
+                      ? l10n.tryAgainIn(
+                          time: formatCountdown(state.waitSecondsLeft),
+                        )
+                      : l10n.savePassword,
                   isBusy: isBusy,
-                  onPressed: state.isValid && !isBusy ? _submit : null,
+                  onPressed: state.isValid && !isBusy && !isWaiting
+                      ? _submit
+                      : null,
                 )
               : null,
         );

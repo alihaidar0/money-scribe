@@ -79,6 +79,21 @@ enum DemoPasswordReset {
   unavailable,
 }
 
+/// What the next attempt to change the password does. A wrong current
+/// password comes from [DemoSignIn.wrongPassword].
+enum DemoPasswordChange {
+  accepted,
+
+  /// The server refuses the new password (too short).
+  passwordRefused,
+
+  /// Too many wrong current passwords: the change is locked for a while.
+  locked,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
 
@@ -91,6 +106,7 @@ final class DemoSettings extends Equatable {
     this.registration = DemoRegistration.accepted,
     this.code = DemoCode.accepted,
     this.passwordReset = DemoPasswordReset.accepted,
+    this.passwordChange = DemoPasswordChange.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
   });
@@ -100,6 +116,7 @@ final class DemoSettings extends Equatable {
   final DemoRegistration registration;
   final DemoCode code;
   final DemoPasswordReset passwordReset;
+  final DemoPasswordChange passwordChange;
   final DemoSave save;
 
   /// How the fake account is paid: one payment or two a month.
@@ -111,6 +128,7 @@ final class DemoSettings extends Equatable {
     DemoRegistration? registration,
     DemoCode? code,
     DemoPasswordReset? passwordReset,
+    DemoPasswordChange? passwordChange,
     DemoSave? save,
     PaymentMode? paymentMode,
   }) {
@@ -120,6 +138,7 @@ final class DemoSettings extends Equatable {
       registration: registration ?? this.registration,
       code: code ?? this.code,
       passwordReset: passwordReset ?? this.passwordReset,
+      passwordChange: passwordChange ?? this.passwordChange,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
     );
@@ -132,6 +151,7 @@ final class DemoSettings extends Equatable {
     registration,
     code,
     passwordReset,
+    passwordChange,
     save,
     paymentMode,
   ];

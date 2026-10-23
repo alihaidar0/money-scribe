@@ -288,7 +288,7 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Write the leaked-password and bot-check sentences for the privacy policy and the store forms (wording in `backend-api.md`)
 - [x] Account endpoints (`alihaidar0/money-scribe-backend#40`): pin the contract and generate the client
 - [x] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
-- [ ] Change password on the server: the new tokens replace the stored ones
+- [x] Change password on the server: the new tokens replace the stored ones
 - [ ] Delete account on the server, and the deletion wording for the privacy policy and the store forms
 - [ ] Edit the name
 - [ ] Change email: new address, code, cancel

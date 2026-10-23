@@ -94,12 +94,30 @@ Exception mapPasswordResetConfirmFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Change the password: `400 invalid_password` (the current password is
+/// wrong, `attr` `current_password`: a `400`, so the session handling is not
+/// triggered), `400 password_unchanged` or another refused new password
+/// (`password_*`), `429 password_attempts_exceeded` (5 wrong current passwords
+/// lock this and the account deletion) or `throttled`.
+Exception mapChangePasswordFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    if (failure.hasCode('invalid_password')) {
+      return const WrongCredentialsException();
+    }
+    final problem = _passwordProblem(failure);
+    if (problem != null) return PasswordRejectedException(problem);
+    return const ServerException();
+  }
+  return mapCommonFailure(failure);
+}
+
 RateLimitReason _reason(String? code) {
   return switch (code) {
     'sign_in_locked' => RateLimitReason.signInLocked,
     'resend_too_soon' => RateLimitReason.resendTooSoon,
     'resend_limit_reached' => RateLimitReason.resendLimitReached,
     'code_attempts_exceeded' => RateLimitReason.codeAttemptsExceeded,
+    'password_attempts_exceeded' => RateLimitReason.passwordAttemptsExceeded,
     _ => RateLimitReason.throttled,
   };
 }
@@ -126,6 +144,7 @@ PasswordProblem? _passwordProblem(ApiFailure failure) {
     'password_too_similar' => const PasswordProblem(PasswordIssue.tooSimilar),
     'password_too_common' => const PasswordProblem(PasswordIssue.tooCommon),
     'password_compromised' => const PasswordProblem(PasswordIssue.compromised),
+    'password_unchanged' => const PasswordProblem(PasswordIssue.unchanged),
     // A reason this version does not know shows the server's English text.
     _ => PasswordProblem(PasswordIssue.other, detail: item.detail),
   };

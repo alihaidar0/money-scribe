@@ -1430,12 +1430,243 @@ void main() {
     });
   });
 
+  group('change password', () {
+    const path = '/api/v1/auth/password/change/';
+
+    Map<String, Object?> newPair() => {
+      'access_token': 'access-2',
+      'refresh_token': 'refresh-2',
+      'token_type': 'Bearer',
+      'expires_in': 600,
+    };
+
+    setUp(() async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+      await auth.restore();
+      routes[path] = (_) => jsonBody(200, newPair());
+    });
+
+    test(
+      'sends both passwords exactly as typed, with the access token',
+      () async {
+        await auth.changePassword(current: ' old pass ', next: '  new pass  ');
+
+        expect(bodyOf(path), {
+          'current_password': ' old pass ',
+          'password': '  new pass  ',
+        });
+        expect(lastRequest(path).headers['Authorization'], 'Bearer access-1');
+      },
+    );
+
+    test(
+      'the new pair replaces the stored one, and the person stays in',
+      () async {
+        await auth.changePassword(current: 'old', next: 'new');
+
+        expect(
+          await tokens.read(),
+          const SessionTokens(
+            accessToken: 'access-2',
+            refreshToken: 'refresh-2',
+          ),
+        );
+        expect(auth.isSignedIn, isTrue);
+      },
+    );
+
+    test('renews an access token that ran out, then sends it again', () async {
+      var expired = true;
+      routes[path] = (options) {
+        if (expired && options.headers['Authorization'] == 'Bearer access-1') {
+          return jsonBody(401, errorBody('token_expired'));
+        }
+        return jsonBody(200, {...newPair(), 'access_token': 'access-3'});
+      };
+      routes['/api/v1/auth/refresh/'] = (_) {
+        expired = false;
+        return jsonBody(200, newPair());
+      };
+
+      await auth.changePassword(current: 'old', next: 'new');
+
+      expect(
+        await tokens.read(),
+        const SessionTokens(accessToken: 'access-3', refreshToken: 'refresh-2'),
+      );
+      expect(server.requests.where((r) => r.path == path), hasLength(2));
+    });
+
+    test('a wrong current password is told, and the session goes on', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody(
+          'invalid_password',
+          type: 'validation_error',
+          attr: 'current_password',
+        ),
+      );
+
+      await expectLater(
+        auth.changePassword(current: 'wrong', next: 'new'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+
+      expect(auth.isSignedIn, isTrue);
+      expect(
+        await tokens.read(),
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+    });
+
+    test('a new password equal to the current one is refused', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody(
+          'password_unchanged',
+          type: 'validation_error',
+          attr: 'password',
+        ),
+      );
+
+      await expectLater(
+        auth.changePassword(current: 'same', next: 'same'),
+        throwsA(
+          isA<PasswordRejectedException>().having(
+            (e) => e.problem,
+            'problem',
+            const PasswordProblem(PasswordIssue.unchanged),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'a refused new password is worded from the code and the limit',
+      () async {
+        routes[path] = (_) => jsonBody(
+          400,
+          errorBody(
+            'password_too_short',
+            type: 'validation_error',
+            attr: 'password',
+            extra: {'min_length': 15},
+          ),
+        );
+
+        await expectLater(
+          auth.changePassword(current: 'old', next: 'short'),
+          throwsA(
+            isA<PasswordRejectedException>().having(
+              (e) => e.problem,
+              'problem',
+              const PasswordProblem(PasswordIssue.tooShort, limit: 15),
+            ),
+          ),
+        );
+        expect(auth.isSignedIn, isTrue);
+      },
+    );
+
+    test(
+      'five wrong passwords lock it, with the wait from the server',
+      () async {
+        routes[path] = (_) => jsonBody(
+          429,
+          errorBody('password_attempts_exceeded'),
+          {'retry-after': '900'},
+        );
+
+        await expectLater(
+          auth.changePassword(current: 'wrong', next: 'new'),
+          throwsA(
+            isA<RateLimitedException>()
+                .having(
+                  (e) => e.reason,
+                  'reason',
+                  RateLimitReason.passwordAttemptsExceeded,
+                )
+                .having(
+                  (e) => e.retryAfter,
+                  'retryAfter',
+                  const Duration(seconds: 900),
+                ),
+          ),
+        );
+        // Signing in is not affected by this lock.
+        expect(auth.signInLockRemaining, isNull);
+        expect(auth.isSignedIn, isTrue);
+      },
+    );
+
+    test('too many requests is a wait', () async {
+      routes[path] = (_) =>
+          jsonBody(429, errorBody('throttled'), {'retry-after': '17'});
+
+      await expectLater(
+        auth.changePassword(current: 'old', next: 'new'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.throttled,
+          ),
+        ),
+      );
+    });
+
+    test('a busy server is reported', () async {
+      routes[path] = (_) => jsonBody(
+        503,
+        errorBody('service_unavailable', type: 'server_error'),
+        {'retry-after': '5'},
+      );
+
+      await expectLater(
+        auth.changePassword(current: 'old', next: 'new'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+    });
+
+    test('a lost connection is reported', () async {
+      routes[path] = (options) => throw connectionLost(options);
+
+      await expectLater(
+        auth.changePassword(current: 'old', next: 'new'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+
+    test('an answer without a refresh token is a server failure', () async {
+      routes[path] = (_) => jsonBody(200, {
+        'access_token': 'access-2',
+        'token_type': 'Bearer',
+        'expires_in': 600,
+      });
+
+      await expectLater(
+        auth.changePassword(current: 'old', next: 'new'),
+        throwsA(isA<ServerException>()),
+      );
+    });
+
+    test('a 400 that names no password problem is a server failure', () async {
+      routes[path] = (_) => jsonBody(
+        400,
+        errorBody('invalid', type: 'validation_error', attr: 'other'),
+      );
+
+      await expectLater(
+        auth.changePassword(current: 'old', next: 'new'),
+        throwsA(isA<ServerException>()),
+      );
+    });
+  });
+
   group('what the server does not offer yet', () {
     test('says so, without calling the server', () async {
-      await expectLater(
-        auth.changePassword(current: 'a', next: 'b'),
-        throwsA(isA<FeatureNotAvailableException>()),
-      );
       await expectLater(
         auth.deleteAccount(password: 'a'),
         throwsA(isA<FeatureNotAvailableException>()),
