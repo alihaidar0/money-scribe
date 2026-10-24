@@ -60,6 +60,17 @@ Only the latest release (the newest tag on `main`) receives security fixes.
   wrong PINs, and when the account is deleted. Its limits: the Android fingerprint check
   accepts the biometrics the system classes as strong or weak, and it guards the screen of the app, not the
   session tokens, which the secure storage protects.
+- Signing in with the fingerprint (a switch in the Settings, apart from the lock) uses a key pair made in the
+  phone's secure hardware (the Android Keystore, or the iOS Secure Enclave). The private key never leaves the
+  hardware, needs a strong fingerprint for every use (never the device PIN) and stops working when a fingerprint
+  is added or removed. The server keeps only the public key and checks a signed, single-use challenge that lives
+  two minutes; on Android it also checks the key's attestation, so a phone that cannot vouch for its key (an
+  emulator, a rooted phone) cannot turn it on. Turning it on needs the account password. Next to the key the
+  phone keeps only the account's name and a masked email, in the secure storage. The key stays when the person
+  signs out, which is what it is for; it is deleted when the person turns the switch off, when another account
+  signs in on the phone, when the server no longer knows it (the password or the email was changed, it
+  was not used for 30 days, another phone removed it) and when the account is deleted. The app never stores the
+  password for this.
 - In the production Android build the window is secure (blank in the recent-apps list, no screenshots or
   screen recordings).
 - Waits (after wrong passwords or codes) come from the server and are counted

@@ -151,6 +151,12 @@ the app has no password rule of its own, and a password is sent exactly as typed
   turned on while the phone has no fingerprint set up. "Lock after" (Immediately, 30 seconds, 1 minute,
   5 minutes; Immediately by default, so the app asks every time it comes back from the background) is a row
   under them. The lock stays when the person signs out and belongs to their account.
+- Under the lock rows, "Sign in with fingerprint" is a switch of its own: the phone signs the person in again
+  after signing out, with no password. Turning it on asks for the password, then for a fingerprint, and the PIN
+  is never a way to sign in. It is off, with the reason under it, on a phone with no fingerprint set up or no
+  secure hardware. Turning it off removes the key from the server and the phone. Every refusal has its own
+  message (wrong password, fingerprint not recognised, the server refusing the key without a reason, the most
+  phones reached, a wait after too many wrong passwords).
 
 ### 3.8 States every screen needs
 

@@ -156,6 +156,12 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   }
 
   @override
+  Future<void> forgetLocal() async {
+    _account = null;
+    _enabledAt = null;
+  }
+
+  @override
   Future<List<DeviceKeyEntry>> keys() async {
     await _demo.simulateRequest();
     final enabledAt = _enabledAt;

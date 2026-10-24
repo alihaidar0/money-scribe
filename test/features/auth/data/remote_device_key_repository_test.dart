@@ -606,6 +606,24 @@ void main() {
     });
   });
 
+  group('an account that is gone', () {
+    setUp(() async {
+      await signIn();
+      routes['/api/v1/auth/device-keys/current/'] = (_) =>
+          jsonBody(201, _keyJson());
+      await keys.enable(password: 'p', prompt: 'Confirm');
+      server.requests.clear();
+    });
+
+    test('has its key and its label deleted, telling no one', () async {
+      await keys.forgetLocal();
+
+      expect(store.hasKey, isFalse);
+      expect(await keys.signInAccount(), isNull);
+      expect(server.requests, isEmpty);
+    });
+  });
+
   group('the phones', () {
     setUp(signIn);
 

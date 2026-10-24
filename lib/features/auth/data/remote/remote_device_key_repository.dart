@@ -310,6 +310,17 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
     );
   }
 
+  @override
+  Future<void> forgetLocal() async {
+    try {
+      await _forgetLocal();
+      // A key that cannot be deleted cannot be used without the server's
+      // public half either, which the server removed with the account.
+    } on Exception {
+      return;
+    }
+  }
+
   Future<void> _forgetLocal() async {
     await _store.delete();
     await _secure.delete(_accountKey);

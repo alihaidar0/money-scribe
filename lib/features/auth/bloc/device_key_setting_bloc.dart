@@ -33,6 +33,17 @@ class DeviceKeySettingBloc
       emit(
         state.copyWith(isLoaded: true, support: support, isEnabled: enabled),
       );
+      if (!enabled) {
+        return;
+      }
+
+      // The server may have dropped the key since (the password was changed,
+      // another phone removed it): ask it, and show what is true.
+      await _repository.sync();
+      final stillEnabled = await _repository.isEnabled();
+      if (stillEnabled != enabled) {
+        emit(state.copyWith(isEnabled: stillEnabled));
+      }
     } on Exception catch (error, stackTrace) {
       // The switch keeps what it showed.
       addError(error, stackTrace);

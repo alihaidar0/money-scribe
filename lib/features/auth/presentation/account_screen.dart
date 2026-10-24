@@ -12,6 +12,7 @@ import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/email_change_outcome.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_dialogs.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/edit_name_dialog.dart';
@@ -27,6 +28,7 @@ class AccountScreen extends StatelessWidget {
       create: (context) => AccountBloc(
         repository: context.read<AuthRepository>(),
         appLock: context.read<AppLockRepository>(),
+        deviceKeys: context.read<DeviceKeyRepository>(),
         ticker: context.read<Ticker>(),
       )..add(const AccountStarted()),
       child: const _AccountView(),
