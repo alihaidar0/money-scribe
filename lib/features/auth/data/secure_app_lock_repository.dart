@@ -28,6 +28,8 @@ class SecureAppLockRepository implements AppLockRepository {
   static const _failuresKey = 'app_lock.failures';
   static const _pausedUntilKey = 'app_lock.paused_until';
   static const _timeoutKey = 'app_lock.timeout';
+  static const _biometricsKey = 'app_lock.biometrics';
+  static const _accountKey = 'app_lock.account';
 
   /// The longest pause the policy can start.
   static const _longestPause = Duration(minutes: 15);
@@ -41,10 +43,23 @@ class SecureAppLockRepository implements AppLockRepository {
   Future<bool> isEnabled() async => (await _verifier()) != null;
 
   @override
-  Future<void> savePin(String pin) async {
+  Future<void> savePin(String pin, {String? accountId}) async {
     final verifier = await _hasher.create(pin);
     await _resetCounters();
     await _store.write(_pinKey, verifier.toJson());
+    if (accountId == null) {
+      await _store.delete(_accountKey);
+    } else {
+      await _store.write(_accountKey, accountId);
+    }
+  }
+
+  @override
+  Future<String?> boundAccount() => _store.read(_accountKey);
+
+  @override
+  Future<void> bindToAccount(String accountId) {
+    return _store.write(_accountKey, accountId);
   }
 
   @override
@@ -92,10 +107,47 @@ class SecureAppLockRepository implements AppLockRepository {
   }
 
   @override
-  Future<bool> canUseBiometrics() => _biometrics.isAvailable();
+  Future<bool> biometricsAvailable() => _biometrics.isAvailable();
+
+  @override
+  Future<bool> biometricsEnabled() async {
+    return await _store.read(_biometricsKey) == '1' && await isEnabled();
+  }
+
+  @override
+  Future<bool> confirmBiometrics({required String reason}) async {
+    if (!await _biometrics.isAvailable()) return false;
+    final matched = await _biometrics.authenticate(reason: reason);
+    return matched;
+  }
+
+  @override
+  Future<bool> enableBiometrics({required String reason}) async {
+    if (!await isEnabled() || !await _biometrics.isAvailable()) return false;
+    final matched = await _biometrics.authenticate(reason: reason);
+    // Turned on only by a fingerprint that matched.
+    if (matched) await _store.write(_biometricsKey, '1');
+    return matched;
+  }
+
+  @override
+  Future<bool> enableConfirmedBiometrics() async {
+    if (!await isEnabled() || !await _biometrics.isAvailable()) return false;
+    await _store.write(_biometricsKey, '1');
+    return true;
+  }
+
+  @override
+  Future<void> disableBiometrics() => _store.delete(_biometricsKey);
+
+  @override
+  Future<bool> canUseBiometrics() async {
+    return await biometricsEnabled() && await _biometrics.isAvailable();
+  }
 
   @override
   Future<bool> unlockWithBiometrics({required String reason}) async {
+    if (!await canUseBiometrics()) return false;
     final matched = await _biometrics.authenticate(reason: reason);
     if (matched) await _resetCounters();
     return matched;
@@ -120,6 +172,8 @@ class SecureAppLockRepository implements AppLockRepository {
     await _store.delete(_pinKey);
     await _resetCounters();
     await _store.delete(_timeoutKey);
+    await _store.delete(_biometricsKey);
+    await _store.delete(_accountKey);
   }
 
   Future<PinVerifier?> _verifier() async {

@@ -53,8 +53,11 @@ Only the latest release (the newest tag on `main`) receives security fixes.
   no pause for four wrong PINs, then 30 seconds, 1, 5, 15 and 15 minutes, and after ten in a row the PIN
   stops working, the person is signed out and only the account password opens the app again. The count
   is stored before a PIN is checked and survives a restart; a clock set back can shorten a pause but never
-  past 15 minutes. The fingerprint is checked by the system and the app never sees it. The lock turns off
-  and the PIN is forgotten whenever the person is signed out. Its limits: the Android fingerprint check
+  past 15 minutes. The fingerprint is checked by the system and the app never sees it; it is a switch of its own that
+  turns on only after a fingerprint matched, and the PIN stays the way in either way. The lock belongs to
+  the account that made it and stays when that person signs out, so signing back in finds it as it was; it is
+  forgotten when another account signs in on the same phone, when the person taps "Forgot PIN?", after ten
+  wrong PINs, and when the account is deleted. Its limits: the Android fingerprint check
   accepts the biometrics the system classes as strong or weak, and it guards the screen of the app, not the
   session tokens, which the secure storage protects.
 - In the production Android build the window is secure (blank in the recent-apps list, no screenshots or

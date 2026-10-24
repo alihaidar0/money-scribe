@@ -1878,6 +1878,30 @@
   "@lockTimeoutFiveMinutes": {
     "description": "Lock timeout: 5 minutes."
   },
+  "fingerprintSettingTitle": "Fingerprint",
+  "@fingerprintSettingTitle": {
+    "description": "Title of the switch in the Settings that lets the fingerprint open the locked app."
+  },
+  "fingerprintSettingHint": "Open the app with your fingerprint instead of the PIN.",
+  "@fingerprintSettingHint": {
+    "description": "Text under the fingerprint switch in the Settings."
+  },
+  "fingerprintSettingNeedsPin": "Open the app with your fingerprint. You will also set a PIN, which stays the other way in.",
+  "@fingerprintSettingNeedsPin": {
+    "description": "Text under the fingerprint switch while the PIN lock is off: turning it on also asks for a PIN."
+  },
+  "fingerprintSettingUnavailable": "Set up a fingerprint in your phone''s settings first.",
+  "@fingerprintSettingUnavailable": {
+    "description": "Text under the fingerprint switch when the device has no fingerprint set up, so the switch cannot be turned on."
+  },
+  "fingerprintEnableReason": "Confirm your fingerprint to turn it on",
+  "@fingerprintEnableReason": {
+    "description": "What the system fingerprint dialog says when the person turns the fingerprint switch on."
+  },
+  "fingerprintNotTurnedOn": "Fingerprint not recognised. It was not turned on.",
+  "@fingerprintNotTurnedOn": {
+    "description": "Message when the fingerprint asked for to turn the switch on did not match, so the switch stayed off."
+  },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
     "description": "Message when signing out failed."

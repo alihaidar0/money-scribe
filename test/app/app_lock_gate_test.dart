@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/app_lock_gate.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/lock_timeout.dart';
 
 import '../support/fake_clock.dart';
@@ -33,7 +34,9 @@ void main() {
       demo: DemoController(latency: Duration.zero),
       signedIn: true,
     );
-    repository = InstantAppLockRepository(pin: '1234');
+    // A stay of up to a minute is allowed, so the timeouts can be told apart.
+    repository = InstantAppLockRepository(pin: '1234')
+      ..currentTimeout = LockTimeout.oneMinute;
     gate = build();
   });
 
@@ -96,6 +99,16 @@ void main() {
 
       await leave(gate);
       returnAfter(const Duration(minutes: 5));
+      expect(gate.isLocked, isTrue);
+    });
+
+    test('a new lock asks every time the app comes back', () async {
+      repository.currentTimeout = LockTimeout.standard;
+
+      await leave(gate);
+      returnAfter(const Duration(seconds: 1));
+
+      expect(LockTimeout.standard, LockTimeout.immediately);
       expect(gate.isLocked, isTrue);
     });
 
@@ -175,36 +188,104 @@ void main() {
     });
   });
 
-  group('when the person is signed out', () {
-    test('the lock opens, and the PIN and its count are forgotten', () async {
+  group('when the person signs out', () {
+    test('the lock opens, and the PIN is kept for the next sign-in', () async {
+      repository.account = auth.accountId;
       final locked = build(locked: true);
 
       await auth.signOut();
       await pumpEventQueue();
 
       expect(locked.isLocked, isFalse);
-      expect(repository.pin, isNull);
-      expect(repository.disabledCount, greaterThan(0));
+      expect(repository.pin, '1234');
+      expect(repository.disabledCount, 0);
     });
 
-    test('so does a session the server ended', () async {
-      repository.pin = '1234';
+    test('nothing is locked while nobody is signed in', () async {
+      await auth.signOut();
+      await leave(gate);
 
-      // Deleting the account signs out too.
-      await auth.deleteAccount(password: 'secret');
+      returnAfter(const Duration(days: 1));
+
+      expect(gate.isLocked, isFalse);
+    });
+
+    test(
+      'signing in again as the same account finds the lock as it was',
+      () async {
+        repository.account = auth.accountId;
+        await auth.signOut();
+        await pumpEventQueue();
+
+        await auth.signIn(email: 'alex@example.com', password: 'secret');
+        await pumpEventQueue();
+
+        expect(repository.pin, '1234');
+        expect(repository.account, auth.accountId);
+        // Signing in is not locking: the person just proved who they are.
+        expect(gate.isLocked, isFalse);
+
+        await leave(gate);
+        returnAfter(const Duration(minutes: 2));
+        expect(gate.isLocked, isTrue);
+      },
+    );
+
+    test('another account signing in starts without the lock', () async {
+      repository.account = auth.accountId;
+      await auth.signOut();
+      await pumpEventQueue();
+
+      await auth.signIn(email: 'dana@example.com', password: 'secret');
       await pumpEventQueue();
 
       expect(repository.pin, isNull);
+      expect(repository.account, isNull);
     });
 
-    test('signing in does not lock the app', () async {
+    test(
+      'a new account registered on the phone starts without the lock',
+      () async {
+        repository.account = auth.accountId;
+        await auth.signOut();
+        await pumpEventQueue();
+
+        await auth.register(
+          name: 'Dana',
+          email: 'dana@example.com',
+          password: 'a-password-1',
+        );
+        await auth.verifyCode(CodePurpose.verifyEmail, '123456');
+        await pumpEventQueue();
+
+        expect(repository.pin, isNull);
+      },
+    );
+
+    test(
+      'a lock saved before it knew its account takes the first one',
+      () async {
+        repository.account = null;
+        await auth.signOut();
+        await pumpEventQueue();
+
+        await auth.signIn(email: 'alex@example.com', password: 'secret');
+        await pumpEventQueue();
+
+        expect(repository.pin, '1234');
+        expect(repository.account, auth.accountId);
+      },
+    );
+
+    test('with no lock turned on there is nothing to bind', () async {
+      repository.pin = null;
       await auth.signOut();
       await pumpEventQueue();
 
       await auth.signIn(email: 'alex@example.com', password: 'secret');
       await pumpEventQueue();
 
-      expect(gate.isLocked, isFalse);
+      expect(repository.account, isNull);
     });
   });
 }

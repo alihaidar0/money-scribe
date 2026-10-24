@@ -19,9 +19,11 @@ import 'package:money_scribe/features/auth/domain/lock_timeout.dart';
 /// the timeout) is read when the app leaves the screen, so coming back is
 /// decided at once and no frame of the app shows before the lock does.
 ///
-/// Signing out for any reason (the person, the server, too many wrong PINs)
-/// turns the lock off and forgets the PIN, so the next person to sign in
-/// starts clean.
+/// The lock belongs to the account that set it and stays when the person signs
+/// out, so signing back in finds it as it was. When another account signs in on
+/// the same phone, the lock of the first one is forgotten, so the second starts
+/// without it. Forgetting the PIN, too many wrong PINs and deleting the account
+/// forget it on their own.
 class AppLockGate with WidgetsBindingObserver implements AppLockSession {
   new({
     required this._auth,
@@ -107,19 +109,33 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
   }
 
   void _onSignedInChanged(bool isSignedIn) {
-    if (isSignedIn) return;
     _leftAt = null;
-    _enabled = false;
-    _setLocked(value: false);
-    // Nobody is signed in: the PIN and its count are forgotten.
-    unawaited(_forget());
+    if (!isSignedIn) {
+      // Nobody is signed in, so there is nothing to lock; the lock itself is
+      // kept for the next sign-in.
+      _enabled = false;
+      _setLocked(value: false);
+      return;
+    }
+    unawaited(_checkAccount());
   }
 
-  Future<void> _forget() async {
+  /// The person who just signed in is the one the lock belongs to, or the
+  /// lock goes. A lock saved before it knew its account takes this one.
+  Future<void> _checkAccount() async {
+    final account = _auth.accountId;
+    if (account == null) return;
     try {
-      await _repository.disable();
+      final bound = await _repository.boundAccount();
+      if (bound == null) {
+        if (await _repository.isEnabled()) {
+          await _repository.bindToAccount(account);
+        }
+      } else if (bound != account) {
+        await _repository.disable();
+      }
     } on Exception {
-      // Nothing more can be done here; the lock is off for a signed-out app.
+      // The lock stays as it was: it only guards the screen.
     }
   }
 

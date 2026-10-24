@@ -96,6 +96,9 @@ class PinBloc extends Bloc<PinEvent, PinState> {
     ForgotPinPressed event,
     Emitter<PinState> emit,
   ) async {
+    // The PIN is what was forgotten: the lock goes, and a new one is made after
+    // signing in again.
+    await _appLock.disable();
     await _auth.signOut();
     emit(state.copyWith(status: PinStatus.signedOut));
   }
@@ -116,7 +119,9 @@ class PinBloc extends Bloc<PinEvent, PinState> {
         case PinPaused(:final remaining):
           _pause(remaining, emit);
         case PinTooManyFailures():
-          // The PIN is no longer a way in: only the password opens the app.
+          // The PIN is no longer a way in: only the password opens the app, and
+          // the lock goes with it.
+          await _appLock.disable();
           await _auth.signOut();
           emit(state.copyWith(pin: '', status: PinStatus.tooManyFailures));
       }
@@ -170,7 +175,7 @@ class PinBloc extends Bloc<PinEvent, PinState> {
     }
     emit(state.copyWith(status: PinStatus.checking));
     try {
-      await _appLock.savePin(pin);
+      await _appLock.savePin(pin, accountId: _auth.accountId);
       emit(state.copyWith(status: PinStatus.accepted));
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);

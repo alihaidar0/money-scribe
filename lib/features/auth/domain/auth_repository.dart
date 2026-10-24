@@ -18,6 +18,12 @@ abstract interface class AuthRepository {
   /// Emits whenever [isSignedIn] changes.
   Stream<bool> get signedInChanges;
 
+  /// The id of the signed-in account, which stays the same when its name or
+  /// its email change. `null` when nobody is signed in, and for a session that
+  /// was restored until the profile has been read. The app lock uses it to know
+  /// that another account signed in.
+  String? get accountId;
+
   /// The address the last 6-digit code was sent to, if any.
   String? get pendingEmail;
 

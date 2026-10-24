@@ -49,6 +49,7 @@ class RemoteAuthRepository implements AuthRepository {
   final _signedInChanges = StreamController<bool>.broadcast(sync: true);
 
   bool _isSignedIn = false;
+  String? _accountId;
   String? _pendingEmail;
   DateTime? _resendAvailableAt;
   DateTime? _lockedUntil;
@@ -59,6 +60,9 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   bool get isSignedIn => _isSignedIn;
+
+  @override
+  String? get accountId => _accountId;
 
   @override
   Stream<bool> get signedInChanges => _signedInChanges.stream;
@@ -137,6 +141,7 @@ class RemoteAuthRepository implements AuthRepository {
         }
       },
     );
+    _accountId = answer.user.id;
     await _startSession(answer.accessToken, answer.refreshToken);
     _lockedUntil = null;
   }
@@ -196,6 +201,7 @@ class RemoteAuthRepository implements AuthRepository {
         }
       },
     );
+    _accountId = answer.user.id;
     await _startSession(answer.accessToken, answer.refreshToken);
     _pendingEmail = null;
     _resendAvailableAt = null;
@@ -285,6 +291,8 @@ class RemoteAuthRepository implements AuthRepository {
   @override
   Future<AccountProfile> profile() async {
     final profile = await _call(_authenticated.authProfile, mapCommonFailure);
+    // A restored session learns who it is here.
+    if (_isSignedIn) _accountId = profile.id;
     return AccountProfile(name: profile.name, email: profile.email);
   }
 
@@ -507,6 +515,7 @@ class RemoteAuthRepository implements AuthRepository {
   void _setSignedIn({required bool value}) {
     if (_isSignedIn == value) return;
     _isSignedIn = value;
+    if (!value) _accountId = null;
     _signedInChanges.add(value);
   }
 }

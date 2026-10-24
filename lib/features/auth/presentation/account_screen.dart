@@ -10,6 +10,7 @@ import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/email_change_outcome.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_dialogs.dart';
@@ -25,6 +26,7 @@ class AccountScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => AccountBloc(
         repository: context.read<AuthRepository>(),
+        appLock: context.read<AppLockRepository>(),
         ticker: context.read<Ticker>(),
       )..add(const AccountStarted()),
       child: const _AccountView(),

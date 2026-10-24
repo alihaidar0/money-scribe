@@ -3,19 +3,31 @@ import 'package:money_scribe/features/auth/domain/lock_timeout.dart';
 import 'package:money_scribe/features/auth/domain/pin_check.dart';
 
 /// An app lock that answers at once and keeps everything in memory: a
-/// fingerprint that is there and matches or not as the test says, a PIN that
-/// can be set, and answers to the next PIN checks the test can queue.
+/// fingerprint that is there, switched on and matching or not as the test
+/// says, a PIN that can be set, and answers to the next PIN checks the test
+/// can queue.
 class InstantAppLockRepository implements AppLockRepository {
   new({
-    this.biometricsAvailable = true,
+    this.deviceHasFingerprint = true,
+    this.biometricsOn = true,
     this.biometricsMatch = true,
     this.pin,
     this.pause,
+    this.account,
   });
 
-  bool biometricsAvailable;
+  /// The device has a fingerprint the person enrolled.
+  bool deviceHasFingerprint;
+
+  /// The person turned the fingerprint switch on.
+  bool biometricsOn;
+
+  /// The fingerprint matches when asked.
   bool biometricsMatch;
   String? pin;
+
+  /// The account the lock belongs to.
+  String? account;
 
   /// A pause after wrong PINs that is running now.
   Duration? pause;
@@ -32,7 +44,41 @@ class InstantAppLockRepository implements AppLockRepository {
   int disabledCount = 0;
 
   @override
-  Future<bool> canUseBiometrics() async => biometricsAvailable;
+  Future<bool> biometricsAvailable() async => deviceHasFingerprint;
+
+  @override
+  Future<bool> canUseBiometrics() async {
+    return deviceHasFingerprint && biometricsOn;
+  }
+
+  @override
+  Future<bool> biometricsEnabled() async => biometricsOn;
+
+  @override
+  Future<bool> confirmBiometrics({required String reason}) async {
+    biometricReasons.add(reason);
+    return deviceHasFingerprint && biometricsMatch;
+  }
+
+  @override
+  Future<bool> enableConfirmedBiometrics() async {
+    if (pin == null || !deviceHasFingerprint) return false;
+    biometricsOn = true;
+    return true;
+  }
+
+  @override
+  Future<bool> enableBiometrics({required String reason}) async {
+    biometricReasons.add(reason);
+    if (pin == null || !deviceHasFingerprint || !biometricsMatch) return false;
+    biometricsOn = true;
+    return true;
+  }
+
+  @override
+  Future<void> disableBiometrics() async {
+    biometricsOn = false;
+  }
 
   @override
   Future<bool> unlockWithBiometrics({required String reason}) async {
@@ -52,8 +98,17 @@ class InstantAppLockRepository implements AppLockRepository {
   Future<Duration?> pinPauseRemaining() async => pause;
 
   @override
-  Future<void> savePin(String pin) async {
+  Future<void> savePin(String pin, {String? accountId}) async {
     this.pin = pin;
+    account = accountId;
+  }
+
+  @override
+  Future<String?> boundAccount() async => account;
+
+  @override
+  Future<void> bindToAccount(String accountId) async {
+    account = accountId;
   }
 
   @override
@@ -71,5 +126,7 @@ class InstantAppLockRepository implements AppLockRepository {
   Future<void> disable() async {
     disabledCount++;
     pin = null;
+    account = null;
+    biometricsOn = false;
   }
 }

@@ -7,6 +7,7 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/lock_timeout.dart';
 import 'package:money_scribe/features/auth/domain/pin_check.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
+import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/pin_entry_screen.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
@@ -27,6 +28,9 @@ Future<InstantAppLockRepository> _pump(
   WidgetTester tester, {
   bool locked = false,
   bool biometrics = false,
+  bool fingerprintOn = true,
+  bool fingerprintMatches = true,
+  String? pin = '1234',
   LockTimeout timeout = LockTimeout.oneMinute,
   Size size = const Size(412, 915),
 }) async {
@@ -35,8 +39,10 @@ Future<InstantAppLockRepository> _pump(
     ..physicalSize = size;
   addTearDown(tester.view.reset);
   final appLock = InstantAppLockRepository(
-    pin: '1234',
-    biometricsAvailable: biometrics,
+    pin: pin,
+    deviceHasFingerprint: biometrics,
+    biometricsOn: fingerprintOn,
+    biometricsMatch: fingerprintMatches,
   )..currentTimeout = timeout;
   _clock = FixedClock(DateTime(2026, 10, 23, 9));
   _ticker = FakeTicker();
@@ -272,6 +278,278 @@ void main() {
 
       expect(appLock.currentTimeout, LockTimeout.fiveMinutes);
       expect(find.text('After 5 minutes'), findsOneWidget);
+    });
+  });
+
+  group('the fingerprint switch in the Settings', () {
+    const tall = Size(412, 1800);
+
+    Future<void> openSettings(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+    }
+
+    Finder fingerprintSwitch() =>
+        find.widgetWithText(SwitchListTile, 'Fingerprint');
+
+    testWidgets('is a switch of its own, under the App lock one', (
+      tester,
+    ) async {
+      await _pump(tester, biometrics: true, fingerprintOn: false, size: tall);
+
+      await openSettings(tester);
+
+      expect(find.widgetWithText(SwitchListTile, 'App lock'), findsOneWidget);
+      expect(fingerprintSwitch(), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isFalse);
+      expect(
+        find.text('Open the app with your fingerprint instead of the PIN.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('turns on after the fingerprint matched', (tester) async {
+      final appLock = await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        size: tall,
+      );
+      await openSettings(tester);
+
+      await tester.tap(fingerprintSwitch());
+      await tester.pumpAndSettle();
+
+      expect(appLock.biometricReasons, [
+        'Confirm your fingerprint to turn it on',
+      ]);
+      expect(appLock.biometricsOn, isTrue);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isTrue);
+    });
+
+    testWidgets('stays off when the fingerprint does not match, and says so', (
+      tester,
+    ) async {
+      final appLock = await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        fingerprintMatches: false,
+        size: tall,
+      );
+      await openSettings(tester);
+
+      await tester.tap(fingerprintSwitch());
+      await tester.pumpAndSettle();
+
+      expect(appLock.biometricsOn, isFalse);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isFalse);
+      expect(
+        find.text('Fingerprint not recognised. It was not turned on.'),
+        findsOneWidget,
+      );
+      // The PIN lock is as it was.
+      expect(appLock.pin, '1234');
+    });
+
+    testWidgets('turns off at once, with no fingerprint asked', (tester) async {
+      final appLock = await _pump(tester, biometrics: true, size: tall);
+      await openSettings(tester);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isTrue);
+
+      await tester.tap(fingerprintSwitch());
+      await tester.pumpAndSettle();
+
+      expect(appLock.biometricsOn, isFalse);
+      expect(appLock.biometricReasons, isEmpty);
+      expect(appLock.pin, '1234');
+    });
+
+    testWidgets('cannot be turned on by a phone with no fingerprint set up', (
+      tester,
+    ) async {
+      await _pump(tester, fingerprintOn: false, size: tall);
+
+      await openSettings(tester);
+
+      expect(
+        find.text("Set up a fingerprint in your phone's settings first."),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<SwitchListTile>(fingerprintSwitch()).onChanged,
+        isNull,
+      );
+    });
+
+    testWidgets('is there while the PIN lock is off, and says it adds a PIN', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        pin: null,
+        size: tall,
+      );
+
+      await openSettings(tester);
+
+      expect(fingerprintSwitch(), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(fingerprintSwitch()).onChanged,
+        isNotNull,
+      );
+      expect(
+        find.text(
+          'Open the app with your fingerprint. You will also set a PIN, '
+          'which stays the other way in.',
+        ),
+        findsOneWidget,
+      );
+      // No timeout row until there is a lock.
+      expect(find.text('Lock after'), findsNothing);
+    });
+
+    testWidgets(
+      'with no PIN: the fingerprint, then a new PIN, then both are on',
+      (tester) async {
+        final appLock = await _pump(
+          tester,
+          biometrics: true,
+          fingerprintOn: false,
+          pin: null,
+          size: tall,
+        );
+        await openSettings(tester);
+
+        await tester.tap(fingerprintSwitch());
+        await tester.pumpAndSettle();
+
+        expect(appLock.biometricReasons, [
+          'Confirm your fingerprint to turn it on',
+        ]);
+        expect(find.byType(CreatePinScreen), findsOneWidget);
+        // Nothing is on while the PIN is not made.
+        expect(appLock.pin, isNull);
+        expect(appLock.biometricsOn, isFalse);
+
+        await _typePin(tester, '4321');
+        await _typePin(tester, '4321');
+
+        expect(find.byType(CreatePinScreen), findsNothing);
+        expect(appLock.pin, '4321');
+        expect(appLock.biometricsOn, isTrue);
+        expect(
+          tester.widget<SwitchListTile>(fingerprintSwitch()).value,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<SwitchListTile>(
+                find.widgetWithText(SwitchListTile, 'App lock'),
+              )
+              .value,
+          isTrue,
+        );
+      },
+    );
+
+    testWidgets('leaving the Create a PIN screen turns nothing on', (
+      tester,
+    ) async {
+      final appLock = await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        pin: null,
+        size: tall,
+      );
+      await openSettings(tester);
+      await tester.tap(fingerprintSwitch());
+      await tester.pumpAndSettle();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreatePinScreen), findsNothing);
+      expect(appLock.pin, isNull);
+      expect(appLock.biometricsOn, isFalse);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isFalse);
+    });
+
+    testWidgets('a fingerprint that does not match asks for no PIN', (
+      tester,
+    ) async {
+      final appLock = await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        fingerprintMatches: false,
+        pin: null,
+        size: tall,
+      );
+      await openSettings(tester);
+
+      await tester.tap(fingerprintSwitch());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreatePinScreen), findsNothing);
+      expect(appLock.pin, isNull);
+      expect(
+        find.text('Fingerprint not recognised. It was not turned on.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the PIN lock can be turned on alone', (tester) async {
+      final appLock = await _pump(
+        tester,
+        biometrics: true,
+        fingerprintOn: false,
+        pin: null,
+        size: tall,
+      );
+      await openSettings(tester);
+
+      await tester.tap(find.widgetWithText(SwitchListTile, 'App lock'));
+      await tester.pumpAndSettle();
+      await _typePin(tester, '1357');
+      await _typePin(tester, '1357');
+
+      expect(appLock.pin, '1357');
+      expect(appLock.biometricsOn, isFalse);
+      expect(tester.widget<SwitchListTile>(fingerprintSwitch()).value, isFalse);
+    });
+
+    testWidgets('a fingerprint that is off is not asked for at the lock', (
+      tester,
+    ) async {
+      final appLock = await _pump(
+        tester,
+        locked: true,
+        biometrics: true,
+        fingerprintOn: false,
+      );
+
+      expect(appLock.biometricReasons, isEmpty);
+      expect(find.byTooltip('Unlock with fingerprint'), findsNothing);
+      expect(find.text('Enter your PIN to unlock.'), findsOneWidget);
+    });
+  });
+
+  group('signing out', () {
+    testWidgets('keeps the PIN and the fingerprint for the next sign-in', (
+      tester,
+    ) async {
+      final appLock = await _pump(tester, biometrics: true);
+
+      await _auth.signOut();
+      await tester.pumpAndSettle();
+
+      expect(appLock.pin, '1234');
+      expect(appLock.biometricsOn, isTrue);
+      expect(appLock.disabledCount, 0);
     });
   });
 }

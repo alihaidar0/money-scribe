@@ -69,7 +69,7 @@ Widget buildApp({
         challengeViewFactory ?? const DemoChallengeViewFactory(),
     appLockRepository:
         appLockRepository ??
-        InstantAppLockRepository(biometricsAvailable: false),
+        InstantAppLockRepository(deviceHasFingerprint: false),
     startsLocked: locked,
     payScheduleRepository: FakePayScheduleRepository(demo: demoController),
     defaultCurrencyRepository: FakeDefaultCurrencyRepository(

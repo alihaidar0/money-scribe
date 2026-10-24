@@ -192,26 +192,127 @@ void main() {
   });
 
   group('the fingerprint', () {
-    test('is offered when the device has one', () async {
-      expect(await lock.canUseBiometrics(), isTrue);
+    setUp(() => lock.savePin('1234', accountId: 'account-1'));
 
-      biometrics.available = false;
+    test(
+      'is off until the person turns it on, even when the device has one',
+      () async {
+        expect(await lock.biometricsAvailable(), isTrue);
+        expect(await lock.biometricsEnabled(), isFalse);
+        expect(await lock.canUseBiometrics(), isFalse);
+      },
+    );
+
+    test('turns on only after a fingerprint that matched', () async {
+      final turnedOn = await lock.enableBiometrics(reason: 'Confirm');
+
+      expect(turnedOn, isTrue);
+      expect(biometrics.reasons, ['Confirm']);
+      expect(await lock.biometricsEnabled(), isTrue);
+      expect(await lock.canUseBiometrics(), isTrue);
+    });
+
+    test('stays off when the fingerprint does not match', () async {
+      biometrics.matches = false;
+
+      final turnedOn = await lock.enableBiometrics(reason: 'Confirm');
+
+      expect(turnedOn, isFalse);
+      expect(await lock.biometricsEnabled(), isFalse);
       expect(await lock.canUseBiometrics(), isFalse);
     });
 
-    test('shows the reason, and a match starts the count again', () async {
-      await lock.savePin('1234');
+    test('can be confirmed without being turned on', () async {
+      final matched = await lock.confirmBiometrics(reason: 'Confirm');
+
+      expect(matched, isTrue);
+      expect(await lock.biometricsEnabled(), isFalse);
+    });
+
+    test('a confirmation needs the device to have a fingerprint', () async {
+      biometrics.available = false;
+
+      expect(await lock.confirmBiometrics(reason: 'Confirm'), isFalse);
+      expect(biometrics.reasons, isEmpty);
+    });
+
+    test('a fingerprint that did not match is not confirmed', () async {
+      biometrics.matches = false;
+
+      expect(await lock.confirmBiometrics(reason: 'Confirm'), isFalse);
+    });
+
+    test(
+      'a confirmed one turns on with the new PIN, without asking again',
+      () async {
+        await lock.confirmBiometrics(reason: 'Confirm');
+        biometrics.reasons.clear();
+
+        final turnedOn = await lock.enableConfirmedBiometrics();
+
+        expect(turnedOn, isTrue);
+        expect(biometrics.reasons, isEmpty);
+        expect(await lock.canUseBiometrics(), isTrue);
+      },
+    );
+
+    test('cannot be turned on without a PIN, confirmed or not', () async {
+      await lock.disable();
+
+      expect(await lock.enableConfirmedBiometrics(), isFalse);
+      expect(await lock.biometricsEnabled(), isFalse);
+    });
+
+    test('cannot be turned on with no fingerprint on the device', () async {
+      biometrics.available = false;
+
+      expect(await lock.enableBiometrics(reason: 'Confirm'), isFalse);
+      // The sensor is not even asked.
+      expect(biometrics.reasons, isEmpty);
+      expect(await lock.biometricsEnabled(), isFalse);
+    });
+
+    test('cannot be turned on with no PIN', () async {
+      await lock.disable();
+
+      expect(await lock.enableBiometrics(reason: 'Confirm'), isFalse);
+      expect(biometrics.reasons, isEmpty);
+    });
+
+    test(
+      'is not offered after the fingerprint was removed from the device',
+      () async {
+        await lock.enableBiometrics(reason: 'Confirm');
+        biometrics.available = false;
+
+        expect(await lock.biometricsEnabled(), isTrue);
+        expect(await lock.canUseBiometrics(), isFalse);
+      },
+    );
+
+    test('turned off, it opens nothing', () async {
+      await lock.enableBiometrics(reason: 'Confirm');
+      await lock.disableBiometrics();
+      biometrics.reasons.clear();
+
+      expect(await lock.canUseBiometrics(), isFalse);
+      expect(await lock.unlockWithBiometrics(reason: 'Unlock'), isFalse);
+      expect(biometrics.reasons, isEmpty);
+    });
+
+    test('opens the app when it matches, and starts the count again', () async {
+      await lock.enableBiometrics(reason: 'Confirm');
       await wrongPins(3);
 
       final matched = await lock.unlockWithBiometrics(reason: 'Unlock');
 
       expect(matched, isTrue);
-      expect(biometrics.reasons, ['Unlock']);
+      expect(biometrics.reasons.last, 'Unlock');
       expect(store.values.containsKey('app_lock.failures'), isFalse);
     });
 
     test('a fingerprint that does not match changes nothing', () async {
-      await lock.savePin('1234');
+      await lock.enableBiometrics(reason: 'Confirm');
       await wrongPins(3);
       biometrics.matches = false;
 
@@ -220,11 +321,56 @@ void main() {
       expect(matched, isFalse);
       expect(store.values['app_lock.failures'], '3');
     });
+
+    test('stays on after the app restarts', () async {
+      await lock.enableBiometrics(reason: 'Confirm');
+
+      expect(await build().canUseBiometrics(), isTrue);
+    });
+
+    test('a new PIN keeps the fingerprint switch as it was', () async {
+      await lock.enableBiometrics(reason: 'Confirm');
+
+      await lock.savePin('5678', accountId: 'account-1');
+
+      expect(await lock.biometricsEnabled(), isTrue);
+    });
+  });
+
+  group('the account the lock belongs to', () {
+    test('is kept with the PIN', () async {
+      await lock.savePin('1234', accountId: 'account-1');
+
+      expect(await lock.boundAccount(), 'account-1');
+      expect(await build().boundAccount(), 'account-1');
+    });
+
+    test('is unknown for a PIN saved without one', () async {
+      await lock.savePin('1234');
+
+      expect(await lock.boundAccount(), isNull);
+    });
+
+    test('can be bound later', () async {
+      await lock.savePin('1234');
+
+      await lock.bindToAccount('account-2');
+
+      expect(await lock.boundAccount(), 'account-2');
+    });
+
+    test('a new PIN takes the account that made it', () async {
+      await lock.savePin('1234', accountId: 'account-1');
+
+      await lock.savePin('5678', accountId: 'account-2');
+
+      expect(await lock.boundAccount(), 'account-2');
+    });
   });
 
   group('the timeout', () {
-    test('starts at one minute', () async {
-      expect(await lock.timeout(), LockTimeout.oneMinute);
+    test('starts with asking every time the app comes back', () async {
+      expect(await lock.timeout(), LockTimeout.immediately);
     });
 
     test('keeps what was chosen, also after a restart', () async {
@@ -241,18 +387,22 @@ void main() {
   });
 
   group('turning the lock off', () {
-    test('forgets the PIN, the count, the pause and the timeout', () async {
-      await lock.savePin('1234');
-      await lock.setTimeout(LockTimeout.immediately);
-      await wrongPins(5);
+    test(
+      'forgets everything: PIN, count, pause, timeout, fingerprint, account',
+      () async {
+        await lock.savePin('1234', accountId: 'account-1');
+        await lock.setTimeout(LockTimeout.immediately);
+        await lock.enableBiometrics(reason: 'Confirm');
+        await wrongPins(5);
 
-      await lock.disable();
+        await lock.disable();
 
-      expect(await lock.isEnabled(), isFalse);
-      expect(await lock.pinPauseRemaining(), isNull);
-      expect(await lock.timeout(), LockTimeout.standard);
-      expect(store.values, isEmpty);
-    });
+        expect(await lock.isEnabled(), isFalse);
+        expect(await lock.pinPauseRemaining(), isNull);
+        expect(await lock.timeout(), LockTimeout.standard);
+        expect(store.values, isEmpty);
+      },
+    );
 
     test('a new PIN starts with a clean count', () async {
       await lock.savePin('1234');

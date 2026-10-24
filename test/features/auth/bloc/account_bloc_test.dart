@@ -5,19 +5,28 @@ import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 
 import '../../../support/fake_ticker.dart';
+import '../../../support/instant_app_lock_repository.dart';
 
 void main() {
   late DemoController demo;
   late FakeAuthRepository repository;
   late FakeTicker ticker;
+  late InstantAppLockRepository appLock;
 
   setUp(() {
+    appLock = InstantAppLockRepository(pin: '1234');
     demo = DemoController(latency: Duration.zero);
     repository = FakeAuthRepository(demo: demo, signedIn: true);
     ticker = FakeTicker();
   });
 
-  AccountBloc build() => AccountBloc(repository: repository, ticker: ticker);
+  AccountBloc build() {
+    return AccountBloc(
+      repository: repository,
+      appLock: appLock,
+      ticker: ticker,
+    );
+  }
 
   Future<void> start(AccountBloc bloc) async {
     bloc.add(const AccountStarted());
@@ -96,6 +105,40 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.action, AccountAction.deleted);
         expect(repository.isSignedIn, isFalse);
+      },
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'the lock of the deleted account goes with it',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DeleteAccountConfirmed('secret'));
+      },
+      verify: (_) => expect(appLock.pin, isNull),
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'a wrong password keeps the lock too',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+        bloc.add(const DeleteAccountConfirmed('nope'));
+      },
+      verify: (_) => expect(appLock.pin, '1234'),
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'signing out keeps the lock',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const SignOutConfirmed());
+      },
+      verify: (_) {
+        expect(repository.isSignedIn, isFalse);
+        expect(appLock.pin, '1234');
       },
     );
 
