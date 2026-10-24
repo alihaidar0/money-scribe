@@ -36,6 +36,7 @@ import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart'
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/bloc/theme_bloc.dart';
+import 'package:money_scribe/features/settings/domain/account_locale_repository.dart';
 import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/default_currency_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
@@ -73,6 +74,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.environment,
     required this.challengeViewFactory,
     this.startsLocked = false,
+    this.accountLocaleRepository,
     this.serverActivity,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
@@ -106,6 +108,10 @@ class MoneyScribeApp extends StatefulWidget {
   /// How fast the server answers. `null` for a build with no server. Staging
   /// builds use it to tell the person the free server is starting.
   final ServerActivity? serverActivity;
+
+  /// Tells the server the language of the app when it changes; `null` in a
+  /// build with no server.
+  final AccountLocaleRepository? accountLocaleRepository;
 
   /// Shows the bot challenge the server may ask for at sign-in.
   final ChallengeViewFactory challengeViewFactory;
@@ -213,8 +219,10 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
         child: MultiBlocProvider(
           providers: [
             BlocProvider(
-              create: (_) =>
-                  LanguageBloc(repository: widget.languageRepository),
+              create: (_) => LanguageBloc(
+                repository: widget.languageRepository,
+                accountLocale: widget.accountLocaleRepository,
+              ),
             ),
             BlocProvider(
               create: (_) => ThemeBloc(repository: widget.themeRepository),

@@ -515,10 +515,14 @@ What the app does when the endpoints exist:
   is part of the contract. The app then deletes the local token and does not call remove, which would be
   refused.
 - Account deletion: delete the local token after the server confirms (already done).
-- Language: the account's `language` and `time_zone` change with the settings `PATCH` of the preferences
-  step, not with the profile update (`name` only) or the refresh request. The app calls it when the
-  person changes the app language, so notifications follow without a new sign-in. When it sends a changed
-  `time_zone` (the device zone differs from the last one sent) is decided with that step.
+- Language: the account's `language` and `time_zone` change with the settings `PATCH`, not with the
+  profile update (`name` only) or the refresh request. The app calls it when the person changes the app
+  language, so notifications follow without a new sign-in; it reads the settings first and sends only
+  when the language or the device time zone differs from what the server holds, and does nothing while
+  nobody is signed in. A failed call is not shown: the language goes again with the next settings change
+  and at the next sign-in. Every settings edit (pay schedule, default currency) carries the language and
+  the time zone too, with `If-Match` set to the `version` it read; a `412` is read again and sent once
+  more.
 
 **Installation ID instead of the FCM token (open).** `firebase_messaging` 17 deprecates `getToken` and
 `deleteToken` in favour of `register()` and `unregister()`, which give the Firebase installation ID (FID) as
