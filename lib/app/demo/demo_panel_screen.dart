@@ -105,6 +105,14 @@ class DemoPanelScreen extends StatelessWidget {
                     demo.settings.copyWith(passwordChange: value),
                   ),
                 ),
+                const _Heading('Fingerprint sign-in, next attempt'),
+                _Choice<DemoFingerprint>(
+                  values: DemoFingerprint.values,
+                  selected: settings.fingerprint,
+                  label: _fingerprintLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(fingerprint: value)),
+                ),
               ],
               const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
@@ -202,6 +210,18 @@ class DemoPanelScreen extends StatelessWidget {
         DemoPasswordChange.locked => 'Locked after wrong passwords (wait)',
         DemoPasswordChange.unavailable => 'Server busy (try again shortly)',
       };
+
+  static String _fingerprintLabel(DemoFingerprint value) => switch (value) {
+    DemoFingerprint.accepted => 'Accepted (wrong password: see Sign in)',
+    DemoFingerprint.notEnrolled => 'Phone has no fingerprint enrolled',
+    DemoFingerprint.unsupported => 'Phone cannot hold the key',
+    DemoFingerprint.notMatched => 'Fingerprint did not match',
+    DemoFingerprint.attestationRefused => 'Server refuses the key',
+    DemoFingerprint.limitReached => 'Five phones already (limit)',
+    DemoFingerprint.signInRefused => 'Sign-in refused (use the password)',
+    DemoFingerprint.locked => 'Locked after failures (wait)',
+    DemoFingerprint.unavailable => 'Server busy (try again shortly)',
+  };
 
   static String _codeLabel(DemoCode value) => switch (value) {
     DemoCode.accepted => 'Accepted (any code)',

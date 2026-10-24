@@ -16,6 +16,7 @@ import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 import '../../../support/fake_clock.dart';
+import '../../../support/fake_device_key_store.dart';
 import '../../../support/fake_http_adapter.dart';
 import '../../../support/in_memory_secure_value_store.dart';
 import '../../../support/manual_timers.dart';
@@ -95,6 +96,8 @@ void main() {
       device: _Device(),
       timeZone: zone,
       language: () => language,
+      deviceKeyStore: FakeDeviceKeyStore(),
+      secureStore: secure,
       clock: clock,
       httpAdapter: server,
     );
@@ -709,6 +712,8 @@ void main() {
         device: _Device(),
         timeZone: zone,
         language: () => language,
+        deviceKeyStore: FakeDeviceKeyStore(),
+        secureStore: secure,
         httpAdapter: server,
       ).repository;
 
@@ -792,6 +797,8 @@ void main() {
         device: _Device(),
         timeZone: zone,
         language: () => language,
+        deviceKeyStore: FakeDeviceKeyStore(),
+        secureStore: secure,
         httpAdapter: server,
       ).repository;
 
@@ -2251,6 +2258,8 @@ void main() {
         device: _Device(),
         timeZone: zone,
         language: () => language,
+        deviceKeyStore: FakeDeviceKeyStore(),
+        secureStore: secure,
         monitor: monitor,
         httpAdapter: slowServer,
       ).repository;
@@ -2274,6 +2283,6 @@ void main() {
       expect(path, startsWith('/api/v1/auth/'));
     }
     expect(authPublicPaths, isNot(contains('/api/v1/auth/profile/')));
-    expect(authPublicPaths, hasLength(9));
+    expect(authPublicPaths, hasLength(11));
   });
 }

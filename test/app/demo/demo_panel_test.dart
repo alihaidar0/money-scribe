@@ -55,7 +55,7 @@ void main() {
     }) async {
       tester.view
         ..devicePixelRatio = 1
-        ..physicalSize = const Size(412, 3200);
+        ..physicalSize = const Size(412, 3600);
       addTearDown(tester.view.reset);
       demo = DemoController(latency: Duration.zero);
       await tester.pumpWidget(

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/app_lock_gate.dart';
 import 'package:money_scribe/app/demo/demo_handle.dart';
+import 'package:money_scribe/app/device_key_sync.dart';
 import 'package:money_scribe/app/push_token_cleanup.dart';
 import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/app/router/stream_listenable.dart';
@@ -23,6 +24,7 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/connection/bloc/server_wake_bloc.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/connection/presentation/server_wake_banner.dart';
@@ -55,6 +57,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.pushMessagingRepository,
     required this.authRepository,
     required this.appLockRepository,
+    required this.deviceKeyRepository,
     required this.payScheduleRepository,
     required this.defaultCurrencyRepository,
     required this.csvTransferRepository,
@@ -82,6 +85,7 @@ class MoneyScribeApp extends StatefulWidget {
   final PushMessagingRepository pushMessagingRepository;
   final AuthRepository authRepository;
   final AppLockRepository appLockRepository;
+  final DeviceKeyRepository deviceKeyRepository;
   final PayScheduleRepository payScheduleRepository;
   final DefaultCurrencyRepository defaultCurrencyRepository;
   final CsvTransferRepository csvTransferRepository;
@@ -122,6 +126,7 @@ class MoneyScribeApp extends StatefulWidget {
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
   late final PushTokenCleanup _pushTokenCleanup;
   late final AppLockGate _lockGate;
+  late final DeviceKeySync _deviceKeySync;
 
   @override
   void initState() {
@@ -132,6 +137,12 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
     _pushTokenCleanup = PushTokenCleanup(
       auth: widget.authRepository,
       push: widget.pushMessagingRepository,
+    );
+    // A fingerprint key the server no longer knows is taken off the phone
+    // after each sign-in.
+    _deviceKeySync = DeviceKeySync(
+      auth: widget.authRepository,
+      deviceKeys: widget.deviceKeyRepository,
     );
     // The lock watches the app move to the background, and locks it after the
     // time the person chose.
@@ -162,6 +173,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
     _lockChanges.dispose();
     unawaited(_lockGate.dispose());
     unawaited(_pushTokenCleanup.dispose());
+    unawaited(_deviceKeySync.dispose());
     super.dispose();
   }
 
@@ -180,6 +192,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.textClipboard),
           RepositoryProvider.value(value: widget.authRepository),
           RepositoryProvider.value(value: widget.appLockRepository),
+          RepositoryProvider.value(value: widget.deviceKeyRepository),
           RepositoryProvider<AppLockSession>.value(value: _lockGate),
           RepositoryProvider.value(value: widget.payScheduleRepository),
           RepositoryProvider.value(value: widget.defaultCurrencyRepository),

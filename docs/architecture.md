@@ -184,6 +184,15 @@ contract, which only a feature's `data/` imports.
   edit or delete passes the version it read, and the Blocs answer a `StaleRecordException` by keeping
   what was typed (the month) or loading the list again (the items) and offering to apply the change
   once more.
+- **Fingerprint sign-in** (`features/auth`) keeps the private key in the phone's secure hardware, behind
+  `DeviceKeyStore` (the only place the `biometric_signature` plugin is used), and the public half on the
+  server. `RemoteDeviceKeyRepository` asks for a challenge, has the key sign it after a fingerprint, and
+  registers or uses the result; next to the key the phone keeps only the name and a masked email of the
+  account, in the secure storage, so the sign-in screen can say whom the fingerprint signs in. The calls
+  that need no session (challenge, sign-in) are in `authPublicPaths`. `DeviceKeySync` compares the key with
+  the server's list after every sign-in and lets go of one the server removed (a changed password, a
+  deleted account, a key that expired) or one that belongs to another account. The emulator has no secure
+  hardware, so a build without a server address uses `FakeDeviceKeyRepository`, driven by the demo panel.
 - **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
   one value. A value that cannot be read is no session. The Android manifest turns automatic backup
   off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.

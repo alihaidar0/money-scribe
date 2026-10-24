@@ -49,6 +49,42 @@ Exception mapSignInFailure(ApiFailure failure) {
   return mapCommonFailure(failure);
 }
 
+/// Register a fingerprint sign-in key: `400 invalid_password` (the password is
+/// wrong, `attr` `current_password`), `challenge_invalid`,
+/// `public_key_invalid`, `attestation_invalid` (no reason is given) or
+/// `platform_not_supported`, `409 device_key_limit_reached`, and the waits
+/// (`429 password_attempts_exceeded`, the lock shared with changing the
+/// password, or `throttled`).
+Exception mapDeviceKeyRegisterFailure(ApiFailure failure) {
+  if (failure.statusCode == 400) {
+    if (failure.hasCode('invalid_password')) {
+      return const WrongCredentialsException();
+    }
+    return FingerprintRefusedException(switch (failure.code) {
+      'challenge_invalid' => FingerprintRefusal.challenge,
+      'public_key_invalid' => FingerprintRefusal.publicKey,
+      'attestation_invalid' => FingerprintRefusal.attestation,
+      'platform_not_supported' => FingerprintRefusal.platform,
+      _ => FingerprintRefusal.challenge,
+    });
+  }
+  if (failure.statusCode == 409 &&
+      failure.hasCode('device_key_limit_reached')) {
+    return const FingerprintRefusedException(FingerprintRefusal.limitReached);
+  }
+  return mapCommonFailure(failure);
+}
+
+/// Sign in with the fingerprint key: every refusal is `401
+/// device_sign_in_failed`, whatever the reason; `429 sign_in_locked` (its own
+/// lock, apart from the password one) or `throttled`.
+Exception mapDeviceKeySignInFailure(ApiFailure failure) {
+  if (failure.statusCode == 401 || failure.statusCode == 400) {
+    return const FingerprintRefusedException(FingerprintRefusal.signInFailed);
+  }
+  return mapCommonFailure(failure);
+}
+
 /// Register: `400` field errors (the password codes, an email that is not an
 /// address, a name that is empty or too long), `429` for the same address
 /// again inside the wait.
