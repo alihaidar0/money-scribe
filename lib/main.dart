@@ -36,6 +36,8 @@ import 'package:money_scribe/features/overview/data/fake/fake_overview_repositor
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
+import 'package:money_scribe/features/salary/data/remote/remote_fixed_items_repository.dart';
+import 'package:money_scribe/features/salary/data/remote/remote_salary_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
@@ -116,8 +118,12 @@ Future<void> main() async {
       accountLocaleRepository: settings,
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
       overviewRepository: FakeOverviewRepository(demo: demo),
-      salaryRepository: FakeSalaryRepository(demo: demo),
-      fixedItemsRepository: FakeFixedItemsRepository(demo: demo),
+      salaryRepository: apiDio == null
+          ? FakeSalaryRepository(demo: demo)
+          : RemoteSalaryRepository.create(dio: apiDio),
+      fixedItemsRepository: apiDio == null
+          ? FakeFixedItemsRepository(demo: demo)
+          : RemoteFixedItemsRepository.create(dio: apiDio),
       transactionsRepository: transactions,
       accountsRepository: FakeAccountsRepository(
         demo: demo,

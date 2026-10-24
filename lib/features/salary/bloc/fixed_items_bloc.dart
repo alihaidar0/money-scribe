@@ -175,7 +175,7 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       final items = results[0]! as List<FixedItem>;
       final saved = results[1] as SalaryMonth?;
       final defaultMode = saved == null
-          ? (await _salary.defaults()).paymentMode
+          ? (await _salary.defaults(state.month)).paymentMode
           : null;
 
       final entry = saved == null ? null : SalaryHistoryEntry.tryFrom(saved);
