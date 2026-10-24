@@ -60,7 +60,7 @@ void main() {
 
     blocTest<AppLockBloc, AppLockState>(
       'a device with no fingerprint goes to the PIN and asks for none',
-      setUp: () => appLock.biometricsAvailable = false,
+      setUp: () => appLock.deviceHasFingerprint = false,
       build: build,
       act: (bloc) => bloc.add(const AppLockStarted(reason: 'Unlock')),
       expect: () => const [AppLockState()],
@@ -166,11 +166,15 @@ void main() {
     );
 
     blocTest<PinBloc, PinState>(
-      'Forgot PIN signs the person out',
+      'Forgot PIN signs the person out, and the forgotten PIN goes',
+      setUp: () => appLock.pin = '1234',
       build: unlockBloc,
       act: (bloc) => bloc.add(const ForgotPinPressed()),
       expect: () => const [PinState(status: PinStatus.signedOut)],
-      verify: (_) => expect(auth.isSignedIn, isFalse),
+      verify: (_) {
+        expect(auth.isSignedIn, isFalse);
+        expect(appLock.pin, isNull);
+      },
     );
   });
 
@@ -241,7 +245,10 @@ void main() {
 
     blocTest<PinBloc, PinState>(
       'too many wrong PINs sign the person out',
-      setUp: () => appLock.queuedChecks.add(const PinTooManyFailures()),
+      setUp: () {
+        appLock.pin = '1234';
+        appLock.queuedChecks.add(const PinTooManyFailures());
+      },
       build: unlockBloc,
       act: (bloc) async {
         typePin(bloc, '9999');
@@ -251,6 +258,8 @@ void main() {
         expect(bloc.state.status, PinStatus.tooManyFailures);
         expect(auth.isSignedIn, isFalse);
         expect(session.unlocks, 0);
+        // The lock goes with it: the person makes a new one after signing in.
+        expect(appLock.pin, isNull);
       },
     );
   });
@@ -274,6 +283,8 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.status, PinStatus.accepted);
         expect(appLock.pin, '4321');
+        // The lock belongs to the account that made it.
+        expect(appLock.account, auth.accountId);
         // Creating a PIN is not unlocking the app.
         expect(session.unlocks, 0);
       },

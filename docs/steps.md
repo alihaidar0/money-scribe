@@ -119,6 +119,11 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-11 App lock
 - [x] AUTH-12 PIN entry
 - [x] AUTH-13 Create a PIN
+- [x] Fingerprint switch of its own (on only after a match), and the PIN, the fingerprint and the timeout stay after sign-out for the same account
+- [x] The PIN lock can be on alone and the fingerprint needs it (turned on without a PIN it asks for the fingerprint, then a new PIN); a new lock asks every time the app comes back
+- [ ] Sign in with the fingerprint only, after it was turned on in the Settings: a device key pair with a signed challenge from the backend (design in `backend-api.md`)
+- [ ] Before adding the biometric signing plugin: check it (maintainer, licence, native code), then `flutter pub add` by the owner
+- [ ] Store forms for the fingerprint sign-in: Data safety (device identifier, no biometric data) and App Privacy answers, in the privacy policy text
 - [x] App lock for real: lock at start and after the time in the background, pauses after wrong PINs, sign-out after ten, "Lock after" in the Settings
 - [x] Sign in with an unverified email: opens Verify email, no code sent
 - [x] Register: passwords differ, and the countdown on the button while the server asks to wait

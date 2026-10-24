@@ -511,6 +511,54 @@ the push endpoints; moving the app to the FID then is one repository (`PushMessa
 The server cleanup is the guarantee and the app cleanup an extra: the app cannot always tell that a
 session ended, and the remove call needs a valid session.
 
+### Signing in with the fingerprint (planned)
+
+The person wants a "Sign in with fingerprint" button on the sign-in screen, after turning it on in the
+Settings; the PIN is never a way to sign in. Signing out ends the session on the server, so the phone needs a
+way to prove who it is that survives it. The app never stores the account password for this (it is sent and
+forgotten, see `SECURITY.md`), and a stored secret released by a screen check alone could be taken by a
+program that skips the check. The design is a **device key pair with a signed challenge**, the model that
+passkeys use, so the secret never leaves the phone and cannot be used without the fingerprint:
+
+- **Turning it on** needs the password and a matching fingerprint. The app creates a key pair in the phone's
+  hardware (Android Keystore or StrongBox, iOS Secure Enclave) that **needs a fingerprint for every use** and
+  **stops working when a fingerprint is added or removed**. Only the public key goes to the server, with the
+  `device_id` and, on Android, the key's attestation. The server keeps the public key for this account.
+- **Signing in** asks the server for a challenge (a random single-use value that expires in about two
+  minutes), signs it with the key after a fingerprint, and sends the signature. The server checks it against
+  the stored public key and answers the same token pair as a sign-in. The challenge and the signature carry a
+  fixed context text, so a signature made for this cannot be used for anything else.
+- **Which account.** The fingerprint does not identify an account; the key does. The server finds the account
+  from the public key, so the app sends no email. The app keeps only a display label next to the key (the name
+  and a masked address such as `a***@gmail.com`), shown on the sign-in screen as "Sign in as Alex with
+  fingerprint" with "Use another account" for the password. One account per phone to begin with: turning it
+  on for another account replaces the first, after a confirmation.
+- **Revocation.** The server removes the key when the password is changed or reset, the email is changed, the
+  account is deleted, the person turns the switch off, or it was not used for a period. Signing out of the
+  app does not remove it. A key the server no longer knows, or one the phone invalidated, sends the person back
+  to the password and removes the label.
+- **Limits.** Signing in with it has its own rate limit and lock, never accepts a password, never says why it
+  failed, and the challenge cannot be replayed.
+
+What this does not need from the person: a new password, or any biometric data leaving the phone. The app
+never sees the fingerprint; the system answers whether it matched, and the key is released only by that
+system check.
+
+**Store rules.** Google Play: the fingerprint dialog is the system `BiometricPrompt`, the only permission is
+`USE_BIOMETRIC` (a normal permission), no biometric data is accessed or collected, so the Data safety form
+says so; the device identifier and the public key sent to the server are declared as a device or other
+identifier used for the account and not shared. Apple: `NSFaceIDUsageDescription` states the purpose, no
+biometric data is collected, the same identifier is declared in the App Privacy answers, the password stays
+available as another way in (the guidelines ask for one), and deleting the account removes the key (guideline
+5.1.1). Passkeys themselves are the later step: they need a registered domain with the app linked to it
+(Android Digital Asset Links, iOS associated domains), which the project does not have yet.
+
+The app side waits for the endpoints in a pinned contract. The plugin proposed for it is
+`biometric_signature` (MIT, Keystore, StrongBox and Secure Enclave, per-use authentication, invalidation on
+enrolment change, Android attestation); it is checked and approved by the owner before it is added, and the
+fingerprint of the lock screen stays on `local_auth`. The request to the backend is in the pull request that
+added this section.
+
 ### Resetting a password
 
 Three calls, none of which signs anyone in: ask for a code (`password-reset/request/`, the same answer for

@@ -1,6 +1,7 @@
 /// How long the app may stay in the background before it asks for the PIN or
-/// the fingerprint again. Short enough that a phone put down is not an open
-/// app, long enough to read an email code in another app and come back.
+/// the fingerprint again. A new lock asks every time the app comes back from
+/// the background, so a phone put down is never an open app; the person can
+/// allow a short stay, for example to read an email code in another app.
 enum LockTimeout {
   /// As soon as the app leaves the screen.
   immediately(Duration.zero),
@@ -17,5 +18,5 @@ enum LockTimeout {
   final Duration duration;
 
   /// What a new lock starts with.
-  static const LockTimeout standard = oneMinute;
+  static const LockTimeout standard = immediately;
 }

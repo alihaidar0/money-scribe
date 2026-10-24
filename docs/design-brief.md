@@ -142,10 +142,15 @@ the app has no password rule of its own, and a password is sent exactly as typed
 - **Change password** asks for the current password and the new one twice.
 - **Delete account** is a dialog that asks for the password and says everything is deleted for good.
 - Optional 4-digit PIN lock for the app (section 3.7). The lock screen asks for the fingerprint at once when
-  the device has one and always offers the PIN; wrong PINs start pauses that count down ("Too many wrong
-  PINs. Try again in 0:30."), and after ten in a row the person signs in again with the password. "Lock
-  after" (Immediately, 30 seconds, 1 minute, 5 minutes; 1 minute by default) is a row under the App lock
-  switch.
+  it is turned on and the device has one, and always offers the PIN; wrong PINs start pauses that count down
+  ("Too many wrong PINs. Try again in 0:30."), and after ten in a row the person signs in again with the
+  password. The PIN lock can be on alone. The fingerprint has a switch of its own under the App lock one and
+  needs the PIN: turned on while the PIN lock is off, it asks for the fingerprint first and then opens the
+  Create a PIN screen, and both are on once the PIN is saved (leaving that screen turns nothing on). It
+  turns on only after a fingerprint matched and stays off (with a message) when it did not; it cannot be
+  turned on while the phone has no fingerprint set up. "Lock after" (Immediately, 30 seconds, 1 minute,
+  5 minutes; Immediately by default, so the app asks every time it comes back from the background) is a row
+  under them. The lock stays when the person signs out and belongs to their account.
 
 ### 3.8 States every screen needs
 

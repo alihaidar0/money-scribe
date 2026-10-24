@@ -92,8 +92,9 @@ void main() {
     testWidgets('the switches start off', (tester) async {
       await openSettings(tester);
 
+      // Remind on pay days, App lock and Fingerprint.
       final switches = tester.widgetList<Switch>(find.byType(Switch)).toList();
-      expect(switches, hasLength(2));
+      expect(switches, hasLength(3));
       expect(switches.every((widget) => !widget.value), isTrue);
     });
 

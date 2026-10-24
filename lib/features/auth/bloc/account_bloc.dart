@@ -7,6 +7,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/time/duration_seconds.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
@@ -16,8 +17,11 @@ part 'account_state.dart';
 /// The account of the signed-in person: who they are, signing out and deleting
 /// the account.
 class AccountBloc extends Bloc<AccountEvent, AccountState> {
-  new({required this._repository, required this._ticker})
-    : super(const AccountState()) {
+  new({
+    required this._repository,
+    required this._appLock,
+    required this._ticker,
+  }) : super(const AccountState()) {
     on<AccountStarted>(_onStarted, transformer: droppable());
     on<AccountRetried>(_onStarted, transformer: droppable());
     // A second press while the first is being answered is ignored.
@@ -32,6 +36,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   }
 
   final AuthRepository _repository;
+  final AppLockRepository _appLock;
   final Ticker _ticker;
   StreamSubscription<int>? _waitTimer;
 
@@ -75,6 +80,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     emit(state.copyWith(action: AccountAction.deleting));
     try {
       await _repository.deleteAccount(password: event.password);
+      // The account is gone, and so is the lock that guarded it.
+      await _forgetLock();
       emit(state.copyWith(action: AccountAction.deleted));
     } on WrongCredentialsException {
       emit(state.copyWith(action: AccountAction.wrongPassword));
@@ -97,6 +104,16 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(state.copyWith(action: AccountAction.deleteFailed));
+    }
+  }
+
+  Future<void> _forgetLock() async {
+    try {
+      await _appLock.disable();
+    } on Exception catch (error, stackTrace) {
+      // The account is deleted all the same; a leftover lock belongs to an
+      // account that no longer exists, and goes at the next sign-in.
+      addError(error, stackTrace);
     }
   }
 

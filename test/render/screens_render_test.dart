@@ -476,6 +476,14 @@ final _scenes = <_Scene>[
     AppRoutes.settings,
     signedIn: true,
     lockOn: true,
+    sensor: true,
+    size: _tallPhone,
+  ),
+  const _Scene(
+    'st-1c-settings-app-lock-off',
+    AppRoutes.settings,
+    signedIn: true,
+    sensor: true,
     size: _tallPhone,
   ),
   const _Scene('ov-1-overview', AppRoutes.overview, signedIn: true),
@@ -1686,7 +1694,7 @@ void main() {
                   signedIn: scene.signedIn,
                 ),
                 appLockRepository: InstantAppLockRepository(
-                  biometricsAvailable: scene.sensor,
+                  deviceHasFingerprint: scene.sensor,
                   biometricsMatch: false,
                   pause: scene.pinPause,
                   pin: scene.lockOn ? '1234' : null,

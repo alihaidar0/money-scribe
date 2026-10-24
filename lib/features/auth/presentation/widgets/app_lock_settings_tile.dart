@@ -33,28 +33,79 @@ class _AppLockTile extends StatelessWidget {
     final l10n = context.l10n;
     final state = context.watch<AppLockSettingBloc>().state;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SwitchListTile(
-          title: Text(l10n.appLockTitle),
-          secondary: const Icon(Icons.lock_outline),
-          value: state.isEnabled,
-          onChanged: state.isBusy
-              ? null
-              : (turnedOn) =>
-                    turnedOn ? _createPin(context) : _turnOff(context),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AppLockSettingBloc, AppLockSettingState>(
+          listenWhen: (previous, current) =>
+              !previous.biometricsRefused && current.biometricsRefused,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(l10n.fingerprintNotTurnedOn)),
+              );
+          },
         ),
-        if (state.isEnabled)
-          ListTile(
-            leading: const Icon(Icons.timer_outlined),
-            title: Text(l10n.lockTimeoutTitle),
-            subtitle: Text(_label(l10n, state.timeout)),
-            enabled: !state.isBusy,
-            onTap: () => _chooseTimeout(context, state.timeout),
-          ),
+        // The fingerprint matched but there is no PIN yet: the PIN is made now,
+        // and the fingerprint turns on with it.
+        BlocListener<AppLockSettingBloc, AppLockSettingState>(
+          listenWhen: (previous, current) =>
+              !previous.pinNeeded && current.pinNeeded,
+          listener: (context, state) => _createPinForFingerprint(context),
+        ),
       ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SwitchListTile(
+            title: Text(l10n.appLockTitle),
+            secondary: const Icon(Icons.lock_outline),
+            value: state.isEnabled,
+            onChanged: state.isBusy
+                ? null
+                : (turnedOn) =>
+                      turnedOn ? _createPin(context) : _turnOff(context),
+          ),
+          // The fingerprint has its own switch: it turns on only after a
+          // fingerprint matched, and it needs the PIN, which it asks for when
+          // there is none. The PIN can be on without it.
+          SwitchListTile(
+            title: Text(l10n.fingerprintSettingTitle),
+            subtitle: Text(
+              !state.biometricsAvailable
+                  ? l10n.fingerprintSettingUnavailable
+                  : state.isEnabled
+                  ? l10n.fingerprintSettingHint
+                  : l10n.fingerprintSettingNeedsPin,
+            ),
+            secondary: const Icon(Icons.fingerprint),
+            value: state.biometricsEnabled,
+            onChanged: state.isBusy || !state.biometricsAvailable
+                ? null
+                : (turnedOn) => context.read<AppLockSettingBloc>().add(
+                    BiometricsSwitched(
+                      turnOn: turnedOn,
+                      reason: l10n.fingerprintEnableReason,
+                    ),
+                  ),
+          ),
+          if (state.isEnabled)
+            ListTile(
+              leading: const Icon(Icons.timer_outlined),
+              title: Text(l10n.lockTimeoutTitle),
+              subtitle: Text(_label(l10n, state.timeout)),
+              enabled: !state.isBusy,
+              onTap: () => _chooseTimeout(context, state.timeout),
+            ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _createPinForFingerprint(BuildContext context) async {
+    final bloc = context.read<AppLockSettingBloc>();
+    await context.push<void>(AppRoutes.createPin);
+    bloc.add(const PinCreatedForFingerprint());
   }
 
   Future<void> _createPin(BuildContext context) async {

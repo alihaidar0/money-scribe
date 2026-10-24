@@ -196,7 +196,14 @@ through the system (`local_auth`). `AppLockGate` (`app/app_lock_gate.dart`) watc
 background (`hidden` and `paused`, never `inactive`) and locks it after the timeout; it implements the
 domain interface `AppLockSession`, so the screens only report "unlocked". The router sends every screen of a
 locked app to the lock screen with a `from` address and goes back to it (`AppRoutes.returnTo` accepts only
-a screen of the app). Signing out for any reason turns the lock off and forgets the PIN.
+a screen of the app). The lock belongs to the account that made it (`AppLockRepository.boundAccount`,
+`AuthRepository.accountId`) and stays when the person signs out. `AppLockGate` forgets it when another
+account signs in; "Forgot PIN?", ten wrong PINs and deleting the account forget it on their own. The
+fingerprint is a separate switch (`biometricsEnabled`) that turns on only after a fingerprint matched and
+needs the PIN: with no PIN it is confirmed first (`confirmBiometrics`), then the Create a PIN screen opens
+and the fingerprint turns on when the PIN is saved (`enableConfirmedBiometrics`). The lock screen asks for
+it only while it is on and the device still has one. A new lock asks every time the app comes back
+(`LockTimeout.standard` is `immediately`).
 
 Whenever the person is signed out (signing out, deleting the account, or a session the server ended),
 `PushTokenCleanup` (`app/push_token_cleanup.dart`) deletes the push token of the device through

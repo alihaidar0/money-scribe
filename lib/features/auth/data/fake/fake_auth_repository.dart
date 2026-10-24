@@ -49,6 +49,9 @@ class FakeAuthRepository implements AuthRepository {
     name: 'Alex',
     email: 'alex@example.com',
   );
+  // Who is signed in: a new account (registering, or signing in with another
+  // address) gets a new id, a change of name or email does not.
+  var _accountNumber = 1;
   int _wrongPasswords = 0;
   DateTime? _lockedUntil;
   int _wrongCodes = 0;
@@ -61,6 +64,9 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   bool get isSignedIn => _isSignedIn;
+
+  @override
+  String? get accountId => _isSignedIn ? 'demo-account-$_accountNumber' : null;
 
   @override
   Stream<bool> get signedInChanges => _signedInChanges.stream;
@@ -185,6 +191,7 @@ class FakeAuthRepository implements AuthRepository {
     _pendingEmail = email.trim();
     _resendAvailableAt = _now().add(resendWait);
     _profile = AccountProfile(name: name.trim(), email: email.trim());
+    _accountNumber++;
     _wrongCodes = 0;
     _codeDead = false;
     // A new account has no data yet: the app shows its first-launch screens.
@@ -388,6 +395,7 @@ class FakeAuthRepository implements AuthRepository {
     _requireRightPassword();
     _throwSharedPasswordFailures();
     // Nothing of the account is left: the next one starts empty.
+    _accountNumber++;
     _demo.update(_demo.settings.copyWith(scenario: DemoScenario.normal));
     _setSignedIn(value: false);
   }
@@ -457,6 +465,7 @@ class FakeAuthRepository implements AuthRepository {
       return;
     }
     final local = trimmed.split('@').first;
+    _accountNumber++;
     _profile = AccountProfile(
       name: local.isEmpty
           ? _profile.name
