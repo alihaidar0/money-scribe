@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  biometric_signature: 13.3.0
   bloc: 9.2.1
   bloc_concurrency: 0.3.0
   crypto: 3.0.7

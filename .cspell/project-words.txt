@@ -35,6 +35,7 @@ pubspec
 rhysd
 shellcheck
 sitekey
+spki
 sshkey
 storetype
 tolower
