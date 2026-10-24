@@ -40,3 +40,23 @@ final class ServiceUnavailableException extends DataException {
   @override
   String toString() => 'ServiceUnavailableException';
 }
+
+/// The record was changed since the app read it, on another device or from
+/// another screen (the answer `412 precondition_failed`). Nothing was changed:
+/// the app reads the record again and the person decides what to do.
+final class StaleRecordException extends DataException {
+  const new();
+
+  @override
+  String toString() => 'StaleRecordException';
+}
+
+/// The first try of the same action is still running on the server (the answer
+/// `409 idempotency_in_progress`). Nothing was done twice: trying again a
+/// moment later gets the answer of the first try.
+final class RequestInProgressException extends DataException {
+  const new();
+
+  @override
+  String toString() => 'RequestInProgressException';
+}

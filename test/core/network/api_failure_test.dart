@@ -145,6 +145,40 @@ void main() {
       );
     });
 
+    test('a 412 is a record that changed meanwhile', () {
+      expect(
+        ApiFailure.from(failedCall(412)).toDataException(),
+        isA<StaleRecordException>(),
+      );
+    });
+
+    test(
+      'a first try that is still running is told apart from other conflicts',
+      () {
+        final running = failedCall(409, {
+          'type': 'client_error',
+          'errors': [
+            {'code': 'idempotency_in_progress', 'detail': 'x'},
+          ],
+        });
+        final other = failedCall(409, {
+          'type': 'client_error',
+          'errors': [
+            {'code': 'account_has_transactions', 'detail': 'x'},
+          ],
+        });
+
+        expect(
+          ApiFailure.from(running).toDataException(),
+          isA<RequestInProgressException>(),
+        );
+        expect(
+          ApiFailure.from(other).toDataException(),
+          isA<ServerException>(),
+        );
+      },
+    );
+
     test('any other failed answer is a server failure', () {
       for (final status in [400, 401, 404, 429, 500, 502]) {
         expect(

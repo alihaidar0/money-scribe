@@ -274,6 +274,7 @@ To do:
 - [x] `API_BASE_URL` per environment: ignored `.env.staging` and `.env.production`, a variable of each GitHub environment, and the launch configurations
 - [ ] Local backend: debug-only cleartext exception for the emulator; CORS and allowed hosts on the backend
 - [x] Dio instance, token interceptor and one error parser in `core/network/`
+- [x] Write safety in the app: one `Idempotency-Key` per action kept until it has an answer, `If-Match` and `If-None-Match`, `412` and `409 idempotency_in_progress`, and reading every page of a list
 - [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
 - [x] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend

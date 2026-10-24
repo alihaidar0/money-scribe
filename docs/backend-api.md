@@ -137,6 +137,24 @@ The generated client is shared code, so it lives in `core/` and follows the laye
 - **Nothing sensitive in logs.** Do not add a Dio logging interceptor that prints requests or
   responses: they hold amounts and personal data.
 
+### Writing safely (agreed with the backend, 2026-10-25)
+
+These rules hold for every resource after the account:
+
+- Every `POST` that creates a record, and every bulk import, sends `Idempotency-Key` with a random UUID,
+  one for each action of the person. The same key with the same request answers the first answer again
+  (`Idempotent-Replayed: true`); a missing or malformed key is `400`; the same key with another request is
+  `422 idempotency_key_reused` (a bug of the app); a first try that is still running is
+  `409 idempotency_in_progress` (the app tries again shortly). Keys live 24 hours. Authentication calls
+  and `PUT`, `PATCH` and `DELETE` do not take the header.
+- Every editable record has a read-only `version`, also sent as the `ETag`. Every edit and delete sends
+  `If-Match` with the version it read; a stale one is `412 precondition_failed`, nothing changes, and the
+  app reads the record again. Without the header the last write wins. Creating a month with `PUT` sends
+  `If-None-Match: *` when the app did not find the month, so another device's month is never replaced.
+- Lists are cursor-paginated (up to 100 items a page): the app follows `next` to the end.
+- The header values are quoted strings (`"<uuid>"`, `"<version>"`), written in one place
+  (`WriteSafetyHeaders`). This is the first thing to check if the server answers `400` for a header.
+
 ### Tokens and errors
 
 - **Authentication** is the app's own code, outside the generated folder: `AuthInterceptor` in
