@@ -18,10 +18,16 @@ abstract interface class SalaryRepository {
   /// How a month that was not saved yet starts.
   Future<SalaryDefaults> defaults();
 
-  /// Saves [month], replacing the saved one of the same month.
-  Future<void> save(SalaryMonth month);
+  /// Saves [month] and returns it as the server holds it, under its new
+  /// version. A month with a [SalaryMonth.version] replaces the saved one only
+  /// if that is still the saved version; one without a version creates the
+  /// month only if none exists. Otherwise it throws a `StaleRecordException`
+  /// and changes nothing.
+  Future<SalaryMonth> save(SalaryMonth month);
 
-  /// Deletes the saved salary of [month], and with it the fixed items of the
-  /// month. Deleting a month that is not saved does nothing.
-  Future<void> delete(YearMonth month);
+  /// Deletes the saved salary of [month] if it is still at [version], and with
+  /// it the fixed items of the month. A month that is not saved is already
+  /// gone and does nothing; a month saved at another version throws a
+  /// `StaleRecordException`.
+  Future<void> delete(YearMonth month, {required int version});
 }

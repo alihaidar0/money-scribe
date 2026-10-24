@@ -106,19 +106,40 @@ void main() {
         october,
         rent.id,
         gym(rubles: 31000),
+        version: rent.version,
       );
 
       expect(saved.id, rent.id);
+      expect(saved.version, rent.version + 1);
       final items = await repository.items(october);
       expect(items[1].name, 'Gym');
       expect(items[1].amount, const Money(3100000, Currency.rub));
       expect(items, hasLength(3));
     });
 
-    test('an item that is gone is a server failure', () async {
+    test('an item that is gone is stale', () async {
       await expectLater(
-        repository.update(october, 'missing', gym()),
-        throwsA(isA<ServerException>()),
+        repository.update(october, 'missing', gym(), version: 1),
+        throwsA(isA<StaleRecordException>()),
+      );
+    });
+
+    test('an item changed since it was read is refused and kept', () async {
+      final rent = (await repository.items(october))[1];
+      await repository.update(october, rent.id, gym(), version: rent.version);
+
+      await expectLater(
+        repository.update(
+          october,
+          rent.id,
+          gym(rubles: 1),
+          version: rent.version,
+        ),
+        throwsA(isA<StaleRecordException>()),
+      );
+      expect(
+        (await repository.items(october))[1].amount,
+        const Money(120000, Currency.rub),
       );
     });
   });
@@ -127,7 +148,7 @@ void main() {
     test('removes the item', () async {
       final rent = (await repository.items(october))[1];
 
-      await repository.delete(october, rent.id);
+      await repository.delete(october, rent.id, version: rent.version);
 
       expect(names(await repository.items(october)), [
         'Scholarship',
@@ -136,14 +157,25 @@ void main() {
     });
 
     test('deleting what is gone does nothing', () async {
-      await repository.delete(october, 'missing');
+      await repository.delete(october, 'missing', version: 1);
 
+      expect(await repository.items(october), hasLength(3));
+    });
+
+    test('an item changed since it was read is refused and kept', () async {
+      final rent = (await repository.items(october))[1];
+      await repository.update(october, rent.id, gym(), version: rent.version);
+
+      await expectLater(
+        repository.delete(october, rent.id, version: rent.version),
+        throwsA(isA<StaleRecordException>()),
+      );
       expect(await repository.items(october), hasLength(3));
     });
 
     test('a month emptied by deleting stays empty', () async {
       for (final item in await repository.items(october)) {
-        await repository.delete(october, item.id);
+        await repository.delete(october, item.id, version: item.version);
       }
 
       expect(await repository.items(october), isEmpty);

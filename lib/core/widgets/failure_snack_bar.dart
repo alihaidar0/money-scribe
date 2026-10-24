@@ -6,14 +6,16 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 /// with an action would otherwise stay until it is dismissed.
 const failureSnackBarDuration = Duration(seconds: 8);
 
-/// Shows [message] in the error colours with a Retry button, for something the
-/// person did that the server did not accept. It replaces any snack bar that
-/// is showing and goes away by itself after [failureSnackBarDuration], also
-/// when the person has moved to another screen.
+/// Shows [message] in the error colours with a Retry button (or [actionLabel]
+/// in its place), for something the person did that the server did not accept.
+/// With no [onRetry] there is no button. It replaces any snack bar that is
+/// showing and goes away by itself after [failureSnackBarDuration], also when
+/// the person has moved to another screen.
 void showFailureSnackBar(
   BuildContext context,
   String message, {
-  required VoidCallback onRetry,
+  required VoidCallback? onRetry,
+  String? actionLabel,
 }) {
   final colors = Theme.of(context).colorScheme;
 
@@ -36,11 +38,13 @@ void showFailureSnackBar(
             ),
           ],
         ),
-        action: SnackBarAction(
-          label: context.l10n.retryAction,
-          textColor: colors.onErrorContainer,
-          onPressed: onRetry,
-        ),
+        action: onRetry == null
+            ? null
+            : SnackBarAction(
+                label: actionLabel ?? context.l10n.retryAction,
+                textColor: colors.onErrorContainer,
+                onPressed: onRetry,
+              ),
       ),
     );
 }

@@ -42,6 +42,33 @@ void main() {
       expect(form.secondPayDay, 3);
       expect(form.inputs, isNull);
     });
+
+    test('starts with the figures carried over, not the monthly ones', () {
+      final form = SalaryForm.empty(
+        SalaryDefaults(
+          baseSalary: _rub(10000000),
+          foodPerDay: _rub(50000),
+          workingHoursInMonth: 160,
+          taxRateBasisPoints: 1350,
+        ),
+      );
+
+      expect(form.baseSalary, '100000.00');
+      expect(form.foodPerDay, '500.00');
+      expect(form.workingHoursInMonth, '160');
+      expect(form.taxRate, '13.5');
+      expect(form.workingDaysInMonth, isEmpty);
+      expect(form.extraHours, isEmpty);
+      expect(form.inputs, isNull);
+    });
+
+    test('is saved without a version, and an edit keeps the one it has', () {
+      final form = _filled();
+      const october = YearMonth(2026, 10);
+
+      expect(form.toMonth(october)!.version, isNull);
+      expect(form.toMonth(october, version: 3)!.version, 3);
+    });
   });
 
   group('inputs', () {

@@ -79,7 +79,12 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     SalarySaveRequested event,
     Emitter<SalaryState> emit,
   ) async {
-    final month = state.canSave ? state.form.toMonth(state.month) : null;
+    final month = state.canSave
+        ? state.form.toMonth(
+            state.month,
+            version: state.isSaved ? state.version : null,
+          )
+        : null;
     if (month == null) return;
 
     // What is sent is what becomes the saved month, even if the person types
@@ -87,14 +92,17 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     final sent = state.form;
     emit(state.copyWith(saveStatus: SalarySaveStatus.saving));
     try {
-      await _repository.save(month);
+      final saved = await _repository.save(month);
       emit(
         state.copyWith(
           saveStatus: SalarySaveStatus.saved,
           isSaved: true,
+          version: saved.version,
           baseline: sent,
         ),
       );
+    } on StaleRecordException {
+      emit(state.copyWith(saveStatus: SalarySaveStatus.stale));
     } on NoConnectionException {
       emit(state.copyWith(saveStatus: SalarySaveStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -111,8 +119,10 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
 
     emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleting));
     try {
-      await _repository.delete(state.month);
+      await _repository.delete(state.month, version: state.version);
       emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleted));
+    } on StaleRecordException {
+      emit(state.copyWith(deleteStatus: SalaryDeleteStatus.stale));
     } on NoConnectionException {
       emit(state.copyWith(deleteStatus: SalaryDeleteStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -164,6 +174,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
           form: form,
           baseline: form,
           isSaved: saved != null,
+          version: saved?.version ?? 0,
           formVersion: state.formVersion + 1,
         ),
       );

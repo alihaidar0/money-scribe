@@ -92,7 +92,7 @@ void main() {
       build: build,
       act: (bloc) async {
         await repository.save(
-          SalarySeed.month(august, PaymentMode.onePayment)!,
+          SalarySeed.month(august, PaymentMode.onePayment)!.withVersion(null),
         );
         bloc.add(const SalaryCompareStarted());
       },
@@ -265,10 +265,8 @@ void main() {
       build: build,
       act: (bloc) async {
         await start(bloc);
-        await fixedItems.delete(
-          october,
-          bloc.state.fixedItems[october]!.first.id,
-        );
+        final item = bloc.state.fixedItems[october]!.first;
+        await fixedItems.delete(october, item.id, version: item.version);
         bloc.add(const SalaryCompareMonthChosen(CompareSide.left, october));
       },
       verify: (bloc) {

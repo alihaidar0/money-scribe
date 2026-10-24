@@ -79,18 +79,37 @@ class SalaryBody extends StatelessWidget {
           l10n.couldNotSave,
           onRetry: () => bloc.add(const SalarySaveRequested()),
         );
+      case SalarySaveStatus.stale:
+        showFailureSnackBar(
+          context,
+          l10n.monthChangedElsewhere,
+          actionLabel: l10n.loadLatestAction,
+          onRetry: () => bloc.add(const SalaryRetried()),
+        );
       case SalarySaveStatus.idle ||
           SalarySaveStatus.saving ||
           SalarySaveStatus.saved:
         break;
     }
 
-    if (state.deleteStatus == SalaryDeleteStatus.failed) {
-      showFailureSnackBar(
-        context,
-        l10n.couldNotDelete,
-        onRetry: () => bloc.add(const SalaryDeleteRequested()),
-      );
+    switch (state.deleteStatus) {
+      case SalaryDeleteStatus.failed:
+        showFailureSnackBar(
+          context,
+          l10n.couldNotDelete,
+          onRetry: () => bloc.add(const SalaryDeleteRequested()),
+        );
+      case SalaryDeleteStatus.stale:
+        showFailureSnackBar(
+          context,
+          l10n.monthChangedElsewhere,
+          actionLabel: l10n.loadLatestAction,
+          onRetry: () => bloc.add(const SalaryRetried()),
+        );
+      case SalaryDeleteStatus.idle ||
+          SalaryDeleteStatus.deleting ||
+          SalaryDeleteStatus.deleted:
+        break;
     }
   }
 }

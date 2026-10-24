@@ -49,12 +49,18 @@ final class SalaryForm extends Equatable {
     this.currency = Currency.rub,
   });
 
-  /// A new, empty month paid the way [defaults] say.
+  /// A new month that starts the way [defaults] say: paid the same way, with
+  /// the figures that rarely change from month to month already typed.
   new empty(SalaryDefaults defaults)
     : this(
+        baseSalary: defaults.baseSalary?.toDecimalString() ?? '',
+        foodPerDay: defaults.foodPerDay?.toDecimalString() ?? '',
+        workingHoursInMonth: '${defaults.workingHoursInMonth ?? ''}',
+        taxRate: DecimalText.formatHundredths(defaults.taxRateBasisPoints),
         paymentMode: defaults.paymentMode,
         firstPayDay: defaults.firstPayDay,
         secondPayDay: defaults.secondPayDay,
+        currency: defaults.currency,
       );
 
   /// The form of a saved month.
@@ -208,7 +214,9 @@ final class SalaryForm extends Equatable {
   }
 
   /// This form as the saved [month], or `null` while it cannot be calculated.
-  SalaryMonth? toMonth(YearMonth month) {
+  /// [version] is the version of the saved month this edits, `null` for a new
+  /// one.
+  SalaryMonth? toMonth(YearMonth month, {int? version}) {
     final inputs = this.inputs;
     if (inputs == null) return null;
     return SalaryMonth(
@@ -216,6 +224,7 @@ final class SalaryForm extends Equatable {
       inputs: inputs,
       firstPayDay: firstPayDay,
       secondPayDay: secondPayDay,
+      version: version,
     );
   }
 

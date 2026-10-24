@@ -179,7 +179,11 @@ contract, which only a feature's `data/` imports.
   person decide) and `409 idempotency_in_progress` becomes `RequestInProgressException` (try again a
   moment later). A list the server cuts into pages is read to the end with `readAllPages`, which stops a
   server that loops. The generated client takes the three headers as plain string parameters, written by
-  `WriteSafetyHeaders`.
+  `WriteSafetyHeaders`. The salary repositories already follow this: a `SalaryMonth` and a `FixedItem`
+  carry their `version`, saving a month without a version means "create it" and fails if it exists, an
+  edit or delete passes the version it read, and the Blocs answer a `StaleRecordException` by keeping
+  what was typed (the month) or loading the list again (the items) and offering to apply the change
+  once more.
 - **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
   one value. A value that cannot be read is no session. The Android manifest turns automatic backup
   off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.

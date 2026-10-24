@@ -24,6 +24,7 @@ final class FixedItemsState extends Equatable {
     this.currency = Currency.rub,
     this.part = FixedItemPart.first,
     this.failedAction,
+    this.staleAction,
   });
 
   final FixedItemsStatus status;
@@ -49,6 +50,11 @@ final class FixedItemsState extends Equatable {
   /// The last add, change or delete that the server did not accept, so the
   /// screen can offer to try it again. `null` once something else was done.
   final FixedItemsEvent? failedAction;
+
+  /// The last add, change or delete that was not done because the item was
+  /// changed on another device; the list was loaded again. `null` once
+  /// something else was done.
+  final FixedItemsEvent? staleAction;
 
   /// The items on screen: all of them, or those of [part].
   List<FixedItem> get shownItems {
@@ -76,6 +82,8 @@ final class FixedItemsState extends Equatable {
     FixedItemPart? part,
     FixedItemsEvent? failedAction,
     bool clearFailedAction = false,
+    FixedItemsEvent? staleAction,
+    bool clearStaleAction = false,
   }) {
     return FixedItemsState(
       month: month,
@@ -88,6 +96,7 @@ final class FixedItemsState extends Equatable {
       failedAction: clearFailedAction
           ? null
           : failedAction ?? this.failedAction,
+      staleAction: clearStaleAction ? null : staleAction ?? this.staleAction,
     );
   }
 
@@ -101,5 +110,6 @@ final class FixedItemsState extends Equatable {
     currency,
     part,
     failedAction,
+    staleAction,
   ];
 }

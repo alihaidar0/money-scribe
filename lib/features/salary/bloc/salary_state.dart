@@ -26,6 +26,11 @@ enum SalarySaveStatus {
 
   /// The month could not be saved; what was typed is kept.
   failed,
+
+  /// The month was changed on another device since it was loaded, so nothing
+  /// was saved; what was typed is kept and the person chooses whether to load
+  /// the latest version.
+  stale,
 }
 
 enum SalaryDeleteStatus {
@@ -40,6 +45,10 @@ enum SalaryDeleteStatus {
 
   /// The month could not be deleted; it is still saved.
   failed,
+
+  /// The month was changed on another device since it was loaded, so nothing
+  /// was deleted.
+  stale,
 }
 
 final class SalaryState extends Equatable {
@@ -49,6 +58,7 @@ final class SalaryState extends Equatable {
     this.form = const SalaryForm(),
     this.baseline = const SalaryForm(),
     this.isSaved = false,
+    this.version = 0,
     this.saveStatus = SalarySaveStatus.idle,
     this.deleteStatus = SalaryDeleteStatus.idle,
     this.formVersion = 0,
@@ -68,6 +78,9 @@ final class SalaryState extends Equatable {
 
   /// Whether this month exists on the server, as opposed to a new, empty one.
   final bool isSaved;
+
+  /// The server's version of the saved month; `0` while [isSaved] is false.
+  final int version;
 
   final SalarySaveStatus saveStatus;
 
@@ -105,6 +118,7 @@ final class SalaryState extends Equatable {
     SalaryForm? form,
     SalaryForm? baseline,
     bool? isSaved,
+    int? version,
     SalarySaveStatus? saveStatus,
     SalaryDeleteStatus? deleteStatus,
     int? formVersion,
@@ -115,6 +129,7 @@ final class SalaryState extends Equatable {
       form: form ?? this.form,
       baseline: baseline ?? this.baseline,
       isSaved: isSaved ?? this.isSaved,
+      version: version ?? this.version,
       saveStatus: saveStatus ?? this.saveStatus,
       deleteStatus: deleteStatus ?? this.deleteStatus,
       formVersion: formVersion ?? this.formVersion,
@@ -128,6 +143,7 @@ final class SalaryState extends Equatable {
     form,
     baseline,
     isSaved,
+    version,
     saveStatus,
     deleteStatus,
     formVersion,

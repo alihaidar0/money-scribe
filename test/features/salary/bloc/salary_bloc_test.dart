@@ -242,13 +242,19 @@ void main() {
     );
 
     blocTest<SalaryBloc, SalaryState>(
-      'starts a new month when none was saved',
+      'starts a new month when none was saved, with the figures of the last',
       build: build,
       act: (bloc) => bloc.add(const SalaryMonthSelected(YearMonth(2025, 10))),
       verify: (bloc) {
         expect(bloc.state.month, const YearMonth(2025, 10));
         expect(bloc.state.isSaved, isFalse);
-        expect(bloc.state.form.baseSalary, isEmpty);
+        expect(bloc.state.version, 0);
+        expect(bloc.state.form.baseSalary, '100000.00');
+        expect(bloc.state.form.foodPerDay, '500.00');
+        expect(bloc.state.form.workingHoursInMonth, '160');
+        // What changes every month is left for the person to type.
+        expect(bloc.state.form.workingDaysInMonth, isEmpty);
+        expect(bloc.state.form.extraHours, isEmpty);
         expect(bloc.state.result, isNull);
       },
     );
@@ -464,6 +470,90 @@ void main() {
     );
   });
 
+  group('a month changed on another device', () {
+    blocTest<SalaryBloc, SalaryState>(
+      'is not replaced by a save, and keeps what was typed',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        // Another device saves the month first.
+        await repository.save((await repository.month(october))!);
+        bloc
+          ..add(const SalaryFieldChanged(SalaryField.extraHours, '4'))
+          ..add(const SalarySaveRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.saveStatus, SalarySaveStatus.stale);
+        expect(bloc.state.form.extraHours, '4');
+        expect(bloc.state.isEdited, isTrue);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'is loaded again on request',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        await repository.save((await repository.month(october))!);
+        bloc
+          ..add(const SalaryFieldChanged(SalaryField.extraHours, '4'))
+          ..add(const SalarySaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == SalarySaveStatus.stale,
+        );
+        bloc.add(const SalaryRetried());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.version, 2);
+        expect(bloc.state.isEdited, isFalse);
+        expect(bloc.state.saveStatus, SalarySaveStatus.idle);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'is not deleted, and stays saved',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        await repository.save((await repository.month(october))!);
+        bloc.add(const SalaryDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.deleteStatus, SalaryDeleteStatus.stale);
+        expect(bloc.state.isSaved, isTrue);
+      },
+    );
+
+    blocTest<SalaryBloc, SalaryState>(
+      'can be saved twice in a row: the second save follows the first',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SalaryStarted());
+        await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+        bloc
+          ..add(const SalaryFieldChanged(SalaryField.extraHours, '4'))
+          ..add(const SalarySaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == SalarySaveStatus.saved,
+        );
+        bloc
+          ..add(const SalaryFieldChanged(SalaryField.extraHours, '5'))
+          ..add(const SalarySaveRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.saveStatus, SalarySaveStatus.saved);
+        expect(bloc.state.version, 3);
+      },
+    );
+  });
+
   group('SalaryStarted with a month', () {
     blocTest<SalaryBloc, SalaryState>(
       'loads that month instead of the month of today',
@@ -477,7 +567,9 @@ void main() {
     );
 
     blocTest<SalaryBloc, SalaryState>(
-      'starts an empty month for one that was not saved',
+      'starts an empty month for one that was not saved in an empty account',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.empty)),
       build: build,
       act: (bloc) => bloc.add(const SalaryStarted(month: YearMonth(2025, 1))),
       verify: (bloc) {

@@ -707,6 +707,22 @@
   "@couldNotSave": {
     "description": "Message shown when saving a form failed."
   },
+  "monthChangedElsewhere": "This month was changed on another device.",
+  "@monthChangedElsewhere": {
+    "description": "Message shown when saving or deleting a salary month was refused because another device changed it first."
+  },
+  "loadLatestAction": "Load latest",
+  "@loadLatestAction": {
+    "description": "Button of the message that a month was changed on another device: replaces what is on screen with the saved month."
+  },
+  "itemChangedElsewhere": "This item was changed on another device. The list is up to date.",
+  "@itemChangedElsewhere": {
+    "description": "Message shown when changing or deleting a fixed item was refused because another device changed it first."
+  },
+  "applyAgainAction": "Apply again",
+  "@applyAgainAction": {
+    "description": "Button of the message that a fixed item was changed on another device: does the change again on the latest version."
+  },
   "salaryHistoryTitle": "Salary history",
   "@salaryHistoryTitle": {
     "description": "Title of the screen that lists the saved months, and tooltip of the button that opens it."
