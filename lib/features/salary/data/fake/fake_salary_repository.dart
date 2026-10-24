@@ -41,7 +41,7 @@ class FakeSalaryRepository implements SalaryRepository {
   }
 
   @override
-  Future<SalaryDefaults> defaults() async {
+  Future<SalaryDefaults> defaults(YearMonth month) async {
     // The pay schedule is the account's (the demo panel stands in for the
     // setting); the figures come from the most recent saved month.
     final paymentMode = _demo.settings.paymentMode;

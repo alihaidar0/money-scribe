@@ -15,8 +15,9 @@ abstract interface class SalaryRepository {
   /// Every saved month, the newest first.
   Future<List<SalaryMonth>> savedMonths();
 
-  /// How a month that was not saved yet starts.
-  Future<SalaryDefaults> defaults();
+  /// How [month], which was not saved yet, starts: the figures of the most
+  /// recent other saved month, under the account's pay schedule.
+  Future<SalaryDefaults> defaults(YearMonth month);
 
   /// Saves [month] and returns it as the server holds it, under its new
   /// version. A month with a [SalaryMonth.version] replaces the saved one only

@@ -166,7 +166,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     try {
       final saved = await _repository.month(month);
       final form = saved == null
-          ? SalaryForm.empty(await _repository.defaults())
+          ? SalaryForm.empty(await _repository.defaults(month))
           : SalaryForm.fromMonth(saved);
       emit(
         state.copyWith(

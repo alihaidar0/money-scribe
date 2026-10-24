@@ -99,7 +99,7 @@ void main() {
       demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments));
 
       expect(
-        (await repository.defaults()).paymentMode,
+        (await repository.defaults(october)).paymentMode,
         PaymentMode.twoPayments,
       );
     });
@@ -107,7 +107,7 @@ void main() {
     test(
       'carry the figures that rarely change from the latest month',
       () async {
-        final defaults = await repository.defaults();
+        final defaults = await repository.defaults(october);
 
         expect(defaults.baseSalary, _rub(100000));
         expect(defaults.foodPerDay, _rub(500));
@@ -120,7 +120,7 @@ void main() {
     test('start from the app defaults when no month is saved', () async {
       demo.update(const DemoSettings(scenario: DemoScenario.empty));
 
-      expect(await repository.defaults(), const SalaryDefaults());
+      expect(await repository.defaults(october), const SalaryDefaults());
     });
   });
 

@@ -321,6 +321,6 @@ Salary step (agreed with the backend; the screens and the fake data follow the a
 - [ ] Fixed items need a saved month: "Save this month's salary first" instead of an empty list
 - [ ] "Copy from last month" for the fixed items of a month, with a confirmation when it already has some, and the refusals worded
 - [ ] Results, payments and balances as the server calculates them, next to the live preview
-- [ ] Remote salary and fixed items repositories (month, defaults, per-item calls, copy), when the contract is pinned
+- [x] Remote salary and fixed items repositories (month, history, defaults, per-item calls); the copy comes with "Copy from last month"
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
