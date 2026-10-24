@@ -7,6 +7,23 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/auth/domain/device_key.dart';
 
+/// A sign-in that is on until the server is asked, and then no longer known.
+class _DroppedByServer extends FakeDeviceKeyRepository {
+  new(DemoController demo)
+    : super(
+        demo: demo,
+        auth: FakeAuthRepository(demo: demo, signedIn: true),
+      );
+
+  bool _dropped = false;
+
+  @override
+  Future<bool> isEnabled() async => !_dropped;
+
+  @override
+  Future<void> sync() async => _dropped = true;
+}
+
 void main() {
   late DemoController demo;
   late FakeDeviceKeyRepository repository;
@@ -67,6 +84,16 @@ void main() {
         bloc.add(const DeviceKeySettingRefreshed());
       },
       verify: (bloc) => expect(bloc.state.isEnabled, isTrue),
+    );
+
+    blocTest<DeviceKeySettingBloc, DeviceKeySettingState>(
+      'turns off when the server no longer knows the key',
+      build: () => DeviceKeySettingBloc(repository: _DroppedByServer(demo)),
+      act: (bloc) => bloc.add(const DeviceKeySettingRefreshed()),
+      expect: () => [
+        isA<DeviceKeySettingState>().having((s) => s.isEnabled, 'on', true),
+        isA<DeviceKeySettingState>().having((s) => s.isEnabled, 'on', false),
+      ],
     );
 
     test('cannot be switched before the first answer', () {

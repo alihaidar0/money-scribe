@@ -10,6 +10,7 @@ import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 
 part 'account_event.dart';
 part 'account_state.dart';
@@ -20,6 +21,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   new({
     required this._repository,
     required this._appLock,
+    required this._deviceKeys,
     required this._ticker,
   }) : super(const AccountState()) {
     on<AccountStarted>(_onStarted, transformer: droppable());
@@ -37,6 +39,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
 
   final AuthRepository _repository;
   final AppLockRepository _appLock;
+  final DeviceKeyRepository _deviceKeys;
   final Ticker _ticker;
   StreamSubscription<int>? _waitTimer;
 
@@ -80,8 +83,10 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     emit(state.copyWith(action: AccountAction.deleting));
     try {
       await _repository.deleteAccount(password: event.password);
-      // The account is gone, and so is the lock that guarded it.
+      // The account is gone, and so are the lock that guarded it and the
+      // fingerprint key that signed it in (the server deleted its half).
       await _forgetLock();
+      await _deviceKeys.forgetLocal();
       emit(state.copyWith(action: AccountAction.deleted));
     } on WrongCredentialsException {
       emit(state.copyWith(action: AccountAction.wrongPassword));

@@ -42,6 +42,11 @@ abstract interface class DeviceKeyRepository {
   /// throws: a server that cannot be reached leaves things as they are.
   Future<void> sync();
 
+  /// Deletes the key of this phone and the account saved next to it, without
+  /// telling the server: for an account that is gone with all its keys (the
+  /// server deletes them with the account). Never throws.
+  Future<void> forgetLocal();
+
   /// The phones that can sign the account in, the newest first.
   Future<List<DeviceKeyEntry>> keys();
 

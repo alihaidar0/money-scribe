@@ -8,6 +8,7 @@ import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 
 /// The Account row of the Settings: the round initial, the name and the email
 /// of the signed-in person. It opens the Account screen.
@@ -20,6 +21,7 @@ class AccountSettingsTile extends StatelessWidget {
       create: (context) => AccountBloc(
         repository: context.read<AuthRepository>(),
         appLock: context.read<AppLockRepository>(),
+        deviceKeys: context.read<DeviceKeyRepository>(),
         ticker: context.read<Ticker>(),
       )..add(const AccountStarted()),
       child: const _AccountTile(),

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 
 import '../../../support/fake_ticker.dart';
 import '../../../support/instant_app_lock_repository.dart';
@@ -12,11 +13,13 @@ void main() {
   late FakeAuthRepository repository;
   late FakeTicker ticker;
   late InstantAppLockRepository appLock;
+  late FakeDeviceKeyRepository deviceKeys;
 
   setUp(() {
     appLock = InstantAppLockRepository(pin: '1234');
     demo = DemoController(latency: Duration.zero);
     repository = FakeAuthRepository(demo: demo, signedIn: true);
+    deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: repository);
     ticker = FakeTicker();
   });
 
@@ -24,6 +27,7 @@ void main() {
     return AccountBloc(
       repository: repository,
       appLock: appLock,
+      deviceKeys: deviceKeys,
       ticker: ticker,
     );
   }
@@ -116,6 +120,40 @@ void main() {
         bloc.add(const DeleteAccountConfirmed('secret'));
       },
       verify: (_) => expect(appLock.pin, isNull),
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'the fingerprint key of the deleted account goes with it',
+      build: build,
+      act: (bloc) async {
+        await deviceKeys.enable(password: 'p', prompt: 'Confirm');
+        await start(bloc);
+        bloc.add(const DeleteAccountConfirmed('secret'));
+      },
+      verify: (_) async => expect(await deviceKeys.signInAccount(), isNull),
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'a wrong password keeps the fingerprint key too',
+      build: build,
+      act: (bloc) async {
+        await deviceKeys.enable(password: 'p', prompt: 'Confirm');
+        await start(bloc);
+        demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+        bloc.add(const DeleteAccountConfirmed('nope'));
+      },
+      verify: (_) async => expect(await deviceKeys.signInAccount(), isNotNull),
+    );
+
+    blocTest<AccountBloc, AccountState>(
+      'signing out keeps the fingerprint key, which is what it is for',
+      build: build,
+      act: (bloc) async {
+        await deviceKeys.enable(password: 'p', prompt: 'Confirm');
+        await start(bloc);
+        bloc.add(const SignOutConfirmed());
+      },
+      verify: (_) async => expect(await deviceKeys.signInAccount(), isNotNull),
     );
 
     blocTest<AccountBloc, AccountState>(
