@@ -107,12 +107,18 @@ final class ApiFailure {
   }
 
   /// The failure as the exceptions every repository shares: no connection, a
-  /// busy server (`503`), or a server that failed.
+  /// busy server (`503`), a record that changed meanwhile (`412`), a first try
+  /// that is still running (`409 idempotency_in_progress`), or a server that
+  /// failed.
   DataException toDataException() {
     final cause = this.cause;
     if (cause != null) return cause;
     if (!reachedServer) return const NoConnectionException();
     if (statusCode == 503) return const ServiceUnavailableException();
+    if (statusCode == 412) return const StaleRecordException();
+    if (statusCode == 409 && hasCode('idempotency_in_progress')) {
+      return const RequestInProgressException();
+    }
     return const ServerException();
   }
 

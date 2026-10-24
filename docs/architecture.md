@@ -167,6 +167,19 @@ contract, which only a feature's `data/` imports.
   `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
   A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,
   `ServiceUnavailableException` (a `503`) and `ServerException`.
+- **Write safety** (`IdempotencyKeys`, `WriteSafetyHeaders`, `readAllPages`) is what the backend agreed
+  for every write after the account. A create that is repeated (a lost answer, a retry) must not make a
+  second record, so each action of the person (one press of Save, Add or Import) gets one random UUID
+  `Idempotency-Key`, kept in memory while the action has no answer and dropped once it has one: a
+  success or a refusal no retry changes. Two presses that each got an answer have two keys, so a second
+  purchase with the same amount is never taken for a repeat of the first. A key is also dropped after 20
+  hours, because the server forgets it after 24. Edits and deletes send `If-Match` with the `version` of
+  the record they read; a month created with `PUT` sends `If-None-Match: *` when the app did not find it.
+  `412` becomes `StaleRecordException` (the record changed on another device: read it again and let the
+  person decide) and `409 idempotency_in_progress` becomes `RequestInProgressException` (try again a
+  moment later). A list the server cuts into pages is read to the end with `readAllPages`, which stops a
+  server that loops. The generated client takes the three headers as plain string parameters, written by
+  `WriteSafetyHeaders`.
 - **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
   one value. A value that cannot be read is no session. The Android manifest turns automatic backup
   off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.
