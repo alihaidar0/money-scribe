@@ -122,7 +122,12 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Fingerprint switch of its own (on only after a match), and the PIN, the fingerprint and the timeout stay after sign-out for the same account
 - [x] The PIN lock can be on alone and the fingerprint needs it (turned on without a PIN it asks for the fingerprint, then a new PIN); a new lock asks every time the app comes back
 - [x] Pin the contract that has the device-key endpoints, and generate the client on a scratch copy first
-- [ ] Sign in with the fingerprint only, after it was turned on in the Settings: a device key pair with a signed challenge from the backend (design in `backend-api.md`)
+- [x] Fingerprint sign-in, the key and the server: `DeviceKeyStore` over the plugin, the remote and the fake repository, the key compared with the server after each sign-in
+- [x] Settings: "Sign in with fingerprint" switch (password, then a fingerprint; off removes the key from the server and the phone)
+- [ ] Sign-in screen: "Sign in as <name> with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
+- [ ] After a password change: offer to turn the fingerprint sign-in on again (the server removes every key)
+- [ ] "Phones with fingerprint sign-in": the list with the key of each phone, removing one
+- [ ] Check on a real phone against staging (an emulator is refused): turn on, sign out, sign in, a changed fingerprint, a changed password
 - [x] Before adding the biometric signing plugin: check it (maintainer, licence, native code), then `flutter pub add` by the owner
 - [ ] Store forms for the fingerprint sign-in: Data safety (device identifier, no biometric data) and App Privacy answers, in the privacy policy text
 - [x] App lock for real: lock at start and after the time in the background, pauses after wrong PINs, sign-out after ten, "Lock after" in the Settings

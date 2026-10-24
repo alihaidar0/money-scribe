@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/app/bloc/app_bloc_observer.dart';
@@ -18,12 +18,15 @@ import 'package:money_scribe/core/network/server_warm_up.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/storage/secure_value_store.dart';
+import 'package:money_scribe/features/auth/data/biometric_signature_device_key_store.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/auth/data/local_auth_biometric_authenticator.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth.dart';
 import 'package:money_scribe/features/auth/data/secure_app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/data/monitored_server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
@@ -60,7 +63,7 @@ Future<void> main() async {
   final transactions = FakeTransactionsRepository(demo: demo);
   final languageRepository = SharedPreferencesLanguageRepository(preferences);
   final monitor = SlowRequestMonitor();
-  final authRepository = await _createAuthRepository(
+  final (authRepository, deviceKeyRepository) = await _createAccount(
     apiConfig: apiConfig,
     demo: demo,
     languageRepository: languageRepository,
@@ -88,6 +91,7 @@ Future<void> main() async {
       pushMessagingRepository: pushMessaging,
       authRepository: authRepository,
       appLockRepository: appLock,
+      deviceKeyRepository: deviceKeyRepository,
       startsLocked: startsLocked,
       payScheduleRepository: FakePayScheduleRepository(demo: demo),
       defaultCurrencyRepository: FakeDefaultCurrencyRepository(demo: demo),
@@ -137,15 +141,18 @@ ChallengeViewFactory _createChallengeViewFactory(ApiConfig? apiConfig) {
   );
 }
 
-/// The account of this build: the real one when there is a server address,
-/// else the fake one.
-Future<AuthRepository> _createAuthRepository({
+/// The account of this build, and the fingerprint sign-in that goes with it:
+/// the real ones when there is a server address, else the fake ones.
+Future<(AuthRepository, DeviceKeyRepository)> _createAccount({
   required ApiConfig? apiConfig,
   required DemoController demo,
   required SharedPreferencesLanguageRepository languageRepository,
   required SlowRequestMonitor monitor,
 }) async {
-  if (apiConfig == null) return FakeAuthRepository(demo: demo);
+  if (apiConfig == null) {
+    final auth = FakeAuthRepository(demo: demo);
+    return (auth, FakeDeviceKeyRepository(demo: demo, auth: auth));
+  }
 
   const secureStore = PlatformSecureValueStore();
   final remote = RemoteAuth.create(
@@ -154,6 +161,11 @@ Future<AuthRepository> _createAuthRepository({
     device: PlatformDeviceInfoSource(secureStore),
     timeZone: const PlatformTimeZoneSource(),
     monitor: monitor,
+    secureStore: secureStore,
+    deviceKeyStore: BiometricSignatureDeviceKeyStore(
+      // Only Android can vouch for a key with an attestation.
+      attestsKeys: defaultTargetPlatform == TargetPlatform.android,
+    ),
     language: () {
       // The server knows English and Arabic; any other language is English.
       final locale =
@@ -166,5 +178,5 @@ Future<AuthRepository> _createAuthRepository({
   // app opens on the right screen. The server is asked in the background.
   await remote.repository.restore();
   unawaited(remote.repository.validateSession());
-  return remote.repository;
+  return (remote.repository, remote.deviceKeys);
 }

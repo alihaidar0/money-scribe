@@ -207,3 +207,67 @@ final class EmailChangeRejectedException extends AuthException {
   @override
   String toString() => 'EmailChangeRejectedException($issue)';
 }
+
+/// Why the fingerprint sign-in could not be turned on or used. These are
+/// answers the person can act on; a lost connection is a `DataException`.
+enum FingerprintRefusal {
+  /// The phone's key could not be vouched for (an emulator, a rooted phone, an
+  /// unlocked bootloader, a build the server does not know). The server gives
+  /// no reason, on purpose.
+  attestation,
+
+  /// This kind of session cannot hold a key (the web).
+  platform,
+
+  /// The challenge ran out (it lives two minutes) or the proof was wrong: ask
+  /// again.
+  challenge,
+
+  /// The key was not a key the server can use.
+  publicKey,
+
+  /// The account already has five phones with fingerprint sign-in.
+  limitReached,
+
+  /// Signing in with the fingerprint was refused, for any reason: the key is
+  /// unknown or expired, or the challenge ran out. The password is the way in.
+  signInFailed,
+}
+
+/// The server refused the device key: [reason] says why.
+final class FingerprintRefusedException extends AuthException {
+  const new(this.reason);
+
+  final FingerprintRefusal reason;
+
+  @override
+  String toString() => 'FingerprintRefusedException($reason)';
+}
+
+/// The person cancelled the fingerprint check, or it did not match. Nothing
+/// is said to them: they can simply try again.
+final class FingerprintCancelledException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'FingerprintCancelledException';
+}
+
+/// The phone cannot check a fingerprint now: none is enrolled, the sensor is
+/// locked after too many tries, or the phone has no secure hardware.
+final class FingerprintUnavailableException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'FingerprintUnavailableException';
+}
+
+/// The key stopped working because a fingerprint was added or removed on the
+/// phone, which is what the key is built to do. The key is gone from the
+/// phone: the person turns the sign-in on again with the password.
+final class FingerprintKeyInvalidatedException extends AuthException {
+  const new();
+
+  @override
+  String toString() => 'FingerprintKeyInvalidatedException';
+}

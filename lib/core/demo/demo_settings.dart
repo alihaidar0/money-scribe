@@ -95,6 +95,39 @@ enum DemoPasswordChange {
   unavailable,
 }
 
+/// What the next fingerprint sign-in action does: turning it on, or signing
+/// in with it. The wrong password of turning it on comes from
+/// [DemoSignIn.wrongPassword].
+enum DemoFingerprint {
+  accepted,
+
+  /// The phone has no fingerprint enrolled.
+  notEnrolled,
+
+  /// The phone has no secure hardware for the key.
+  unsupported,
+
+  /// The fingerprint did not match, or the check was cancelled.
+  notMatched,
+
+  /// The server refuses the key (an emulator, a rooted phone): turning it on
+  /// fails with no reason.
+  attestationRefused,
+
+  /// The account already has five phones with fingerprint sign-in.
+  limitReached,
+
+  /// The server refuses the fingerprint sign-in (the key expired or was
+  /// removed): the password is the way in.
+  signInRefused,
+
+  /// Too many fingerprint sign-ins failed: it is locked for a while.
+  locked,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
 
@@ -108,6 +141,7 @@ final class DemoSettings extends Equatable {
     this.code = DemoCode.accepted,
     this.passwordReset = DemoPasswordReset.accepted,
     this.passwordChange = DemoPasswordChange.accepted,
+    this.fingerprint = DemoFingerprint.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
   });
@@ -118,6 +152,7 @@ final class DemoSettings extends Equatable {
   final DemoCode code;
   final DemoPasswordReset passwordReset;
   final DemoPasswordChange passwordChange;
+  final DemoFingerprint fingerprint;
   final DemoSave save;
 
   /// How the fake account is paid: one payment or two a month.
@@ -130,6 +165,7 @@ final class DemoSettings extends Equatable {
     DemoCode? code,
     DemoPasswordReset? passwordReset,
     DemoPasswordChange? passwordChange,
+    DemoFingerprint? fingerprint,
     DemoSave? save,
     PaymentMode? paymentMode,
   }) {
@@ -140,6 +176,7 @@ final class DemoSettings extends Equatable {
       code: code ?? this.code,
       passwordReset: passwordReset ?? this.passwordReset,
       passwordChange: passwordChange ?? this.passwordChange,
+      fingerprint: fingerprint ?? this.fingerprint,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
     );
@@ -153,6 +190,7 @@ final class DemoSettings extends Equatable {
     code,
     passwordReset,
     passwordChange,
+    fingerprint,
     save,
     paymentMode,
   ];

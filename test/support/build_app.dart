@@ -7,8 +7,10 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
@@ -47,6 +49,7 @@ Widget buildApp({
   TextClipboard? clipboard,
   AuthRepository? authRepository,
   AppLockRepository? appLockRepository,
+  DeviceKeyRepository? deviceKeyRepository,
   DemoController? demo,
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
@@ -60,15 +63,25 @@ Widget buildApp({
 }) {
   final demoController = demo ?? DemoController(latency: Duration.zero);
   final transactions = FakeTransactionsRepository(demo: demoController);
+  final account =
+      authRepository ??
+      FakeAuthRepository(demo: demoController, signedIn: signedIn);
 
   return MoneyScribeApp(
     languageRepository: languageRepository ?? FakeLanguageRepository(),
     themeRepository: themeRepository ?? FakeThemeRepository(),
     pushMessagingRepository:
         pushMessaging ?? const UnavailablePushMessagingRepository(),
-    authRepository:
-        authRepository ??
-        FakeAuthRepository(demo: demoController, signedIn: signedIn),
+    authRepository: account,
+    deviceKeyRepository:
+        deviceKeyRepository ??
+        FakeDeviceKeyRepository(
+          demo: demoController,
+          // A test that brings its own account has no fake to follow.
+          auth: account is FakeAuthRepository
+              ? account
+              : FakeAuthRepository(demo: demoController),
+        ),
     challengeViewFactory:
         challengeViewFactory ?? const DemoChallengeViewFactory(),
     appLockRepository:

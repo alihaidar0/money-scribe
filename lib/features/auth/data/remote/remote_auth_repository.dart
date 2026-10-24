@@ -9,7 +9,9 @@ import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/features/auth/data/remote/device_request.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth_errors.dart';
+import 'package:money_scribe/features/auth/data/remote/remote_call.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
@@ -141,6 +143,14 @@ class RemoteAuthRepository implements AuthRepository {
         }
       },
     );
+    _accountId = answer.user.id;
+    await _startSession(answer.accessToken, answer.refreshToken);
+    _lockedUntil = null;
+  }
+
+  /// Starts the session of a sign-in made with the fingerprint key (see
+  /// `RemoteDeviceKeyRepository`): the same session a password sign-in starts.
+  Future<void> startSessionFrom(SignedInResponse answer) async {
     _accountId = answer.user.id;
     await _startSession(answer.accessToken, answer.refreshToken);
     _lockedUntil = null;
@@ -378,29 +388,12 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   /// Runs a call and turns its failure into the exceptions of the screens.
-  /// [onFailure] sees the failure and its exception first, to remember what the
-  /// server said (a wait, an address).
   Future<T> _call<T>(
     Future<T> Function() request,
     Exception Function(ApiFailure failure) map, {
     void Function(ApiFailure failure, Exception exception)? onFailure,
-  }) async {
-    try {
-      return await request();
-    } on DioException catch (error) {
-      final failure = ApiFailure.from(error);
-      final exception = map(failure);
-      onFailure?.call(failure, exception);
-      throw exception;
-    } on FormatException {
-      // An answer that is not what the contract says.
-      throw const ServerException();
-      // A body of another shape fails inside the generated `fromJson` with a
-      // `TypeError`: it is the same thing, an answer that is not the contract.
-      // ignore: avoid_catching_errors
-    } on TypeError {
-      throw const ServerException();
-    }
+  }) {
+    return callApi(request, map, onFailure: onFailure);
   }
 
   Future<void> _startSession(String access, String? refresh) async {
@@ -418,19 +411,7 @@ class RemoteAuthRepository implements AuthRepository {
     return SessionTokens(accessToken: access, refreshToken: refresh);
   }
 
-  Future<DeviceRequest> _deviceRequest() async {
-    final info = await _device.read();
-    return DeviceRequest(
-      deviceId: info.deviceId,
-      deviceName: info.deviceName,
-      platform: switch (info.platform) {
-        DevicePlatform.android => PlatformEnum.android,
-        DevicePlatform.ios => PlatformEnum.ios,
-      },
-      osVersion: info.osVersion,
-      appVersion: info.appVersion,
-    );
-  }
+  Future<DeviceRequest> _deviceRequest() => readDeviceRequest(_device);
 
   LanguageEnum _languageEnum() {
     return _language() == 'ar' ? LanguageEnum.ar : LanguageEnum.en;

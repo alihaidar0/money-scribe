@@ -2259,5 +2259,82 @@
     "placeholders": {
       "name": {"type": "String"}
     }
+  },
+  "fingerprintSignInTitle": "Sign in with fingerprint",
+  "@fingerprintSignInTitle": {
+    "description": "Title of the Settings switch that lets the phone sign the person in with their fingerprint, without the password."
+  },
+  "fingerprintSignInHint": "Sign in with your fingerprint instead of your password. Your PIN is never a way to sign in.",
+  "@fingerprintSignInHint": {
+    "description": "Hint under the switch of signing in with the fingerprint."
+  },
+  "fingerprintSignInUnsupported": "This phone can''t keep a sign-in key. Use your password.",
+  "@fingerprintSignInUnsupported": {
+    "description": "Hint under the sign-in fingerprint switch on a phone without the secure hardware for it."
+  },
+  "fingerprintSignInPromptTitle": "Turn on fingerprint sign-in",
+  "@fingerprintSignInPromptTitle": {
+    "description": "Title of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInPromptMessage": "Type your password to confirm it''s you. Then touch the fingerprint sensor.",
+  "@fingerprintSignInPromptMessage": {
+    "description": "Text of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInPromptAction": "Continue",
+  "@fingerprintSignInPromptAction": {
+    "description": "Button of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInReason": "Confirm your fingerprint to turn on sign-in with it",
+  "@fingerprintSignInReason": {
+    "description": "Text of the system fingerprint dialog shown when turning on the fingerprint sign-in."
+  },
+  "fingerprintSignInTurnedOn": "Fingerprint sign-in is on.",
+  "@fingerprintSignInTurnedOn": {
+    "description": "Message after the fingerprint sign-in was turned on."
+  },
+  "fingerprintSignInTurnedOff": "Fingerprint sign-in is off.",
+  "@fingerprintSignInTurnedOff": {
+    "description": "Message after the fingerprint sign-in was turned off."
+  },
+  "fingerprintSignInWrongPassword": "That password isn''t right. Fingerprint sign-in was not turned on.",
+  "@fingerprintSignInWrongPassword": {
+    "description": "Message when the password typed to turn on the fingerprint sign-in was wrong."
+  },
+  "fingerprintSignInRefused": "This phone can''t be used for fingerprint sign-in. Use your password to sign in.",
+  "@fingerprintSignInRefused": {
+    "description": "Message when the server refused the key of this phone. It gives no reason."
+  },
+  "fingerprintSignInLimit": "Fingerprint sign-in is already on for as many phones as an account can have. Turn it off on another phone first.",
+  "@fingerprintSignInLimit": {
+    "description": "Message when the account has reached the most phones that can sign in with a fingerprint."
+  },
+  "fingerprintSignInExpired": "That took too long. Please try again.",
+  "@fingerprintSignInExpired": {
+    "description": "Message when the one-time challenge of the fingerprint sign-in ran out before the fingerprint was confirmed."
+  },
+  "fingerprintSignInCannotCheck": "The fingerprint can''t be checked right now. Try again later.",
+  "@fingerprintSignInCannotCheck": {
+    "description": "Message when the phone cannot check a fingerprint now, for example after too many tries."
+  },
+  "fingerprintSignInWait": "Too many wrong passwords. Try again in {time}.",
+  "@fingerprintSignInWait": {
+    "description": "Message when the password lock is on. The placeholder is a countdown such as 14:59.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintSignInBusy": "The service is busy. Please try again shortly.",
+  "@fingerprintSignInBusy": {
+    "description": "Message when the server is busy while turning the fingerprint sign-in on or off."
+  },
+  "fingerprintSignInOffline": "Couldn''t change fingerprint sign-in. Check your connection.",
+  "@fingerprintSignInOffline": {
+    "description": "Message when the fingerprint sign-in could not be turned on or off because the server cannot be reached."
+  },
+  "fingerprintSignInFailed": "Something went wrong. Please try again.",
+  "@fingerprintSignInFailed": {
+    "description": "Message for any other failure while turning the fingerprint sign-in on or off."
   }
 }

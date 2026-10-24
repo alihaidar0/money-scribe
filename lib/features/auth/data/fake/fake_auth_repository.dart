@@ -153,6 +153,13 @@ class FakeAuthRepository implements AuthRepository {
     }
   }
 
+  /// Signs the account in the way its phone's fingerprint does: no email, no
+  /// password, no bot challenge.
+  Future<void> signInWithFingerprint() async {
+    _wrongPasswords = 0;
+    _setSignedIn(value: true);
+  }
+
   @override
   Future<void> register({
     required String name,
