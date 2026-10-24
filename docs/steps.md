@@ -124,7 +124,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Pin the contract that has the device-key endpoints, and generate the client on a scratch copy first
 - [x] Fingerprint sign-in, the key and the server: `DeviceKeyStore` over the plugin, the remote and the fake repository, the key compared with the server after each sign-in
 - [x] Settings: "Sign in with fingerprint" switch (password, then a fingerprint; off removes the key from the server and the phone)
-- [ ] Sign-in screen: "Sign in as <name> with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
+- [ ] Sign-in screen: "Sign in as `<name>` with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
 - [ ] After a password change: offer to turn the fingerprint sign-in on again (the server removes every key)
 - [ ] "Phones with fingerprint sign-in": the list with the key of each phone, removing one
 - [ ] Check on a real phone against staging (an emulator is refused): turn on, sign out, sign in, a changed fingerprint, a changed password
@@ -308,7 +308,8 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Push token rules agreed with the backend (one token per device, removed with the session and the account, 90-day retention; written in `backend-api.md`)
 - [ ] Push token on the server, when its endpoints are in a pinned contract: register after sign-in and on a new token, only while notifications are allowed; remove first on sign-out, with a short timeout
 - [ ] Decide with the backend whether push addresses a device by its FCM token or by its Firebase installation ID (`firebase_messaging` 17 deprecates the token calls), then update `PushMessagingRepository`
-- [ ] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
+- [x] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
+- [x] Remote pay schedule and default currency: the settings of the account are read and saved on the server
 - [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
 - [x] Edit the name
 - [x] Change email: new address, code, cancel (a new code asks for the password again)

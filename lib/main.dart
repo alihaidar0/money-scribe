@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
@@ -38,8 +39,12 @@ import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.da
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
+import 'package:money_scribe/features/settings/data/remote/remote_default_currency_repository.dart';
+import 'package:money_scribe/features/settings/data/remote/remote_pay_schedule_repository.dart';
+import 'package:money_scribe/features/settings/data/remote/remote_settings.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_language_repository.dart';
 import 'package:money_scribe/features/settings/data/shared_preferences_theme_repository.dart';
+import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
@@ -63,12 +68,21 @@ Future<void> main() async {
   final transactions = FakeTransactionsRepository(demo: demo);
   final languageRepository = SharedPreferencesLanguageRepository(preferences);
   final monitor = SlowRequestMonitor();
-  final (authRepository, deviceKeyRepository) = await _createAccount(
+  final (authRepository, deviceKeyRepository, apiDio) = await _createAccount(
     apiConfig: apiConfig,
     demo: demo,
     languageRepository: languageRepository,
     monitor: monitor,
   );
+  // The settings of the account are on the server when there is one.
+  final settings = apiDio == null
+      ? null
+      : RemoteSettings.create(
+          dio: apiDio,
+          timeZone: const PlatformTimeZoneSource(),
+          language: () => _accountLanguage(languageRepository),
+          isSignedIn: () => authRepository.isSignedIn,
+        );
   // The app lock lives on the device. A signed-in person who has it on starts
   // on the lock screen, which is known before the first frame so no screen of
   // the app shows first.
@@ -93,8 +107,13 @@ Future<void> main() async {
       appLockRepository: appLock,
       deviceKeyRepository: deviceKeyRepository,
       startsLocked: startsLocked,
-      payScheduleRepository: FakePayScheduleRepository(demo: demo),
-      defaultCurrencyRepository: FakeDefaultCurrencyRepository(demo: demo),
+      payScheduleRepository: settings == null
+          ? FakePayScheduleRepository(demo: demo)
+          : RemotePayScheduleRepository(settings),
+      defaultCurrencyRepository: settings == null
+          ? FakeDefaultCurrencyRepository(demo: demo)
+          : RemoteDefaultCurrencyRepository(settings),
+      accountLocaleRepository: settings,
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
       overviewRepository: FakeOverviewRepository(demo: demo),
       salaryRepository: FakeSalaryRepository(demo: demo),
@@ -141,9 +160,18 @@ ChallengeViewFactory _createChallengeViewFactory(ApiConfig? apiConfig) {
   );
 }
 
-/// The account of this build, and the fingerprint sign-in that goes with it:
-/// the real ones when there is a server address, else the fake ones.
-Future<(AuthRepository, DeviceKeyRepository)> _createAccount({
+/// The language the server is told: the server knows English and Arabic, any
+/// other language is English.
+String _accountLanguage(LanguageRepository languageRepository) {
+  final locale =
+      languageRepository.read().locale ?? PlatformDispatcher.instance.locale;
+  return locale.languageCode == 'ar' ? 'ar' : 'en';
+}
+
+/// The account of this build, the fingerprint sign-in that goes with it, and
+/// the HTTP client the other features build on: the real ones when there is a
+/// server address, else the fake ones and no client.
+Future<(AuthRepository, DeviceKeyRepository, Dio?)> _createAccount({
   required ApiConfig? apiConfig,
   required DemoController demo,
   required SharedPreferencesLanguageRepository languageRepository,
@@ -151,7 +179,7 @@ Future<(AuthRepository, DeviceKeyRepository)> _createAccount({
 }) async {
   if (apiConfig == null) {
     final auth = FakeAuthRepository(demo: demo);
-    return (auth, FakeDeviceKeyRepository(demo: demo, auth: auth));
+    return (auth, FakeDeviceKeyRepository(demo: demo, auth: auth), null);
   }
 
   const secureStore = PlatformSecureValueStore();
@@ -166,17 +194,11 @@ Future<(AuthRepository, DeviceKeyRepository)> _createAccount({
       // Only Android can vouch for a key with an attestation.
       attestsKeys: defaultTargetPlatform == TargetPlatform.android,
     ),
-    language: () {
-      // The server knows English and Arabic; any other language is English.
-      final locale =
-          languageRepository.read().locale ??
-          PlatformDispatcher.instance.locale;
-      return locale.languageCode == 'ar' ? 'ar' : 'en';
-    },
+    language: () => _accountLanguage(languageRepository),
   );
   // The session of the last run, from the secure storage: no network, so the
   // app opens on the right screen. The server is asked in the background.
   await remote.repository.restore();
   unawaited(remote.repository.validateSession());
-  return (remote.repository, remote.deviceKeys);
+  return (remote.repository, remote.deviceKeys, remote.dio);
 }
