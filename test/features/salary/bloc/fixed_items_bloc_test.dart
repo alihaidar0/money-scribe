@@ -226,6 +226,79 @@ void main() {
     );
   });
 
+  group('an item changed on another device', () {
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'is not changed, the list is loaded again and the change is offered',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        final rent = bloc.state.items[1];
+        // Another device changes the rent first.
+        await fixedItems.update(october, rent.id, gym(), version: rent.version);
+        bloc.add(FixedItemChanged(rent.id, gym(part: FixedItemPart.second)));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.status, FixedItemsStatus.ready);
+        expect(bloc.state.items[1].version, 2);
+        expect(bloc.state.items[1].part, FixedItemPart.first);
+        expect(bloc.state.staleAction, isA<FixedItemChanged>());
+        expect(bloc.state.failedAction, isNull);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'applied again, it goes through on the latest version',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        final rent = bloc.state.items[1];
+        await fixedItems.update(october, rent.id, gym(), version: rent.version);
+        bloc.add(FixedItemChanged(rent.id, gym(part: FixedItemPart.second)));
+        await bloc.stream.firstWhere((s) => s.staleAction != null);
+        bloc.add(bloc.state.staleAction!);
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.items[1].part, FixedItemPart.second);
+        expect(bloc.state.items[1].version, 3);
+        expect(bloc.state.staleAction, isNull);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'deleted on another device, a change is stale and the item stays gone',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        final rent = bloc.state.items[1];
+        await fixedItems.delete(october, rent.id, version: rent.version);
+        bloc.add(FixedItemChanged(rent.id, gym()));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.items, hasLength(2));
+        expect(bloc.state.staleAction, isA<FixedItemChanged>());
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'is not deleted, and stays on the list at its latest version',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        final rent = bloc.state.items[1];
+        await fixedItems.update(october, rent.id, gym(), version: rent.version);
+        bloc.add(FixedItemDeleted(rent.id));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.items, hasLength(3));
+        expect(bloc.state.staleAction, isA<FixedItemDeleted>());
+      },
+    );
+  });
+
   group('FixedItemChanged', () {
     blocTest<FixedItemsBloc, FixedItemsState>(
       'replaces the item and counts the new amount',

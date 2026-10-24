@@ -307,4 +307,13 @@ Authentication step (agreed with the backend, summary in [`backend-api.md`](back
 - [x] Edit the name
 - [x] Change email: new address, code, cancel (a new code asks for the password again)
 
+Salary step (agreed with the backend; the screens and the fake data follow the agreed contract first, the remote repositories come when the contract is pinned):
+
+- [x] Versions on a month and on a fixed item; a save, edit or delete of a stale one is refused and the person chooses what to do
+- [x] A new month starts with the figures of the last saved month (currency, base salary, food allowance, working hours, tax rate, pay schedule); the monthly numbers stay empty
+- [ ] Fixed items need a saved month: "Save this month's salary first" instead of an empty list
+- [ ] "Copy from last month" for the fixed items of a month, with a confirmation when it already has some, and the refusals worded
+- [ ] Results, payments and balances as the server calculates them, next to the live preview
+- [ ] Remote salary and fixed items repositories (month, defaults, per-item calls, copy), when the contract is pinned
+
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

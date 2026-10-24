@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
@@ -14,6 +16,8 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'salary_test_helpers.dart';
 
 const twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
+
+const october = YearMonth(2026, 10);
 
 /// A row's amount as shown, with a true minus sign for an expense.
 Finder figure(String text) => find.text(amount(text));
@@ -564,6 +568,49 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Rent'), findsOneWidget);
+    });
+  });
+
+  group('an item changed on another device', () {
+    testWidgets('is not changed: the list is current and Apply again retries', (
+      tester,
+    ) async {
+      final demo = DemoController(latency: Duration.zero);
+      final repository = FakeFixedItemsRepository(demo: demo);
+      await pumpFixedItems(tester, fixedItemsRepository: repository);
+      // Another device renames the rent first.
+      final rent = (await repository.items(october))[1];
+      await repository.update(
+        october,
+        rent.id,
+        FixedItemDraft(
+          name: 'Flat',
+          amount: rent.amount,
+          kind: rent.kind,
+          part: rent.part,
+        ),
+        version: rent.version,
+      );
+      await openEditSheet(tester, 'Rent');
+      await fillSheet(tester, name: 'Rent 2', amount: '31000');
+
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This item was changed on another device. The list is up to date.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Flat'), findsOneWidget);
+      expect(find.text('Rent 2'), findsNothing);
+
+      await tester.tap(find.text('Apply again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rent 2'), findsOneWidget);
+      expect(find.text('Flat'), findsNothing);
     });
   });
 

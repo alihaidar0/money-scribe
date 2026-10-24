@@ -85,10 +85,12 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     Emitter<FixedItemsState> emit,
   ) {
     return _run(event, emit, () async {
+      final current = _itemOf(event.id);
       final saved = await _fixedItems.update(
         state.month,
         event.id,
         event.draft,
+        version: current.version,
       );
       emit(
         state.copyWith(
@@ -106,7 +108,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     Emitter<FixedItemsState> emit,
   ) {
     return _run(event, emit, () async {
-      await _fixedItems.delete(state.month, event.id);
+      final current = _itemOf(event.id);
+      await _fixedItems.delete(state.month, event.id, version: current.version);
       emit(
         state.copyWith(
           items: [
@@ -126,17 +129,32 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     await super.close();
   }
 
+  /// The item [id] as the list shows it. An item that is not there was deleted
+  /// on another device, which is the same as a version that moved on.
+  FixedItem _itemOf(String id) {
+    return state.items.firstWhere(
+      (item) => item.id == id,
+      orElse: () => throw const StaleRecordException(),
+    );
+  }
+
   /// Does [action], which saves [event] on the server. When the server does
   /// not accept it the list stays as it was and [FixedItemsState.failedAction]
-  /// holds [event], so the screen can offer to try again.
+  /// holds [event], so the screen can offer to try again. When the item was
+  /// changed on another device the list is loaded again and
+  /// [FixedItemsState.staleAction] holds [event], so the screen can offer to
+  /// apply it to what is there now.
   Future<void> _run(
     FixedItemsEvent event,
     Emitter<FixedItemsState> emit,
     Future<void> Function() action,
   ) async {
-    emit(state.copyWith(clearFailedAction: true));
+    emit(state.copyWith(clearFailedAction: true, clearStaleAction: true));
     try {
       await action();
+    } on StaleRecordException {
+      await _load(emit);
+      emit(state.copyWith(staleAction: event));
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {

@@ -39,21 +39,32 @@ class FakeFixedItemsRepository implements FixedItemsRepository {
   Future<FixedItem> update(
     YearMonth month,
     String id,
-    FixedItemDraft draft,
-  ) async {
+    FixedItemDraft draft, {
+    required int version,
+  }) async {
     await _demo.simulateSave();
     final items = _current(month);
     final index = items.indexWhere((item) => item.id == id);
-    if (index < 0) throw const ServerException();
+    if (index < 0 || items[index].version != version) {
+      throw const StaleRecordException();
+    }
 
-    final item = FixedItem.fromDraft(id, draft);
+    final item = FixedItem.fromDraft(id, draft, version: version + 1);
     _edited[month] = [...items]..[index] = item;
     return item;
   }
 
   @override
-  Future<void> delete(YearMonth month, String id) async {
+  Future<void> delete(
+    YearMonth month,
+    String id, {
+    required int version,
+  }) async {
     await _demo.simulateSave();
+    final current = _current(month).where((item) => item.id == id).firstOrNull;
+    if (current != null && current.version != version) {
+      throw const StaleRecordException();
+    }
     _edited[month] = [
       for (final item in _current(month))
         if (item.id != id) item,

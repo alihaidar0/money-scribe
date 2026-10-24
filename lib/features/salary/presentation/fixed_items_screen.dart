@@ -55,21 +55,48 @@ class _FixedItemsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<FixedItemsBloc, FixedItemsState>(
-      listenWhen: (previous, current) =>
-          previous.failedAction != current.failedAction &&
-          current.failedAction != null,
-      listener: (context, state) {
-        final action = state.failedAction;
-        if (action == null) return;
-        showFailureSnackBar(
-          context,
-          action is FixedItemDeleted
-              ? context.l10n.couldNotDelete
-              : context.l10n.couldNotSave,
-          onRetry: () => context.read<FixedItemsBloc>().add(action),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<FixedItemsBloc, FixedItemsState>(
+          listenWhen: (previous, current) =>
+              previous.failedAction != current.failedAction &&
+              current.failedAction != null,
+          listener: (context, state) {
+            final action = state.failedAction;
+            if (action == null) return;
+            showFailureSnackBar(
+              context,
+              action is FixedItemDeleted
+                  ? context.l10n.couldNotDelete
+                  : context.l10n.couldNotSave,
+              onRetry: () => context.read<FixedItemsBloc>().add(action),
+            );
+          },
+        ),
+        BlocListener<FixedItemsBloc, FixedItemsState>(
+          listenWhen: (previous, current) =>
+              previous.staleAction != current.staleAction &&
+              current.staleAction != null,
+          listener: (context, state) {
+            final action = state.staleAction;
+            if (action == null) return;
+            // An item that is gone has nothing to apply the change to.
+            final id = switch (action) {
+              FixedItemChanged(:final id) || FixedItemDeleted(:final id) => id,
+              _ => null,
+            };
+            final gone = !state.items.any((item) => item.id == id);
+            showFailureSnackBar(
+              context,
+              context.l10n.itemChangedElsewhere,
+              actionLabel: context.l10n.applyAgainAction,
+              onRetry: gone
+                  ? null
+                  : () => context.read<FixedItemsBloc>().add(action),
+            );
+          },
+        ),
+      ],
       child: TopLevelScreen(
         title: context.l10n.salaryTitle,
         actions: const [SalaryHistoryButton()],

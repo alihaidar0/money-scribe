@@ -38,6 +38,7 @@ abstract final class SalarySeed {
       ),
       firstPayDay: 20,
       secondPayDay: 5,
+      version: 1,
     );
   }
 }

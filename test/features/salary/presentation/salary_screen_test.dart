@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
@@ -15,6 +18,7 @@ import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
 
 const _nbsp = '\u00a0';
+const _october = YearMonth(2026, 10);
 const _tallPhone = Size(412, 1800);
 
 late DemoController _demo;
@@ -26,6 +30,7 @@ Future<void> _pumpSalary(
   AppLanguage language = AppLanguage.english,
   Size size = _tallPhone,
   Duration latency = Duration.zero,
+  SalaryRepository? salaryRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -35,6 +40,7 @@ Future<void> _pumpSalary(
   await tester.pumpWidget(
     buildApp(
       demo: _demo,
+      salaryRepository: salaryRepository,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: _demo, signedIn: true),
     ),
@@ -285,6 +291,31 @@ void main() {
   });
 
   group('saving (SAL-10)', () {
+    testWidgets('a month changed on another device is not replaced', (
+      tester,
+    ) async {
+      final demo = DemoController(latency: Duration.zero);
+      final repository = FakeSalaryRepository(demo: demo);
+      await _pumpSalary(tester, salaryRepository: repository);
+      // Another device saves the month first.
+      await repository.save((await repository.month(_october))!);
+
+      await tester.tap(_save);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('This month was changed on another device.'),
+        findsOneWidget,
+      );
+      expect(find.text('Month saved'), findsNothing);
+      expect(find.text('Load latest'), findsOneWidget);
+
+      await tester.tap(find.text('Load latest'));
+      await tester.pumpAndSettle();
+
+      expect(_isEnabled(tester, _save), isTrue);
+    });
+
     testWidgets('says the month was saved, in green, with no action', (
       tester,
     ) async {
