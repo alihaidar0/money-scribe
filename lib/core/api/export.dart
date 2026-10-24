@@ -5,10 +5,17 @@
 // Clients
 export 'auth/auth_client.dart';
 // Data classes
+export 'models/algorithm_enum.dart';
 export 'models/change_password_request.dart';
 export 'models/client_error_enum.dart';
 export 'models/code_sent.dart';
 export 'models/delete_account_request.dart';
+export 'models/device_key.dart';
+export 'models/device_key_challenge_request.dart';
+export 'models/device_key_challenge_response.dart';
+export 'models/device_key_list.dart';
+export 'models/device_key_register_request.dart';
+export 'models/device_key_sign_in_request.dart';
 export 'models/device_request.dart';
 export 'models/email_change_confirm_request.dart';
 export 'models/email_change_request_request.dart';

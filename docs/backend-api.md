@@ -529,7 +529,7 @@ the push endpoints; moving the app to the FID then is one repository (`PushMessa
 The server cleanup is the guarantee and the app cleanup an extra: the app cannot always tell that a
 session ended, and the remove call needs a valid session.
 
-### Signing in with the fingerprint (planned)
+### Signing in with the fingerprint
 
 The person wants a "Sign in with fingerprint" button on the sign-in screen, after turning it on in the
 Settings; the PIN is never a way to sign in. Signing out ends the session on the server, so the phone needs a
@@ -571,11 +571,37 @@ available as another way in (the guidelines ask for one), and deleting the accou
 5.1.1). Passkeys themselves are the later step: they need a registered domain with the app linked to it
 (Android Digital Asset Links, iOS associated domains), which the project does not have yet.
 
-The app side waits for the endpoints in a pinned contract. The plugin proposed for it is
-`biometric_signature` (MIT, Keystore, StrongBox and Secure Enclave, per-use authentication, invalidation on
-enrolment change, Android attestation); it is checked and approved by the owner before it is added, and the
-fingerprint of the lock screen stays on `local_auth`. The request to the backend is in the pull request that
-added this section.
+The contract is pinned (backend ADR 0018, request issue 45). What it settled, beyond the design above:
+
+- Calls under `/api/v1/auth/device-keys/`: `POST challenge/`, `PUT current/` (register or replace, `201` or
+  `200`), `DELETE current/` (turn the switch off, `204`), `DELETE {device_id}/` (remove another device's
+  key), `GET /` (one page, at most 5 keys, `next` and `previous` always `null`) and `POST sign-in/`.
+- The id in the path is the lowercase install UUID; an upper-case or malformed one is a plain `404` with no
+  JSON body, which the app treats as "already gone". Every path ends in a slash, because a redirected
+  `DELETE` can be lost.
+- Signed texts (UTF-8, lines joined by `\n`, no trailing newline, the challenge exactly as sent): sign-in is
+  `money-scribe/device-sign-in/v1`, `challenge_id`, `challenge`, `device_id`; registration is
+  `money-scribe/device-key-registration/v1`, `challenge_id`, `challenge`, `device_id`, `user_id` (lower case).
+  ECDSA P-256 with SHA-256, DER signature, standard base64; the public key is SPKI base64.
+- Android attestation is required, with the 32 raw bytes of the challenge as its challenge. The key must be
+  hardware-backed, for signing only, need a strong biometric for every use and no device PIN, and the phone
+  must have a locked bootloader and the original system. A refusal is `400 attestation_invalid` with no
+  reason; the server logs the failed rule, so note the time of the attempt. An emulator, a rooted phone or a
+  custom ROM is refused, and iOS keys are accepted with `attested: false`.
+- The package name and the signing-certificate digests are checked per environment. Staging accepts the CI
+  staging key and the debug key of the development container (a new container or machine has another debug
+  key, whose digest must be sent to the maintainer); production never accepts the debug key.
+- Errors: `device_sign_in_failed` (401, the only answer to a failed sign-in), `sign_in_locked` and
+  `throttled` (429 with `Retry-After`), `challenge_invalid`, `public_key_invalid`, `platform_not_supported`
+  (400), `device_key_limit_reached` (409), `password_attempts_exceeded` (the lock shared with changing the
+  password) and `503 service_unavailable` (also when Google's revocation list cannot be read).
+- A challenge lives 2 minutes, so the app asks for it just before the fingerprint prompt.
+
+The plugin is `biometric_signature` 13.3.0 (MIT; Keystore, StrongBox and Secure Enclave, per-use
+authentication, invalidation on enrolment change, Android attestation), approved by the owner and pinned.
+It brings `androidx.biometric` 1.4.0-alpha05 on Android, a version the plugin chooses itself and the app does
+not override. The app wraps it in one place (`DeviceKeyStore`); the fingerprint of the lock screen stays on
+`local_auth`.
 
 ### Resetting a password
 
