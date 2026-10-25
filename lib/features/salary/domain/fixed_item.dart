@@ -61,9 +61,10 @@ final class FixedItem extends Equatable {
     required this.amount,
     required this.kind,
     required this.part,
+    this.version = 1,
   });
 
-  new fromDraft(this.id, FixedItemDraft draft)
+  new fromDraft(this.id, FixedItemDraft draft, {this.version = 1})
     : name = draft.name,
       amount = draft.amount,
       kind = draft.kind,
@@ -77,6 +78,10 @@ final class FixedItem extends Equatable {
   final FixedItemKind kind;
   final FixedItemPart part;
 
+  /// The server's version of the item, which a change or a delete sends back
+  /// so an edit made on another device is never replaced unseen.
+  final int version;
+
   /// The amount with its sign: positive for income, negative for an expense.
   Money get signedAmount => kind == FixedItemKind.income ? amount : -amount;
 
@@ -86,5 +91,5 @@ final class FixedItem extends Equatable {
   }
 
   @override
-  List<Object> get props => [id, name, amount, kind, part];
+  List<Object> get props => [id, name, amount, kind, part, version];
 }

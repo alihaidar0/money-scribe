@@ -4,18 +4,21 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/bloc/code_verification_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
 import '../../../support/fake_ticker.dart';
 
 void main() {
   late DemoController demo;
+  late DateTime now;
   late FakeAuthRepository auth;
   late FakeTicker ticker;
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
-    auth = FakeAuthRepository(demo: demo);
+    now = DateTime(2026, 10, 11, 9);
+    auth = FakeAuthRepository(demo: demo, now: () => now);
     ticker = FakeTicker();
   });
 
@@ -29,33 +32,49 @@ void main() {
 
   CodeVerificationState state(
     CodeVerificationStatus status, {
-    int resendSecondsLeft = 60,
-    int attemptsLeft = 0,
+    int resendSecondsLeft = 0,
+    int? attemptsLeft,
+    int waitSecondsLeft = 0,
   }) {
     return CodeVerificationState(
       email: 'alex@example.com',
       status: status,
       resendSecondsLeft: resendSecondsLeft,
       attemptsLeft: attemptsLeft,
+      waitSecondsLeft: waitSecondsLeft,
     );
   }
 
-  test('starts with the email the code was sent to', () async {
+  const code = '482915';
+
+  test('starts with the email and the time left to wait', () async {
     await auth.register(name: 'A', email: 'new@b.c', password: 'x');
+    now = now.add(const Duration(seconds: 20));
 
     final bloc = build();
     addTearDown(bloc.close);
 
     expect(bloc.state.email, 'new@b.c');
     expect(bloc.state.status, CodeVerificationStatus.entering);
-    expect(bloc.state.resendSecondsLeft, 60);
+    expect(bloc.state.resendSecondsLeft, 40);
+  });
+
+  test('a code is six digits long', () {
+    expect(CodeVerificationBloc.codeLength, 6);
+  });
+
+  test('a new code can be asked for at once when none was requested', () {
+    final bloc = build();
+    addTearDown(bloc.close);
+
+    expect(bloc.state.resendSecondsLeft, 0);
   });
 
   group('CodeSubmitted', () {
     blocTest<CodeVerificationBloc, CodeVerificationState>(
       'verifies a correct code',
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('1234')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
         state(CodeVerificationStatus.verified),
@@ -66,7 +85,7 @@ void main() {
     blocTest<CodeVerificationBloc, CodeVerificationState>(
       'a reset code does not sign in',
       build: () => build(purpose: CodePurpose.resetPassword),
-      act: (bloc) => bloc.add(const CodeSubmitted('1234')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
         state(CodeVerificationStatus.verified),
@@ -77,18 +96,49 @@ void main() {
     blocTest<CodeVerificationBloc, CodeVerificationState>(
       'ignores a code that is not complete',
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('12')),
+      act: (bloc) => bloc.add(const CodeSubmitted('1234')),
       expect: () => <CodeVerificationState>[],
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'ignores a code that is too long',
+      build: build,
+      act: (bloc) => bloc.add(const CodeSubmitted('1234567')),
+      expect: () => <CodeVerificationState>[],
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'keeps a leading zero: the code is text',
+      build: build,
+      act: (bloc) => bloc.add(const CodeSubmitted('012345')),
+      expect: () => [
+        state(CodeVerificationStatus.verifying),
+        state(CodeVerificationStatus.verified),
+      ],
     );
 
     blocTest<CodeVerificationBloc, CodeVerificationState>(
       'shows a wrong code with the tries left',
       setUp: () => demo.update(const DemoSettings(code: DemoCode.wrong)),
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('4817')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
-        state(CodeVerificationStatus.wrong, attemptsLeft: 2),
+        state(CodeVerificationStatus.wrong, attemptsLeft: 4),
+      ],
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'shows a wrong code without a count when the server gives none',
+      build: () => CodeVerificationBloc(
+        purpose: CodePurpose.verifyEmail,
+        repository: _NoCountAuth(demo),
+        ticker: ticker,
+      ),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
+      expect: () => [
+        state(CodeVerificationStatus.verifying),
+        state(CodeVerificationStatus.wrong),
       ],
     );
 
@@ -96,7 +146,7 @@ void main() {
       'shows an expired code',
       setUp: () => demo.update(const DemoSettings(code: DemoCode.expired)),
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('4817')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
         state(CodeVerificationStatus.expired),
@@ -108,10 +158,10 @@ void main() {
       setUp: () => demo.update(const DemoSettings(code: DemoCode.expired)),
       build: build,
       act: (bloc) async {
-        bloc.add(const CodeSubmitted('4817'));
+        bloc.add(const CodeSubmitted(code));
         await pumpEventQueue();
         demo.update(const DemoSettings());
-        bloc.add(const CodeSubmitted('4817'));
+        bloc.add(const CodeSubmitted(code));
       },
       skip: 2,
       expect: () => <CodeVerificationState>[],
@@ -119,11 +169,51 @@ void main() {
     );
 
     blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'kills the code after too many tries, and waits to ask for a new one',
+      setUp: () =>
+          demo.update(const DemoSettings(code: DemoCode.attemptsExceeded)),
+      build: build,
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
+      expect: () => [
+        state(CodeVerificationStatus.verifying),
+        state(CodeVerificationStatus.attemptsExceeded, resendSecondsLeft: 60),
+      ],
+      verify: (_) => expect(ticker.started, [60]),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'does not check a dead code again',
+      setUp: () =>
+          demo.update(const DemoSettings(code: DemoCode.attemptsExceeded)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const CodeSubmitted(code));
+        await pumpEventQueue();
+        demo.update(const DemoSettings());
+        bloc.add(const CodeSubmitted(code));
+      },
+      skip: 2,
+      expect: () => <CodeVerificationState>[],
+      verify: (_) => expect(auth.isSignedIn, isFalse),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'asks to try again shortly when the server is busy',
+      setUp: () => demo.update(const DemoSettings(code: DemoCode.unavailable)),
+      build: build,
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
+      expect: () => [
+        state(CodeVerificationStatus.verifying),
+        state(CodeVerificationStatus.unavailable),
+      ],
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
       'reports no connection',
       setUp: () =>
           demo.update(const DemoSettings(scenario: DemoScenario.noConnection)),
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('4817')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
         state(CodeVerificationStatus.noConnection),
@@ -135,12 +225,131 @@ void main() {
       setUp: () =>
           demo.update(const DemoSettings(scenario: DemoScenario.error)),
       build: build,
-      act: (bloc) => bloc.add(const CodeSubmitted('4817')),
+      act: (bloc) => bloc.add(const CodeSubmitted(code)),
       expect: () => [
         state(CodeVerificationStatus.verifying),
         state(CodeVerificationStatus.failure),
       ],
       errors: () => [isA<ServerException>()],
+    );
+  });
+
+  group('when the server says there are too many requests', () {
+    Future<CodeVerificationBloc> throttledBloc() async {
+      final bloc = CodeVerificationBloc(
+        purpose: CodePurpose.verifyEmail,
+        repository: _ThrottledAuth(demo),
+        ticker: ticker,
+      );
+      addTearDown(bloc.close);
+      bloc.add(const CodeSubmitted(code));
+      await bloc.stream.firstWhere(
+        (state) => state.status == CodeVerificationStatus.rateLimited,
+      );
+      return bloc;
+    }
+
+    test('the code is not checked until the wait is over', () async {
+      final bloc = await throttledBloc();
+
+      expect(bloc.state.waitSecondsLeft, 17);
+      expect(ticker.started, [17]);
+
+      ticker.tick(5);
+      await pumpEventQueue();
+      expect(bloc.state.waitSecondsLeft, 5);
+
+      // A press during the wait does nothing.
+      bloc.add(const CodeSubmitted(code));
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.rateLimited);
+
+      ticker.tick(0);
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.entering);
+      expect(bloc.state.waitSecondsLeft, 0);
+    });
+  });
+
+  group('changing the email', () {
+    Future<void> startChange() async {
+      await auth.requestEmailChange(email: 'new@example.com', password: 'x');
+      now = now.add(const Duration(seconds: 61));
+    }
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a correct code gives the account its new address',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) => bloc.add(const CodeSubmitted('123456')),
+      verify: (bloc) async {
+        expect(bloc.state.status, CodeVerificationStatus.verified);
+        expect((await auth.profile()).email, 'new@example.com');
+      },
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a new code takes the password, and shows the new wait',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) async {
+        bloc.add(const CodeResendRequested(password: 'secret'));
+        await pumpEventQueue();
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, CodeVerificationStatus.entering);
+        expect(bloc.state.resendSecondsLeft, 60);
+      },
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'a wrong password for a new code is told, and the first code still works',
+      setUp: () async {
+        await startChange();
+        demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      },
+      build: () => build(purpose: CodePurpose.changeEmail),
+      act: (bloc) async {
+        bloc.add(const CodeResendRequested(password: 'nope'));
+        await pumpEventQueue();
+        expect(bloc.state.status, CodeVerificationStatus.wrongPassword);
+        demo.update(const DemoSettings());
+        bloc.add(const CodeSubmitted('123456'));
+      },
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.verified),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'typing after a wrong password starts a new try',
+      setUp: startChange,
+      build: () => build(purpose: CodePurpose.changeEmail),
+      seed: () => const CodeVerificationState(
+        email: 'new@example.com',
+        resendSecondsLeft: 0,
+        status: CodeVerificationStatus.wrongPassword,
+      ),
+      act: (bloc) => bloc.add(const CodeEdited()),
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.entering),
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'an address taken meanwhile is told, and no code is checked after that',
+      setUp: startChange,
+      build: () => CodeVerificationBloc(
+        purpose: CodePurpose.changeEmail,
+        repository: _TakenMeanwhileAuth(demo, () => now),
+        ticker: ticker,
+      ),
+      act: (bloc) async {
+        bloc.add(const CodeSubmitted('123456'));
+        await pumpEventQueue();
+        bloc.add(const CodeSubmitted('123456'));
+        await pumpEventQueue();
+      },
+      verify: (bloc) =>
+          expect(bloc.state.status, CodeVerificationStatus.emailTaken),
     );
   });
 
@@ -150,12 +359,25 @@ void main() {
       setUp: () => demo.update(const DemoSettings(code: DemoCode.wrong)),
       build: build,
       act: (bloc) async {
-        bloc.add(const CodeSubmitted('4817'));
+        bloc.add(const CodeSubmitted(code));
         await pumpEventQueue();
         bloc.add(const CodeEdited());
       },
       skip: 2,
-      expect: () => [state(CodeVerificationStatus.entering, attemptsLeft: 2)],
+      expect: () => [state(CodeVerificationStatus.entering, attemptsLeft: 4)],
+    );
+
+    blocTest<CodeVerificationBloc, CodeVerificationState>(
+      'clears a busy-server error',
+      setUp: () => demo.update(const DemoSettings(code: DemoCode.unavailable)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const CodeSubmitted(code));
+        await pumpEventQueue();
+        bloc.add(const CodeEdited());
+      },
+      skip: 2,
+      expect: () => [state(CodeVerificationStatus.entering)],
     );
 
     blocTest<CodeVerificationBloc, CodeVerificationState>(
@@ -167,12 +389,18 @@ void main() {
   });
 
   group('the wait for a new code', () {
-    test('starts at 60 seconds and counts down', () async {
+    Future<CodeVerificationBloc> startedAfterRegister() async {
+      await auth.register(name: 'A', email: 'alex@example.com', password: 'x');
       final bloc = build();
       addTearDown(bloc.close);
-
       bloc.add(const CodeVerificationStarted());
       await pumpEventQueue();
+      return bloc;
+    }
+
+    test('is the one the server gave, and counts down', () async {
+      final bloc = await startedAfterRegister();
+
       ticker.tick(41);
       await pumpEventQueue();
 
@@ -180,11 +408,41 @@ void main() {
       expect(bloc.state.resendSecondsLeft, 41);
     });
 
-    test('cannot resend before it ends', () async {
+    test('is not started when the server asked for none', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+
+      bloc.add(const CodeVerificationStarted());
+      await pumpEventQueue();
+
+      expect(ticker.started, isEmpty);
+      expect(bloc.state.resendSecondsLeft, 0);
+    });
+
+    test('a code can be asked for as soon as the person arrives from '
+        'a sign-in with an unverified address', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotVerified));
+      await expectLater(
+        auth.signIn(email: 'late@b.c', password: 'x'),
+        throwsA(anything),
+      );
       final bloc = build();
       addTearDown(bloc.close);
       bloc.add(const CodeVerificationStarted());
       await pumpEventQueue();
+
+      expect(bloc.state.email, 'late@b.c');
+      expect(bloc.state.resendSecondsLeft, 0);
+
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+
+      expect(bloc.state.resendSecondsLeft, 60);
+      expect(ticker.started, [60]);
+    });
+
+    test('cannot resend before it ends', () async {
+      final bloc = await startedAfterRegister();
 
       bloc.add(const CodeResendRequested());
       await pumpEventQueue();
@@ -193,10 +451,8 @@ void main() {
     });
 
     test('resends once it ends, and waits again', () async {
-      final bloc = build();
-      addTearDown(bloc.close);
-      bloc.add(const CodeVerificationStarted());
-      await pumpEventQueue();
+      final bloc = await startedAfterRegister();
+      now = now.add(const Duration(seconds: 60));
       ticker.tick(0);
       await pumpEventQueue();
       expect(bloc.state.resendSecondsLeft, 0);
@@ -209,31 +465,101 @@ void main() {
       expect(bloc.state.status, CodeVerificationStatus.entering);
     });
 
-    test('resends after the code expired, even before the wait ends', () async {
-      demo.update(const DemoSettings(code: DemoCode.expired));
+    test('a new code clears the tries count of the old one', () async {
+      demo.update(const DemoSettings(code: DemoCode.wrong));
       final bloc = build();
       addTearDown(bloc.close);
-      bloc
-        ..add(const CodeVerificationStarted())
-        ..add(const CodeSubmitted('4817'));
+      bloc.add(const CodeSubmitted(code));
       await pumpEventQueue();
-      expect(bloc.state.status, CodeVerificationStatus.expired);
+      expect(bloc.state.attemptsLeft, 4);
 
       bloc.add(const CodeResendRequested());
       await pumpEventQueue();
 
       expect(bloc.state.status, CodeVerificationStatus.entering);
+      expect(bloc.state.attemptsLeft, isNull);
+    });
+
+    test('an expired code waits for the server too', () async {
+      await auth.register(name: 'A', email: 'alex@example.com', password: 'x');
+      demo.update(const DemoSettings(code: DemoCode.expired));
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc
+        ..add(const CodeVerificationStarted())
+        ..add(const CodeSubmitted(code));
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.expired);
+      expect(bloc.state.resendSecondsLeft, 60);
+
+      // Pressing resend inside the wait does nothing.
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.expired);
+      expect(ticker.started, [60]);
+
+      // Once the wait is over, a new code starts again.
+      now = now.add(const Duration(seconds: 60));
+      ticker.tick(0);
+      await pumpEventQueue();
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.entering);
       expect(ticker.started, [60, 60]);
+    });
+
+    test('after too many tries, a new code waits for the time given', () async {
+      demo.update(const DemoSettings(code: DemoCode.attemptsExceeded));
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(const CodeSubmitted(code));
+      await pumpEventQueue();
+      expect(bloc.state.status, CodeVerificationStatus.attemptsExceeded);
+      expect(bloc.state.resendSecondsLeft, 60);
+
+      now = now.add(const Duration(seconds: 60));
+      ticker.tick(0);
+      await pumpEventQueue();
+      demo.update(const DemoSettings());
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+
+      expect(bloc.state.status, CodeVerificationStatus.entering);
+      expect(bloc.state.resendSecondsLeft, 60);
+    });
+
+    test('a refusal to send counts down the time the server gave', () async {
+      final bloc = CodeVerificationBloc(
+        purpose: CodePurpose.verifyEmail,
+        repository: _ResendLimitedAuth(demo),
+        ticker: ticker,
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+
+      // An hour: the countdown is whatever the server said.
+      expect(bloc.state.resendSecondsLeft, 3600);
+      expect(ticker.started, [3600]);
+      expect(bloc.state.status, CodeVerificationStatus.entering);
+    });
+
+    test('a busy server is reported when sending', () async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+      final bloc = build();
+      addTearDown(bloc.close);
+
+      bloc.add(const CodeResendRequested());
+      await pumpEventQueue();
+
+      expect(bloc.state.status, CodeVerificationStatus.unavailable);
     });
 
     test('a failed resend is reported', () async {
       demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
       final bloc = build();
       addTearDown(bloc.close);
-      bloc.add(const CodeVerificationStarted());
-      await pumpEventQueue();
-      ticker.tick(0);
-      await pumpEventQueue();
 
       bloc.add(const CodeResendRequested());
       await pumpEventQueue();
@@ -241,4 +567,51 @@ void main() {
       expect(bloc.state.status, CodeVerificationStatus.noConnection);
     });
   });
+}
+
+/// A server that says the code is wrong and does not count the tries.
+class _NoCountAuth extends FakeAuthRepository {
+  new(DemoController demo) : super(demo: demo);
+
+  @override
+  Future<void> verifyCode(CodePurpose purpose, String code) {
+    throw const WrongCodeException();
+  }
+}
+
+/// A server that says there are too many requests.
+class _ThrottledAuth extends FakeAuthRepository {
+  new(DemoController demo) : super(demo: demo);
+
+  @override
+  Future<void> verifyCode(CodePurpose purpose, String code) {
+    throw const RateLimitedException(
+      RateLimitReason.throttled,
+      Duration(seconds: 17),
+    );
+  }
+}
+
+/// A server that has sent too many codes this hour.
+class _ResendLimitedAuth extends FakeAuthRepository {
+  new(DemoController demo) : super(demo: demo);
+
+  @override
+  Future<void> resendCode(CodePurpose purpose, {String? password}) {
+    throw const RateLimitedException(
+      RateLimitReason.resendLimitReached,
+      Duration(hours: 1),
+    );
+  }
+}
+
+/// An account whose new address is taken by the time the code is confirmed.
+class _TakenMeanwhileAuth extends FakeAuthRepository {
+  new(DemoController demo, DateTime Function() now)
+    : super(demo: demo, now: now);
+
+  @override
+  Future<void> verifyCode(CodePurpose purpose, String code) {
+    throw const EmailChangeRejectedException(EmailIssue.taken);
+  }
 }

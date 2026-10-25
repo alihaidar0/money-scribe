@@ -33,9 +33,13 @@ class DemoPanelScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
-              const _Note(
-                'Staging builds only. The server does not exist yet, so '
-                'these switches decide what the fake data answers.',
+              _Note(
+                demo.fakeAccount
+                    ? 'Staging builds only. The server does not exist yet, so '
+                          'these switches decide what the fake data answers.'
+                    : 'Staging builds only. The account is on the real '
+                          'server; these switches decide what the fake data '
+                          'of the other screens answers.',
               ),
               const _Heading('Language'),
               const _LanguagePicker(),
@@ -57,30 +61,59 @@ class DemoPanelScreen extends StatelessWidget {
                 onSelected: (value) =>
                     demo.update(demo.settings.copyWith(paymentMode: value)),
               ),
-              const _Heading('Sign in, next attempt'),
-              _Choice<DemoSignIn>(
-                values: DemoSignIn.values,
-                selected: settings.signIn,
-                label: _signInLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(signIn: value)),
-              ),
-              const _Heading('Create account, next attempt'),
-              _Choice<DemoRegistration>(
-                values: DemoRegistration.values,
-                selected: settings.registration,
-                label: _registrationLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(registration: value)),
-              ),
-              const _Heading('4-digit codes'),
-              _Choice<DemoCode>(
-                values: DemoCode.values,
-                selected: settings.code,
-                label: _codeLabel,
-                onSelected: (value) =>
-                    demo.update(demo.settings.copyWith(code: value)),
-              ),
+              if (demo.fakeAccount) ...[
+                const _Heading('Sign in, next attempt'),
+                _Choice<DemoSignIn>(
+                  values: DemoSignIn.values,
+                  selected: settings.signIn,
+                  label: _signInLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(signIn: value)),
+                ),
+                const _Heading('Create account, next attempt'),
+                _Choice<DemoRegistration>(
+                  values: DemoRegistration.values,
+                  selected: settings.registration,
+                  label: _registrationLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(registration: value)),
+                ),
+                const _Heading('6-digit codes and new codes'),
+                _Choice<DemoCode>(
+                  values: DemoCode.values,
+                  selected: settings.code,
+                  label: _codeLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(code: value)),
+                ),
+                const _Heading('New password after a reset, next attempt'),
+                _Choice<DemoPasswordReset>(
+                  values: DemoPasswordReset.values,
+                  selected: settings.passwordReset,
+                  label: _passwordResetLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(passwordReset: value)),
+                ),
+                const _Heading(
+                  'Change password and delete account, next attempt',
+                ),
+                _Choice<DemoPasswordChange>(
+                  values: DemoPasswordChange.values,
+                  selected: settings.passwordChange,
+                  label: _passwordChangeLabel,
+                  onSelected: (value) => demo.update(
+                    demo.settings.copyWith(passwordChange: value),
+                  ),
+                ),
+                const _Heading('Fingerprint sign-in, next attempt'),
+                _Choice<DemoFingerprint>(
+                  values: DemoFingerprint.values,
+                  selected: settings.fingerprint,
+                  label: _fingerprintLabel,
+                  onSelected: (value) =>
+                      demo.update(demo.settings.copyWith(fingerprint: value)),
+                ),
+              ],
               const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
                 values: DemoSave.values,
@@ -145,19 +178,57 @@ class DemoPanelScreen extends StatelessWidget {
 
   static String _signInLabel(DemoSignIn value) => switch (value) {
     DemoSignIn.accepted => 'Accepted (any email and password)',
+    DemoSignIn.emailNotRegistered => 'Email not registered',
     DemoSignIn.wrongPassword => 'Wrong password (locks after 5)',
+    DemoSignIn.challengeRequired => 'Bot check (any solution signs in)',
+    DemoSignIn.challengeRejected => 'Bot check (every solution refused)',
     DemoSignIn.locked => 'Too many attempts (locked)',
+    DemoSignIn.emailNotVerified => 'Email not verified',
+    DemoSignIn.unavailable => 'Server busy (try again shortly)',
   };
 
   static String _registrationLabel(DemoRegistration value) => switch (value) {
     DemoRegistration.accepted => 'Accepted (any data)',
     DemoRegistration.rejected => 'Rejected (field errors)',
+    DemoRegistration.tooSoon => 'Too soon (wait, then send again)',
+    DemoRegistration.unavailable => 'Server busy (try again shortly)',
+  };
+
+  static String _passwordResetLabel(DemoPasswordReset value) => switch (value) {
+    DemoPasswordReset.accepted => 'Accepted (any password)',
+    DemoPasswordReset.passwordRefused => 'Password refused (too short)',
+    DemoPasswordReset.tokenInvalid => 'Reset ran out (start again)',
+    DemoPasswordReset.tooSoon => 'Too many requests (wait)',
+    DemoPasswordReset.unavailable => 'Server busy (try again shortly)',
+  };
+
+  static String _passwordChangeLabel(DemoPasswordChange value) =>
+      switch (value) {
+        DemoPasswordChange.accepted => 'Accepted (wrong current: see Sign in)',
+        DemoPasswordChange.passwordRefused =>
+          'New password refused (too short)',
+        DemoPasswordChange.locked => 'Locked after wrong passwords (wait)',
+        DemoPasswordChange.unavailable => 'Server busy (try again shortly)',
+      };
+
+  static String _fingerprintLabel(DemoFingerprint value) => switch (value) {
+    DemoFingerprint.accepted => 'Accepted (wrong password: see Sign in)',
+    DemoFingerprint.notEnrolled => 'Phone has no fingerprint enrolled',
+    DemoFingerprint.unsupported => 'Phone cannot hold the key',
+    DemoFingerprint.notMatched => 'Fingerprint did not match',
+    DemoFingerprint.attestationRefused => 'Server refuses the key',
+    DemoFingerprint.limitReached => 'Five phones already (limit)',
+    DemoFingerprint.signInRefused => 'Sign-in refused (use the password)',
+    DemoFingerprint.locked => 'Locked after failures (wait)',
+    DemoFingerprint.unavailable => 'Server busy (try again shortly)',
   };
 
   static String _codeLabel(DemoCode value) => switch (value) {
     DemoCode.accepted => 'Accepted (any code)',
-    DemoCode.wrong => 'Wrong (expires after 3 tries)',
+    DemoCode.wrong => 'Wrong (dead after 5 tries)',
     DemoCode.expired => 'Expired',
+    DemoCode.attemptsExceeded => 'Too many tries (dead, wait for a new one)',
+    DemoCode.unavailable => 'Server busy (try again shortly)',
   };
 }
 

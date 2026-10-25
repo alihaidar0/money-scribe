@@ -19,6 +19,8 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 ## 2. Quality baseline
 
 - [x] Pre-commit hook runs every CI check (format, analyze, tests, file hygiene)
+- [x] Smart checks: the commit hook runs only the tests a change can reach and skips non-Dart commits; CI skips Flutter jobs for non-Dart pull requests and splits the tests in three shards
+- [x] CI runs the test shards at the same time as format and analyze, not after them
 - [x] First smoke test in `test/`
 - [x] Spell checker configured (`cspell.json`, shared project word list)
 - [x] Strict lints in `analysis_options.yaml` (`very_good_analysis`)
@@ -48,7 +50,7 @@ The build plan for **Money Scribe: Budget & Expense Tracker**, as a checklist. E
 - [ ] Monthly overview
 - [ ] Reports: by category, month over month, debts summary
 - [ ] CSV export and import that round-trips without loss
-- [ ] App lock
+- [x] App lock: a salted hash of the PIN in secure storage, pauses and a limit on wrong PINs, the fingerprint through the system, a timeout the person chooses, and a secure window in production
 - [ ] Accessibility review
 
 ## 5. Release
@@ -66,6 +68,7 @@ To do, in this order, one step at a time:
 - [x] Add the four staging secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS`) and the variable `ANDROID_CERT_SHA256`
 - [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
 - [x] Merge the environments pull request; check the first staging build and the "Staging" draft release
+- [x] Dependencies updated to the latest versions that resolve with Flutter 3.47.7 (Firebase 5.1.0 and 17.0.1, `go_router` 18.1.1, the code generators); the 13 packages held back by the SDK move with the Flutter update below
 - [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
@@ -75,6 +78,11 @@ To do, in this order, one step at a time:
 - [x] Add Firebase to both projects (Analytics off) and register the staging and production Android apps; keep `google-services.json` out of Git
 - [x] Store each environment's `google-services.json` (base64) as the secret `GOOGLE_SERVICES_JSON_BASE64` of its GitHub environment
 - [x] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
+- [x] Build workflow job that sends the arm64-v8a APK to Firebase App Distribution (staging keeps only the newest build), skipped until the variables are set
+- [x] Staging: turn on App Distribution and create the group `testers`
+- [x] Staging: service account with the App Distribution Admin role and the Workload Identity Federation provider for this repository and the `staging` environment
+- [x] Staging: add the three variables to the `staging` GitHub environment; check the first upload and the invitation link
+- [ ] Production: the same four steps for the production project and the `production` environment
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
 - [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)
@@ -100,6 +108,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-2 Sign in
 - [x] AUTH-2b Sign in, wrong password
 - [x] AUTH-2c Sign in, too many attempts
+- [ ] AUTH-2d Sign in, signed out because of too many devices
 - [x] AUTH-3 Register
 - [x] AUTH-3b Register, errors
 - [x] AUTH-4 Verify email
@@ -116,6 +125,23 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-11 App lock
 - [x] AUTH-12 PIN entry
 - [x] AUTH-13 Create a PIN
+- [x] Fingerprint switch of its own (on only after a match), and the PIN, the fingerprint and the timeout stay after sign-out for the same account
+- [x] The PIN lock can be on alone and the fingerprint needs it (turned on without a PIN it asks for the fingerprint, then a new PIN); a new lock asks every time the app comes back
+- [x] Pin the contract that has the device-key endpoints, and generate the client on a scratch copy first
+- [x] Fingerprint sign-in, the key and the server: `DeviceKeyStore` over the plugin, the remote and the fake repository, the key compared with the server after each sign-in
+- [x] Settings: "Sign in with fingerprint" switch (password, then a fingerprint; off removes the key from the server and the phone)
+- [x] Sign-in screen: "Sign in as `<name>` with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
+- [x] After a password change: offer to turn the fingerprint sign-in on again (the server removes every key)
+- [x] "Phones with fingerprint sign-in": the list with the key of each phone, removing one
+- [ ] Check on a real phone against staging (an emulator is refused): turn on, sign out, sign in, a changed fingerprint, a changed password
+- [x] Before adding the biometric signing plugin: check it (maintainer, licence, native code), then `flutter pub add` by the owner
+- [x] Store forms for the fingerprint sign-in: Data safety (device identifier, no biometric data) and App Privacy answers, in the privacy policy text
+- [x] App lock for real: lock at start and after the time in the background, pauses after wrong PINs, sign-out after ten, "Lock after" in the Settings
+- [x] Sign in with an unverified email: opens Verify email, no code sent
+- [x] Register: passwords differ, and the countdown on the button while the server asks to wait
+- [x] Verify email: 6 digits, the hint for an existing account, and the dead code after too many tries
+- [x] "Try again shortly" state when the server is busy (sign in, register, verify email)
+- [x] "Not available yet" state for changing a password and deleting the account, until the server offers them
 
 ### B. Overview
 
@@ -191,6 +217,14 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-9 Default currency
 - [x] ST-10 Sign out
 - [x] ST-11 Delete account
+- [ ] ST-7b Export CSV, confirm the password
+- [ ] ST-7c Export CSV, too many attempts
+- [ ] ST-12 Where you are signed in, Active
+- [ ] ST-12b Where you are signed in, Previous
+- [ ] ST-12c Session details
+- [ ] ST-12d End this session
+- [ ] ST-12e Sign out of all other devices
+- [ ] ST-13 Security activity
 
 ### H. Loading, empty, error and no connection
 
@@ -218,6 +252,8 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] NC-1 No connection, full screen
 - [x] ERR-1 Could not save
 - [x] ERR-2 Something went wrong
+- [ ] ERR-3 Too many requests
+- [ ] ST-14 Sessions and Security activity: loading, empty, error, no connection
 
 ### I. Arabic (right-to-left) screens
 
@@ -229,6 +265,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AR-6 Settings (Arabic)
 - [x] AR-7 Sign in (Arabic)
 - [x] AR-8 Verify email (Arabic)
+- [ ] AR-9 Where you are signed in (Arabic)
 
 ### J. Tablet and web layouts
 
@@ -244,6 +281,16 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
 
+### L. Changes to finished screens after the backend agreements
+
+- [ ] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
+- [ ] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
+- [ ] Overview and Reports: the notice "records in other currencies are not shown here"
+- [ ] Transactions: the search box searches the notes only
+- [ ] Debts: the direction and the currency are fixed when editing; the repayment date cannot be before the start; totals by currency
+- [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
+- [ ] Something went wrong: the reference the person can copy
+
 ## 7. Backend connection
 
 The server is the Django backend. The app pins one release of its API contract and generates its client from it; the full guide is [`backend-api.md`](backend-api.md). Do the steps in order, one pull request each unless noted.
@@ -255,13 +302,65 @@ Done in the repository:
 To do:
 
 - [ ] Backend: first release with `openapi.yaml` attached and immutable releases on (backend repository)
-- [ ] Add the client packages with `flutter pub add`, every version pinned exactly
+- [x] Add the client packages with `flutter pub add`, every version pinned exactly
 - [ ] Create `api/BACKEND_REPO`, sign in with `gh auth login`, run `scripts/sync-api.sh vX.Y.Z`, commit `api/` and `lib/core/api/`
-- [ ] `API_BASE_URL` per environment in `env/staging.json` and `env/production.json`, and in the launch configurations
+- [x] `API_BASE_URL` per environment: ignored `.env.staging` and `.env.production`, a variable of each GitHub environment, and the launch configurations
 - [ ] Local backend: debug-only cleartext exception for the emulator; CORS and allowed hosts on the backend
-- [ ] Dio instance, token interceptor and one error parser in `core/network/`
+- [x] Dio instance, token interceptor and one error parser in `core/network/`
+- [x] Write safety in the app: one `Idempotency-Key` per action kept until it has an answer, `If-Match` and `If-None-Match`, `412` and `409 idempotency_in_progress`, and reading every page of a list
 - [ ] Remote repositories, one feature at a time: `data/remote/`, switch in `main`, delete `data/fake/`
 - [ ] Optional: repository variable `BACKEND_REPO` (and secret `BACKEND_READ_TOKEN` if private) for the weekly reminder
-- [ ] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
+- [x] Update `SECURITY.md`, `CONTRIBUTING.md`, the design brief and `docs/DESIGN.md` for the connected backend
+
+Authentication step (agreed with the backend, summary in [`backend-api.md`](backend-api.md) section 7). The contract is pinned; the screens and the fake account follow it first, then the app connects to the server:
+
+- [x] Backend: merge `openapi/schema.yaml` for register, verify email, resend, sign in, refresh, sign out and profile
+- [x] Pin the schema, generate the client on a scratch copy first, and check the optional fields and the extra error members
+- [x] Prepare the screens, no schema needed: 6-digit email code, no password rule in the app, register countdown, verify-screen hint, "try again shortly" state
+- [x] Update the fake auth repository and its tests to the agreed rules (6-digit code, new error codes, resend wait)
+- [x] Add the packages for tokens, device information and time zone with `flutter pub add`, exact versions
+- [x] Remote auth repository: tokens in secure storage, one refresh at a time, device object, language and time zone
+- [x] Check the authentication on a real device against staging: register and verify, sign out and in, a wrong password and the lock, the token expiring, a lost refresh answer
+- [x] Staging only: a banner "the server is starting" when a request waits more than a few seconds (the free server sleeps after 15 minutes, production does not), and a silent warm-up request at start
+- [x] Request to the backend (`alihaidar0/money-scribe-backend#35`): separate sign-in errors for an unknown email and a wrong password
+- [x] Pin the contract that has them, and generate the client on a scratch copy first
+- [x] Sign in names the field at fault: email not registered under the email, wrong password under the password, email first
+- [x] Sign-in bot challenge (Cloudflare Turnstile) after repeated failed sign-ins: show the widget, send its token once, a new one for each attempt
+- [x] Write the leaked-password and bot-check sentences for the privacy policy and the store forms (wording in `backend-api.md`)
+- [x] Account endpoints (`alihaidar0/money-scribe-backend#40`): pin the contract and generate the client
+- [x] Forgot password on the server: ask for the code, check it, set the new password, then sign in again
+- [x] Change password on the server: the new tokens replace the stored ones
+- [x] Delete account on the server, and the deletion wording for the privacy policy and the store forms
+- [x] Delete the push token of the device when the person signs out, the account is deleted or the session ends
+- [x] Push token rules agreed with the backend (one token per device, removed with the session and the account, 90-day retention; written in `backend-api.md`)
+- [ ] Push token on the server, when its endpoints are in a pinned contract: register after sign-in and on a new token, only while notifications are allowed; remove first on sign-out, with a short timeout
+- [ ] Decide with the backend whether push addresses a device by its FCM token or by its Firebase installation ID (`firebase_messaging` 17 deprecates the token calls), then update `PushMessagingRepository`
+- [x] Language and time zone of the account follow the app through the settings `PATCH` of the preferences step, so notifications use the right language
+- [x] Remote pay schedule and default currency: the settings of the account are read and saved on the server
+- [ ] Before publishing: declare the push token and Firebase installation ID in the privacy policy and the store data forms, and give the web address for account deletion that Google Play asks for
+- [x] Edit the name
+- [x] Change email: new address, code, cancel (a new code asks for the password again)
+
+Salary step (agreed with the backend; the screens and the fake data follow the agreed contract first, the remote repositories come when the contract is pinned):
+
+- [x] Versions on a month and on a fixed item; a save, edit or delete of a stale one is refused and the person chooses what to do
+- [x] A new month starts with the figures of the last saved month (currency, base salary, food allowance, working hours, tax rate, pay schedule); the monthly numbers stay empty
+- [x] Fixed items need a saved month: "Save this month's salary first" instead of an empty list
+- [x] "Copy from last month" for the fixed items of a month, with a confirmation when it already has some, and the refusals worded
+- [x] Results, payments and balances as the server calculates them, next to the live preview
+- [x] Remote salary and fixed items repositories (month, history, defaults, per-item calls); the copy comes with "Copy from last month"
+
+Money data step (agreed with the backend, backend issues #63 to #69; summary in [`backend-data-api.md`](backend-data-api.md)). Each line waits for its endpoint to be merged and pinned; until then the screens and the fake data follow the agreement:
+
+- [ ] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
+- [ ] Follow a `next` link only when it points at the API address
+- [ ] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
+- [ ] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
+- [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
+- [ ] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
+- [ ] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports), `session_limit_reached` as a sign-in reason
+- [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
+- [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
+- [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

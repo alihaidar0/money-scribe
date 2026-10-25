@@ -14,7 +14,8 @@ lib/
                              # BlocObserver (wires everything)
   core/                      # shared and feature-independent: money, environment, routing
                              # paths, l10n, clipboard, formatting, theme extensions, errors,
-                             # demo settings, time, widgets, the generated API client (api/)
+                             # demo settings, time, widgets, the generated API client (api/),
+                             # network (Dio, session), device, secure storage
   features/<feature>/
     domain/                  # entities, value objects, repository interfaces (plain Dart)
     data/                    # repository implementations, data sources
@@ -84,6 +85,22 @@ with **events everywhere**: even a simple feature has event and state classes (n
   screen changes: `flutter test --run-skipped --tags render test/render`.
 - `test/architecture_test.dart` enforces the dependency rules above.
 
+### Which tests run when
+
+- **Commit hook.** `scripts/dart-affecting.sh` says whether a change can affect the Dart checks at all; if not,
+  format, analyze and the tests are skipped. Otherwise `tool/changed_scope.dart` reads the import graph of
+  `lib/`, `test/` and `tool/` (`part` files count as one unit with their library) and selects the tests that
+  import a changed file, directly or through a chain of imports. A change to a file of `lib/` always adds
+  `test/architecture_test.dart`, which reads every source file, and `docs/DESIGN.md` counts as a change to the
+  parser the theme tests read it with. The whole suite runs whenever the graph cannot say: a change to the
+  dependencies, the analyzer settings, the strings or the assets, a deleted Dart file, a changed file that
+  cannot be found, or an error. `FULL_CHECKS=1` forces everything.
+- **CI.** A pull request into `develop` that changes nothing the Dart checks read skips the Flutter jobs
+  (`CI passed` counts a skipped job as passed). Otherwise the whole suite runs, split over three runners
+  (`--total-shards`), at the same time as format and analyze, so the required check never depends on the
+  selection and the run lasts as long as the slowest check. A pull request into `main`, a
+  manual run and a change CI cannot read run everything, and only then is coverage collected.
+
 ## Data
 
 The data lives only on the server. Until the backend exists, repository interfaces have fake
@@ -120,6 +137,68 @@ implementations with invented data; the device keeps only simple settings in
 - A repository throws a `DataException` (`core/errors/`) when the server cannot be reached or fails;
   a Bloc turns it into a state, and the screen shows the full-screen "No connection" or
   "Something went wrong" view (`FlowPage` keeps the form underneath, so nothing typed is lost).
+  The other kinds are "The service is busy" (`ServiceUnavailableException`, a `503`) and "Not available
+  yet" (`FeatureNotAvailableException`: the screen exists and the server side is still to come; the
+  only way out is Go back).
+
+### The network layer
+
+`core/network/` is what every remote repository shares; `core/api/` is the client generated from the
+contract, which only a feature's `data/` imports.
+
+- **`createPlainDio` / `createAuthenticatedDio`** build the Dio of the server from `ApiConfig`
+  (`core/environment/`): JSON only, long timeouts (the free staging server wakes slowly), and no
+  logging interceptor, ever, because requests hold personal and financial data.
+- **`AuthInterceptor`** puts the access token on the requests a feature says need it and keeps the
+  session alive. Only `401 token_expired` refreshes, and the request is sent again once. One refresh
+  runs at a time, and requests that expire together wait for it. The new pair is stored before it is
+  used. A refresh whose answer is lost is sent again with the same token inside the server's 30
+  seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
+  Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
+  imports `core/api/`: the feature that owns the paths builds it with its generated client.
+- **`SlowRequestMonitor`** notices a request that has waited more than 5 seconds, and `MonitoredHttpAdapter`
+  tells it about every real request (below the interceptors, so a request sent again after a refresh counts
+  once). The `connection` feature turns this into a note above the screen, in staging builds only: the free
+  staging server sleeps after 15 minutes and its first request takes about a minute, while a production
+  server does not sleep. `warmUpServer` sends one `GET /healthz` at start in staging, to wake it early.
+- **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
+  optional field as `null`, and the server wants it left out.
+- **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
+  `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
+  A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,
+  `ServiceUnavailableException` (a `503`) and `ServerException`.
+- **Write safety** (`IdempotencyKeys`, `WriteSafetyHeaders`, `readAllPages`) is what the backend agreed
+  for every write after the account. A create that is repeated (a lost answer, a retry) must not make a
+  second record, so each action of the person (one press of Save, Add or Import) gets one random UUID
+  `Idempotency-Key`, kept in memory while the action has no answer and dropped once it has one: a
+  success or a refusal no retry changes. Two presses that each got an answer have two keys, so a second
+  purchase with the same amount is never taken for a repeat of the first. A key is also dropped after 20
+  hours, because the server forgets it after 24. Edits and deletes send `If-Match` with the `version` of
+  the record they read; a month created with `PUT` sends `If-None-Match: *` when the app did not find it.
+  `412` becomes `StaleRecordException` (the record changed on another device: read it again and let the
+  person decide) and `409 idempotency_in_progress` becomes `RequestInProgressException` (try again a
+  moment later). A list the server cuts into pages is read to the end with `readAllPages`, which stops a
+  server that loops. The generated client takes the three headers as plain string parameters, written by
+  `WriteSafetyHeaders`. The salary repositories already follow this: a `SalaryMonth` and a `FixedItem`
+  carry their `version`, saving a month without a version means "create it" and fails if it exists, an
+  edit or delete passes the version it read, and the Blocs answer a `StaleRecordException` by keeping
+  what was typed (the month) or loading the list again (the items) and offering to apply the change
+  once more.
+- **Fingerprint sign-in** (`features/auth`) keeps the private key in the phone's secure hardware, behind
+  `DeviceKeyStore` (the only place the `biometric_signature` plugin is used), and the public half on the
+  server. `RemoteDeviceKeyRepository` asks for a challenge, has the key sign it after a fingerprint, and
+  registers or uses the result; next to the key the phone keeps only the name and a masked email of the
+  account, in the secure storage, so the sign-in screen can say whom the fingerprint signs in. The calls
+  that need no session (challenge, sign-in) are in `authPublicPaths`. `DeviceKeySync` compares the key with
+  the server's list after every sign-in and lets go of one the server removed (a changed password, a
+  deleted account, a key that expired) or one that belongs to another account. The emulator has no secure
+  hardware, so a build without a server address uses `FakeDeviceKeyRepository`, driven by the demo panel.
+- **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
+  one value. A value that cannot be read is no session. The Android manifest turns automatic backup
+  off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.
+- **`core/device/`** describes the device for the server (a random UUID kept in the secure storage,
+  the model name, the system and app versions) and reads the time zone as an IANA name. The plugins
+  are used in one place each, behind small interfaces.
 
 ## Navigation
 
@@ -129,6 +208,33 @@ sit above the shell, so they hide the bar. The exception is a screen that is a s
 as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
+
+The email change is two screens that hand their result back (`EmailChangeOutcome`): the form
+(`ChangeEmailBloc`) and the code screen, which reuses `CodeEntryPage` and `CodeVerificationBloc` with the
+purpose `CodePurpose.changeEmail`. A new code for it needs the password again, which the page asks for
+with a dialog and passes with the resend event; the password is never kept.
+
+The app lock (`features/auth/`) has three parts. `AppLockRepository` is the device side: the PIN as a
+salted PBKDF2 hash in the secure storage (`SecureAppLockRepository`, `PinHasher`), the count of wrong PINs,
+the pause they started (`PinLockoutPolicy`: none for four, then 30 s, 1 min, 5 min, 15 min, 15 min, and the
+tenth wrong PIN in a row signs the person out) and the timeout; `BiometricAuthenticator` is the fingerprint
+through the system (`local_auth`). `AppLockGate` (`app/app_lock_gate.dart`) watches the app move to the
+background (`hidden` and `paused`, never `inactive`) and locks it after the timeout; it implements the
+domain interface `AppLockSession`, so the screens only report "unlocked". The router sends every screen of a
+locked app to the lock screen with a `from` address and goes back to it (`AppRoutes.returnTo` accepts only
+a screen of the app). The lock belongs to the account that made it (`AppLockRepository.boundAccount`,
+`AuthRepository.accountId`) and stays when the person signs out. `AppLockGate` forgets it when another
+account signs in; "Forgot PIN?", ten wrong PINs and deleting the account forget it on their own. The
+fingerprint is a separate switch (`biometricsEnabled`) that turns on only after a fingerprint matched and
+needs the PIN: with no PIN it is confirmed first (`confirmBiometrics`), then the Create a PIN screen opens
+and the fingerprint turns on when the PIN is saved (`enableConfirmedBiometrics`). The lock screen asks for
+it only while it is on and the device still has one. A new lock asks every time the app comes back
+(`LockTimeout.standard` is `immediately`).
+
+Whenever the person is signed out (signing out, deleting the account, or a session the server ended),
+`PushTokenCleanup` (`app/push_token_cleanup.dart`) deletes the push token of the device through
+`PushMessagingRepository.forgetToken()`, so a signed-out device keeps no token that an earlier sign-in
+registered. A failure to delete it is logged by type only and never blocks the sign-out.
 
 A screen pushed above the shell is wrapped once, in the router, in `WideFrame` (`core/widgets/`), which
 centres the whole screen in a column on a window from 600 dp and changes nothing on a phone; it also gives

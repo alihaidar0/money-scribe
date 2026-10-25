@@ -36,3 +36,23 @@ final class DeleteAccountConfirmed extends AccountEvent {
 final class DeleteAccountDialogOpened extends AccountEvent {
   const new();
 }
+
+/// A second of the wait before the password can be sent again passed.
+final class _DeleteWaitTicked extends AccountEvent {
+  const new(this.secondsLeft);
+
+  final int secondsLeft;
+
+  @override
+  List<Object> get props => [secondsLeft];
+}
+
+/// The name was changed in the Edit name dialog: show the new profile.
+final class AccountProfileChanged extends AccountEvent {
+  const new(this.profile);
+
+  final AccountProfile profile;
+
+  @override
+  List<Object> get props => [profile];
+}

@@ -8,8 +8,10 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_summary.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_history_entry.dart';
 import 'package:money_scribe/features/salary/domain/salary_month.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
@@ -38,6 +40,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     on<FixedItemAdded>(_onAdded, transformer: sequential());
     on<FixedItemChanged>(_onChanged, transformer: sequential());
     on<FixedItemDeleted>(_onDeleted, transformer: sequential());
+    // A second press while the first copy runs would copy everything twice.
+    on<FixedItemsCopied>(_onCopied, transformer: droppable());
   }
 
   final FixedItemsRepository _fixedItems;
@@ -74,9 +78,11 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
   }
 
   Future<void> _onAdded(FixedItemAdded event, Emitter<FixedItemsState> emit) {
+    // The server refuses an item for a month that is not saved.
+    if (!state.monthSaved) return Future.value();
     return _run(event, emit, () async {
       final item = await _fixedItems.add(state.month, event.draft);
-      emit(state.copyWith(items: [...state.items, item]));
+      await _itemsChanged(emit, [...state.items, item]);
     });
   }
 
@@ -85,19 +91,17 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     Emitter<FixedItemsState> emit,
   ) {
     return _run(event, emit, () async {
+      final current = _itemOf(event.id);
       final saved = await _fixedItems.update(
         state.month,
         event.id,
         event.draft,
+        version: current.version,
       );
-      emit(
-        state.copyWith(
-          items: [
-            for (final item in state.items)
-              if (item.id == event.id) saved else item,
-          ],
-        ),
-      );
+      await _itemsChanged(emit, [
+        for (final item in state.items)
+          if (item.id == event.id) saved else item,
+      ]);
     });
   }
 
@@ -106,16 +110,47 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     Emitter<FixedItemsState> emit,
   ) {
     return _run(event, emit, () async {
-      await _fixedItems.delete(state.month, event.id);
-      emit(
-        state.copyWith(
-          items: [
-            for (final item in state.items)
-              if (item.id != event.id) item,
-          ],
-        ),
-      );
+      final current = _itemOf(event.id);
+      await _fixedItems.delete(state.month, event.id, version: current.version);
+      await _itemsChanged(emit, [
+        for (final item in state.items)
+          if (item.id != event.id) item,
+      ]);
     });
+  }
+
+  Future<void> _onCopied(
+    FixedItemsCopied event,
+    Emitter<FixedItemsState> emit,
+  ) async {
+    // The server has no month to copy into until the salary is saved.
+    if (!state.monthSaved) return;
+
+    emit(state.copyWith(copying: true));
+    await _run(event, emit, () async {
+      final items = await _fixedItems.copyFromPrevious(state.month);
+      await _itemsChanged(emit, items);
+    });
+    emit(state.copyWith(copying: false));
+  }
+
+  /// The items are now [items]. The balances the server gave are out of date,
+  /// so the summary adds them up here until the server's come: a change of an
+  /// item does not answer with them, so the month is read again.
+  Future<void> _itemsChanged(
+    Emitter<FixedItemsState> emit,
+    List<FixedItem> items,
+  ) async {
+    final hadServerBalances = state.balances != null;
+    emit(state.copyWith(items: items, clearBalances: true));
+    if (!hadServerBalances) return;
+
+    try {
+      final saved = await _salary.month(state.month);
+      emit(state.copyWith(balances: saved?.figures?.balances));
+    } on Exception {
+      // The summary keeps adding them up here; the next load asks again.
+    }
   }
 
   @override
@@ -126,17 +161,41 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     await super.close();
   }
 
+  /// The item [id] as the list shows it. An item that is not there was deleted
+  /// on another device, which is the same as a version that moved on.
+  FixedItem _itemOf(String id) {
+    return state.items.firstWhere(
+      (item) => item.id == id,
+      orElse: () => throw const StaleRecordException(),
+    );
+  }
+
   /// Does [action], which saves [event] on the server. When the server does
   /// not accept it the list stays as it was and [FixedItemsState.failedAction]
-  /// holds [event], so the screen can offer to try again.
+  /// holds [event], so the screen can offer to try again. When the item was
+  /// changed on another device the list is loaded again and
+  /// [FixedItemsState.staleAction] holds [event], so the screen can offer to
+  /// apply it to what is there now. When a copy is refused for a reason the
+  /// person can act on, [FixedItemsState.copyRefusal] holds it.
   Future<void> _run(
     FixedItemsEvent event,
     Emitter<FixedItemsState> emit,
     Future<void> Function() action,
   ) async {
-    emit(state.copyWith(clearFailedAction: true));
+    emit(
+      state.copyWith(
+        clearFailedAction: true,
+        clearStaleAction: true,
+        clearCopyRefusal: true,
+      ),
+    );
     try {
       await action();
+    } on StaleRecordException {
+      await _load(emit);
+      emit(state.copyWith(staleAction: event));
+    } on FixedItemsCopyRefusedException catch (refused) {
+      emit(state.copyWith(copyRefusal: refused.refusal));
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {
@@ -157,7 +216,7 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       final items = results[0]! as List<FixedItem>;
       final saved = results[1] as SalaryMonth?;
       final defaultMode = saved == null
-          ? (await _salary.defaults()).paymentMode
+          ? (await _salary.defaults(state.month)).paymentMode
           : null;
 
       final entry = saved == null ? null : SalaryHistoryEntry.tryFrom(saved);
@@ -165,9 +224,13 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       emit(
         state.copyWith(
           status: FixedItemsStatus.ready,
-          items: items,
+          monthSaved: saved != null,
+          // The server deletes the items with the month.
+          items: saved == null ? const [] : items,
           salary: entry?.result,
           clearSalary: entry == null,
+          balances: saved?.figures?.balances,
+          clearBalances: saved?.figures == null,
           twoPayments: mode == PaymentMode.twoPayments,
           currency: saved?.inputs.baseSalary.currency ?? Currency.rub,
         ),

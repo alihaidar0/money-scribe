@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/money/currency.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_result.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
@@ -13,8 +19,10 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
+import '../../../support/fake_server_salary_repository.dart';
 
 const _nbsp = '\u00a0';
+const _october = YearMonth(2026, 10);
 const _tallPhone = Size(412, 1800);
 
 late DemoController _demo;
@@ -26,6 +34,7 @@ Future<void> _pumpSalary(
   AppLanguage language = AppLanguage.english,
   Size size = _tallPhone,
   Duration latency = Duration.zero,
+  SalaryRepository? salaryRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -35,6 +44,7 @@ Future<void> _pumpSalary(
   await tester.pumpWidget(
     buildApp(
       demo: _demo,
+      salaryRepository: salaryRepository,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: _demo, signedIn: true),
     ),
@@ -284,7 +294,121 @@ void main() {
     });
   });
 
+  group('the figures the server calculated', () {
+    /// The server's food allowance is a ruble more than the app's, so the
+    /// two can be told apart on screen.
+    FakeServerSalaryRepository serverSalary({
+      DemoSettings settings = const DemoSettings(),
+    }) {
+      final inner = FakeSalaryRepository(
+        demo: DemoController(initial: settings, latency: Duration.zero),
+      );
+      return FakeServerSalaryRepository(inner)
+        ..resultOf = (result) => SalaryResult(
+          foodAllowance: result.foodAllowance + const Money(100, Currency.rub),
+          extraHoursPay: result.extraHoursPay,
+          incomeBeforeTax: result.incomeBeforeTax,
+          tax: result.tax,
+          totalAfterTax: result.totalAfterTax,
+          payments: result.payments,
+        );
+    }
+
+    testWidgets('a saved month shows the lines the server calculated', (
+      tester,
+    ) async {
+      await _pumpSalary(tester, salaryRepository: serverSalary());
+
+      expect(_text('+10,001.00 ₽'), findsOneWidget);
+      expect(_text('104,400.00 ₽'), findsOneWidget);
+      expect(find.text('Saved total'), findsNothing);
+    });
+
+    testWidgets('typing shows the live lines, with the saved total', (
+      tester,
+    ) async {
+      await _pumpSalary(tester, salaryRepository: serverSalary());
+
+      await tester.enterText(_field('Extra hours'), '4');
+      await tester.pumpAndSettle();
+
+      // What is typed is calculated here: the server's ruble is gone.
+      expect(_text('+10,001.00 ₽'), findsNothing);
+      expect(_text('100,050.00 ₽'), findsOneWidget);
+      expect(find.text('Saved total'), findsOneWidget);
+      expect(_text('104,400.00 ₽'), findsOneWidget);
+    });
+
+    testWidgets('saving shows what the server calculated for it', (
+      tester,
+    ) async {
+      await _pumpSalary(tester, salaryRepository: serverSalary());
+      await tester.enterText(_field('Extra hours'), '4');
+      await tester.pumpAndSettle();
+
+      await tester.tap(_save);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Month saved'), findsOneWidget);
+      expect(_text('+10,001.00 ₽'), findsOneWidget);
+      expect(_text('100,050.00 ₽'), findsOneWidget);
+      expect(find.text('Saved total'), findsNothing);
+    });
+
+    testWidgets('a month that is not saved has no saved total', (tester) async {
+      const empty = DemoSettings(scenario: DemoScenario.empty);
+      await _pumpSalary(
+        tester,
+        salaryRepository: serverSalary(settings: empty),
+        settings: empty,
+      );
+
+      await tester.enterText(_field('Extra hours'), '4');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved total'), findsNothing);
+    });
+
+    testWidgets('the saved total is in Arabic', (tester) async {
+      await _pumpSalary(
+        tester,
+        salaryRepository: serverSalary(),
+        language: AppLanguage.arabic,
+      );
+
+      await tester.enterText(_field('الساعات الإضافية'), '4');
+      await tester.pumpAndSettle();
+
+      expect(find.text('الإجمالي المحفوظ'), findsOneWidget);
+    });
+  });
+
   group('saving (SAL-10)', () {
+    testWidgets('a month changed on another device is not replaced', (
+      tester,
+    ) async {
+      final demo = DemoController(latency: Duration.zero);
+      final repository = FakeSalaryRepository(demo: demo);
+      await _pumpSalary(tester, salaryRepository: repository);
+      // Another device saves the month first.
+      await repository.save((await repository.month(_october))!);
+
+      await tester.tap(_save);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('This month was changed on another device.'),
+        findsOneWidget,
+      );
+      expect(find.text('Month saved'), findsNothing);
+      expect(find.text('Load latest'), findsOneWidget);
+
+      await tester.tap(find.text('Load latest'));
+      await tester.pumpAndSettle();
+
+      expect(_isEnabled(tester, _save), isTrue);
+    });
+
     testWidgets('says the month was saved, in green, with no action', (
       tester,
     ) async {

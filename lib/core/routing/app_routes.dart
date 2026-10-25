@@ -42,6 +42,9 @@ abstract final class AppRoutes {
   // The screens of the Settings.
   static const account = '/settings/account';
   static const changePassword = '/settings/account/change-password';
+  static const changeEmail = '/settings/account/change-email';
+  static const changeEmailCode = '/settings/account/change-email/code';
+  static const fingerprintPhones = '/settings/fingerprint-phones';
   static const paySchedule = '/settings/pay-schedule';
   static const categories = '/settings/categories';
   static const accounts = '/settings/accounts';
@@ -119,6 +122,37 @@ abstract final class AppRoutes {
     newPassword,
     passwordChanged,
   ];
+
+  /// The lock screen, with the place to go back to once the app is open.
+  static String lockedAt(String from) {
+    return Uri(path: appLock, queryParameters: {'from': from}).toString();
+  }
+
+  /// The PIN entry, with the same place to go back to.
+  static String pinEntryFor(String? from) {
+    return Uri(
+      path: pinEntry,
+      queryParameters: from == null ? null : {'from': from},
+    ).toString();
+  }
+
+  /// Where an unlocked app goes: [from] when it is a screen of the app a
+  /// signed-in person can open, else the Overview. A `from` taken from an
+  /// address is never trusted (no other site, no lock screen).
+  static String returnTo(String? from) {
+    if (from == null || !from.startsWith('/') || from.startsWith('//')) {
+      return overview;
+    }
+    final path = Uri.tryParse(from)?.path;
+    if (path == null || lockScreens.contains(path)) return overview;
+    if (signedOutOnly.contains(path) || passwordReset.contains(path)) {
+      return overview;
+    }
+    return from;
+  }
+
+  /// The two screens that open a locked app.
+  static const List<String> lockScreens = [appLock, pinEntry];
 
   /// The screens that need no sign-in. Everything else sends a signed-out
   /// person to the Welcome screen. Verifying the email is in this list but not

@@ -5,8 +5,10 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/domain/salary_calculator.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_form.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_result.dart';
@@ -79,7 +81,12 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     SalarySaveRequested event,
     Emitter<SalaryState> emit,
   ) async {
-    final month = state.canSave ? state.form.toMonth(state.month) : null;
+    final month = state.canSave
+        ? state.form.toMonth(
+            state.month,
+            version: state.isSaved ? state.version : null,
+          )
+        : null;
     if (month == null) return;
 
     // What is sent is what becomes the saved month, even if the person types
@@ -87,14 +94,19 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     final sent = state.form;
     emit(state.copyWith(saveStatus: SalarySaveStatus.saving));
     try {
-      await _repository.save(month);
+      final saved = await _repository.save(month);
       emit(
         state.copyWith(
           saveStatus: SalarySaveStatus.saved,
           isSaved: true,
+          version: saved.version,
           baseline: sent,
+          figures: saved.figures,
+          clearFigures: saved.figures == null,
         ),
       );
+    } on StaleRecordException {
+      emit(state.copyWith(saveStatus: SalarySaveStatus.stale));
     } on NoConnectionException {
       emit(state.copyWith(saveStatus: SalarySaveStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -111,8 +123,10 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
 
     emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleting));
     try {
-      await _repository.delete(state.month);
+      await _repository.delete(state.month, version: state.version);
       emit(state.copyWith(deleteStatus: SalaryDeleteStatus.deleted));
+    } on StaleRecordException {
+      emit(state.copyWith(deleteStatus: SalaryDeleteStatus.stale));
     } on NoConnectionException {
       emit(state.copyWith(deleteStatus: SalaryDeleteStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -156,7 +170,7 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
     try {
       final saved = await _repository.month(month);
       final form = saved == null
-          ? SalaryForm.empty(await _repository.defaults())
+          ? SalaryForm.empty(await _repository.defaults(month))
           : SalaryForm.fromMonth(saved);
       emit(
         state.copyWith(
@@ -164,7 +178,10 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
           form: form,
           baseline: form,
           isSaved: saved != null,
+          version: saved?.version ?? 0,
           formVersion: state.formVersion + 1,
+          figures: saved?.figures,
+          clearFigures: saved?.figures == null,
         ),
       );
     } on NoConnectionException {

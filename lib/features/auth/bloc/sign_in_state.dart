@@ -10,27 +10,115 @@ enum SignInStatus {
   /// The person is signed in.
   success,
 
-  /// The email or the password is wrong.
+  /// No account has this email address: said under the email field.
+  emailNotRegistered,
+
+  /// The account exists but the password is wrong: said under the password
+  /// field.
+  wrongPassword,
+
+  /// The server wants a bot challenge to be solved before it checks the email
+  /// and password: the challenge opens, and its token goes with the next send.
+  challengeRequired,
+
+  /// The token of the challenge was refused (wrong, expired or used): a new
+  /// challenge opens.
+  challengeRejected,
+
+  /// The server refused the sign-in without naming a field (a deactivated
+  /// account, for instance): said in a banner.
   wrongCredentials,
 
-  /// Too many wrong attempts: sign-in is locked until the countdown ends.
+  /// The password is right but the email address is not verified yet: the
+  /// Verify your email screen follows.
+  emailNotVerified,
+
+  /// The server asked to wait (too many wrong attempts, or too many
+  /// requests): sign-in is locked until the countdown ends.
   locked,
+
+  /// The server is busy: try again shortly.
+  unavailable,
 
   /// The server could not be reached.
   noConnection,
 
   /// The server failed.
   failure,
+
+  /// The fingerprint sign-in is under way: the sensor is asked, then the
+  /// server.
+  fingerprintSubmitting,
+
+  /// The phone cannot check the fingerprint now (a locked sensor, none
+  /// enrolled): the password is the way in, the fingerprint stays offered.
+  fingerprintUnavailable,
+
+  /// The server refused the fingerprint sign-in (the key expired or was
+  /// removed): the password is the way in.
+  fingerprintRefused,
+
+  /// A fingerprint was added or removed on the phone, so its key stopped
+  /// working and is gone: the person signs in with the password and turns the
+  /// sign-in on again.
+  fingerprintKeyChanged,
 }
 
 final class SignInState extends Equatable {
-  const new({this.status = SignInStatus.idle, this.lockSecondsLeft = 0});
+  const new({
+    this.status = SignInStatus.idle,
+    this.lockSecondsLeft = 0,
+    this.fingerprintAccount,
+    this.usePassword = false,
+    this.viaFingerprint = false,
+  });
 
   final SignInStatus status;
 
   /// Seconds until sign-in unlocks, while [status] is `locked`.
   final int lockSecondsLeft;
 
+  /// The account this phone signs in with its fingerprint, or `null` when the
+  /// phone has no key.
+  final FingerprintAccount? fingerprintAccount;
+
+  /// Whether the person chose the password form over the fingerprint: "Use
+  /// another account", or a fingerprint that was refused.
+  final bool usePassword;
+
+  /// Whether [status] is the answer to a fingerprint sign-in, so that Try again
+  /// asks for the fingerprint and not the password.
+  final bool viaFingerprint;
+
+  /// Whether the fingerprint is what the screen offers, instead of the email
+  /// and password form.
+  bool get offersFingerprint => fingerprintAccount != null && !usePassword;
+
+  SignInState copyWith({
+    SignInStatus? status,
+    int? lockSecondsLeft,
+    FingerprintAccount? fingerprintAccount,
+    bool clearFingerprintAccount = false,
+    bool? usePassword,
+    bool? viaFingerprint,
+  }) {
+    return SignInState(
+      status: status ?? this.status,
+      lockSecondsLeft: lockSecondsLeft ?? this.lockSecondsLeft,
+      fingerprintAccount: clearFingerprintAccount
+          ? null
+          : fingerprintAccount ?? this.fingerprintAccount,
+      usePassword: usePassword ?? this.usePassword,
+      viaFingerprint: viaFingerprint ?? this.viaFingerprint,
+    );
+  }
+
   @override
-  List<Object> get props => [status, lockSecondsLeft];
+  List<Object?> get props => [
+    status,
+    lockSecondsLeft,
+    fingerprintAccount,
+    usePassword,
+    viaFingerprint,
+  ];
 }

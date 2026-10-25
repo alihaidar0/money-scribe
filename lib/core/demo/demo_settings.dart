@@ -10,13 +10,123 @@ import 'package:money_scribe/core/payments/payment_mode.dart';
 enum DemoScenario { normal, loading, empty, error, noConnection }
 
 /// What the next sign-in attempt does.
-enum DemoSignIn { accepted, wrongPassword, locked }
+enum DemoSignIn {
+  accepted,
+
+  /// No account has the email address.
+  emailNotRegistered,
+
+  /// The account exists but the password is wrong (locks after 5).
+  wrongPassword,
+
+  /// The server asks for a bot challenge; any solved challenge signs in.
+  challengeRequired,
+
+  /// The server asks for a bot challenge and refuses every token.
+  challengeRejected,
+  locked,
+
+  /// The password is right but the email address is not verified yet.
+  emailNotVerified,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
 
 /// What the next attempt to create an account does.
-enum DemoRegistration { accepted, rejected }
+enum DemoRegistration {
+  accepted,
 
-/// What a code typed on the verification screens does.
-enum DemoCode { accepted, wrong, expired }
+  /// The server refuses the email address and the password.
+  rejected,
+
+  /// The same address was registered a moment ago: wait before sending again.
+  tooSoon,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
+/// What a code typed on the verification screens, or a new code asked for,
+/// does.
+enum DemoCode {
+  accepted,
+  wrong,
+  expired,
+
+  /// Too many wrong codes: the code is dead and a new one can be asked for
+  /// after a wait.
+  attemptsExceeded,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
+/// What the next attempt to set a new password after a reset does.
+enum DemoPasswordReset {
+  accepted,
+
+  /// The server refuses the password (the token stays valid).
+  passwordRefused,
+
+  /// The reset ran out: a new code has to be asked for.
+  tokenInvalid,
+
+  /// Too many requests: wait before the password is sent again.
+  tooSoon,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
+/// What the next attempt to change the password does; deleting the account
+/// shares the lock and the busy server. A wrong current password comes from
+/// [DemoSignIn.wrongPassword].
+enum DemoPasswordChange {
+  accepted,
+
+  /// The server refuses the new password (too short).
+  passwordRefused,
+
+  /// Too many wrong current passwords: the change is locked for a while.
+  locked,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
+
+/// What the next fingerprint sign-in action does: turning it on, or signing
+/// in with it. The wrong password of turning it on comes from
+/// [DemoSignIn.wrongPassword].
+enum DemoFingerprint {
+  accepted,
+
+  /// The phone has no fingerprint enrolled.
+  notEnrolled,
+
+  /// The phone has no secure hardware for the key.
+  unsupported,
+
+  /// The fingerprint did not match, or the check was cancelled.
+  notMatched,
+
+  /// The server refuses the key (an emulator, a rooted phone): turning it on
+  /// fails with no reason.
+  attestationRefused,
+
+  /// The account already has five phones with fingerprint sign-in.
+  limitReached,
+
+  /// The server refuses the fingerprint sign-in (the key expired or was
+  /// removed): the password is the way in.
+  signInRefused,
+
+  /// Too many fingerprint sign-ins failed: it is locked for a while.
+  locked,
+
+  /// The server is busy (`503`).
+  unavailable,
+}
 
 /// What the next attempt to save something does.
 enum DemoSave { accepted, fails }
@@ -29,6 +139,9 @@ final class DemoSettings extends Equatable {
     this.signIn = DemoSignIn.accepted,
     this.registration = DemoRegistration.accepted,
     this.code = DemoCode.accepted,
+    this.passwordReset = DemoPasswordReset.accepted,
+    this.passwordChange = DemoPasswordChange.accepted,
+    this.fingerprint = DemoFingerprint.accepted,
     this.save = DemoSave.accepted,
     this.paymentMode = PaymentMode.onePayment,
   });
@@ -37,6 +150,9 @@ final class DemoSettings extends Equatable {
   final DemoSignIn signIn;
   final DemoRegistration registration;
   final DemoCode code;
+  final DemoPasswordReset passwordReset;
+  final DemoPasswordChange passwordChange;
+  final DemoFingerprint fingerprint;
   final DemoSave save;
 
   /// How the fake account is paid: one payment or two a month.
@@ -47,6 +163,9 @@ final class DemoSettings extends Equatable {
     DemoSignIn? signIn,
     DemoRegistration? registration,
     DemoCode? code,
+    DemoPasswordReset? passwordReset,
+    DemoPasswordChange? passwordChange,
+    DemoFingerprint? fingerprint,
     DemoSave? save,
     PaymentMode? paymentMode,
   }) {
@@ -55,6 +174,9 @@ final class DemoSettings extends Equatable {
       signIn: signIn ?? this.signIn,
       registration: registration ?? this.registration,
       code: code ?? this.code,
+      passwordReset: passwordReset ?? this.passwordReset,
+      passwordChange: passwordChange ?? this.passwordChange,
+      fingerprint: fingerprint ?? this.fingerprint,
       save: save ?? this.save,
       paymentMode: paymentMode ?? this.paymentMode,
     );
@@ -66,6 +188,9 @@ final class DemoSettings extends Equatable {
     signIn,
     registration,
     code,
+    passwordReset,
+    passwordChange,
+    fingerprint,
     save,
     paymentMode,
   ];
@@ -77,10 +202,16 @@ class DemoController {
   new({
     DemoSettings initial = const DemoSettings(),
     this.latency = const Duration(milliseconds: 500),
+    this.fakeAccount = true,
   }) : _settings = initial;
 
   /// How long a fake request takes, so loading states can be seen.
   final Duration latency;
+
+  /// Whether the account (sign in, register, the codes) is fake. A build with
+  /// a server address has the real account, so the switches that force its
+  /// answers do nothing and the demo panel leaves them out.
+  final bool fakeAccount;
 
   final _changes = StreamController<DemoSettings>.broadcast();
   final _scheduleChanges = StreamController<void>.broadcast();

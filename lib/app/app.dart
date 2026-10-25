@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/app/app_lock_gate.dart';
 import 'package:money_scribe/app/demo/demo_handle.dart';
+import 'package:money_scribe/app/device_key_sync.dart';
+import 'package:money_scribe/app/push_token_cleanup.dart';
 import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/app/router/stream_listenable.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
+import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/clipboard/system_text_clipboard.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
@@ -18,7 +22,12 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
+import 'package:money_scribe/features/connection/bloc/server_wake_bloc.dart';
+import 'package:money_scribe/features/connection/domain/server_activity.dart';
+import 'package:money_scribe/features/connection/presentation/server_wake_banner.dart';
 import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/domain/overview_repository.dart';
@@ -27,6 +36,7 @@ import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart'
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/bloc/theme_bloc.dart';
+import 'package:money_scribe/features/settings/domain/account_locale_repository.dart';
 import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/default_currency_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
@@ -48,6 +58,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.pushMessagingRepository,
     required this.authRepository,
     required this.appLockRepository,
+    required this.deviceKeyRepository,
     required this.payScheduleRepository,
     required this.defaultCurrencyRepository,
     required this.csvTransferRepository,
@@ -61,6 +72,10 @@ class MoneyScribeApp extends StatefulWidget {
     required this.reportsRepository,
     required this.demo,
     required this.environment,
+    required this.challengeViewFactory,
+    this.startsLocked = false,
+    this.accountLocaleRepository,
+    this.serverActivity,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
     this.clock = const SystemClock(),
@@ -72,6 +87,7 @@ class MoneyScribeApp extends StatefulWidget {
   final PushMessagingRepository pushMessagingRepository;
   final AuthRepository authRepository;
   final AppLockRepository appLockRepository;
+  final DeviceKeyRepository deviceKeyRepository;
   final PayScheduleRepository payScheduleRepository;
   final DefaultCurrencyRepository defaultCurrencyRepository;
   final CsvTransferRepository csvTransferRepository;
@@ -88,6 +104,23 @@ class MoneyScribeApp extends StatefulWidget {
   final DemoController demo;
 
   final AppEnvironment environment;
+
+  /// How fast the server answers. `null` for a build with no server. Staging
+  /// builds use it to tell the person the free server is starting.
+  final ServerActivity? serverActivity;
+
+  /// Tells the server the language of the app when it changes; `null` in a
+  /// build with no server.
+  final AccountLocaleRepository? accountLocaleRepository;
+
+  /// Shows the bot challenge the server may ask for at sign-in.
+  final ChallengeViewFactory challengeViewFactory;
+
+  /// Whether the app opens on the lock screen: a person is signed in and has
+  /// the app lock on. Known before the first frame, so no screen of the app
+  /// shows first.
+  final bool startsLocked;
+
   final TextClipboard textClipboard;
   final Ticker ticker;
   final Clock clock;
@@ -97,26 +130,63 @@ class MoneyScribeApp extends StatefulWidget {
 }
 
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
+  late final PushTokenCleanup _pushTokenCleanup;
+  late final AppLockGate _lockGate;
+  late final DeviceKeySync _deviceKeySync;
+
   @override
   void initState() {
     super.initState();
     WesternDigits.useInDateFormats();
+    // A signed-out device keeps no push token. It listens from the start, so
+    // it is built here and not on first use.
+    _pushTokenCleanup = PushTokenCleanup(
+      auth: widget.authRepository,
+      push: widget.pushMessagingRepository,
+    );
+    // A fingerprint key the server no longer knows is taken off the phone
+    // after each sign-in.
+    _deviceKeySync = DeviceKeySync(
+      auth: widget.authRepository,
+      deviceKeys: widget.deviceKeyRepository,
+    );
+    // The lock watches the app move to the background, and locks it after the
+    // time the person chose.
+    _lockGate = AppLockGate(
+      auth: widget.authRepository,
+      repository: widget.appLockRepository,
+      clock: widget.clock,
+      locked: widget.startsLocked,
+    )..start();
   }
 
   late final StreamListenable _signInChanges = StreamListenable(
     widget.authRepository.signedInChanges,
   );
+  late final StreamListenable _lockChanges = StreamListenable(
+    _lockGate.changes,
+  );
   late final GoRouter _router = createAppRouter(
     auth: widget.authRepository,
-    refreshListenable: _signInChanges,
+    lock: _lockGate,
+    refreshListenable: Listenable.merge([_signInChanges, _lockChanges]),
   );
 
   @override
   void dispose() {
     _router.dispose();
     _signInChanges.dispose();
+    _lockChanges.dispose();
+    unawaited(_lockGate.dispose());
+    unawaited(_pushTokenCleanup.dispose());
+    unawaited(_deviceKeySync.dispose());
     super.dispose();
   }
+
+  /// Whether to tell the person that the server is starting: only staging
+  /// builds have a server that sleeps, and only a build with a server.
+  bool get _showServerNotice =>
+      widget.serverActivity != null && !widget.environment.isProduction;
 
   @override
   Widget build(BuildContext context) {
@@ -128,6 +198,8 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.textClipboard),
           RepositoryProvider.value(value: widget.authRepository),
           RepositoryProvider.value(value: widget.appLockRepository),
+          RepositoryProvider.value(value: widget.deviceKeyRepository),
+          RepositoryProvider<AppLockSession>.value(value: _lockGate),
           RepositoryProvider.value(value: widget.payScheduleRepository),
           RepositoryProvider.value(value: widget.defaultCurrencyRepository),
           RepositoryProvider.value(value: widget.csvTransferRepository),
@@ -142,18 +214,27 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
           RepositoryProvider.value(value: widget.clock),
           RepositoryProvider.value(value: widget.ticker),
           RepositoryProvider.value(value: widget.demo),
+          RepositoryProvider.value(value: widget.challengeViewFactory),
         ],
         child: MultiBlocProvider(
           providers: [
             BlocProvider(
-              create: (_) =>
-                  LanguageBloc(repository: widget.languageRepository),
+              create: (_) => LanguageBloc(
+                repository: widget.languageRepository,
+                accountLocale: widget.accountLocaleRepository,
+              ),
             ),
             BlocProvider(
               create: (_) => ThemeBloc(repository: widget.themeRepository),
             ),
+            if (_showServerNotice)
+              BlocProvider(
+                create: (_) =>
+                    ServerWakeBloc(activity: widget.serverActivity!)
+                      ..add(const ServerWakeStarted()),
+              ),
           ],
-          child: _AppView(router: _router),
+          child: _AppView(router: _router, showServerNotice: _showServerNotice),
         ),
       ),
     );
@@ -161,9 +242,10 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
 }
 
 class _AppView extends StatelessWidget {
-  const new({required this.router});
+  const new({required this.router, required this.showServerNotice});
 
   final GoRouter router;
+  final bool showServerNotice;
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +283,7 @@ class _AppView extends StatelessWidget {
                 child: Stack(
                   children: [
                     child!,
+                    if (showServerNotice) const ServerWakeBanner(),
                     if (showDemoPanel) DemoHandle(onPressed: _openDemoPanel),
                   ],
                 ),

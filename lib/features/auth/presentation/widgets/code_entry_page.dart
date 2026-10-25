@@ -4,17 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/formatting/bidi_isolate.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/code_boxes.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/linked_text.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/code_verification_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 
-/// The page where the 4-digit code sent by email is typed. It serves the
+/// The page where the 6-digit code sent by email is typed. It serves the
 /// Verify your email screen (AUTH-4, 4b, 4c) and the Enter the code screen
 /// (AUTH-8, 8b), which differ in their title, button and next step.
 class CodeEntryPage extends StatelessWidget {
@@ -23,6 +25,12 @@ class CodeEntryPage extends StatelessWidget {
     required this.title,
     required this.actionLabel,
     required this.onVerified,
+    this.codeWasSent = true,
+    this.showAccountHint = false,
+    this.askPassword,
+    this.backLabel,
+    this.cancelLabel,
+    this.onCancel,
     super.key,
   });
 
@@ -32,8 +40,30 @@ class CodeEntryPage extends StatelessWidget {
   /// The label of the button that checks the code.
   final String actionLabel;
 
+  /// Whether a code is on its way. Off, the screen says the address is not
+  /// verified yet and the person asks for a code.
+  final bool codeWasSent;
+
+  /// Shows the hint for someone who did not get a code because they already
+  /// have an account.
+  final bool showAccountHint;
+
   /// Opens the screen that follows a correct code.
   final void Function(BuildContext context) onVerified;
+
+  /// Asks for the current password before a new code is sent, and answers it,
+  /// or `null` when the person gave up. Only changing the email needs it.
+  final Future<String?> Function(BuildContext context)? askPassword;
+
+  /// The label of the button that goes back to the previous screen. The
+  /// default is "Change email", which is what going back means after
+  /// registering.
+  final String? backLabel;
+
+  /// A second button that abandons the whole flow, with what it does. Both
+  /// are given or neither.
+  final String? cancelLabel;
+  final Future<void> Function(BuildContext context)? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +76,13 @@ class CodeEntryPage extends StatelessWidget {
       child: _CodeEntryView(
         title: title,
         actionLabel: actionLabel,
+        codeWasSent: codeWasSent,
+        showAccountHint: showAccountHint,
         onVerified: onVerified,
+        askPassword: askPassword,
+        backLabel: backLabel,
+        cancelLabel: cancelLabel,
+        onCancel: onCancel,
       ),
     );
   }
@@ -56,12 +92,24 @@ class _CodeEntryView extends StatefulWidget {
   const new({
     required this.title,
     required this.actionLabel,
+    required this.codeWasSent,
+    required this.showAccountHint,
     required this.onVerified,
+    required this.askPassword,
+    required this.backLabel,
+    required this.cancelLabel,
+    required this.onCancel,
   });
 
   final String title;
   final String actionLabel;
+  final bool codeWasSent;
+  final bool showAccountHint;
   final void Function(BuildContext context) onVerified;
+  final Future<String?> Function(BuildContext context)? askPassword;
+  final String? backLabel;
+  final String? cancelLabel;
+  final Future<void> Function(BuildContext context)? onCancel;
 
   @override
   State<_CodeEntryView> createState() => _CodeEntryViewState();
@@ -99,9 +147,17 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
     }
   }
 
-  void _resend() {
+  Future<void> _resend() async {
+    final askPassword = widget.askPassword;
+    String? password;
+    if (askPassword != null) {
+      password = await askPassword(context);
+      if (password == null || !mounted) return;
+    }
     _code.clear();
-    context.read<CodeVerificationBloc>().add(const CodeResendRequested());
+    context.read<CodeVerificationBloc>().add(
+      CodeResendRequested(password: password),
+    );
     _focus.requestFocus();
   }
 
@@ -123,18 +179,29 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
       listener: (context, state) {
         if (state.status == CodeVerificationStatus.verified) {
           widget.onVerified(context);
-        } else if (state.status == CodeVerificationStatus.expired) {
+        } else if (state.status == CodeVerificationStatus.expired ||
+            state.status == CodeVerificationStatus.attemptsExceeded) {
           _code.clear();
         }
       },
       builder: (context, state) {
         final isExpired = state.status == CodeVerificationStatus.expired;
+        final isDead = state.status == CodeVerificationStatus.attemptsExceeded;
+        final isWaiting = state.status == CodeVerificationStatus.rateLimited;
         final isWrong = state.status == CodeVerificationStatus.wrong;
         final isVerifying = state.status == CodeVerificationStatus.verifying;
+        final isTaken = state.status == CodeVerificationStatus.emailTaken;
+        final isWrongPassword =
+            state.status == CodeVerificationStatus.wrongPassword;
+        // The code cannot be typed while it is dead, old, useless because the
+        // address was taken, or the server says to wait.
+        final canType =
+            !isExpired && !isDead && !isWaiting && !isVerifying && !isTaken;
 
         return FlowPage(
           failure: switch (state.status) {
             CodeVerificationStatus.noConnection => FailureKind.noConnection,
+            CodeVerificationStatus.unavailable => FailureKind.unavailable,
             CodeVerificationStatus.failure => FailureKind.error,
             _ => null,
           },
@@ -154,7 +221,11 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
             const SizedBox(height: 8),
             // The address keeps its left-to-right order inside Arabic text.
             Text(
-              l10n.codeSentTo(email: isolateLeftToRight(state.email)),
+              widget.codeWasSent
+                  ? l10n.codeSentTo(email: isolateLeftToRight(state.email))
+                  : l10n.emailNotVerifiedMessage(
+                      email: isolateLeftToRight(state.email),
+                    ),
               style: theme.textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
@@ -166,21 +237,48 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
               ),
               const SizedBox(height: 16),
             ],
+            if (isDead) ...[
+              MessageBanner(
+                icon: Icons.lock_outline,
+                text: l10n.codeAttemptsExceeded,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (isTaken) ...[
+              MessageBanner(
+                icon: Icons.error_outline,
+                text: l10n.changeEmailTakenMeanwhile,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (isWrongPassword) ...[
+              MessageBanner(
+                icon: Icons.error_outline,
+                text: l10n.changePasswordWrongCurrent,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (isWaiting) ...[
+              MessageBanner(
+                icon: Icons.lock_outline,
+                text: l10n.tooManyAttemptsTryAgain(
+                  time: formatCountdown(state.waitSecondsLeft),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             CodeBoxes(
+              length: CodeVerificationBloc.codeLength,
               controller: _code,
               focusNode: _focus,
               semanticLabel: l10n.codeFieldLabel,
               hasError: isWrong,
-              enabled: !isExpired && !isVerifying,
+              enabled: canType,
               onChanged: _onChanged,
             ),
             if (isWrong) ...[
               const SizedBox(height: 12),
-              _CodeError(
-                text: state.attemptsLeft > 1
-                    ? l10n.codeIncorrectAttemptsLeft(count: state.attemptsLeft)
-                    : l10n.codeIncorrectLastAttempt,
-              ),
+              _CodeError(text: _wrongCodeText(l10n, state.attemptsLeft)),
             ],
             const SizedBox(height: 16),
             _ResendRow(
@@ -197,9 +295,7 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
                 final complete =
                     _code.text.length == CodeVerificationBloc.codeLength;
                 return FilledButton(
-                  onPressed: complete && !isExpired && !isVerifying
-                      ? _submit
-                      : null,
+                  onPressed: complete && canType ? _submit : null,
                   child: isVerifying
                       ? const ButtonSpinner()
                       : Text(widget.actionLabel),
@@ -207,10 +303,64 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
               },
             ),
             const SizedBox(height: 8),
-            TextButton(onPressed: context.pop, child: Text(l10n.changeEmail)),
+            TextButton(
+              onPressed: context.pop,
+              child: Text(widget.backLabel ?? l10n.changeEmail),
+            ),
+            if (widget.onCancel != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => widget.onCancel!(context),
+                child: Text(widget.cancelLabel!),
+              ),
+            ],
+            if (widget.showAccountHint) ...[
+              const SizedBox(height: 8),
+              _AccountHint(style: theme.textTheme.bodyMedium),
+            ],
           ],
         );
       },
+    );
+  }
+
+  /// What a wrong code says. The server gives the tries left when it counts
+  /// them; one or none left reads as the last try.
+  String _wrongCodeText(AppLocalizations l10n, int? attemptsLeft) {
+    if (attemptsLeft == null || attemptsLeft < 1) return l10n.codeIncorrect;
+    return attemptsLeft > 1
+        ? l10n.codeIncorrectAttemptsLeft(count: attemptsLeft)
+        : l10n.codeIncorrectLastAttempt;
+  }
+}
+
+/// "No code? You may already have an account": the answer to registering is
+/// the same for an address that already has an account, so no code arrives.
+/// The links lead to the two things that person wants.
+class _AccountHint extends StatelessWidget {
+  const new({required this.style});
+
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return LinkedText(
+      message: (links) =>
+          l10n.verifyEmailHint(signIn: links[0], resetPassword: links[1]),
+      links: [
+        TextLink(
+          l10n.verifyHintSignIn,
+          onTap: () => context.go(AppRoutes.signIn),
+        ),
+        TextLink(
+          l10n.verifyHintResetPassword,
+          onTap: () => context.push(AppRoutes.forgotPassword),
+        ),
+      ],
+      style: style,
+      textAlign: TextAlign.center,
     );
   }
 }
@@ -255,17 +405,23 @@ class _ResendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    if (state.status == CodeVerificationStatus.expired) {
-      return FilledButton.tonal(
-        onPressed: onResend,
-        child: Text(l10n.resendCode),
-      );
-    }
+    // The server decides when a new code may be asked for: the button waits
+    // for the countdown, in every state.
     if (state.resendSecondsLeft > 0) {
       return Text(
         l10n.resendCodeIn(time: formatCountdown(state.resendSecondsLeft)),
         style: style,
         textAlign: TextAlign.center,
+      );
+    }
+    // A code that is old or dead needs a new one: make the button stand out.
+    final needsNewCode =
+        state.status == CodeVerificationStatus.expired ||
+        state.status == CodeVerificationStatus.attemptsExceeded;
+    if (needsNewCode) {
+      return FilledButton.tonal(
+        onPressed: onResend,
+        child: Text(l10n.resendCode),
       );
     }
     return TextButton(onPressed: onResend, child: Text(l10n.resendCode));

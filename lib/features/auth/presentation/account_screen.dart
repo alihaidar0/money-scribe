@@ -3,13 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
+import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
+import 'package:money_scribe/features/auth/presentation/email_change_outcome.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_dialogs.dart';
+import 'package:money_scribe/features/auth/presentation/widgets/edit_name_dialog.dart';
 
 /// ST-2: the account: who the person is, and the rows that change the
 /// password, sign out and delete the account (ST-6, ST-10, ST-11).
@@ -19,9 +25,12 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          AccountBloc(repository: context.read<AuthRepository>())
-            ..add(const AccountStarted()),
+      create: (context) => AccountBloc(
+        repository: context.read<AuthRepository>(),
+        appLock: context.read<AppLockRepository>(),
+        deviceKeys: context.read<DeviceKeyRepository>(),
+        ticker: context.read<Ticker>(),
+      )..add(const AccountStarted()),
       child: const _AccountView(),
     );
   }
@@ -112,6 +121,20 @@ class _Content extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         ListTile(
+          leading: const Icon(Icons.badge_outlined),
+          title: Text(l10n.editNameAction),
+          trailing: const _Chevron(),
+          enabled: !isBusy,
+          onTap: () => _editName(context, profile.name),
+        ),
+        ListTile(
+          leading: const Icon(Icons.alternate_email),
+          title: Text(l10n.changeEmail),
+          trailing: const _Chevron(),
+          enabled: !isBusy,
+          onTap: () => _changeEmail(context),
+        ),
+        ListTile(
           leading: const Icon(Icons.lock_outline),
           title: Text(l10n.changePasswordTitle),
           trailing: const _Chevron(),
@@ -135,6 +158,26 @@ class _Content extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _editName(BuildContext context, String currentName) async {
+    final bloc = context.read<AccountBloc>();
+    final updated = await showEditNameDialog(context, currentName: currentName);
+    if (updated == null || !context.mounted) return;
+    bloc.add(AccountProfileChanged(updated));
+    showSuccessSnackBar(context, context.l10n.nameUpdated);
+  }
+
+  Future<void> _changeEmail(BuildContext context) async {
+    final bloc = context.read<AccountBloc>();
+    final outcome = await context.push<EmailChangeOutcome>(
+      AppRoutes.changeEmail,
+    );
+    if (outcome != EmailChangeOutcome.changed || !context.mounted) return;
+    // The server ended every other session and gave the account its new
+    // address: read the profile again.
+    bloc.add(const AccountRetried());
+    showSuccessSnackBar(context, context.l10n.emailChanged);
   }
 
   Future<void> _signOut(BuildContext context) async {

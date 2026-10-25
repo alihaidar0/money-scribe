@@ -17,6 +17,7 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
@@ -25,6 +26,8 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
 import '../support/fake_push_messaging_repository.dart';
+import '../support/fake_server_activity.dart';
+import '../support/instant_app_lock_repository.dart';
 import '../support/render_screen.dart';
 
 typedef _Setup = Future<void> Function(
@@ -39,11 +42,37 @@ class _Scene {
     this.signedIn = false,
     this.setup,
     this.size = const Size(412, 915),
+    this.serverWaking = false,
+    this.sensor = false,
+    this.pinPause,
+    this.lockOn = false,
+    this.fingerprintKey = false,
+    this.fingerprintOn = false,
   });
 
   final String name;
   final String route;
   final bool signedIn;
+
+  /// The server is slow to answer: the staging note above the screen shows.
+  final bool serverWaking;
+
+  /// The device has a fingerprint that does not match (the lock screen then
+  /// says so).
+  final bool sensor;
+
+  /// A pause after wrong PINs that is running when the PIN screen opens.
+  final Duration? pinPause;
+
+  /// The app lock is on (a PIN is saved).
+  final bool lockOn;
+
+  /// The phone has the fingerprint key of the sample account, signed out: the
+  /// Sign in screen offers the fingerprint.
+  final bool fingerprintKey;
+
+  /// The fingerprint sign-in is on for the signed-in account on this phone.
+  final bool fingerprintOn;
   final _Setup? setup;
   final Size size;
 }
@@ -152,11 +181,37 @@ final _scenes = <_Scene>[
   const _Scene('auth-1-welcome', AppRoutes.welcome),
   const _Scene('auth-2-sign-in', AppRoutes.signIn),
   _Scene(
-    'auth-2b-sign-in-wrong',
+    'auth-2b-sign-in-wrong-password',
     AppRoutes.signIn,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
       await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2e-sign-in-no-account',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2f-sign-in-challenge',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2g-sign-in-challenge-refused',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected));
+      await _tapPrimary(tester);
+      await tester.tap(find.byType(OutlinedButton).last);
+      await tester.pumpAndSettle();
     },
   ),
   _Scene(
@@ -166,6 +221,104 @@ final _scenes = <_Scene>[
       demo.update(const DemoSettings(signIn: DemoSignIn.locked));
       await _tapPrimary(tester);
     },
+  ),
+  _Scene(
+    'auth-2d-sign-in-busy',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
+      await _tapPrimary(tester);
+    },
+  ),
+  const _Scene(
+    'auth-2h-sign-in-fingerprint',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+  ),
+  _Scene(
+    'auth-2i-sign-in-fingerprint-unavailable',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(fingerprint: DemoFingerprint.notEnrolled));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2j-sign-in-fingerprint-refused',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(fingerprint: DemoFingerprint.signInRefused),
+      );
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2k-sign-in-fingerprint-locked',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(fingerprint: DemoFingerprint.locked));
+      await _tapPrimary(tester);
+    },
+  ),
+  const _Scene(
+    'st-9-fingerprint-phones',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+  ),
+  _Scene(
+    'st-9b-fingerprint-phones-remove',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.delete_outline).at(1));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-9c-fingerprint-phones-empty',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byIcon(Icons.delete_outline).first);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(FilledButton),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'st-6c-change-password-fingerprint-offer',
+    AppRoutes.changePassword,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('err-5-server-starting', AppRoutes.signIn, serverWaking: true),
+  const _Scene(
+    'err-5b-server-starting-register',
+    AppRoutes.register,
+    serverWaking: true,
   ),
   _Scene(
     'nc-1-no-connection',
@@ -204,7 +357,55 @@ final _scenes = <_Scene>[
       demo.update(const DemoSettings(registration: DemoRegistration.rejected));
       final fields = find.byType(TextField);
       await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex');
+      await tester.enterText(fields.at(2), 'short one');
+      await tester.enterText(fields.at(3), 'short one');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3c-register-mismatch',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
       await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'one passphrase');
+      await tester.enterText(fields.at(3), 'another passphrase');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3d-register-wait',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(registration: DemoRegistration.tooSoon));
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'password1');
+      await tester.enterText(fields.at(3), 'password1');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-3e-register-busy',
+    AppRoutes.register,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(registration: DemoRegistration.unavailable),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'password1');
+      await tester.enterText(fields.at(3), 'password1');
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await _tapPrimary(tester);
@@ -213,14 +414,14 @@ final _scenes = <_Scene>[
   _Scene(
     'auth-4-verify-email',
     AppRoutes.verifyEmail,
-    setup: (tester, demo) => _typeCode(tester, '48'),
+    setup: (tester, demo) => _typeCode(tester, '482'),
   ),
   _Scene(
     'auth-4b-verify-wrong',
     AppRoutes.verifyEmail,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.wrong));
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
     },
   ),
   _Scene(
@@ -228,7 +429,32 @@ final _scenes = <_Scene>[
     AppRoutes.verifyEmail,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.expired));
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4d-verify-dead',
+    AppRoutes.verifyEmail,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.attemptsExceeded));
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4e-verify-busy',
+    AppRoutes.verifyEmail,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await _typeCode(tester, '481729');
+    },
+  ),
+  _Scene(
+    'auth-4f-verify-from-sign-in',
+    AppRoutes.signIn,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.emailNotVerified));
+      await tester.enterText(find.byType(TextField).first, 'alex@example.com');
+      await _tapPrimary(tester);
     },
   ),
   const _Scene(
@@ -248,16 +474,36 @@ final _scenes = <_Scene>[
   ),
   const _Scene('auth-7-forgot-password', AppRoutes.forgotPassword),
   _Scene(
+    'auth-7b-forgot-wait',
+    AppRoutes.forgotPassword,
+    setup: (tester, demo) async {
+      await tester.enterText(find.byType(TextField), 'alex@example.com');
+      await _tapPrimary(tester);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-7c-forgot-busy',
+    AppRoutes.forgotPassword,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await tester.enterText(find.byType(TextField), 'alex@example.com');
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
     'auth-8-reset-code',
     AppRoutes.resetCode,
-    setup: (tester, demo) => _typeCode(tester, '6'),
+    setup: (tester, demo) => _typeCode(tester, '62'),
   ),
   _Scene(
     'auth-8b-reset-wrong',
     AppRoutes.resetCode,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(code: DemoCode.wrong));
-      await _typeCode(tester, '6205');
+      await _typeCode(tester, '620517');
     },
   ),
   _Scene(
@@ -270,8 +516,44 @@ final _scenes = <_Scene>[
       await tester.pumpAndSettle();
     },
   ),
+  _Scene(
+    'auth-9b-new-password-refused',
+    AppRoutes.newPassword,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.passwordRefused),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'secret123');
+      await tester.enterText(fields.at(1), 'secret123');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-9c-new-password-wait',
+    AppRoutes.newPassword,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(passwordReset: DemoPasswordReset.tooSoon));
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'secret123');
+      await tester.enterText(fields.at(1), 'secret123');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
   const _Scene('auth-10-password-changed', AppRoutes.passwordChanged),
   const _Scene('auth-11-app-lock', AppRoutes.appLock),
+  const _Scene(
+    'auth-11b-app-lock-fingerprint',
+    AppRoutes.appLock,
+    sensor: true,
+  ),
+  const _Scene(
+    'auth-12b-pin-paused',
+    AppRoutes.pinEntry,
+    pinPause: Duration(seconds: 30),
+  ),
   _Scene(
     'auth-12-pin-entry',
     AppRoutes.pinEntry,
@@ -282,6 +564,21 @@ final _scenes = <_Scene>[
     AppRoutes.createPin,
     signedIn: true,
     setup: (tester, demo) => _tapKeys(tester, [3]),
+  ),
+  const _Scene(
+    'st-1b-settings-app-lock-on',
+    AppRoutes.settings,
+    signedIn: true,
+    lockOn: true,
+    sensor: true,
+    size: _tallPhone,
+  ),
+  const _Scene(
+    'st-1c-settings-app-lock-off',
+    AppRoutes.settings,
+    signedIn: true,
+    sensor: true,
+    size: _tallPhone,
   ),
   const _Scene('ov-1-overview', AppRoutes.overview, signedIn: true),
   _Scene(
@@ -713,13 +1010,49 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'fix-8-copy-from-last-month-confirm',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.content_copy_outlined));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'fix-6-fixed-items-empty',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      // A saved month whose items are all deleted.
+      for (var i = 0; i < 3; i++) {
+        await _openEditSheet(tester);
+        await tester.tap(
+          find
+              .descendant(
+                of: find.byType(BottomSheet),
+                matching: find.byType(TextButton),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(FilledButton),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'fix-7-save-salary-first',
     AppRoutes.fixedItems,
     signedIn: true,
     setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
   ),
   _Scene(
-    'fix-6-fixed-items-empty-part',
+    'fix-7-save-salary-first-two-payments',
     AppRoutes.fixedItems,
     signedIn: true,
     setup: (tester, demo) async {
@@ -1183,6 +1516,67 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'st-6c-change-password-refused',
+    AppRoutes.changePassword,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'short');
+      await tester.enterText(fields.at(2), 'short');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-6d-change-password-locked',
+    AppRoutes.changePassword,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('st-12-change-email', AppRoutes.changeEmail, signedIn: true),
+  _Scene(
+    'st-12b-change-email-taken',
+    AppRoutes.changeEmail,
+    signedIn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'taken@example.com');
+      await tester.enterText(fields.at(1), 'secret-password');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'st-12c-change-email-code',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.alternate_email));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'dana.whitfield@example.com');
+      await tester.enterText(fields.at(1), 'secret-password');
+      await tester.pumpAndSettle();
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
     'st-7-export-csv',
     AppRoutes.settings,
     signedIn: true,
@@ -1225,6 +1619,31 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'st-2b-edit-name',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Dana Whitfield');
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-2c-edit-name-failed',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.pumpAndSettle();
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await tester.enterText(find.byType(TextField), 'Dana Whitfield');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'st-10-sign-out',
     AppRoutes.account,
     signedIn: true,
@@ -1239,6 +1658,38 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: (tester, demo) async {
       await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-11c-delete-account-locked',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-11d-delete-account-busy',
+    AppRoutes.account,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
       await tester.pumpAndSettle();
     },
   ),
@@ -1358,6 +1809,15 @@ void main() {
           );
 
           final demo = DemoController(latency: Duration.zero);
+          final auth = FakeAuthRepository(
+            demo: demo,
+            signedIn: scene.signedIn || scene.fingerprintKey,
+          );
+          final deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: auth);
+          if (scene.fingerprintKey || scene.fingerprintOn) {
+            await deviceKeys.enable(password: 'p', prompt: 'Confirm');
+          }
+          if (scene.fingerprintKey) await auth.signOut();
           final key = GlobalKey();
           await tester.pumpWidget(
             RenderTarget(
@@ -1368,15 +1828,23 @@ void main() {
                 // notification rows.
                 pushMessaging: FakePushMessagingRepository(),
                 demo: demo,
-                authRepository: FakeAuthRepository(
-                  demo: demo,
-                  signedIn: scene.signedIn,
+                authRepository: auth,
+                deviceKeyRepository: deviceKeys,
+                appLockRepository: InstantAppLockRepository(
+                  deviceHasFingerprint: scene.sensor,
+                  biometricsMatch: false,
+                  pause: scene.pinPause,
+                  pin: scene.lockOn ? '1234' : null,
                 ),
                 // The demo panel handle belongs to staging builds only and
                 // would sit on top of every picture.
-                environment: scene.route == AppRoutes.demo
+                environment: scene.route == AppRoutes.demo || scene.serverWaking
                     ? AppEnvironment.staging
                     : AppEnvironment.production,
+                // The note about the sleeping server belongs to staging.
+                serverActivity: scene.serverWaking
+                    ? FakeServerActivity(isSlow: true)
+                    : null,
               ),
             ),
           );

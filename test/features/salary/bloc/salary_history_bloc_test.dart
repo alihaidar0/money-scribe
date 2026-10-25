@@ -147,7 +147,7 @@ void main() {
         await bloc.stream.firstWhere(
           (s) => s.status == SalaryHistoryStatus.ready,
         );
-        await repository.delete(october);
+        await repository.delete(october, version: 1);
         bloc.add(const SalaryHistoryRefreshed());
       },
       expect: () => [

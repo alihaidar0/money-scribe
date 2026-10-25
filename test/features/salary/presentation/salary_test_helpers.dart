@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/build_app.dart';
@@ -26,6 +28,8 @@ Future<DemoController> pumpApp(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  SalaryRepository? salaryRepository,
+  FixedItemsRepository? fixedItemsRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -35,6 +39,8 @@ Future<DemoController> pumpApp(
   await tester.pumpWidget(
     buildApp(
       demo: demo,
+      salaryRepository: salaryRepository,
+      fixedItemsRepository: fixedItemsRepository,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: demo, signedIn: true),
     ),
@@ -102,12 +108,16 @@ Future<DemoController> pumpFixedItems(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  SalaryRepository? salaryRepository,
+  FixedItemsRepository? fixedItemsRepository,
 }) async {
   final demo = await pumpApp(
     tester,
     settings: settings,
     language: language,
     size: size,
+    salaryRepository: salaryRepository,
+    fixedItemsRepository: fixedItemsRepository,
   );
   final arabic = language == AppLanguage.arabic;
   await tester.tap(

@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
@@ -21,6 +23,7 @@ import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dar
 
 import '../support/build_app.dart';
 import '../support/fake_ticker.dart';
+import '../support/instant_app_lock_repository.dart';
 
 /// The link test: every button of the authentication flow leads where the
 /// design says, with the fake data accepting anything.
@@ -29,16 +32,30 @@ late DemoController _demo;
 late FakeTicker _ticker;
 late FakeAuthRepository _auth;
 
-Future<void> _pumpApp(WidgetTester tester, {bool signedIn = false}) async {
+/// The time the fake server sees. The ticker is fake, so a test moves this on
+/// together with it when it waits for the server.
+late DateTime _now;
+
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  bool signedIn = false,
+  AppLockRepository? appLock,
+}) async {
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = const Size(412, 915);
   addTearDown(tester.view.reset);
   _demo = DemoController(latency: Duration.zero);
   _ticker = FakeTicker();
-  _auth = FakeAuthRepository(demo: _demo, signedIn: signedIn);
+  _now = DateTime(2026, 10, 11, 9);
+  _auth = FakeAuthRepository(demo: _demo, now: () => _now, signedIn: signedIn);
   await tester.pumpWidget(
-    buildApp(demo: _demo, ticker: _ticker, authRepository: _auth),
+    buildApp(
+      demo: _demo,
+      ticker: _ticker,
+      authRepository: _auth,
+      appLockRepository: appLock,
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -157,7 +174,7 @@ void main() {
       expect(find.byType(SignInScreen), findsNothing);
     });
 
-    testWidgets('a wrong password shows the error and stays on the form', (
+    testWidgets('a wrong password is said under the password field', (
       tester,
     ) async {
       await _pumpApp(tester);
@@ -166,8 +183,93 @@ void main() {
 
       await _tapButton(tester, FilledButton);
 
-      expect(find.text('Email or password is incorrect.'), findsOneWidget);
+      expect(find.text('Wrong password.'), findsOneWidget);
+      expect(find.text('No account uses this email address.'), findsNothing);
       expect(find.byType(SignInScreen), findsOneWidget);
+    });
+
+    testWidgets('an email without an account is said under the email field, '
+        'and the message goes away when the email is edited', (tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.emailNotRegistered));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('No account uses this email address.'), findsOneWidget);
+      expect(find.text('Wrong password.'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, 'other@b.c');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No account uses this email address.'), findsNothing);
+    });
+
+    testWidgets('the wrong password message goes away when it is edited', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await _tapButton(tester, FilledButton);
+      expect(find.text('Wrong password.'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).at(1), 'another');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wrong password.'), findsNothing);
+    });
+
+    testWidgets('a bot challenge opens, and solving it signs in once', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('Security check'), findsOneWidget);
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+
+      await _tapText(tester, 'I am not a robot (demo)');
+
+      expect(find.byType(SignInScreen), findsNothing);
+      expect(_auth.isSignedIn, isTrue);
+    });
+
+    testWidgets('closing the challenge sends nothing and keeps the form', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRequired));
+      await _tapButton(tester, FilledButton);
+
+      await _tapText(tester, 'Cancel');
+
+      expect(find.text('Security check'), findsNothing);
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('a refused token opens a new challenge with a message', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.challengeRejected));
+      await _tapButton(tester, FilledButton);
+      await _tapText(tester, 'I am not a robot (demo)');
+
+      expect(find.text('Security check'), findsOneWidget);
+      expect(find.text('The check did not work. Try again.'), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
     });
 
     testWidgets('five wrong passwords lock sign-in with a countdown', (
@@ -204,6 +306,52 @@ void main() {
         find.text('Too many attempts. Try again in 4:59.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('an address that is not verified opens the code screen', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      await _typeInField(tester, 0, 'late@example.com');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.emailNotVerified));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.byType(VerifyEmailScreen), findsOneWidget);
+      // The address keeps its left-to-right order inside the sentence.
+      expect(find.textContaining('late@example.com'), findsOneWidget);
+      expect(
+        find.textContaining('is not verified yet'),
+        findsOneWidget,
+        reason: 'nothing was sent, and the screen says so',
+      );
+      // The hint is for someone who just created an account.
+      expect(
+        find.textContaining('You may already have an account'),
+        findsNothing,
+      );
+      // No code is on its way: one can be asked for at once.
+      expect(find.widgetWithText(TextButton, 'Resend code'), findsOneWidget);
+
+      await _tapText(tester, 'Resend code');
+      expect(find.text('Resend code in 1:00'), findsOneWidget);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Sign in');
+      _demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('The service is busy'), findsOneWidget);
+      expect(find.text('Please try again shortly.'), findsOneWidget);
+
+      _demo.update(const DemoSettings());
+      await _tapText(tester, 'Try again');
+
+      expect(find.byType(OverviewScreen), findsOneWidget);
     });
 
     testWidgets('no connection shows the full-screen state; Try again works', (
@@ -254,29 +402,41 @@ void main() {
     Future<void> fillAndSubmit(WidgetTester tester) async {
       await _typeInField(tester, 0, 'Alex');
       await _typeInField(tester, 1, 'alex@example.com');
-      await _typeInField(tester, 2, 'a');
-      await _typeInField(tester, 3, 'b');
+      await _typeInField(tester, 2, 'an invented passphrase');
+      await _typeInField(tester, 3, 'an invented passphrase');
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await _tapButton(tester, FilledButton);
     }
 
-    testWidgets('the button waits for the agreement', (tester) async {
+    testWidgets('the button waits for the agreement and a password', (
+      tester,
+    ) async {
       await _pumpApp(tester);
       await _tapText(tester, 'Create account');
+      bool enabled() =>
+          tester.widget<FilledButton>(find.byType(FilledButton)).onPressed !=
+          null;
 
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
-      );
+      expect(enabled(), isFalse);
 
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
+      expect(enabled(), isFalse, reason: 'agreed, but no password yet');
 
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNotNull,
-      );
+      // Any password is enough for the button: the server judges it.
+      await _typeInField(tester, 2, 'x');
+      expect(enabled(), isTrue);
+    });
+
+    testWidgets('the form gives no hint about what a password must be', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+
+      expect(find.textContaining('characters'), findsNothing);
+      expect(find.textContaining('number'), findsNothing);
     });
 
     testWidgets('any data lead to the code screen, then through the setup', (
@@ -293,7 +453,7 @@ void main() {
         reason: 'the code screen says where the code went',
       );
 
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
       expect(find.byType(EmailVerifiedScreen), findsOneWidget);
       expect(find.text('Your account is ready.'), findsOneWidget);
 
@@ -312,7 +472,7 @@ void main() {
       await _pumpApp(tester);
       await _tapText(tester, 'Create account');
       await fillAndSubmit(tester);
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
       await _tapText(tester, 'Continue');
       await _tapText(tester, 'Two payments a month');
       await _tapText(tester, 'Continue');
@@ -344,7 +504,7 @@ void main() {
       expect(find.text('First payment is paid on day'), findsNothing);
     });
 
-    testWidgets('refused data show the errors; the Sign in link leads on', (
+    testWidgets('data the server refuses show its reasons, worded by the app', (
       tester,
     ) async {
       await _pumpApp(tester);
@@ -354,12 +514,73 @@ void main() {
       await fillAndSubmit(tester);
 
       expect(find.byType(RegisterScreen), findsOneWidget);
-      expect(find.text('Use at least 8 characters.'), findsOneWidget);
-      expect(find.text('Passwords do not match.'), findsOneWidget);
+      expect(find.text('Enter a valid email address.'), findsOneWidget);
+      // The number in the message comes from the server.
       expect(
-        find.textContaining('already registered', findRichText: true),
+        find.text('Your password is too short. Use at least 15 characters.'),
         findsOneWidget,
       );
+      expect(find.text('Passwords do not match.'), findsNothing);
+    });
+
+    testWidgets('two different passwords are refused on the device', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+      await _typeInField(tester, 0, 'Alex');
+      await _typeInField(tester, 1, 'alex@example.com');
+      await _typeInField(tester, 2, 'one passphrase');
+      await _typeInField(tester, 3, 'another passphrase');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+
+      await _tapButton(tester, FilledButton);
+
+      expect(find.text('Passwords do not match.'), findsOneWidget);
+      expect(find.byType(RegisterScreen), findsOneWidget);
+      expect(_demo.settings.scenario, isNot(DemoScenario.empty));
+    });
+
+    testWidgets('a second registration inside the wait counts down on the '
+        'button', (tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+      _demo.update(const DemoSettings(registration: DemoRegistration.tooSoon));
+
+      await fillAndSubmit(tester);
+
+      expect(find.byType(RegisterScreen), findsOneWidget);
+      expect(find.text('Try again in 1:00'), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+
+      _ticker.tick(41);
+      await tester.pumpAndSettle();
+      expect(find.text('Try again in 0:41'), findsOneWidget);
+
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Try again in 0:00'), findsNothing);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+      _demo.update(
+        const DemoSettings(registration: DemoRegistration.unavailable),
+      );
+
+      await fillAndSubmit(tester);
+
+      expect(find.text('The service is busy'), findsOneWidget);
+      expect(find.text('Please try again shortly.'), findsOneWidget);
     });
 
     testWidgets('Sign in at the bottom swaps to the sign-in form', (
@@ -375,53 +596,136 @@ void main() {
   });
 
   group('Verify your email', () {
+    // The person arrives from Create account: a code was sent, and the server
+    // asks to wait a minute before another.
+    Future<void> openAfterRegistering(WidgetTester tester) async {
+      await _pumpApp(tester);
+      await _tapText(tester, 'Create account');
+      await _typeInField(tester, 0, 'Alex');
+      await _typeInField(tester, 1, 'alex@example.com');
+      await _typeInField(tester, 2, 'an invented passphrase');
+      await _typeInField(tester, 3, 'an invented passphrase');
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await _tapButton(tester, FilledButton);
+      expect(find.byType(VerifyEmailScreen), findsOneWidget);
+    }
+
+    // Opened with no code asked for yet.
     Future<void> openCodeScreen(WidgetTester tester) async {
       await _pumpApp(tester);
       await _go(tester, AppRoutes.verifyEmail);
     }
 
-    testWidgets('waits for four digits before Verify can be pressed', (
+    testWidgets('waits for six digits before Verify can be pressed', (
       tester,
     ) async {
-      await openCodeScreen(tester);
+      await openAfterRegistering(tester);
       bool enabled() =>
           tester.widget<FilledButton>(find.byType(FilledButton)).onPressed !=
           null;
 
       expect(enabled(), isFalse);
-      await _typeCode(tester, '48');
+      await _typeCode(tester, '48172');
       expect(enabled(), isFalse);
       expect(find.text('Resend code in 1:00'), findsOneWidget);
+      expect(find.textContaining('6-digit code'), findsOneWidget);
     });
 
-    testWidgets('a wrong code shows the tries left', (tester) async {
-      await openCodeScreen(tester);
+    testWidgets('the hint for someone who already has an account', (
+      tester,
+    ) async {
+      await openAfterRegistering(tester);
+
+      expect(
+        find.textContaining(
+          'No code? You may already have an account: sign in or reset your '
+          'password.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the hint links lead to sign in and to resetting the '
+        'password', (tester) async {
+      await openAfterRegistering(tester);
+      await tester.tapOnText(find.textRange.ofSubstring('reset your password'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+
+      await _back(tester);
+      await tester.tapOnText(find.textRange.ofSubstring('sign in'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SignInScreen), findsOneWidget);
+    });
+
+    testWidgets('a wrong code shows the tries left, then the code is dead', (
+      tester,
+    ) async {
+      await openAfterRegistering(tester);
       _demo.update(const DemoSettings(code: DemoCode.wrong));
 
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
       expect(
-        find.text('The code is incorrect. 2 attempts left.'),
+        find.text('The code is incorrect. 4 attempts left.'),
         findsOneWidget,
       );
 
-      await _typeCode(tester, '481');
+      await _typeCode(tester, '48172');
       expect(find.textContaining('incorrect'), findsNothing);
 
-      await _typeCode(tester, '4818');
+      for (final entry in {
+        '481730': 'The code is incorrect. 3 attempts left.',
+        '481731': 'The code is incorrect. 2 attempts left.',
+        '481732': 'The code is incorrect. 1 attempt left.',
+      }.entries) {
+        await _typeCode(tester, entry.key);
+        expect(find.text(entry.value), findsOneWidget);
+        await _typeCode(tester, '48173');
+      }
+
+      await _typeCode(tester, '481733');
       expect(
-        find.text('The code is incorrect. 1 attempt left.'),
+        find.text('Too many incorrect codes. This code no longer works.'),
         findsOneWidget,
       );
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      // A new code can be asked for only when the server allows it.
+      expect(find.text('Resend code in 1:00'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Resend code'), findsNothing);
 
-      await _typeCode(tester, '481');
-      await _typeCode(tester, '4819');
-      expect(find.text('This code has expired.'), findsOneWidget);
+      // The minute passes for the server and for the countdown.
+      _now = _now.add(const Duration(seconds: 60));
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      _demo.update(const DemoSettings());
+      await _tapText(tester, 'Resend code');
+
+      expect(
+        find.text('Too many incorrect codes. This code no longer works.'),
+        findsNothing,
+      );
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
+    });
+
+    testWidgets('too many tries kills the code at once', (tester) async {
+      await openAfterRegistering(tester);
+      _demo.update(const DemoSettings(code: DemoCode.attemptsExceeded));
+
+      await _typeCode(tester, '481729');
+
+      expect(
+        find.text('Too many incorrect codes. This code no longer works.'),
+        findsOneWidget,
+      );
+      expect(find.text('Resend code in 1:00'), findsOneWidget);
     });
 
     testWidgets('an expired code can be replaced', (tester) async {
       await openCodeScreen(tester);
       _demo.update(const DemoSettings(code: DemoCode.expired));
-      await _typeCode(tester, '4817');
+      await _typeCode(tester, '481729');
 
       expect(find.text('This code has expired.'), findsOneWidget);
       expect(
@@ -438,13 +742,25 @@ void main() {
       expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
     });
 
+    testWidgets('an expired code still waits for the server to send another', (
+      tester,
+    ) async {
+      await openAfterRegistering(tester);
+      _demo.update(const DemoSettings(code: DemoCode.expired));
+      await _typeCode(tester, '481729');
+
+      expect(find.text('This code has expired.'), findsOneWidget);
+      expect(find.text('Resend code in 1:00'), findsOneWidget);
+    });
+
     testWidgets('counts down to Resend code', (tester) async {
-      await openCodeScreen(tester);
+      await openAfterRegistering(tester);
 
       _ticker.tick(42);
       await tester.pumpAndSettle();
       expect(find.text('Resend code in 0:42'), findsOneWidget);
 
+      _now = _now.add(const Duration(seconds: 60));
       _ticker.tick(0);
       await tester.pumpAndSettle();
       expect(find.text('Resend code in 0:00'), findsNothing);
@@ -454,14 +770,18 @@ void main() {
       expect(find.text('Resend code in 1:00'), findsOneWidget);
     });
 
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await openAfterRegistering(tester);
+      _demo.update(const DemoSettings(code: DemoCode.unavailable));
+
+      await _typeCode(tester, '481729');
+
+      expect(find.text('The service is busy'), findsOneWidget);
+      expect(find.text('Please try again shortly.'), findsOneWidget);
+    });
+
     testWidgets('Change email goes back to the form', (tester) async {
-      await _pumpApp(tester);
-      await _tapText(tester, 'Create account');
-      await _typeInField(tester, 1, 'alex@example.com');
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      await _tapButton(tester, FilledButton);
-      expect(find.byType(VerifyEmailScreen), findsOneWidget);
+      await openAfterRegistering(tester);
 
       await _tapText(tester, 'Change email');
 
@@ -479,8 +799,13 @@ void main() {
       await _tapText(tester, 'Send code');
       expect(find.byType(ResetCodeScreen), findsOneWidget);
       expect(find.textContaining('me@example.com'), findsOneWidget);
+      // The hint is for a new account only.
+      expect(
+        find.textContaining('You may already have an account'),
+        findsNothing,
+      );
 
-      await _typeCode(tester, '6205');
+      await _typeCode(tester, '620517');
       expect(find.byType(NewPasswordScreen), findsOneWidget);
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
@@ -496,27 +821,26 @@ void main() {
       expect(find.byType(SignInScreen), findsOneWidget);
     });
 
-    testWidgets('the checklist follows the typing', (tester) async {
+    testWidgets('the new password has no rules but being typed twice', (
+      tester,
+    ) async {
       await _pumpApp(tester);
       await _go(tester, AppRoutes.newPassword);
-      IconData iconOf(String rule) {
-        final row = find.ancestor(
-          of: find.text(rule),
-          matching: find.byType(Row),
-        );
-        return tester
-            .widget<Icon>(
-              find.descendant(of: row.first, matching: find.byType(Icon)),
-            )
-            .icon!;
-      }
+      bool enabled() =>
+          tester.widget<FilledButton>(find.byType(FilledButton)).onPressed !=
+          null;
 
-      expect(iconOf('At least 8 characters'), Icons.radio_button_unchecked);
+      expect(find.textContaining('characters'), findsNothing);
+      expect(find.text('One number'), findsNothing);
 
-      await _typeInField(tester, 0, 'secret123');
-      expect(iconOf('At least 8 characters'), Icons.check_circle);
-      expect(iconOf('One number'), Icons.check_circle);
-      expect(iconOf('Passwords match'), Icons.radio_button_unchecked);
+      await _typeInField(tester, 0, 'x');
+      await _typeInField(tester, 1, 'y');
+      expect(find.text('Passwords do not match.'), findsOneWidget);
+      expect(enabled(), isFalse);
+
+      await _typeInField(tester, 1, 'x');
+      expect(find.text('Passwords do not match.'), findsNothing);
+      expect(enabled(), isTrue, reason: 'any password: the server judges it');
     });
 
     testWidgets('Back to sign in returns to the sign-in form', (tester) async {
@@ -534,26 +858,185 @@ void main() {
       await _go(tester, AppRoutes.resetCode);
       _demo.update(const DemoSettings(code: DemoCode.wrong));
 
-      await _typeCode(tester, '6205');
+      await _typeCode(tester, '620517');
 
       expect(find.byType(ResetCodeScreen), findsOneWidget);
       expect(
-        find.text('The code is incorrect. 2 attempts left.'),
+        find.text('The code is incorrect. 4 attempts left.'),
         findsOneWidget,
       );
     });
   });
 
-  group('App lock', () {
-    testWidgets('the fingerprint opens the app', (tester) async {
+  group('Forgot password: what the server answers', () {
+    testWidgets('asking for a code again at once counts down the wait', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _go(tester, AppRoutes.forgotPassword);
+      await _typeInField(tester, 0, 'me@example.com');
+      await _tapText(tester, 'Send code');
+      expect(find.byType(ResetCodeScreen), findsOneWidget);
+      await _back(tester);
+
+      await _tapText(tester, 'Send code');
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.text('Try again in 1:00'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Try again in 1:00'),
+            )
+            .onPressed,
+        isNull,
+      );
+
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Send code'), findsOneWidget);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      await _go(tester, AppRoutes.forgotPassword);
+      _demo.update(const DemoSettings(code: DemoCode.unavailable));
+      await _typeInField(tester, 0, 'me@example.com');
+
+      await _tapText(tester, 'Send code');
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.byType(FailureView), findsOneWidget);
+      expect(find.byType(ResetCodeScreen), findsNothing);
+    });
+  });
+
+  group('New password: what the server answers', () {
+    Future<void> save(WidgetTester tester) async {
+      await _go(tester, AppRoutes.newPassword);
+      await _typeInField(tester, 0, 'secret123');
+      await _typeInField(tester, 1, 'secret123');
+      await _tapText(tester, 'Save password');
+    }
+
+    testWidgets('a refused password is explained under the field', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.passwordRefused),
+      );
+
+      await save(tester);
+
+      expect(find.byType(NewPasswordScreen), findsOneWidget);
+      expect(
+        find.text('Your password is too short. Use at least 15 characters.'),
+        findsOneWidget,
+      );
+
+      // The reset is still open: typing again clears the message.
+      _demo.update(const DemoSettings());
+      await _typeInField(tester, 0, 'a much longer passphrase');
+      await _typeInField(tester, 1, 'a much longer passphrase');
+      expect(find.textContaining('too short'), findsNothing);
+      await _tapText(tester, 'Save password');
+      expect(find.byType(PasswordChangedScreen), findsOneWidget);
+    });
+
+    testWidgets('a reset that ran out starts again from the email', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tokenInvalid),
+      );
+
+      await save(tester);
+
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(
+        find.text('This reset has expired. Ask for a new code.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('too many requests counts down on the button', (tester) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.tooSoon),
+      );
+
+      await save(tester);
+
+      expect(find.text('Try again in 0:30'), findsOneWidget);
+      _ticker.tick(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Save password'), findsOneWidget);
+    });
+
+    testWidgets('a busy server asks to try again shortly', (tester) async {
+      await _pumpApp(tester);
+      _demo.update(
+        const DemoSettings(passwordReset: DemoPasswordReset.unavailable),
+      );
+
+      await save(tester);
+
+      expect(find.byType(NewPasswordScreen), findsOneWidget);
+      expect(find.byType(FailureView), findsOneWidget);
+    });
+
+    testWidgets('saving it signs a signed-in person out', (tester) async {
       await _pumpApp(tester, signedIn: true);
+
+      await save(tester);
+
+      expect(find.byType(PasswordChangedScreen), findsOneWidget);
+      expect(_auth.isSignedIn, isFalse);
+    });
+  });
+
+  group('App lock', () {
+    testWidgets('the fingerprint is asked for at once, and opens the app', (
+      tester,
+    ) async {
+      final appLock = InstantAppLockRepository();
+      await _pumpApp(tester, signedIn: true, appLock: appLock);
+
+      await _go(tester, AppRoutes.appLock);
+
+      expect(appLock.biometricReasons, ['Unlock Money Scribe']);
+      expect(find.byType(OverviewScreen), findsOneWidget);
+    });
+
+    testWidgets('a fingerprint that does not match leaves the PIN', (
+      tester,
+    ) async {
+      final appLock = InstantAppLockRepository(biometricsMatch: false);
+      await _pumpApp(tester, signedIn: true, appLock: appLock);
       await _go(tester, AppRoutes.appLock);
       expect(find.byType(AppLockScreen), findsOneWidget);
+      expect(
+        find.text('Fingerprint not recognised. Try again or use your PIN.'),
+        findsOneWidget,
+      );
 
+      appLock.biometricsMatch = true;
       await tester.tap(find.byTooltip('Unlock with fingerprint'));
       await tester.pumpAndSettle();
 
       expect(find.byType(OverviewScreen), findsOneWidget);
+    });
+
+    testWidgets('a device with no fingerprint shows no sensor button', (
+      tester,
+    ) async {
+      await _pumpApp(tester, signedIn: true);
+      await _go(tester, AppRoutes.appLock);
+
+      expect(find.byTooltip('Unlock with fingerprint'), findsNothing);
+      expect(find.text('Enter your PIN to unlock.'), findsOneWidget);
     });
 
     testWidgets('Use PIN opens the pad; any PIN opens the app', (tester) async {

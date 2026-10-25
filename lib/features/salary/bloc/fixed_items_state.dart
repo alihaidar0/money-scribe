@@ -18,12 +18,17 @@ final class FixedItemsState extends Equatable {
   const new({
     required this.month,
     this.status = FixedItemsStatus.loading,
+    this.monthSaved = false,
     this.items = const [],
     this.salary,
+    this.balances,
     this.twoPayments = false,
     this.currency = Currency.rub,
     this.part = FixedItemPart.first,
     this.failedAction,
+    this.staleAction,
+    this.copying = false,
+    this.copyRefusal,
   });
 
   final FixedItemsStatus status;
@@ -31,11 +36,20 @@ final class FixedItemsState extends Equatable {
   /// The month the fixed items belong to.
   final YearMonth month;
 
+  /// Whether the month's salary is saved. Fixed items belong to a saved month,
+  /// so a month that is not saved has none and cannot take any.
+  final bool monthSaved;
+
   /// Every fixed item of the month, in the order they were added.
   final List<FixedItem> items;
 
   /// What the month's salary comes to, or `null` when none was saved.
   final SalaryResult? salary;
+
+  /// The balances the server calculated for the items of the month, or `null`
+  /// when it gave none or the items changed since: the summary then adds them
+  /// up here until the server's arrive.
+  final SalaryBalances? balances;
 
   /// Whether the month is paid in two payments, so its items have parts.
   final bool twoPayments;
@@ -50,6 +64,18 @@ final class FixedItemsState extends Equatable {
   /// screen can offer to try it again. `null` once something else was done.
   final FixedItemsEvent? failedAction;
 
+  /// The last add, change or delete that was not done because the item was
+  /// changed on another device; the list was loaded again. `null` once
+  /// something else was done.
+  final FixedItemsEvent? staleAction;
+
+  /// Whether the items of another month are being copied into this one.
+  final bool copying;
+
+  /// Why the last copy was refused, so the screen can say so. `null` once
+  /// something else was done.
+  final FixedItemsCopyRefusal? copyRefusal;
+
   /// The items on screen: all of them, or those of [part].
   List<FixedItem> get shownItems {
     return FixedItemsSummary.shown(items, twoPayments: twoPayments, part: part);
@@ -63,31 +89,45 @@ final class FixedItemsState extends Equatable {
       currency: currency,
       twoPayments: twoPayments,
       part: part,
+      balances: balances,
     );
   }
 
   FixedItemsState copyWith({
     FixedItemsStatus? status,
+    bool? monthSaved,
     List<FixedItem>? items,
     SalaryResult? salary,
     bool clearSalary = false,
+    SalaryBalances? balances,
+    bool clearBalances = false,
     bool? twoPayments,
     Currency? currency,
     FixedItemPart? part,
     FixedItemsEvent? failedAction,
     bool clearFailedAction = false,
+    FixedItemsEvent? staleAction,
+    bool clearStaleAction = false,
+    bool? copying,
+    FixedItemsCopyRefusal? copyRefusal,
+    bool clearCopyRefusal = false,
   }) {
     return FixedItemsState(
       month: month,
       status: status ?? this.status,
+      monthSaved: monthSaved ?? this.monthSaved,
       items: items ?? this.items,
       salary: clearSalary ? null : salary ?? this.salary,
+      balances: clearBalances ? null : balances ?? this.balances,
       twoPayments: twoPayments ?? this.twoPayments,
       currency: currency ?? this.currency,
       part: part ?? this.part,
       failedAction: clearFailedAction
           ? null
           : failedAction ?? this.failedAction,
+      staleAction: clearStaleAction ? null : staleAction ?? this.staleAction,
+      copying: copying ?? this.copying,
+      copyRefusal: clearCopyRefusal ? null : copyRefusal ?? this.copyRefusal,
     );
   }
 
@@ -95,11 +135,16 @@ final class FixedItemsState extends Equatable {
   List<Object?> get props => [
     status,
     month,
+    monthSaved,
     items,
     salary,
+    balances,
     twoPayments,
     currency,
     part,
     failedAction,
+    staleAction,
+    copying,
+    copyRefusal,
   ];
 }

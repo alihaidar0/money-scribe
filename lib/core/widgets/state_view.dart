@@ -9,6 +9,14 @@ enum FailureKind {
 
   /// The server failed.
   error,
+
+  /// The server is busy and refused the request before changing anything:
+  /// asking again shortly is safe.
+  unavailable,
+
+  /// The server does not offer this yet. Trying again does not help: the only
+  /// way out is back.
+  notAvailable,
 }
 
 /// A centred icon, title, sentence and one button: the pattern of every
@@ -21,11 +29,19 @@ class StateView extends StatelessWidget {
     required this.onAction,
     this.message,
     this.filledAction = false,
+    this.secondaryLabel,
+    this.onSecondary,
     super.key,
   });
 
   final IconData icon;
   final String title;
+
+  /// A second, quieter action under the first, such as "Copy from last
+  /// month" under "Add item". Shown when [secondaryLabel] is set; with no
+  /// [onSecondary] it is disabled.
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
 
   /// The sentence under the title, when the title does not say enough.
   final String? message;
@@ -74,6 +90,13 @@ class StateView extends StatelessWidget {
                   onPressed: onAction,
                   child: Text(actionLabel),
                 ),
+              if (secondaryLabel != null) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: onSecondary,
+                  child: Text(secondaryLabel!),
+                ),
+              ],
             ],
           ),
         ),
@@ -82,8 +105,9 @@ class StateView extends StatelessWidget {
   }
 }
 
-/// The full-screen state for a failure: "No connection" or "Something went
-/// wrong", each with a "Try again" button.
+/// The full-screen state for a failure: "No connection", "Something went
+/// wrong" or "The service is busy", each with a "Try again" button, or "Not
+/// available yet", with a "Go back" button.
 class FailureView extends StatelessWidget {
   const new({
     required this.kind,
@@ -118,6 +142,20 @@ class FailureView extends StatelessWidget {
         message: errorTitle == null ? l10n.errorMessage : null,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
+      ),
+      FailureKind.unavailable => StateView(
+        icon: Icons.hourglass_empty,
+        title: l10n.unavailableTitle,
+        message: l10n.unavailableMessage,
+        actionLabel: l10n.tryAgain,
+        onAction: onRetry,
+      ),
+      FailureKind.notAvailable => StateView(
+        icon: Icons.construction_outlined,
+        title: l10n.notAvailableTitle,
+        message: l10n.notAvailableMessage,
+        actionLabel: l10n.goBackAction,
+        onAction: () => Navigator.of(context).maybePop(),
       ),
     };
   }

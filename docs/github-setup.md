@@ -51,7 +51,7 @@ The default branch is `develop`, the integration branch, so every automatic pull
 | Actions permissions | Allow `<your user>`, and select non-`<your user>`, actions and reusable workflows |
 | Allow actions created by GitHub | On |
 | Allow Marketplace actions by verified creators | Off |
-| Allowed actions (one per line) | `raven-actions/actionlint@*`, `zizmorcore/zizmor-action@*`, `google/osv-scanner-action/*` |
+| Allowed actions (one per line) | `raven-actions/actionlint@*`, `zizmorcore/zizmor-action@*`, `google/osv-scanner-action/*`, `google-github-actions/auth@*` (signs the Firebase App Distribution upload in to Google Cloud, see [`firebase-app-distribution.md`](firebase-app-distribution.md)) |
 | Require actions to be pinned to a full-length commit SHA | **On** |
 | Artifact and log retention | 30 days |
 | Fork pull request workflows | Require approval for all external contributors |
@@ -59,13 +59,13 @@ The default branch is `develop`, the integration branch, so every automatic pull
 | Workflow permissions | **Read repository contents and packages permissions** |
 | Allow GitHub Actions to create and approve pull requests | Off |
 
-Every workflow also declares its own top-level `permissions:` block (`contents: read`); the jobs that need more request it explicitly: the `release-draft` job of `build.yml` (`contents: write`, to create the draft release and attach the signed files), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes), `backend-contract.yml` (`issues: write`, to open and close the reminder about a newer backend release) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
+Every workflow also declares its own top-level `permissions:` block (`contents: read`); the jobs that need more request it explicitly: the `release-draft` job of `build.yml` (`contents: write`, to create the draft release and attach the signed files), its `distribute-firebase` job (`id-token: write`, so the run can prove its identity to Google Cloud without a stored key), `labels.yml` (`issues: write`, to sync `.github/labels.yml` when it changes), `backend-contract.yml` (`issues: write`, to open and close the reminder about a newer backend release) and `pr-labels.yml` (`pull-requests: write`, to add labels from the pull request title).
 
 Workflows run on an explicit runner image (`ubuntu-24.04`) rather than `ubuntu-latest`. GitHub moves `ubuntu-latest` to a new Ubuntu release on its own schedule, which changes the toolchain under every job at once. Moving to a newer image is a deliberate edit of the `runs-on:` lines once the build has been verified on it.
 
 ## 3. Environments and secrets
 
-CI and the pull-request builds need **no secrets and no environments**: they only use the automatic `GITHUB_TOKEN`. The signed builds need two environments, `staging` (restricted to `develop`) and `production` (restricted to `main`), each with its own Android signing secrets and one variable ([`android-signing.md`](android-signing.md) section 3). The same rules apply to any later deployment target:
+CI and the pull-request builds need **no secrets and no environments**: they only use the automatic `GITHUB_TOKEN`. The signed builds need two environments, `staging` (restricted to `develop`) and `production` (restricted to `main`), each with its own Android signing secrets and three variables: the expected signing fingerprint ([`android-signing.md`](android-signing.md) section 3) `API_BASE_URL`, the address of the server of that environment (an https address with no path; leave it empty or unset while the environment has no server; see [`backend-api.md`](backend-api.md) section 6), and `TURNSTILE_SITE_KEY`, the public site key of the sign-in bot check (a variable, never a secret; empty while there is no check). The same rules apply to any later deployment target:
 
 - Create an environment per deployment target, restrict it to its branch under **Deployment branches and tags**, and put the target's credentials there as environment secrets rather than repository secrets (a repository secret stays readable from any branch).
 - Optionally require a reviewer on the environment for production deployments.

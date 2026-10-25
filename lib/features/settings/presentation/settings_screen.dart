@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/account_settings_tile.dart';
 import 'package:money_scribe/features/auth/presentation/widgets/app_lock_settings_tile.dart';
+import 'package:money_scribe/features/auth/presentation/widgets/fingerprint_sign_in_tile.dart';
 import 'package:money_scribe/features/notifications/presentation/notifications_settings_section.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/bloc/settings_bloc.dart';
@@ -110,7 +111,7 @@ enum _Section {
       _Notifications(),
     ],
     _Section.data => const [_DataRows()],
-    _Section.security => const [AppLockSettingsTile()],
+    _Section.security => const [AppLockSettingsTile(), FingerprintSignInTile()],
   };
 
   String title(AppLocalizations l10n) => switch (this) {

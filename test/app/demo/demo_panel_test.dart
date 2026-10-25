@@ -55,7 +55,7 @@ void main() {
     }) async {
       tester.view
         ..devicePixelRatio = 1
-        ..physicalSize = const Size(412, 2600);
+        ..physicalSize = const Size(412, 3600);
       addTearDown(tester.view.reset);
       demo = DemoController(latency: Duration.zero);
       await tester.pumpWidget(
@@ -90,6 +90,41 @@ void main() {
           paymentMode: PaymentMode.twoPayments,
         ),
       );
+    });
+
+    testWidgets('leaves out the account switches when the account is real', (
+      tester,
+    ) async {
+      final real = DemoController(latency: Duration.zero, fakeAccount: false);
+      await tester.pumpWidget(
+        buildApp(
+          demo: real,
+          authRepository: FakeAuthRepository(demo: real, signedIn: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DemoHandle));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign in, next attempt'), findsNothing);
+      expect(find.text('Create account, next attempt'), findsNothing);
+      expect(find.text('6-digit codes and new codes'), findsNothing);
+      expect(
+        find.textContaining('The account is on the real server'),
+        findsOneWidget,
+      );
+      // The switches of the screens that are still fake stay.
+      expect(find.text('Server'), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+    });
+
+    testWidgets('shows the account switches while the account is fake', (
+      tester,
+    ) async {
+      await openPanel(tester);
+
+      expect(find.text('Sign in, next attempt'), findsOneWidget);
+      expect(find.text('6-digit codes and new codes'), findsOneWidget);
     });
 
     testWidgets('switches the theme of the app', (tester) async {

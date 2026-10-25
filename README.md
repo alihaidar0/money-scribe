@@ -18,9 +18,9 @@ Android, iOS and web.
 
 | Component | Version |
 | --- | --- |
-| Flutter | 3.47.6 (stable) |
+| Flutter | 3.47.7 (stable) |
 | Dart | 3.13.5 |
-| Dev container image | `alihaidar199527/flutter-devcontainer:flutter-3.47.6.4` |
+| Dev container image | `alihaidar199527/flutter-devcontainer:flutter-3.47.7.1` |
 | Node.js (git tooling) | 24 |
 | pnpm | 12.9.1 |
 | Husky | 9.1.7 |

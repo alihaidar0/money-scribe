@@ -27,3 +27,13 @@ final class ChangePasswordEdited extends ChangePasswordEvent {
 final class ChangePasswordSubmitted extends ChangePasswordEvent {
   const new();
 }
+
+/// A second of the wait before the password can be sent again passed.
+final class _ChangePasswordWaitTicked extends ChangePasswordEvent {
+  const new(this.secondsLeft);
+
+  final int secondsLeft;
+
+  @override
+  List<Object> get props => [secondsLeft];
+}

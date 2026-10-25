@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/bloc/account_bloc.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 
 /// The Account row of the Settings: the round initial, the name and the email
 /// of the signed-in person. It opens the Account screen.
@@ -15,9 +18,12 @@ class AccountSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          AccountBloc(repository: context.read<AuthRepository>())
-            ..add(const AccountStarted()),
+      create: (context) => AccountBloc(
+        repository: context.read<AuthRepository>(),
+        appLock: context.read<AppLockRepository>(),
+        deviceKeys: context.read<DeviceKeyRepository>(),
+        ticker: context.read<Ticker>(),
+      )..add(const AccountStarted()),
       child: const _AccountTile(),
     );
   }
@@ -25,6 +31,16 @@ class AccountSettingsTile extends StatelessWidget {
 
 class _AccountTile extends StatelessWidget {
   const new();
+
+  /// Opens the Account screen, and reads the profile again when the person
+  /// comes back, because the name may have been changed there.
+  Future<void> _open(BuildContext context) async {
+    final bloc = context.read<AccountBloc>();
+    await context.push<void>(AppRoutes.account);
+    // Settings may be gone by now: the person signed out or deleted the
+    // account on the Account screen.
+    if (!bloc.isClosed) bloc.add(const AccountRetried());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +87,7 @@ class _AccountTile extends StatelessWidget {
             ? Icons.chevron_left
             : Icons.chevron_right,
       ),
-      onTap: () => context.push(AppRoutes.account),
+      onTap: () => _open(context),
     );
   }
 }

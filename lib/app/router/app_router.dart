@@ -6,12 +6,16 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/wide_frame.dart';
+import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
+import 'package:money_scribe/features/auth/presentation/change_email_code_screen.dart';
+import 'package:money_scribe/features/auth/presentation/change_email_screen.dart';
 import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
+import 'package:money_scribe/features/auth/presentation/fingerprint_phones_screen.dart';
 import 'package:money_scribe/features/auth/presentation/forgot_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/new_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/password_changed_screen.dart';
@@ -44,15 +48,18 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 /// The routes of the app. The caller owns the router and disposes it.
 ///
 /// A signed-out person is sent to the Welcome screen, and a signed-in one
-/// leaves the sign-in screens for the Overview. [refreshListenable] tells the
-/// router to check again when the person signs in or out.
+/// leaves the sign-in screens for the Overview. While the app is locked
+/// ([lock]) every screen leads to the lock screen, which remembers where to go
+/// back to. [refreshListenable] tells the router to check again when the person
+/// signs in or out, or the app locks or opens.
 GoRouter createAppRouter({
   required AuthRepository auth,
   required Listenable refreshListenable,
+  AppLockSession? lock,
 }) {
   return GoRouter(
     refreshListenable: refreshListenable,
-    redirect: (context, state) => _redirect(auth, state.uri.path),
+    redirect: (context, state) => _redirect(auth, lock, state.uri),
     routes: [
       GoRoute(
         path: AppRoutes.welcome,
@@ -68,7 +75,11 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.verifyEmail,
-        builder: (context, state) => const VerifyEmailScreen(),
+        builder: (context, state) => VerifyEmailScreen(
+          origin: state.extra is VerifyEmailOrigin
+              ? state.extra! as VerifyEmailOrigin
+              : VerifyEmailOrigin.registration,
+        ),
       ),
       GoRoute(
         path: AppRoutes.emailVerified,
@@ -96,11 +107,13 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.appLock,
-        builder: (context, state) => const AppLockScreen(),
+        builder: (context, state) =>
+            AppLockScreen(returnTo: state.uri.queryParameters['from']),
       ),
       GoRoute(
         path: AppRoutes.pinEntry,
-        builder: (context, state) => const PinEntryScreen(),
+        builder: (context, state) =>
+            PinEntryScreen(returnTo: state.uri.queryParameters['from']),
       ),
       GoRoute(
         path: AppRoutes.createPin,
@@ -120,6 +133,27 @@ GoRouter createAppRouter({
         builder: (context, state) => const WideFrame(
           width: FrameWidth.narrow,
           child: ChangePasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.fingerprintPhones,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: FingerprintPhonesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.changeEmail,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: ChangeEmailScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.changeEmailCode,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: ChangeEmailCodeScreen(),
         ),
       ),
       GoRoute(
@@ -278,11 +312,15 @@ GoRouter createAppRouter({
   );
 }
 
-String? _redirect(AuthRepository auth, String path) {
+String? _redirect(AuthRepository auth, AppLockSession? lock, Uri uri) {
+  final path = uri.path;
   if (!auth.isSignedIn) {
     final open =
         AppRoutes.withoutSignIn.contains(path) || path == AppRoutes.demo;
     return open ? null : AppRoutes.welcome;
+  }
+  if (lock != null && lock.isLocked && !AppRoutes.lockScreens.contains(path)) {
+    return AppRoutes.lockedAt(uri.toString());
   }
   return AppRoutes.signedOutOnly.contains(path) ? AppRoutes.overview : null;
 }

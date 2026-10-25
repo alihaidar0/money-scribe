@@ -10,12 +10,17 @@ evenodd
 exfiltration
 fanalyze
 fdoctor
+firebaseappdistribution
+firebaseappdistro
 flutterfire
 frunw
 ftest
 genkey
 haidar
+healthz
+hmac
 husky
+iamcredentials
 jarfile
 keyalg
 keygen
@@ -32,6 +37,8 @@ printcert
 pubspec
 rhysd
 shellcheck
+sitekey
+spki
 sshkey
 storetype
 tolower

@@ -122,7 +122,7 @@ void main() {
       final salary = FakeSalaryRepository(demo: demo);
       await salary.save(SalarySeed.month(september, PaymentMode.twoPayments)!);
 
-      await salary.delete(september);
+      await salary.delete(september, version: 2);
 
       expect((await repository.month(september))!.hasParts, isFalse);
     });

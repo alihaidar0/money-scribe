@@ -4,6 +4,8 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
+import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 void main() {
   late DemoController demo;
@@ -67,6 +69,170 @@ void main() {
     });
   });
 
+  group('edit the name', () {
+    test('keeps the trimmed name and the email', () async {
+      final profile = await repository.updateName('  Dana ');
+
+      expect(
+        profile,
+        const AccountProfile(name: 'Dana', email: 'alex@example.com'),
+      );
+      expect(await repository.profile(), profile);
+    });
+
+    test('refuses an empty name and one that is too long', () async {
+      await expectLater(
+        repository.updateName('   '),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.blank,
+          ),
+        ),
+      );
+      await expectLater(
+        repository.updateName(
+          'x' * (FakeAuthRepository.demoMaximumNameLength + 1),
+        ),
+        throwsA(
+          isA<NameRejectedException>().having(
+            (e) => e.issue,
+            'issue',
+            NameIssue.tooLong,
+          ),
+        ),
+      );
+    });
+
+    test('fails like the server does', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+
+      await expectLater(
+        repository.updateName('Dana'),
+        throwsA(isA<NoConnectionException>()),
+      );
+    });
+  });
+
+  group('change email', () {
+    test(
+      'a code goes to the new address, and confirming it changes the account',
+      () async {
+        await repository.requestEmailChange(
+          email: ' new@example.com ',
+          password: 'secret',
+        );
+        expect(repository.pendingEmail, 'new@example.com');
+        expect((await repository.profile()).email, 'alex@example.com');
+
+        await repository.verifyCode(CodePurpose.changeEmail, '123456');
+
+        expect((await repository.profile()).email, 'new@example.com');
+        expect(repository.pendingEmail, isNull);
+        expect(repository.isSignedIn, isTrue);
+      },
+    );
+
+    test(
+      'refuses an address that is not one, the same one, or a taken one',
+      () async {
+        for (final (address, issue) in [
+          ('nope', EmailIssue.invalid),
+          ('Alex@Example.com', EmailIssue.unchanged),
+          (FakeAuthRepository.demoTakenEmail, EmailIssue.taken),
+        ]) {
+          await expectLater(
+            repository.requestEmailChange(email: address, password: 'secret'),
+            throwsA(
+              isA<EmailChangeRejectedException>().having(
+                (e) => e.issue,
+                'issue',
+                issue,
+              ),
+            ),
+          );
+        }
+      },
+    );
+
+    test('refuses a wrong password, also for a new code', () async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+
+      await expectLater(
+        repository.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+      await expectLater(
+        repository.resendCode(CodePurpose.changeEmail, password: 'x'),
+        throwsA(isA<WrongCredentialsException>()),
+      );
+    });
+
+    test(
+      'shares the lock and the busy server with changing the password',
+      () async {
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.locked),
+        );
+        await expectLater(
+          repository.requestEmailChange(
+            email: 'new@example.com',
+            password: 'x',
+          ),
+          throwsA(
+            isA<RateLimitedException>().having(
+              (e) => e.reason,
+              'reason',
+              RateLimitReason.passwordAttemptsExceeded,
+            ),
+          ),
+        );
+
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+        );
+        await expectLater(
+          repository.requestEmailChange(
+            email: 'new@example.com',
+            password: 'x',
+          ),
+          throwsA(isA<ServiceUnavailableException>()),
+        );
+      },
+    );
+
+    test('the same address again inside the wait is refused', () async {
+      await repository.requestEmailChange(
+        email: 'new@example.com',
+        password: 'x',
+      );
+
+      await expectLater(
+        repository.requestEmailChange(email: 'new@example.com', password: 'x'),
+        throwsA(
+          isA<RateLimitedException>().having(
+            (e) => e.reason,
+            'reason',
+            RateLimitReason.resendTooSoon,
+          ),
+        ),
+      );
+    });
+
+    test('cancelling forgets the pending address', () async {
+      await repository.requestEmailChange(
+        email: 'new@example.com',
+        password: 'x',
+      );
+
+      await repository.cancelEmailChange();
+
+      expect(repository.pendingEmail, isNull);
+      expect(repository.resendWaitRemaining, Duration.zero);
+    });
+  });
+
   group('change password', () {
     test('is accepted', () async {
       await repository.changePassword(current: 'old', next: 'new-password-1');
@@ -79,6 +245,63 @@ void main() {
         repository.changePassword(current: 'old', next: 'new-password-1'),
         throwsA(isA<WrongCredentialsException>()),
       );
+    });
+
+    test('refuses a new password that is the current one', () async {
+      await expectLater(
+        repository.changePassword(current: 'same', next: 'same'),
+        throwsA(
+          isA<PasswordRejectedException>().having(
+            (e) => e.problem.issue,
+            'issue',
+            PasswordIssue.unchanged,
+          ),
+        ),
+      );
+    });
+
+    test('says what the demo panel asks for', () async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(
+          isA<RateLimitedException>()
+              .having(
+                (e) => e.reason,
+                'reason',
+                RateLimitReason.passwordAttemptsExceeded,
+              )
+              .having(
+                (e) => e.retryAfter,
+                'retryAfter',
+                const Duration(minutes: 15),
+              ),
+        ),
+      );
+
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(isA<ServiceUnavailableException>()),
+      );
+
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+      await expectLater(
+        repository.changePassword(current: 'old', next: 'new-password-1'),
+        throwsA(isA<PasswordRejectedException>()),
+      );
+    });
+
+    test('keeps the person signed in', () async {
+      await repository.changePassword(current: 'old', next: 'new-password-1');
+
+      expect(repository.isSignedIn, isTrue);
     });
   });
 
@@ -93,6 +316,34 @@ void main() {
       expect(repository.isSignedIn, isFalse);
       expect(changes, [false]);
     });
+
+    test(
+      'shares the lock and the busy server with changing the password',
+      () async {
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.locked),
+        );
+        await expectLater(
+          repository.deleteAccount(password: 'secret'),
+          throwsA(
+            isA<RateLimitedException>().having(
+              (e) => e.reason,
+              'reason',
+              RateLimitReason.passwordAttemptsExceeded,
+            ),
+          ),
+        );
+
+        demo.update(
+          const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
+        );
+        await expectLater(
+          repository.deleteAccount(password: 'secret'),
+          throwsA(isA<ServiceUnavailableException>()),
+        );
+        expect(repository.isSignedIn, isTrue);
+      },
+    );
 
     test('refuses a wrong password and stays signed in', () async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));

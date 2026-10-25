@@ -175,6 +175,30 @@
   "@errorMessage": {
     "description": "Explanation under the Something went wrong title."
   },
+  "unavailableTitle": "The service is busy",
+  "@unavailableTitle": {
+    "description": "Title of the full-screen state shown when the server is busy and refused the request."
+  },
+  "unavailableMessage": "Please try again shortly.",
+  "@unavailableMessage": {
+    "description": "Sentence under the title of the busy state."
+  },
+  "notAvailableTitle": "Not available yet",
+  "@notAvailableTitle": {
+    "description": "Title of the full-screen state shown when the server does not offer a feature yet, such as resetting a password."
+  },
+  "notAvailableMessage": "This part of your account is not ready on the server yet. It will be added soon.",
+  "@notAvailableMessage": {
+    "description": "Sentence under the title of the not available yet state."
+  },
+  "goBackAction": "Go back",
+  "@goBackAction": {
+    "description": "Button of the not available yet state that returns to the previous screen."
+  },
+  "serverStartingMessage": "The server is starting. This free staging server sleeps after 15 minutes without use, so the first request can take up to a minute. The production server does not sleep.",
+  "@serverStartingMessage": {
+    "description": "Note above the screen, in staging builds only, while a request waits for the server. It explains that the free test server sleeps when it is not used and that the real server does not."
+  },
   "continueAction": "Continue",
   "@continueAction": {
     "description": "Button that moves to the next step of a flow."
@@ -239,6 +263,39 @@
   "@signInWelcomeBack": {
     "description": "Sentence under the title of the Sign in screen."
   },
+  "signInAsName": "Sign in as {name}",
+  "@signInAsName": {
+    "description": "Heading of the card of the Sign in screen that offers the fingerprint of this phone. The placeholder is the name of the account the fingerprint signs in.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "signInWithFingerprintAction": "Sign in with fingerprint",
+  "@signInWithFingerprintAction": {
+    "description": "Button of the Sign in screen that asks for the fingerprint to sign in."
+  },
+  "useAnotherAccountAction": "Use another account",
+  "@useAnotherAccountAction": {
+    "description": "Button of the Sign in screen that shows the email and password form instead of the fingerprint."
+  },
+  "signInFingerprintReason": "Confirm your fingerprint to sign in",
+  "@signInFingerprintReason": {
+    "description": "What the system fingerprint dialog says it is for when the person signs in with the fingerprint."
+  },
+  "signInFingerprintUnavailable": "The fingerprint can''t be checked right now. Try again later or use your password.",
+  "@signInFingerprintUnavailable": {
+    "description": "Message of the Sign in screen when the phone cannot check the fingerprint now."
+  },
+  "signInFingerprintRefused": "Fingerprint sign-in didn''t work. Use your password to sign in.",
+  "@signInFingerprintRefused": {
+    "description": "Message of the Sign in screen when the server refused the fingerprint sign-in."
+  },
+  "signInFingerprintKeyChanged": "A fingerprint was added or removed on this phone, so fingerprint sign-in was turned off. Sign in with your password, then turn it on again in Settings.",
+  "@signInFingerprintKeyChanged": {
+    "description": "Message of the Sign in screen when the fingerprints of the phone changed, which makes its sign-in key stop working."
+  },
   "forgotPasswordLink": "Forgot password?",
   "@forgotPasswordLink": {
     "description": "Title of the Forgot password screen and the text button on the Sign in screen that opens it."
@@ -251,6 +308,34 @@
   "@signInWrongCredentials": {
     "description": "Error banner on the Sign in screen after a wrong email or password."
   },
+  "signInEmailNotRegistered": "No account uses this email address.",
+  "@signInEmailNotRegistered": {
+    "description": "Error under the email field of the Sign in screen when the server says no account has the address."
+  },
+  "signInWrongPassword": "Wrong password.",
+  "@signInWrongPassword": {
+    "description": "Error under the password field of the Sign in screen when the account exists but the password is wrong."
+  },
+  "challengeTitle": "Security check",
+  "@challengeTitle": {
+    "description": "Title of the bottom sheet that asks the person to complete a bot check before signing in. The server asks for it after several failed sign-ins."
+  },
+  "challengeBody": "Complete the check to sign in.",
+  "@challengeBody": {
+    "description": "Sentence under the title of the security check sheet of the Sign in screen."
+  },
+  "challengeRejected": "The check did not work. Try again.",
+  "@challengeRejected": {
+    "description": "Error in the security check sheet when the server did not accept the result of the check, for example because it expired."
+  },
+  "challengeLoadFailed": "The check could not load. Check your connection and try again.",
+  "@challengeLoadFailed": {
+    "description": "Error in the security check sheet when the check itself could not be shown."
+  },
+  "challengeUnavailable": "The security check is not available right now. Try again later.",
+  "@challengeUnavailable": {
+    "description": "Notice in the security check sheet when this version of the app cannot show the check."
+  },
   "signInLocked": "Too many attempts. Try again in {time}.",
   "@signInLocked": {
     "description": "Banner on the Sign in screen while sign-in is locked. The placeholder is the time left as minutes and seconds, such as 4:59.",
@@ -261,10 +346,6 @@
   "registerSentence": "It takes a minute.",
   "@registerSentence": {
     "description": "Sentence under the title of the Create account screen."
-  },
-  "passwordRuleLength": "At least 8 characters",
-  "@passwordRuleLength": {
-    "description": "Rule for a new password: helper text under the password field and an item of the checklist on the New password screen."
   },
   "registerAgreement": "I agree to the {terms} and the {privacy}",
   "@registerAgreement": {
@@ -278,20 +359,66 @@
   "@alreadyHaveAccount": {
     "description": "Question at the bottom of the Create account screen, followed by the Sign in button."
   },
-  "registerEmailTaken": "This email is already registered. {signIn} instead.",
-  "@registerEmailTaken": {
-    "description": "Error under the email field of the Create account screen. The placeholder is the word Sign in, shown as a link that opens the Sign in screen.",
-    "placeholders": {
-      "signIn": {"type": "String"}
-    }
-  },
-  "registerPasswordTooShort": "Use at least 8 characters.",
-  "@registerPasswordTooShort": {
-    "description": "Error under the password field of the Create account screen."
-  },
   "registerPasswordsMismatch": "Passwords do not match.",
   "@registerPasswordsMismatch": {
     "description": "Error under the confirm password field of the Create account screen."
+  },
+  "registerEmailInvalid": "Enter a valid email address.",
+  "@registerEmailInvalid": {
+    "description": "Error under the email field of the Create account screen when the server does not accept the address."
+  },
+  "registerNameInvalid": "Check your name.",
+  "@registerNameInvalid": {
+    "description": "Error under the name field of the Create account screen when the server does not accept the name."
+  },
+  "tryAgainIn": "Try again in {time}",
+  "@tryAgainIn": {
+    "description": "Label of a disabled button (Create account, Send code, Save password) while the server asks to wait before the same request is sent again. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "passwordErrorTooShort": "Your password is too short.",
+  "@passwordErrorTooShort": {
+    "description": "Error under the password field when the server says the password is too short and gives no length."
+  },
+  "passwordErrorTooShortLimit": "Your password is too short. Use at least {count} characters.",
+  "@passwordErrorTooShortLimit": {
+    "description": "Error under the password field when the server says the password is too short. The placeholder is the shortest length the server accepts.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "passwordErrorTooLong": "Your password is too long.",
+  "@passwordErrorTooLong": {
+    "description": "Error under the password field when the server says the password is too long and gives no length."
+  },
+  "passwordErrorTooLongLimit": "Your password is too long. Use at most {count} characters.",
+  "@passwordErrorTooLongLimit": {
+    "description": "Error under the password field when the server says the password is too long. The placeholder is the longest length the server accepts.",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "passwordErrorTooSimilar": "Your password is too similar to your name or email. Choose a different one.",
+  "@passwordErrorTooSimilar": {
+    "description": "Error under the password field when the server says the password resembles the name or the email."
+  },
+  "passwordErrorTooCommon": "This password is too common. Choose a different one.",
+  "@passwordErrorTooCommon": {
+    "description": "Error under the password field when the server says the password is one of the most common ones."
+  },
+  "passwordErrorCompromised": "This password appeared in a data breach. Choose a different one.",
+  "@passwordErrorCompromised": {
+    "description": "Error under the password field when the server says the password was found in a known data breach."
+  },
+  "passwordErrorUnchanged": "The new password must be different from your current one.",
+  "@passwordErrorUnchanged": {
+    "description": "Error under the new password field when changing the password and the server says it is the same as the current password."
+  },
+  "passwordErrorRejected": "This password cannot be used. Choose a different one.",
+  "@passwordErrorRejected": {
+    "description": "Error under the password field when the server refuses the password for a reason the app does not know and gives no text."
   },
   "verifyEmailTitle": "Verify your email",
   "@verifyEmailTitle": {
@@ -301,16 +428,16 @@
   "@enterCodeTitle": {
     "description": "Title of the screen where the code sent to reset a password is typed."
   },
-  "codeSentTo": "We sent a 4-digit code to {email}.",
+  "codeSentTo": "We sent a 6-digit code to {email}.",
   "@codeSentTo": {
     "description": "Text under the title of the code screens. The placeholder is the email address the code was sent to.",
     "placeholders": {
       "email": {"type": "String"}
     }
   },
-  "codeFieldLabel": "4-digit code",
+  "codeFieldLabel": "6-digit code",
   "@codeFieldLabel": {
-    "description": "Spoken label of the field where the 4-digit code is typed, for screen readers."
+    "description": "Spoken label of the field where the 6-digit code is typed, for screen readers."
   },
   "resendCodeIn": "Resend code in {time}",
   "@resendCodeIn": {
@@ -345,6 +472,44 @@
   "codeExpired": "This code has expired.",
   "@codeExpired": {
     "description": "Banner on the code screens when the code is no longer valid."
+  },
+  "codeIncorrect": "The code is incorrect.",
+  "@codeIncorrect": {
+    "description": "Error under the code boxes after a wrong code, when the server does not say how many tries remain."
+  },
+  "codeAttemptsExceeded": "Too many incorrect codes. This code no longer works.",
+  "@codeAttemptsExceeded": {
+    "description": "Banner on the code screens when too many wrong codes were typed and a new code is needed."
+  },
+  "tooManyAttemptsTryAgain": "Too many attempts. Try again in {time}.",
+  "@tooManyAttemptsTryAgain": {
+    "description": "Banner on the code screens while the server asks to wait before the code is checked again. The placeholder is the time left as minutes and seconds, such as 0:42.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "emailNotVerifiedMessage": "Your email address {email} is not verified yet. Send a new code to verify it.",
+  "@emailNotVerifiedMessage": {
+    "description": "Text under the title of the Verify your email screen when it opens from sign-in, before any code was sent. The placeholder is the email address.",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "verifyEmailHint": "No code? You may already have an account: {signIn} or {resetPassword}.",
+  "@verifyEmailHint": {
+    "description": "Hint under the code boxes of the Verify your email screen after creating an account. The two placeholders are links: to sign in, and to reset the password.",
+    "placeholders": {
+      "signIn": {"type": "String"},
+      "resetPassword": {"type": "String"}
+    }
+  },
+  "verifyHintSignIn": "sign in",
+  "@verifyHintSignIn": {
+    "description": "Link inside the verify email hint, in lower case: opens the Sign in screen."
+  },
+  "verifyHintResetPassword": "reset your password",
+  "@verifyHintResetPassword": {
+    "description": "Link inside the verify email hint, in lower case: opens the Forgot password screen."
   },
   "emailVerifiedTitle": "Email verified",
   "@emailVerifiedTitle": {
@@ -398,13 +563,13 @@
   "@decrease": {
     "description": "Tooltip of the minus button of a number stepper."
   },
-  "forgotPasswordMessage": "Enter your email and we will send you a 4-digit code.",
+  "forgotPasswordMessage": "Enter your email and we will send you a 6-digit code.",
   "@forgotPasswordMessage": {
     "description": "Text under the title of the Forgot password screen."
   },
   "sendCode": "Send code",
   "@sendCode": {
-    "description": "Button that sends the 4-digit code by email."
+    "description": "Button that sends the 6-digit code by email."
   },
   "backToSignIn": "Back to sign in",
   "@backToSignIn": {
@@ -414,13 +579,9 @@
   "@newPasswordTitle": {
     "description": "Title of the screen where a new password is chosen."
   },
-  "passwordRuleNumber": "One number",
-  "@passwordRuleNumber": {
-    "description": "Rule for a new password: it contains at least one digit. An item of the checklist."
-  },
-  "passwordRuleMatch": "Passwords match",
-  "@passwordRuleMatch": {
-    "description": "Rule for a new password: the two fields are equal. An item of the checklist."
+  "resetExpired": "This reset has expired. Ask for a new code.",
+  "@resetExpired": {
+    "description": "Message shown on the Forgot password screen when the reset ran out while the new password was being saved, so a new code has to be asked for."
   },
   "savePassword": "Save password",
   "@savePassword": {
@@ -578,6 +739,22 @@
   "couldNotSave": "Couldn''t save. Check your connection.",
   "@couldNotSave": {
     "description": "Message shown when saving a form failed."
+  },
+  "monthChangedElsewhere": "This month was changed on another device.",
+  "@monthChangedElsewhere": {
+    "description": "Message shown when saving or deleting a salary month was refused because another device changed it first."
+  },
+  "loadLatestAction": "Load latest",
+  "@loadLatestAction": {
+    "description": "Button of the message that a month was changed on another device: replaces what is on screen with the saved month."
+  },
+  "itemChangedElsewhere": "This item was changed on another device. The list is up to date.",
+  "@itemChangedElsewhere": {
+    "description": "Message shown when changing or deleting a fixed item was refused because another device changed it first."
+  },
+  "applyAgainAction": "Apply again",
+  "@applyAgainAction": {
+    "description": "Button of the message that a fixed item was changed on another device: does the change again on the latest version."
   },
   "salaryHistoryTitle": "Salary history",
   "@salaryHistoryTitle": {
@@ -932,6 +1109,54 @@
   "fixedItemsEmptyMessage": "Add your rent, services or scholarship.",
   "@fixedItemsEmptyMessage": {
     "description": "Sentence under the title of the empty fixed items."
+  },
+  "fixedItemsSaveFirstTitle": "Save this month''s salary first",
+  "@fixedItemsSaveFirstTitle": {
+    "description": "Title shown on the fixed items when the month's salary is not saved yet, so it cannot have any."
+  },
+  "fixedItemsSaveFirstMessage": "Fixed items belong to a saved month. Save its salary, then add them here.",
+  "@fixedItemsSaveFirstMessage": {
+    "description": "Sentence under the title shown on the fixed items of a month whose salary is not saved."
+  },
+  "goToSalaryAction": "Go to salary",
+  "@goToSalaryAction": {
+    "description": "Button of the fixed items of a month whose salary is not saved: opens the Salary screen of that month."
+  },
+  "salarySavedTotalLabel": "Saved total",
+  "@salarySavedTotalLabel": {
+    "description": "Label of the total after tax the server saved, shown under the live total while the salary of a saved month is being edited."
+  },
+  "copyFromLastMonthAction": "Copy from last month",
+  "@copyFromLastMonthAction": {
+    "description": "Button of the fixed items that adds a copy of the fixed items of the last saved month to this one."
+  },
+  "copyFixedItemsTitle": "Copy from last month?",
+  "@copyFixedItemsTitle": {
+    "description": "Title of the question asked before copying the fixed items of the last saved month into a month that already has some."
+  },
+  "copyFixedItemsMessage": "This month already has fixed items. Last month''s items will be added to them.",
+  "@copyFixedItemsMessage": {
+    "description": "Sentence of the question asked before copying the fixed items of the last saved month into a month that already has some."
+  },
+  "copyFixedItemsConfirmAction": "Copy",
+  "@copyFixedItemsConfirmAction": {
+    "description": "Button that confirms copying the fixed items of the last saved month."
+  },
+  "couldNotCopy": "Couldn''t copy the items. Check your connection.",
+  "@couldNotCopy": {
+    "description": "Message shown when copying the fixed items of another month failed because the server could not be reached or failed. It has a Retry button."
+  },
+  "copyNoEarlierMonth": "There is no earlier month with a saved salary to copy from.",
+  "@copyNoEarlierMonth": {
+    "description": "Message shown when the fixed items cannot be copied because no earlier month has a saved salary."
+  },
+  "copyLimitReached": "This month would hold too many fixed items. Nothing was copied.",
+  "@copyLimitReached": {
+    "description": "Message shown when copying the fixed items was refused because the month would pass the most items it may hold."
+  },
+  "copyCurrencyMismatch": "Last month is in another currency, so its items can''t be copied.",
+  "@copyCurrencyMismatch": {
+    "description": "Message shown when copying the fixed items was refused because the month to copy from has another currency."
   },
   "addFixedItemTitle": "Add fixed item",
   "@addFixedItemTitle": {
@@ -1629,6 +1854,151 @@
   "@deleteMyAccountFailed": {
     "description": "Banner in the delete account dialog when the server could not be reached or failed."
   },
+  "deleteMyAccountUnavailable": "The service is busy. Please try again shortly.",
+  "@deleteMyAccountUnavailable": {
+    "description": "Banner in the delete account dialog when the server is busy and asks to try again shortly."
+  },
+  "editNameAction": "Edit name",
+  "@editNameAction": {
+    "description": "Row on the Account screen that opens the dialog to change the display name."
+  },
+  "editNameTitle": "Edit your name",
+  "@editNameTitle": {
+    "description": "Title of the dialog to change the display name."
+  },
+  "nameBlankError": "Enter your name.",
+  "@nameBlankError": {
+    "description": "Error under the name field when the name is empty."
+  },
+  "nameTooLongError": "This name is too long.",
+  "@nameTooLongError": {
+    "description": "Error under the name field when the server says the name is too long."
+  },
+  "editNameFailed": "Couldn''t save your name. Check your connection and try again.",
+  "@editNameFailed": {
+    "description": "Banner in the edit name dialog when the server could not be reached or failed."
+  },
+  "editNameUnavailable": "The service is busy. Please try again shortly.",
+  "@editNameUnavailable": {
+    "description": "Banner in the edit name dialog when the server is busy and asks to try again shortly."
+  },
+  "nameUpdated": "Name updated",
+  "@nameUpdated": {
+    "description": "Message after the display name was changed."
+  },
+  "changeEmailMessage": "We will send a 6-digit code to the new address. Your email changes only after you enter it.",
+  "@changeEmailMessage": {
+    "description": "Text above the fields of the screen that changes the email address."
+  },
+  "newEmailLabel": "New email",
+  "@newEmailLabel": {
+    "description": "Label of the field for the new email address."
+  },
+  "changeEmailUnchanged": "This is already your email address.",
+  "@changeEmailUnchanged": {
+    "description": "Error under the new email field when it is the address the account already has."
+  },
+  "changeEmailTaken": "Another account already uses this email address.",
+  "@changeEmailTaken": {
+    "description": "Error under the new email field when another account has the address."
+  },
+  "changeEmailTakenMeanwhile": "Another account took this address in the meantime. Use another address.",
+  "@changeEmailTakenMeanwhile": {
+    "description": "Banner on the code screen when the new address was taken while the code was on its way."
+  },
+  "changeEmailCodeTitle": "Confirm your new email",
+  "@changeEmailCodeTitle": {
+    "description": "Title of the screen where the code sent to the new email address is typed."
+  },
+  "useAnotherAddress": "Use another address",
+  "@useAnotherAddress": {
+    "description": "Button on the code screen that goes back to type a different new email address."
+  },
+  "cancelEmailChange": "Cancel email change",
+  "@cancelEmailChange": {
+    "description": "Button on the code screen that drops the pending email change."
+  },
+  "cancelEmailChangeFailed": "Couldn''t cancel the change. Check your connection and try again.",
+  "@cancelEmailChangeFailed": {
+    "description": "Message when cancelling the pending email change failed."
+  },
+  "resendPasswordTitle": "Send a new code",
+  "@resendPasswordTitle": {
+    "description": "Title of the dialog that asks for the password before a new email-change code is sent."
+  },
+  "resendPasswordMessage": "For your security, enter your password to send a new code.",
+  "@resendPasswordMessage": {
+    "description": "Text of the dialog that asks for the password before a new email-change code is sent."
+  },
+  "emailChanged": "Email changed",
+  "@emailChanged": {
+    "description": "Message after the email address of the account was changed."
+  },
+  "unlockReason": "Unlock Money Scribe",
+  "@unlockReason": {
+    "description": "What the system fingerprint dialog says when it opens the locked app."
+  },
+  "appLockedHintPinOnly": "Enter your PIN to unlock.",
+  "@appLockedHintPinOnly": {
+    "description": "Hint on the lock screen of a device that has no fingerprint set up."
+  },
+  "pinPausedTryAgain": "Too many wrong PINs. Try again in {time}.",
+  "@pinPausedTryAgain": {
+    "description": "Message on the PIN screen while a pause after wrong PINs runs.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pinTooManyFailures": "Too many wrong PINs. Sign in with your password.",
+  "@pinTooManyFailures": {
+    "description": "Message after too many wrong PINs in a row signed the person out."
+  },
+  "lockTimeoutTitle": "Lock after",
+  "@lockTimeoutTitle": {
+    "description": "Title of the setting that says how long the app may stay in the background before it locks."
+  },
+  "lockTimeoutImmediately": "Immediately",
+  "@lockTimeoutImmediately": {
+    "description": "Lock timeout: lock as soon as the app leaves the screen."
+  },
+  "lockTimeoutThirtySeconds": "After 30 seconds",
+  "@lockTimeoutThirtySeconds": {
+    "description": "Lock timeout: 30 seconds."
+  },
+  "lockTimeoutOneMinute": "After 1 minute",
+  "@lockTimeoutOneMinute": {
+    "description": "Lock timeout: 1 minute."
+  },
+  "lockTimeoutFiveMinutes": "After 5 minutes",
+  "@lockTimeoutFiveMinutes": {
+    "description": "Lock timeout: 5 minutes."
+  },
+  "fingerprintSettingTitle": "Fingerprint",
+  "@fingerprintSettingTitle": {
+    "description": "Title of the switch in the Settings that lets the fingerprint open the locked app."
+  },
+  "fingerprintSettingHint": "Open the app with your fingerprint instead of the PIN.",
+  "@fingerprintSettingHint": {
+    "description": "Text under the fingerprint switch in the Settings."
+  },
+  "fingerprintSettingNeedsPin": "Open the app with your fingerprint. You will also set a PIN, which stays the other way in.",
+  "@fingerprintSettingNeedsPin": {
+    "description": "Text under the fingerprint switch while the PIN lock is off: turning it on also asks for a PIN."
+  },
+  "fingerprintSettingUnavailable": "Set up a fingerprint in your phone''s settings first.",
+  "@fingerprintSettingUnavailable": {
+    "description": "Text under the fingerprint switch when the device has no fingerprint set up, so the switch cannot be turned on."
+  },
+  "fingerprintEnableReason": "Confirm your fingerprint to turn it on",
+  "@fingerprintEnableReason": {
+    "description": "What the system fingerprint dialog says when the person turns the fingerprint switch on."
+  },
+  "fingerprintNotTurnedOn": "Fingerprint not recognised. It was not turned on.",
+  "@fingerprintNotTurnedOn": {
+    "description": "Message when the fingerprint asked for to turn the switch on did not match, so the switch stayed off."
+  },
   "couldNotSignOut": "Couldn''t sign out. Check your connection.",
   "@couldNotSignOut": {
     "description": "Message when signing out failed."
@@ -1970,5 +2340,182 @@
     "placeholders": {
       "name": {"type": "String"}
     }
+  },
+  "fingerprintSignInTitle": "Sign in with fingerprint",
+  "@fingerprintSignInTitle": {
+    "description": "Title of the Settings switch that lets the phone sign the person in with their fingerprint, without the password."
+  },
+  "fingerprintSignInHint": "Sign in with your fingerprint instead of your password. Your PIN is never a way to sign in.",
+  "@fingerprintSignInHint": {
+    "description": "Hint under the switch of signing in with the fingerprint."
+  },
+  "fingerprintSignInUnsupported": "This phone can''t keep a sign-in key. Use your password.",
+  "@fingerprintSignInUnsupported": {
+    "description": "Hint under the sign-in fingerprint switch on a phone without the secure hardware for it."
+  },
+  "fingerprintSignInPromptTitle": "Turn on fingerprint sign-in",
+  "@fingerprintSignInPromptTitle": {
+    "description": "Title of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInPromptMessage": "Type your password to confirm it''s you. Then touch the fingerprint sensor.",
+  "@fingerprintSignInPromptMessage": {
+    "description": "Text of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInPromptAction": "Continue",
+  "@fingerprintSignInPromptAction": {
+    "description": "Button of the dialog that asks for the password before the fingerprint sign-in is turned on."
+  },
+  "fingerprintSignInReason": "Confirm your fingerprint to turn on sign-in with it",
+  "@fingerprintSignInReason": {
+    "description": "Text of the system fingerprint dialog shown when turning on the fingerprint sign-in."
+  },
+  "fingerprintSignInTurnedOn": "Fingerprint sign-in is on.",
+  "@fingerprintSignInTurnedOn": {
+    "description": "Message after the fingerprint sign-in was turned on."
+  },
+  "fingerprintSignInTurnedOff": "Fingerprint sign-in is off.",
+  "@fingerprintSignInTurnedOff": {
+    "description": "Message after the fingerprint sign-in was turned off."
+  },
+  "fingerprintSignInWrongPassword": "That password isn''t right. Fingerprint sign-in was not turned on.",
+  "@fingerprintSignInWrongPassword": {
+    "description": "Message when the password typed to turn on the fingerprint sign-in was wrong."
+  },
+  "fingerprintSignInRefused": "This phone can''t be used for fingerprint sign-in. Use your password to sign in.",
+  "@fingerprintSignInRefused": {
+    "description": "Message when the server refused the key of this phone. It gives no reason."
+  },
+  "fingerprintSignInLimit": "Fingerprint sign-in is already on for as many phones as an account can have. Turn it off on another phone first.",
+  "@fingerprintSignInLimit": {
+    "description": "Message when the account has reached the most phones that can sign in with a fingerprint."
+  },
+  "fingerprintSignInExpired": "That took too long. Please try again.",
+  "@fingerprintSignInExpired": {
+    "description": "Message when the one-time challenge of the fingerprint sign-in ran out before the fingerprint was confirmed."
+  },
+  "fingerprintSignInCannotCheck": "The fingerprint can''t be checked right now. Try again later.",
+  "@fingerprintSignInCannotCheck": {
+    "description": "Message when the phone cannot check a fingerprint now, for example after too many tries."
+  },
+  "fingerprintSignInWait": "Too many wrong passwords. Try again in {time}.",
+  "@fingerprintSignInWait": {
+    "description": "Message when the password lock is on. The placeholder is a countdown such as 14:59.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintSignInBusy": "The service is busy. Please try again shortly.",
+  "@fingerprintSignInBusy": {
+    "description": "Message when the server is busy while turning the fingerprint sign-in on or off."
+  },
+  "fingerprintSignInOffline": "Couldn''t change fingerprint sign-in. Check your connection.",
+  "@fingerprintSignInOffline": {
+    "description": "Message when the fingerprint sign-in could not be turned on or off because the server cannot be reached."
+  },
+  "fingerprintSignInFailed": "Something went wrong. Please try again.",
+  "@fingerprintSignInFailed": {
+    "description": "Message for any other failure while turning the fingerprint sign-in on or off."
+  },
+  "notNowAction": "Not now",
+  "@notNowAction": {
+    "description": "Button that dismisses an offer without accepting it."
+  },
+  "fingerprintBackOnTitle": "Turn fingerprint sign-in back on?",
+  "@fingerprintBackOnTitle": {
+    "description": "Title of the question asked after the password was changed, which removed the fingerprint sign-in key."
+  },
+  "fingerprintBackOnMessage": "Changing your password turned fingerprint sign-in off on all your phones. Turn it on again for this phone? You will touch the sensor to confirm.",
+  "@fingerprintBackOnMessage": {
+    "description": "Sentence of the question asked after the password was changed."
+  },
+  "fingerprintBackOnAction": "Turn on",
+  "@fingerprintBackOnAction": {
+    "description": "Button that turns the fingerprint sign-in on again after a password change."
+  },
+  "fingerprintPhonesTitle": "Phones with fingerprint sign-in",
+  "@fingerprintPhonesTitle": {
+    "description": "Title of the screen that lists the phones that can sign the account in with a fingerprint, and of the row of the Settings that opens it."
+  },
+  "fingerprintPhonesHint": "See which phones can sign in, and remove one.",
+  "@fingerprintPhonesHint": {
+    "description": "Subtitle of the row of the Settings that opens the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhonesIntro": "These phones can sign in to your account with a fingerprint. Remove one you no longer use.",
+  "@fingerprintPhonesIntro": {
+    "description": "Sentence above the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhoneThisPhone": "This phone",
+  "@fingerprintPhoneThisPhone": {
+    "description": "Label of the phone the app runs on, in the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhoneLastUsed": "Last used {date}",
+  "@fingerprintPhoneLastUsed": {
+    "description": "Line of a phone in the list: when its fingerprint last signed the account in. The placeholder is a short date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneNeverUsed": "Not used to sign in yet",
+  "@fingerprintPhoneNeverUsed": {
+    "description": "Line of a phone in the list whose fingerprint never signed the account in."
+  },
+  "fingerprintPhoneExpires": "Stops working on {date} if not used",
+  "@fingerprintPhoneExpires": {
+    "description": "Line of a phone in the list: when its fingerprint sign-in expires if it is not used. The placeholder is a short date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveTooltip": "Remove {name}",
+  "@fingerprintPhoneRemoveTooltip": {
+    "description": "Tooltip and spoken label of the button that removes a phone from the list. The placeholder is the name of the phone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveTitle": "Remove {name}?",
+  "@fingerprintPhoneRemoveTitle": {
+    "description": "Title of the question asked before a phone is removed from the list. The placeholder is the name of the phone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveMessage": "That phone will need your password to sign in again.",
+  "@fingerprintPhoneRemoveMessage": {
+    "description": "Sentence of the question asked before another phone is removed from the list."
+  },
+  "fingerprintPhoneRemoveThisMessage": "Fingerprint sign-in will be turned off on this phone. You can turn it on again in Settings.",
+  "@fingerprintPhoneRemoveThisMessage": {
+    "description": "Sentence of the question asked before this phone is removed from the list."
+  },
+  "fingerprintPhoneRemoveAction": "Remove",
+  "@fingerprintPhoneRemoveAction": {
+    "description": "Button that confirms removing a phone from the list."
+  },
+  "fingerprintPhoneRemoved": "Phone removed.",
+  "@fingerprintPhoneRemoved": {
+    "description": "Message shown when a phone was removed from the list."
+  },
+  "fingerprintPhonesEmptyTitle": "No phones yet",
+  "@fingerprintPhonesEmptyTitle": {
+    "description": "Title shown when no phone has fingerprint sign-in."
+  },
+  "fingerprintPhonesEmptyMessage": "Turn on fingerprint sign-in in Settings to add this phone.",
+  "@fingerprintPhonesEmptyMessage": {
+    "description": "Sentence under the title shown when no phone has fingerprint sign-in."
+  },
+  "fingerprintPhonesEmptyAction": "Back to settings",
+  "@fingerprintPhonesEmptyAction": {
+    "description": "Button that leaves the empty list of phones for the Settings."
   }
 }

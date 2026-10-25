@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
@@ -15,8 +18,10 @@ import 'package:money_scribe/core/widgets/top_level_screen.dart';
 import 'package:money_scribe/core/widgets/wide_frame.dart';
 import 'package:money_scribe/features/salary/bloc/fixed_items_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
+import 'package:money_scribe/features/salary/presentation/widgets/fixed_item_dialogs.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/fixed_item_sheet.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/fixed_items_summary_card.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/salary_history_button.dart';
@@ -55,21 +60,64 @@ class _FixedItemsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<FixedItemsBloc, FixedItemsState>(
-      listenWhen: (previous, current) =>
-          previous.failedAction != current.failedAction &&
-          current.failedAction != null,
-      listener: (context, state) {
-        final action = state.failedAction;
-        if (action == null) return;
-        showFailureSnackBar(
-          context,
-          action is FixedItemDeleted
-              ? context.l10n.couldNotDelete
-              : context.l10n.couldNotSave,
-          onRetry: () => context.read<FixedItemsBloc>().add(action),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<FixedItemsBloc, FixedItemsState>(
+          listenWhen: (previous, current) =>
+              previous.failedAction != current.failedAction &&
+              current.failedAction != null,
+          listener: (context, state) {
+            final action = state.failedAction;
+            if (action == null) return;
+            showFailureSnackBar(context, switch (action) {
+              FixedItemDeleted() => context.l10n.couldNotDelete,
+              FixedItemsCopied() => context.l10n.couldNotCopy,
+              _ => context.l10n.couldNotSave,
+            }, onRetry: () => context.read<FixedItemsBloc>().add(action));
+          },
+        ),
+        BlocListener<FixedItemsBloc, FixedItemsState>(
+          listenWhen: (previous, current) =>
+              previous.copyRefusal != current.copyRefusal &&
+              current.copyRefusal != null,
+          listener: (context, state) {
+            final refusal = state.copyRefusal;
+            if (refusal == null) return;
+            // Asking again changes nothing, so there is no Retry.
+            showFailureSnackBar(context, switch (refusal) {
+              FixedItemsCopyRefusal.noEarlierMonth =>
+                context.l10n.copyNoEarlierMonth,
+              FixedItemsCopyRefusal.limitReached =>
+                context.l10n.copyLimitReached,
+              FixedItemsCopyRefusal.currencyMismatch =>
+                context.l10n.copyCurrencyMismatch,
+            }, onRetry: null);
+          },
+        ),
+        BlocListener<FixedItemsBloc, FixedItemsState>(
+          listenWhen: (previous, current) =>
+              previous.staleAction != current.staleAction &&
+              current.staleAction != null,
+          listener: (context, state) {
+            final action = state.staleAction;
+            if (action == null) return;
+            // An item that is gone has nothing to apply the change to.
+            final id = switch (action) {
+              FixedItemChanged(:final id) || FixedItemDeleted(:final id) => id,
+              _ => null,
+            };
+            final gone = !state.items.any((item) => item.id == id);
+            showFailureSnackBar(
+              context,
+              context.l10n.itemChangedElsewhere,
+              actionLabel: context.l10n.applyAgainAction,
+              onRetry: gone
+                  ? null
+                  : () => context.read<FixedItemsBloc>().add(action),
+            );
+          },
+        ),
+      ],
       child: TopLevelScreen(
         title: context.l10n.salaryTitle,
         actions: const [SalaryHistoryButton()],
@@ -93,7 +141,9 @@ class _Body extends StatelessWidget {
     );
     final showParts = context.select<FixedItemsBloc, bool>(
       (bloc) =>
-          bloc.state.status == FixedItemsStatus.ready && bloc.state.twoPayments,
+          bloc.state.status == FixedItemsStatus.ready &&
+          bloc.state.monthSaved &&
+          bloc.state.twoPayments,
     );
 
     return Column(
@@ -175,6 +225,16 @@ Future<void> _addItem(BuildContext context) async {
   if (result is FixedItemSheetSaved) bloc.add(FixedItemAdded(result.draft));
 }
 
+/// Copies the fixed items of the last saved month into this one. A month that
+/// already has items asks first, because they are added to, not replaced.
+Future<void> _copyItems(BuildContext context) async {
+  final bloc = context.read<FixedItemsBloc>();
+  if (bloc.state.items.isNotEmpty && !await confirmCopyFixedItems(context)) {
+    return;
+  }
+  bloc.add(const FixedItemsCopied());
+}
+
 /// Opens the sheet that changes or deletes [item].
 Future<void> _editItem(BuildContext context, FixedItem item) async {
   final bloc = context.read<FixedItemsBloc>();
@@ -205,6 +265,18 @@ class _Content extends StatelessWidget {
     final state = context.watch<FixedItemsBloc>().state;
     final items = state.shownItems;
 
+    // Fixed items belong to a saved month: the way to one is its salary.
+    if (!state.monthSaved) {
+      return StateView(
+        icon: Icons.event_note_outlined,
+        title: l10n.fixedItemsSaveFirstTitle,
+        message: l10n.fixedItemsSaveFirstMessage,
+        actionLabel: l10n.goToSalaryAction,
+        filledAction: true,
+        onAction: () => context.go(AppRoutes.salaryTab(state.month)),
+      );
+    }
+
     if (items.isEmpty) {
       return StateView(
         icon: Icons.autorenew,
@@ -213,6 +285,8 @@ class _Content extends StatelessWidget {
         actionLabel: l10n.addItemAction,
         filledAction: true,
         onAction: () => _addItem(context),
+        secondaryLabel: l10n.copyFromLastMonthAction,
+        onSecondary: state.copying ? null : () => _copyItems(context),
       );
     }
 
@@ -223,6 +297,19 @@ class _Content extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) => Column(
             children: [
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextButton.icon(
+                    onPressed: state.copying ? null : () => _copyItems(context),
+                    icon: state.copying
+                        ? const ButtonSpinner()
+                        : const Icon(Icons.content_copy_outlined),
+                    label: Text(l10n.copyFromLastMonthAction),
+                  ),
+                ),
+              ),
               Expanded(
                 child: Stack(
                   children: [

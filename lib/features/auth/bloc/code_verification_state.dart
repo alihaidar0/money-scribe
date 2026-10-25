@@ -13,8 +13,28 @@ enum CodeVerificationStatus {
   /// The code was wrong: see [CodeVerificationState.attemptsLeft].
   wrong,
 
-  /// The code is no longer valid; a new one must be sent.
+  /// The code is no longer valid (or none was ever sent to this address); a
+  /// new one must be asked for.
   expired,
+
+  /// Too many wrong codes: the code is dead. A new one can be asked for once
+  /// [CodeVerificationState.resendSecondsLeft] reaches zero.
+  attemptsExceeded,
+
+  /// The server asked to wait before the code is checked again: see
+  /// [CodeVerificationState.waitSecondsLeft].
+  rateLimited,
+
+  /// The password typed to ask for a new code (changing the email) is wrong.
+  /// The code that was sent still works.
+  wrongPassword,
+
+  /// Another account took the new address meanwhile (changing the email): the
+  /// code cannot be used, the person chooses another address.
+  emailTaken,
+
+  /// The server is busy: try again shortly.
+  unavailable,
 
   /// The server could not be reached.
   noConnection,
@@ -28,8 +48,13 @@ final class CodeVerificationState extends Equatable {
     required this.email,
     required this.resendSecondsLeft,
     this.status = CodeVerificationStatus.entering,
-    this.attemptsLeft = 0,
+    this.attemptsLeft,
+    this.waitSecondsLeft = 0,
   });
+
+  /// Tells [copyWith] that `attemptsLeft` was not given, because `null` is a
+  /// value too.
+  static const _keep = Object();
 
   final CodeVerificationStatus status;
 
@@ -39,22 +64,36 @@ final class CodeVerificationState extends Equatable {
   /// Seconds until a new code can be asked for; `0` when it can.
   final int resendSecondsLeft;
 
-  /// Tries left, while [status] is `wrong`.
-  final int attemptsLeft;
+  /// Tries left, while [status] is `wrong`, when the server says how many.
+  final int? attemptsLeft;
+
+  /// Seconds until the code can be checked again, while [status] is
+  /// `rateLimited`.
+  final int waitSecondsLeft;
 
   CodeVerificationState copyWith({
     CodeVerificationStatus? status,
     int? resendSecondsLeft,
-    int? attemptsLeft,
+    Object? attemptsLeft = _keep,
+    int? waitSecondsLeft,
   }) {
     return CodeVerificationState(
       email: email,
       status: status ?? this.status,
       resendSecondsLeft: resendSecondsLeft ?? this.resendSecondsLeft,
-      attemptsLeft: attemptsLeft ?? this.attemptsLeft,
+      attemptsLeft: identical(attemptsLeft, _keep)
+          ? this.attemptsLeft
+          : attemptsLeft as int?,
+      waitSecondsLeft: waitSecondsLeft ?? this.waitSecondsLeft,
     );
   }
 
   @override
-  List<Object> get props => [status, email, resendSecondsLeft, attemptsLeft];
+  List<Object?> get props => [
+    status,
+    email,
+    resendSecondsLeft,
+    attemptsLeft,
+    waitSecondsLeft,
+  ];
 }

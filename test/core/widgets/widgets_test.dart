@@ -35,11 +35,13 @@ void main() {
       WidgetTester tester, {
       bool hasError = false,
       bool enabled = true,
+      int length = 6,
     }) {
       return tester.pumpWidget(
         _host(
           Scaffold(
             body: CodeBoxes(
+              length: length,
               controller: controller,
               focusNode: focus,
               semanticLabel: 'Code',
@@ -51,7 +53,7 @@ void main() {
       );
     }
 
-    testWidgets('shows the typed digits in four boxes', (tester) async {
+    testWidgets('shows the typed digits in the boxes', (tester) async {
       await pumpBoxes(tester);
 
       await tester.enterText(find.byType(TextField), '48');
@@ -61,12 +63,57 @@ void main() {
       expect(find.text('8'), findsOneWidget);
     });
 
-    testWidgets('takes at most four digits', (tester) async {
+    testWidgets('takes at most as many digits as the code has', (tester) async {
       await pumpBoxes(tester);
+
+      await tester.enterText(find.byType(TextField), '12345678');
+
+      expect(controller.text, '123456');
+    });
+
+    testWidgets('a short code takes fewer digits', (tester) async {
+      await pumpBoxes(tester, length: 4);
 
       await tester.enterText(find.byType(TextField), '123456');
 
       expect(controller.text, '1234');
+    });
+
+    testWidgets('six boxes fit a narrow phone at a large text size', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        _host(
+          MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 640),
+              textScaler: TextScaler.linear(2),
+            ),
+            child: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(24),
+                child: CodeBoxes(
+                  length: 6,
+                  controller: controller,
+                  focusNode: focus,
+                  semanticLabel: 'Code',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.enterText(find.byType(TextField), '482915');
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      for (final digit in ['4', '8', '2', '9', '1', '5']) {
+        expect(find.text(digit), findsOneWidget);
+      }
     });
 
     testWidgets('keeps only digits, and Western ones', (tester) async {
@@ -84,6 +131,7 @@ void main() {
         _host(
           Scaffold(
             body: CodeBoxes(
+              length: 6,
               controller: controller,
               focusNode: focus,
               semanticLabel: 'Code',
