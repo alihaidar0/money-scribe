@@ -17,6 +17,7 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
@@ -45,6 +46,7 @@ class _Scene {
     this.sensor = false,
     this.pinPause,
     this.lockOn = false,
+    this.fingerprintKey = false,
   });
 
   final String name;
@@ -63,6 +65,10 @@ class _Scene {
 
   /// The app lock is on (a PIN is saved).
   final bool lockOn;
+
+  /// The phone has the fingerprint key of the sample account, signed out: the
+  /// Sign in screen offers the fingerprint.
+  final bool fingerprintKey;
   final _Setup? setup;
   final Size size;
 }
@@ -217,6 +223,40 @@ final _scenes = <_Scene>[
     AppRoutes.signIn,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
+      await _tapPrimary(tester);
+    },
+  ),
+  const _Scene(
+    'auth-2h-sign-in-fingerprint',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+  ),
+  _Scene(
+    'auth-2i-sign-in-fingerprint-unavailable',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(fingerprint: DemoFingerprint.notEnrolled));
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2j-sign-in-fingerprint-refused',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(fingerprint: DemoFingerprint.signInRefused),
+      );
+      await _tapPrimary(tester);
+    },
+  ),
+  _Scene(
+    'auth-2k-sign-in-fingerprint-locked',
+    AppRoutes.signIn,
+    fingerprintKey: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(fingerprint: DemoFingerprint.locked));
       await _tapPrimary(tester);
     },
   ),
@@ -1715,6 +1755,15 @@ void main() {
           );
 
           final demo = DemoController(latency: Duration.zero);
+          final auth = FakeAuthRepository(
+            demo: demo,
+            signedIn: scene.signedIn || scene.fingerprintKey,
+          );
+          final deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: auth);
+          if (scene.fingerprintKey) {
+            await deviceKeys.enable(password: 'p', prompt: 'Confirm');
+            await auth.signOut();
+          }
           final key = GlobalKey();
           await tester.pumpWidget(
             RenderTarget(
@@ -1725,10 +1774,8 @@ void main() {
                 // notification rows.
                 pushMessaging: FakePushMessagingRepository(),
                 demo: demo,
-                authRepository: FakeAuthRepository(
-                  demo: demo,
-                  signedIn: scene.signedIn,
-                ),
+                authRepository: auth,
+                deviceKeyRepository: deviceKeys,
                 appLockRepository: InstantAppLockRepository(
                   deviceHasFingerprint: scene.sensor,
                   biometricsMatch: false,

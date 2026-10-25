@@ -263,6 +263,39 @@
   "@signInWelcomeBack": {
     "description": "Sentence under the title of the Sign in screen."
   },
+  "signInAsName": "Sign in as {name}",
+  "@signInAsName": {
+    "description": "Heading of the card of the Sign in screen that offers the fingerprint of this phone. The placeholder is the name of the account the fingerprint signs in.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "signInWithFingerprintAction": "Sign in with fingerprint",
+  "@signInWithFingerprintAction": {
+    "description": "Button of the Sign in screen that asks for the fingerprint to sign in."
+  },
+  "useAnotherAccountAction": "Use another account",
+  "@useAnotherAccountAction": {
+    "description": "Button of the Sign in screen that shows the email and password form instead of the fingerprint."
+  },
+  "signInFingerprintReason": "Confirm your fingerprint to sign in",
+  "@signInFingerprintReason": {
+    "description": "What the system fingerprint dialog says it is for when the person signs in with the fingerprint."
+  },
+  "signInFingerprintUnavailable": "The fingerprint can''t be checked right now. Try again later or use your password.",
+  "@signInFingerprintUnavailable": {
+    "description": "Message of the Sign in screen when the phone cannot check the fingerprint now."
+  },
+  "signInFingerprintRefused": "Fingerprint sign-in didn''t work. Use your password to sign in.",
+  "@signInFingerprintRefused": {
+    "description": "Message of the Sign in screen when the server refused the fingerprint sign-in."
+  },
+  "signInFingerprintKeyChanged": "A fingerprint was added or removed on this phone, so fingerprint sign-in was turned off. Sign in with your password, then turn it on again in Settings.",
+  "@signInFingerprintKeyChanged": {
+    "description": "Message of the Sign in screen when the fingerprints of the phone changed, which makes its sign-in key stop working."
+  },
   "forgotPasswordLink": "Forgot password?",
   "@forgotPasswordLink": {
     "description": "Title of the Forgot password screen and the text button on the Sign in screen that opens it."
