@@ -612,6 +612,13 @@ The contract is pinned (backend ADR 0018, request issue 45). What it settled, be
   (400), `device_key_limit_reached` (409), `password_attempts_exceeded` (the lock shared with changing the
   password) and `503 service_unavailable` (also when Google's revocation list cannot be read).
 - A challenge lives 2 minutes, so the app asks for it just before the fingerprint prompt.
+- The Sign in screen offers the fingerprint first when the phone has a key (`signInAccount()`: a name and a
+  masked address). The person presses the button (nothing is asked on its own); a cancelled or unmatched
+  fingerprint says nothing and can be tried again. `device_sign_in_failed` is one answer for every refusal,
+  so the app only says the password is the way in and shows the form. A key that the phone itself
+  invalidated (a fingerprint was added or removed) is already deleted, so the screen says why and offers the
+  form. `sign_in_locked` and `throttled` show the countdown of the password form. "Use another account"
+  hides the card for that visit and deletes nothing.
 
 The plugin is `biometric_signature` 13.3.0 (MIT; Keystore, StrongBox and Secure Enclave, per-use
 authentication, invalidation on enrolment change, Android attestation), approved by the owner and pinned.

@@ -27,6 +27,23 @@ final class SignInSubmitted extends SignInEvent {
   List<Object?> get props => [email, password, challengeToken];
 }
 
+/// The person pressed the fingerprint button. [prompt] is what the system
+/// dialog says it is for.
+final class SignInFingerprintRequested extends SignInEvent {
+  const new({required this.prompt});
+
+  final String prompt;
+
+  @override
+  List<Object?> get props => [prompt];
+}
+
+/// The person chose "Use another account": the email and password form shows
+/// instead of the fingerprint. The key stays on the phone.
+final class SignInOtherAccountChosen extends SignInEvent {
+  const new();
+}
+
 /// The person closed the bot challenge without solving it.
 final class SignInChallengeDismissed extends SignInEvent {
   const new();

@@ -124,7 +124,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] Pin the contract that has the device-key endpoints, and generate the client on a scratch copy first
 - [x] Fingerprint sign-in, the key and the server: `DeviceKeyStore` over the plugin, the remote and the fake repository, the key compared with the server after each sign-in
 - [x] Settings: "Sign in with fingerprint" switch (password, then a fingerprint; off removes the key from the server and the phone)
-- [ ] Sign-in screen: "Sign in as `<name>` with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
+- [x] Sign-in screen: "Sign in as `<name>` with fingerprint" and "Use another account", the wait after too many failures, and the message when it is refused
 - [ ] After a password change: offer to turn the fingerprint sign-in on again (the server removes every key)
 - [ ] "Phones with fingerprint sign-in": the list with the key of each phone, removing one
 - [ ] Check on a real phone against staging (an emulator is refused): turn on, sign out, sign in, a changed fingerprint, a changed password

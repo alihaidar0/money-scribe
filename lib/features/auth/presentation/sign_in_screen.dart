@@ -11,17 +11,21 @@ import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
+import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
 import 'package:money_scribe/core/widgets/password_field.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/auth/bloc/sign_in_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_challenge_sheet.dart';
 import 'package:money_scribe/features/auth/presentation/verify_email_screen.dart';
 
 /// AUTH-2, AUTH-2b and AUTH-2c: sign in with an email and a password. The
 /// password is sent as typed and never checked against a policy: only the
-/// server knows whether it is right.
+/// server knows whether it is right. A phone that has a fingerprint key offers
+/// to sign in with it first, with a way to use another account.
 class SignInScreen extends StatelessWidget {
   const new({super.key});
 
@@ -30,6 +34,7 @@ class SignInScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => SignInBloc(
         repository: context.read<AuthRepository>(),
+        deviceKeys: context.read<DeviceKeyRepository>(),
         ticker: context.read<Ticker>(),
       )..add(const SignInStarted()),
       child: const _SignInView(),
@@ -62,6 +67,12 @@ class _SignInViewState extends State<_SignInView> {
         password: _password.text,
         challengeToken: challengeToken,
       ),
+    );
+  }
+
+  void _signInWithFingerprint() {
+    context.read<SignInBloc>().add(
+      SignInFingerprintRequested(prompt: context.l10n.signInFingerprintReason),
     );
   }
 
@@ -117,7 +128,10 @@ class _SignInViewState extends State<_SignInView> {
       },
       builder: (context, state) {
         final isLocked = state.status == SignInStatus.locked;
-        final isBusy = state.status == SignInStatus.submitting;
+        final fingerprintBusy =
+            state.status == SignInStatus.fingerprintSubmitting;
+        final isBusy =
+            state.status == SignInStatus.submitting || fingerprintBusy;
         final isChallenged =
             state.status == SignInStatus.challengeRequired ||
             state.status == SignInStatus.challengeRejected;
@@ -127,6 +141,15 @@ class _SignInViewState extends State<_SignInView> {
         final emailNotRegistered =
             state.status == SignInStatus.emailNotRegistered;
         final wrongPassword = state.status == SignInStatus.wrongPassword;
+        final account = state.fingerprintAccount;
+        final fingerprintMessage = switch (state.status) {
+          SignInStatus.fingerprintUnavailable =>
+            l10n.signInFingerprintUnavailable,
+          SignInStatus.fingerprintRefused => l10n.signInFingerprintRefused,
+          SignInStatus.fingerprintKeyChanged =>
+            l10n.signInFingerprintKeyChanged,
+          _ => null,
+        };
 
         return FlowPage(
           failure: switch (state.status) {
@@ -135,7 +158,7 @@ class _SignInViewState extends State<_SignInView> {
             SignInStatus.failure => FailureKind.error,
             _ => null,
           },
-          onRetry: _submit,
+          onRetry: state.viaFingerprint ? _signInWithFingerprint : _submit,
           content: [
             Semantics(
               header: true,
@@ -144,6 +167,13 @@ class _SignInViewState extends State<_SignInView> {
             const SizedBox(height: 8),
             Text(l10n.signInWelcomeBack, style: theme.textTheme.bodyLarge),
             const SizedBox(height: 24),
+            if (fingerprintMessage != null) ...[
+              MessageBanner(
+                icon: Icons.error_outline,
+                text: fingerprintMessage,
+              ),
+              const SizedBox(height: 16),
+            ],
             if (hasWrongCredentials) ...[
               MessageBanner(
                 icon: Icons.error_outline,
@@ -160,47 +190,62 @@ class _SignInViewState extends State<_SignInView> {
               ),
               const SizedBox(height: 16),
             ],
-            AppTextField(
-              controller: _email,
-              label: l10n.emailLabel,
-              enabled: canEdit,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.email],
-              textDirection: TextDirection.ltr,
-              showErrorOutline: hasWrongCredentials,
-              errorText: emailNotRegistered
-                  ? l10n.signInEmailNotRegistered
-                  : null,
-              onChanged: (_) =>
-                  context.read<SignInBloc>().add(const SignInEmailEdited()),
-            ),
-            const SizedBox(height: 16),
-            PasswordField(
-              controller: _password,
-              label: l10n.passwordLabel,
-              enabled: canEdit,
-              showErrorOutline: hasWrongCredentials,
-              errorText: wrongPassword ? l10n.signInWrongPassword : null,
-              onChanged: (_) =>
-                  context.read<SignInBloc>().add(const SignInPasswordEdited()),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) {
-                if (canEdit) _submit();
-              },
-            ),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton(
-                onPressed: () => context.push(AppRoutes.forgotPassword),
-                child: Text(l10n.forgotPasswordLink),
+            if (state.offersFingerprint && account != null) ...[
+              _FingerprintCard(
+                account: account,
+                busy: fingerprintBusy,
+                locked: isLocked,
+                onSignIn: _signInWithFingerprint,
+                onOtherAccount: () => context.read<SignInBloc>().add(
+                  const SignInOtherAccountChosen(),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: canEdit ? _submit : null,
-              child: isBusy ? const ButtonSpinner() : Text(l10n.signIn),
-            ),
+            ] else ...[
+              AppTextField(
+                controller: _email,
+                label: l10n.emailLabel,
+                enabled: canEdit,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                textDirection: TextDirection.ltr,
+                showErrorOutline: hasWrongCredentials,
+                errorText: emailNotRegistered
+                    ? l10n.signInEmailNotRegistered
+                    : null,
+                onChanged: (_) =>
+                    context.read<SignInBloc>().add(const SignInEmailEdited()),
+              ),
+              const SizedBox(height: 16),
+              PasswordField(
+                controller: _password,
+                label: l10n.passwordLabel,
+                enabled: canEdit,
+                showErrorOutline: hasWrongCredentials,
+                errorText: wrongPassword ? l10n.signInWrongPassword : null,
+                onChanged: (_) => context.read<SignInBloc>().add(
+                  const SignInPasswordEdited(),
+                ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) {
+                  if (canEdit) _submit();
+                },
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => context.push(AppRoutes.forgotPassword),
+                  child: Text(l10n.forgotPasswordLink),
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: canEdit ? _submit : null,
+                child: state.status == SignInStatus.submitting
+                    ? const ButtonSpinner()
+                    : Text(l10n.signIn),
+              ),
+            ],
           ],
           bottomChildren: [
             const SizedBox(height: 24),
@@ -218,6 +263,84 @@ class _SignInViewState extends State<_SignInView> {
           ],
         );
       },
+    );
+  }
+}
+
+/// The fingerprint of this phone as a way in: the account it signs in, a button
+/// that asks for the fingerprint, and the way to the email and password form.
+class _FingerprintCard extends StatelessWidget {
+  const new({
+    required this.account,
+    required this.busy,
+    required this.locked,
+    required this.onSignIn,
+    required this.onOtherAccount,
+  });
+
+  final FingerprintAccount account;
+  final bool busy;
+  final bool locked;
+  final VoidCallback onSignIn;
+  final VoidCallback onOtherAccount;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const IconCircle(icon: Icons.fingerprint, size: 56),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: MergeSemantics(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.signInAsName(name: account.name),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Text(
+                            account.maskedEmail,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: locked || busy ? null : onSignIn,
+          icon: busy ? const ButtonSpinner() : const Icon(Icons.fingerprint),
+          label: Text(l10n.signInWithFingerprintAction),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: busy ? null : onOtherAccount,
+          child: Text(l10n.useAnotherAccountAction),
+        ),
+      ],
     );
   }
 }
