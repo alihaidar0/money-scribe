@@ -440,7 +440,7 @@ emails.
 ### For the privacy policy and the store forms
 
 Two things in the sign-in flow involve a third party, and the privacy policy needs one sentence on each.
-Deleting the account has its own wording, at the end of this section.
+Signing in with the fingerprint and deleting the account have their own wording, at the end of this section.
 There is no policy yet (it comes with Google Play); this is the wording to use then, and the points to
 check against the Play Data safety and Apple App Privacy forms when they are filled in.
 
@@ -460,6 +460,29 @@ check against the Play Data safety and Apple App Privacy forms when they are fil
   Cloudflare, which processes technical information about your device to tell people from automated
   programs." This is data going from the app to a third party, so check it against the "shared data"
   wording of the store forms, and against Cloudflare's own terms, before publishing.
+- **Signing in with the fingerprint (done by the system, the app and the server).** The person can let a
+  phone sign them in with its fingerprint instead of the password. The fingerprint itself never reaches the
+  app or the server: the system dialog (Android `BiometricPrompt`; Face ID or Touch ID on iOS) checks it and
+  only answers whether it matched. The app makes a key pair in the phone's secure hardware; the private half
+  never leaves it and is released only by a matching fingerprint. What the server keeps for each phone: the
+  public key, the install identifier of the app (a random UUID, not a hardware serial), the phone's name and
+  platform, the version of the system and of the app, whether the key could be shown to live in secure
+  hardware, and when the key was made and last used. On Android the app also sends the certificate chain that
+  proves the key is hardware-backed; the server checks it against Google's public revocation list, which is
+  a download that carries nothing about the person. A fingerprint key stops working 30 days after it was
+  last used and is removed when the password is changed or reset, the email is changed, the person turns the
+  switch off or removes the phone in the app (Settings, "Phones with fingerprint sign-in"), or the account
+  is deleted. An account can have five phones.
+  Sentence: "You can sign in with your fingerprint. Your fingerprint is checked by your phone and never
+  leaves it. We keep a public key, a random identifier of the app, and your phone's name and system version
+  to recognise the phone, and we delete them when you turn the feature off, remove the phone, change your
+  password, delete your account, or after 30 days without use."
+  Forms: **Google Play Data safety**: biometric data is not collected (the app only receives a yes or no from
+  `BiometricPrompt`); declare "Device or other IDs" (the install identifier and the public key; it is not
+  the advertising ID); purpose: account management and app security; collected, not shared, encrypted in
+  transit, deletable by the person (turn the feature off, remove the phone, delete the account). **Apple App Privacy**: "Identifiers, Device ID", linked to the person, used for app
+  functionality, not used for tracking; no biometric data is collected, and `NSFaceIDUsageDescription` gives
+  the reason. Check both against the final forms before publishing.
 - **Deleting the account (done by the app and the server).** Account deletion is inside the app
   (Settings, Account, Delete account) and needs the password. The server deletes the account and all
   the data it owns in one step and for good: there is no soft delete and no copy kept. Every session
@@ -619,6 +642,14 @@ The contract is pinned (backend ADR 0018, request issue 45). What it settled, be
   invalidated (a fingerprint was added or removed) is already deleted, so the screen says why and offers the
   form. `sign_in_locked` and `throttled` show the countdown of the password form. "Use another account"
   hides the card for that visit and deletes nothing.
+- After the password is changed the app compares the phone with the server. If the fingerprint sign-in was
+  on and its key is gone (the server removes every key with the old password), Change password asks once
+  whether to turn it on again, and uses the password just typed, so nothing is typed twice. "Not now" leaves
+  it off. A phone that cannot be asked is offered nothing.
+- "Phones with fingerprint sign-in" (Settings, shown while the sign-in is on) lists `GET /auth/device-keys/`
+  with this phone marked, when each key last signed in and when it expires, and removes one with
+  `DELETE /auth/device-keys/{device_id}/`. Removing this phone turns the sign-in off here. The Settings
+  switch follows what happens on other screens through `DeviceKeyRepository.changes`.
 
 The plugin is `biometric_signature` 13.3.0 (MIT; Keystore, StrongBox and Secure Enclave, per-use
 authentication, invalidation on enrolment change, Android attestation), approved by the owner and pinned.

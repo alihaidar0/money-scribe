@@ -44,6 +44,7 @@ abstract final class AppRoutes {
   static const changePassword = '/settings/account/change-password';
   static const changeEmail = '/settings/account/change-email';
   static const changeEmailCode = '/settings/account/change-email/code';
+  static const fingerprintPhones = '/settings/fingerprint-phones';
   static const paySchedule = '/settings/pay-schedule';
   static const categories = '/settings/categories';
   static const accounts = '/settings/accounts';

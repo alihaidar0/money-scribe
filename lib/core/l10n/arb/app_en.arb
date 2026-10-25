@@ -2417,5 +2417,105 @@
   "fingerprintSignInFailed": "Something went wrong. Please try again.",
   "@fingerprintSignInFailed": {
     "description": "Message for any other failure while turning the fingerprint sign-in on or off."
+  },
+  "notNowAction": "Not now",
+  "@notNowAction": {
+    "description": "Button that dismisses an offer without accepting it."
+  },
+  "fingerprintBackOnTitle": "Turn fingerprint sign-in back on?",
+  "@fingerprintBackOnTitle": {
+    "description": "Title of the question asked after the password was changed, which removed the fingerprint sign-in key."
+  },
+  "fingerprintBackOnMessage": "Changing your password turned fingerprint sign-in off on all your phones. Turn it on again for this phone? You will touch the sensor to confirm.",
+  "@fingerprintBackOnMessage": {
+    "description": "Sentence of the question asked after the password was changed."
+  },
+  "fingerprintBackOnAction": "Turn on",
+  "@fingerprintBackOnAction": {
+    "description": "Button that turns the fingerprint sign-in on again after a password change."
+  },
+  "fingerprintPhonesTitle": "Phones with fingerprint sign-in",
+  "@fingerprintPhonesTitle": {
+    "description": "Title of the screen that lists the phones that can sign the account in with a fingerprint, and of the row of the Settings that opens it."
+  },
+  "fingerprintPhonesHint": "See which phones can sign in, and remove one.",
+  "@fingerprintPhonesHint": {
+    "description": "Subtitle of the row of the Settings that opens the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhonesIntro": "These phones can sign in to your account with a fingerprint. Remove one you no longer use.",
+  "@fingerprintPhonesIntro": {
+    "description": "Sentence above the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhoneThisPhone": "This phone",
+  "@fingerprintPhoneThisPhone": {
+    "description": "Label of the phone the app runs on, in the list of phones with fingerprint sign-in."
+  },
+  "fingerprintPhoneLastUsed": "Last used {date}",
+  "@fingerprintPhoneLastUsed": {
+    "description": "Line of a phone in the list: when its fingerprint last signed the account in. The placeholder is a short date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneNeverUsed": "Not used to sign in yet",
+  "@fingerprintPhoneNeverUsed": {
+    "description": "Line of a phone in the list whose fingerprint never signed the account in."
+  },
+  "fingerprintPhoneExpires": "Stops working on {date} if not used",
+  "@fingerprintPhoneExpires": {
+    "description": "Line of a phone in the list: when its fingerprint sign-in expires if it is not used. The placeholder is a short date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveTooltip": "Remove {name}",
+  "@fingerprintPhoneRemoveTooltip": {
+    "description": "Tooltip and spoken label of the button that removes a phone from the list. The placeholder is the name of the phone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveTitle": "Remove {name}?",
+  "@fingerprintPhoneRemoveTitle": {
+    "description": "Title of the question asked before a phone is removed from the list. The placeholder is the name of the phone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fingerprintPhoneRemoveMessage": "That phone will need your password to sign in again.",
+  "@fingerprintPhoneRemoveMessage": {
+    "description": "Sentence of the question asked before another phone is removed from the list."
+  },
+  "fingerprintPhoneRemoveThisMessage": "Fingerprint sign-in will be turned off on this phone. You can turn it on again in Settings.",
+  "@fingerprintPhoneRemoveThisMessage": {
+    "description": "Sentence of the question asked before this phone is removed from the list."
+  },
+  "fingerprintPhoneRemoveAction": "Remove",
+  "@fingerprintPhoneRemoveAction": {
+    "description": "Button that confirms removing a phone from the list."
+  },
+  "fingerprintPhoneRemoved": "Phone removed.",
+  "@fingerprintPhoneRemoved": {
+    "description": "Message shown when a phone was removed from the list."
+  },
+  "fingerprintPhonesEmptyTitle": "No phones yet",
+  "@fingerprintPhonesEmptyTitle": {
+    "description": "Title shown when no phone has fingerprint sign-in."
+  },
+  "fingerprintPhonesEmptyMessage": "Turn on fingerprint sign-in in Settings to add this phone.",
+  "@fingerprintPhonesEmptyMessage": {
+    "description": "Sentence under the title shown when no phone has fingerprint sign-in."
+  },
+  "fingerprintPhonesEmptyAction": "Back to settings",
+  "@fingerprintPhonesEmptyAction": {
+    "description": "Button that leaves the empty list of phones for the Settings."
   }
 }

@@ -47,6 +47,7 @@ class _Scene {
     this.pinPause,
     this.lockOn = false,
     this.fingerprintKey = false,
+    this.fingerprintOn = false,
   });
 
   final String name;
@@ -69,6 +70,9 @@ class _Scene {
   /// The phone has the fingerprint key of the sample account, signed out: the
   /// Sign in screen offers the fingerprint.
   final bool fingerprintKey;
+
+  /// The fingerprint sign-in is on for the signed-in account on this phone.
+  final bool fingerprintOn;
   final _Setup? setup;
   final Size size;
 }
@@ -258,6 +262,56 @@ final _scenes = <_Scene>[
     setup: (tester, demo) async {
       demo.update(const DemoSettings(fingerprint: DemoFingerprint.locked));
       await _tapPrimary(tester);
+    },
+  ),
+  const _Scene(
+    'st-9-fingerprint-phones',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+  ),
+  _Scene(
+    'st-9b-fingerprint-phones-remove',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.delete_outline).at(1));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-9c-fingerprint-phones-empty',
+    AppRoutes.fingerprintPhones,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byIcon(Icons.delete_outline).first);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(FilledButton),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'st-6c-change-password-fingerprint-offer',
+    AppRoutes.changePassword,
+    signedIn: true,
+    fingerprintOn: true,
+    setup: (tester, demo) async {
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'old-password');
+      await tester.enterText(fields.at(1), 'new-password-1');
+      await tester.enterText(fields.at(2), 'new-password-1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
     },
   ),
   const _Scene('err-5-server-starting', AppRoutes.signIn, serverWaking: true),
@@ -1760,10 +1814,10 @@ void main() {
             signedIn: scene.signedIn || scene.fingerprintKey,
           );
           final deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: auth);
-          if (scene.fingerprintKey) {
+          if (scene.fingerprintKey || scene.fingerprintOn) {
             await deviceKeys.enable(password: 'p', prompt: 'Confirm');
-            await auth.signOut();
           }
+          if (scene.fingerprintKey) await auth.signOut();
           final key = GlobalKey();
           await tester.pumpWidget(
             RenderTarget(

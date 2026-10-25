@@ -3,22 +3,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/bloc/change_password_bloc.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 import '../../../support/fake_ticker.dart';
 
+/// A phone that cannot be asked whether the fingerprint sign-in is on.
+class _UnreadableKeys extends FakeDeviceKeyRepository {
+  new({required super.demo, required super.auth});
+
+  @override
+  Future<bool> isEnabled() {
+    throw StateError('The secure storage cannot be read');
+  }
+}
+
 void main() {
   late DemoController demo;
   late FakeTicker ticker;
+  late FakeAuthRepository auth;
+  late FakeDeviceKeyRepository keys;
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
     ticker = FakeTicker();
+    auth = FakeAuthRepository(demo: demo, signedIn: true);
+    keys = FakeDeviceKeyRepository(demo: demo, auth: auth);
   });
 
   ChangePasswordBloc build() {
     return ChangePasswordBloc(
-      repository: FakeAuthRepository(demo: demo, signedIn: true),
+      repository: auth,
+      deviceKeys: keys,
       ticker: ticker,
     );
   }
@@ -288,5 +304,82 @@ void main() {
       verify: (bloc) =>
           expect(bloc.state.status, ChangePasswordStatus.unavailable),
     );
+  });
+
+  group('the fingerprint sign-in', () {
+    Future<ChangePasswordBloc> saveWith(ChangePasswordBloc bloc) async {
+      addTearDown(bloc.close);
+      bloc
+        ..add(valid)
+        ..add(const ChangePasswordSubmitted());
+      await bloc.stream.firstWhere(
+        (s) =>
+            s.status != ChangePasswordStatus.editing &&
+            s.status != ChangePasswordStatus.saving,
+      );
+      return bloc;
+    }
+
+    test(
+      'is offered again when it was on, as the server removed its key',
+      () async {
+        await keys.enable(password: 'old-password', prompt: 'Confirm');
+
+        final bloc = await saveWith(build());
+
+        expect(bloc.state.status, ChangePasswordStatus.saved);
+        expect(bloc.state.offerFingerprint, isTrue);
+        expect(await keys.isEnabled(), isFalse);
+        // The new password is what turns it on again.
+        expect(bloc.state.next, 'new-password-1');
+      },
+    );
+
+    test('is not offered when it was off', () async {
+      final bloc = await saveWith(build());
+
+      expect(bloc.state.status, ChangePasswordStatus.saved);
+      expect(bloc.state.offerFingerprint, isFalse);
+    });
+
+    test('is not offered when the password was not changed', () async {
+      await keys.enable(password: 'old-password', prompt: 'Confirm');
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.passwordRefused),
+      );
+
+      final bloc = await saveWith(build());
+
+      expect(bloc.state.status, ChangePasswordStatus.rejected);
+      expect(bloc.state.offerFingerprint, isFalse);
+      // Nothing was removed, so it is still on.
+      expect(await keys.isEnabled(), isTrue);
+    });
+
+    test('is not offered by a phone that cannot be asked', () async {
+      final unreadable = _UnreadableKeys(demo: demo, auth: auth);
+      final bloc = await saveWith(
+        ChangePasswordBloc(
+          repository: auth,
+          deviceKeys: unreadable,
+          ticker: ticker,
+        ),
+      );
+
+      // The password is saved all the same.
+      expect(bloc.state.status, ChangePasswordStatus.saved);
+      expect(bloc.state.offerFingerprint, isFalse);
+    });
+
+    test('typing again after saving forgets the offer', () async {
+      await keys.enable(password: 'old-password', prompt: 'Confirm');
+      final bloc = await saveWith(build());
+      expect(bloc.state.offerFingerprint, isTrue);
+
+      bloc.add(valid);
+      await pumpEventQueue();
+
+      expect(bloc.state.offerFingerprint, isFalse);
+    });
   });
 }

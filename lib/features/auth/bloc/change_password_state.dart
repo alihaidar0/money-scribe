@@ -39,6 +39,7 @@ final class ChangePasswordState extends Equatable {
     this.confirmation = '',
     this.passwordProblem,
     this.waitSecondsLeft = 0,
+    this.offerFingerprint = false,
   });
 
   final ChangePasswordStatus status;
@@ -54,6 +55,11 @@ final class ChangePasswordState extends Equatable {
   /// `waiting`.
   final int waitSecondsLeft;
 
+  /// Whether the fingerprint sign-in was on and the server removed its key with
+  /// the old password, so the person is offered to turn it on again. Only with
+  /// [status] `saved`.
+  final bool offerFingerprint;
+
   /// Whether the confirmation differs from the new password. Nothing typed in
   /// the confirmation yet is not a mismatch.
   bool get mismatch => confirmation.isNotEmpty && confirmation != next;
@@ -67,6 +73,7 @@ final class ChangePasswordState extends Equatable {
     ChangePasswordStatus? status,
     PasswordProblem? passwordProblem,
     int? waitSecondsLeft,
+    bool? offerFingerprint,
   }) {
     return ChangePasswordState(
       status: status ?? this.status,
@@ -76,6 +83,7 @@ final class ChangePasswordState extends Equatable {
       // A refusal belongs to the attempt that got it.
       passwordProblem: passwordProblem,
       waitSecondsLeft: waitSecondsLeft ?? this.waitSecondsLeft,
+      offerFingerprint: offerFingerprint ?? this.offerFingerprint,
     );
   }
 
@@ -87,5 +95,6 @@ final class ChangePasswordState extends Equatable {
     confirmation,
     passwordProblem,
     waitSecondsLeft,
+    offerFingerprint,
   ];
 }

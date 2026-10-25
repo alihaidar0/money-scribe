@@ -40,6 +40,35 @@ void main() {
 
   const turnOn = FingerprintSignInTurnedOn(password: 'p', prompt: 'Confirm');
 
+  group('a key made or removed elsewhere', () {
+    test('turns the switch off when the key is removed', () async {
+      await repository.enable(password: 'p', prompt: 'Confirm');
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(const DeviceKeySettingRefreshed());
+      await bloc.stream.firstWhere((s) => s.isLoaded && s.isEnabled);
+
+      // The phone list removes this phone, or the password change removes it.
+      await repository.removeKey(FakeDeviceKeyRepository.thisDeviceId);
+      await bloc.stream.firstWhere((s) => !s.isEnabled);
+
+      expect(bloc.state.isEnabled, isFalse);
+    });
+
+    test('turns the switch on when the key is made', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(const DeviceKeySettingRefreshed());
+      await bloc.stream.firstWhere((s) => s.isLoaded);
+      expect(bloc.state.isEnabled, isFalse);
+
+      await repository.enable(password: 'p', prompt: 'Confirm');
+      await bloc.stream.firstWhere((s) => s.isEnabled);
+
+      expect(bloc.state.isEnabled, isTrue);
+    });
+  });
+
   group('what the row shows', () {
     blocTest<DeviceKeySettingBloc, DeviceKeySettingState>(
       'is off until the sign-in is turned on',

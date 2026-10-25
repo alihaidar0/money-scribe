@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
@@ -16,12 +18,19 @@ part 'device_key_setting_state.dart';
 class DeviceKeySettingBloc
     extends Bloc<DeviceKeySettingEvent, DeviceKeySettingState> {
   new({required this._repository}) : super(const DeviceKeySettingState()) {
+    // The key can be made or removed from another screen (the password was
+    // changed, a phone was removed): the switch follows.
+    _changes = _repository.changes.listen(
+      (_) => add(const DeviceKeySettingRefreshed()),
+    );
     on<DeviceKeySettingRefreshed>(_onRefreshed, transformer: restartable());
     on<FingerprintSignInTurnedOn>(_onTurnedOn, transformer: droppable());
     on<FingerprintSignInTurnedOff>(_onTurnedOff, transformer: droppable());
   }
 
   final DeviceKeyRepository _repository;
+
+  late final StreamSubscription<void> _changes;
 
   Future<void> _onRefreshed(
     DeviceKeySettingRefreshed event,
@@ -124,5 +133,11 @@ class DeviceKeySettingBloc
       },
       _ => DeviceKeyOutcome.failed,
     };
+  }
+
+  @override
+  Future<void> close() async {
+    await _changes.cancel();
+    await super.close();
   }
 }

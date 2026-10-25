@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/device_key_setting_bloc.dart';
 import 'package:money_scribe/features/auth/domain/device_key.dart';
@@ -42,15 +44,32 @@ class _Tile extends StatelessWidget {
     return BlocListener<DeviceKeySettingBloc, DeviceKeySettingState>(
       listenWhen: (previous, current) =>
           previous.outcome != current.outcome && current.outcome != null,
-      listener: _tell,
-      child: SwitchListTile(
-        title: Text(l10n.fingerprintSignInTitle),
-        subtitle: Text(_hint(context, state)),
-        secondary: const Icon(Icons.vpn_key_outlined),
-        value: state.isEnabled,
-        onChanged: canSwitch
-            ? (turnedOn) => turnedOn ? _turnOn(context) : _turnOff(context)
-            : null,
+      listener: tellDeviceKeyOutcome,
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: Text(l10n.fingerprintSignInTitle),
+            subtitle: Text(_hint(context, state)),
+            secondary: const Icon(Icons.vpn_key_outlined),
+            value: state.isEnabled,
+            onChanged: canSwitch
+                ? (turnedOn) => turnedOn ? _turnOn(context) : _turnOff(context)
+                : null,
+          ),
+          // The phones are listed while the sign-in is on for this one.
+          if (state.isEnabled)
+            ListTile(
+              title: Text(l10n.fingerprintPhonesTitle),
+              subtitle: Text(l10n.fingerprintPhonesHint),
+              leading: const Icon(Icons.smartphone_outlined),
+              trailing: Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.chevron_left
+                    : Icons.chevron_right,
+              ),
+              onTap: () => _openPhones(context),
+            ),
+        ],
       ),
     );
   }
@@ -83,52 +102,62 @@ class _Tile extends StatelessWidget {
     );
   }
 
+  /// Opens the phones, and asks again when it is closed: removing this phone
+  /// there turns the sign-in off here.
+  Future<void> _openPhones(BuildContext context) async {
+    final bloc = context.read<DeviceKeySettingBloc>();
+    await context.push<void>(AppRoutes.fingerprintPhones);
+    bloc.add(const DeviceKeySettingRefreshed());
+  }
+
   void _turnOff(BuildContext context) {
     context.read<DeviceKeySettingBloc>().add(
       const FingerprintSignInTurnedOff(),
     );
   }
+}
 
-  void _tell(BuildContext context, DeviceKeySettingState state) {
-    final l10n = context.l10n;
-    final outcome = state.outcome;
-    if (outcome == null) return;
+/// Tells the person how turning the fingerprint sign-in on or off ended: a
+/// message for the outcome of [state], if it has one.
+void tellDeviceKeyOutcome(BuildContext context, DeviceKeySettingState state) {
+  final l10n = context.l10n;
+  final outcome = state.outcome;
+  if (outcome == null) return;
 
-    switch (outcome) {
-      case DeviceKeyOutcome.turnedOn:
-        showSuccessSnackBar(context, l10n.fingerprintSignInTurnedOn);
-        return;
-      case DeviceKeyOutcome.turnedOff:
-        showSuccessSnackBar(context, l10n.fingerprintSignInTurnedOff);
-        return;
-      case DeviceKeyOutcome.wrongPassword ||
-          DeviceKeyOutcome.notMatched ||
-          DeviceKeyOutcome.refused ||
-          DeviceKeyOutcome.limitReached ||
-          DeviceKeyOutcome.expired ||
-          DeviceKeyOutcome.cannotCheck ||
-          DeviceKeyOutcome.waitForPassword ||
-          DeviceKeyOutcome.busy ||
-          DeviceKeyOutcome.offline ||
-          DeviceKeyOutcome.failed:
-        break;
-    }
-    final message = switch (outcome) {
-      DeviceKeyOutcome.wrongPassword => l10n.fingerprintSignInWrongPassword,
-      DeviceKeyOutcome.notMatched => l10n.fingerprintNotTurnedOn,
-      DeviceKeyOutcome.refused => l10n.fingerprintSignInRefused,
-      DeviceKeyOutcome.limitReached => l10n.fingerprintSignInLimit,
-      DeviceKeyOutcome.expired => l10n.fingerprintSignInExpired,
-      DeviceKeyOutcome.cannotCheck => l10n.fingerprintSignInCannotCheck,
-      DeviceKeyOutcome.waitForPassword => l10n.fingerprintSignInWait(
-        time: formatCountdown(state.waitSeconds),
-      ),
-      DeviceKeyOutcome.busy => l10n.fingerprintSignInBusy,
-      DeviceKeyOutcome.offline => l10n.fingerprintSignInOffline,
-      _ => l10n.fingerprintSignInFailed,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+  switch (outcome) {
+    case DeviceKeyOutcome.turnedOn:
+      showSuccessSnackBar(context, l10n.fingerprintSignInTurnedOn);
+      return;
+    case DeviceKeyOutcome.turnedOff:
+      showSuccessSnackBar(context, l10n.fingerprintSignInTurnedOff);
+      return;
+    case DeviceKeyOutcome.wrongPassword ||
+        DeviceKeyOutcome.notMatched ||
+        DeviceKeyOutcome.refused ||
+        DeviceKeyOutcome.limitReached ||
+        DeviceKeyOutcome.expired ||
+        DeviceKeyOutcome.cannotCheck ||
+        DeviceKeyOutcome.waitForPassword ||
+        DeviceKeyOutcome.busy ||
+        DeviceKeyOutcome.offline ||
+        DeviceKeyOutcome.failed:
+      break;
   }
+  final message = switch (outcome) {
+    DeviceKeyOutcome.wrongPassword => l10n.fingerprintSignInWrongPassword,
+    DeviceKeyOutcome.notMatched => l10n.fingerprintNotTurnedOn,
+    DeviceKeyOutcome.refused => l10n.fingerprintSignInRefused,
+    DeviceKeyOutcome.limitReached => l10n.fingerprintSignInLimit,
+    DeviceKeyOutcome.expired => l10n.fingerprintSignInExpired,
+    DeviceKeyOutcome.cannotCheck => l10n.fingerprintSignInCannotCheck,
+    DeviceKeyOutcome.waitForPassword => l10n.fingerprintSignInWait(
+      time: formatCountdown(state.waitSeconds),
+    ),
+    DeviceKeyOutcome.busy => l10n.fingerprintSignInBusy,
+    DeviceKeyOutcome.offline => l10n.fingerprintSignInOffline,
+    _ => l10n.fingerprintSignInFailed,
+  };
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }

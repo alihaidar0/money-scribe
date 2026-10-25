@@ -179,4 +179,69 @@ void main() {
       expect(await repository.isEnabled(), isFalse);
     });
   });
+
+  group('changes', () {
+    /// Counts what the repository announces while [action] runs.
+    Future<int> announced(Future<void> Function() action) async {
+      var count = 0;
+      final listening = repository.changes.listen((_) => count++);
+      await action();
+      await pumpEventQueue();
+      await listening.cancel();
+      return count;
+    }
+
+    test('announces turning it on and off', () async {
+      expect(await announced(enable), 1);
+      expect(await announced(repository.disable), 1);
+    });
+
+    test('announces removing this phone, not another one', () async {
+      await enable();
+
+      expect(await announced(() => repository.removeKey('fake-other-ios')), 0);
+      expect(
+        await announced(
+          () => repository.removeKey(FakeDeviceKeyRepository.thisDeviceId),
+        ),
+        1,
+      );
+    });
+
+    test('announces a key the server removed with the password', () async {
+      await enable();
+      await auth.changePassword(
+        current: 'old-password',
+        next: 'new-password-1',
+      );
+
+      expect(await announced(repository.sync), 1);
+      expect(await repository.isEnabled(), isFalse);
+      // Nothing more to announce once it is gone.
+      expect(await announced(repository.sync), 0);
+    });
+
+    test('a password change ends the key, as the server does', () async {
+      await enable();
+
+      await auth.changePassword(
+        current: 'old-password',
+        next: 'new-password-1',
+      );
+
+      expect(await repository.isEnabled(), isFalse);
+      // Signing in with it is refused until it is made again.
+      await auth.signOut();
+      await expectLater(
+        repository.signIn(prompt: 'Confirm'),
+        throwsA(
+          isA<FingerprintRefusedException>().having(
+            (e) => e.reason,
+            'reason',
+            FingerprintRefusal.signInFailed,
+          ),
+        ),
+      );
+    });
+  });
 }
