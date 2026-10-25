@@ -10,6 +10,8 @@ evenodd
 exfiltration
 fanalyze
 fdoctor
+firebaseappdistribution
+firebaseappdistro
 flutterfire
 frunw
 ftest
@@ -18,6 +20,7 @@ haidar
 healthz
 hmac
 husky
+iamcredentials
 jarfile
 keyalg
 keygen

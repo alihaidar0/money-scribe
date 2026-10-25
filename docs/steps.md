@@ -78,6 +78,11 @@ To do, in this order, one step at a time:
 - [x] Add Firebase to both projects (Analytics off) and register the staging and production Android apps; keep `google-services.json` out of Git
 - [x] Store each environment's `google-services.json` (base64) as the secret `GOOGLE_SERVICES_JSON_BASE64` of its GitHub environment
 - [x] Firebase Cloud Messaging in the app, as its own pull request: flavor configuration files written by the build workflow, notification permission, push token behind a repository interface
+- [x] Build workflow job that sends the arm64-v8a APK to Firebase App Distribution (staging keeps only the newest build), skipped until the variables are set
+- [x] Staging: turn on App Distribution and create the group `testers`
+- [x] Staging: service account with the App Distribution Admin role and the Workload Identity Federation provider for this repository and the `staging` environment
+- [ ] Staging: add the three variables to the `staging` GitHub environment; check the first upload and the invitation link
+- [ ] Production: the same four steps for the production project and the `production` environment
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
 - [ ] iOS: flavors, signing and TestFlight (needs a Mac and an Apple Developer account)

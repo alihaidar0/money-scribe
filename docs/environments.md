@@ -15,6 +15,7 @@ release.
 | GitHub environment | `staging`, restricted to `develop` | `production`, restricted to `main` |
 | Release | the draft "Staging" (tag `staging`) | the draft `v<version>` |
 | Google Cloud and Firebase project | one for staging | one for production |
+| Testers | the group `testers` of the staging project, newest build only | the group `testers` of the production project |
 
 The production ID has no suffix because it is the ID of the app in the stores and cannot be
 changed once published. The signing keys are described in
@@ -56,9 +57,9 @@ The **Build** workflow (`.github/workflows/build.yml`) decides by event:
 | Event | Result |
 | --- | --- |
 | Pull request into `develop` | Staging test build (debug key, no secrets), kept 14 days |
-| Merge into `develop` | Signed staging build; its files replace those of the draft release "Staging" |
+| Merge into `develop` | Signed staging build; its files replace those of the draft release "Staging", and the arm64-v8a APK goes to the testers (Firebase App Distribution) |
 | Pull request into `main` | Production test build (debug key, no secrets), kept 14 days; test this one before merging |
-| Merge into `main` | Signed production build; its files go into the draft release `v<version>` |
+| Merge into `main` | Signed production build; its files go into the draft release `v<version>` and the arm64-v8a APK to the testers |
 | Manual run (Actions → Build → Run workflow) | Signed build of the chosen environment, from `develop` for staging or `main` for production |
 
 A signed build produces one APK per CPU type (`arm64-v8a`, `armeabi-v7a`, `x86_64`), the
@@ -84,6 +85,33 @@ setting and the `tags-protect` ruleset), so the build only warns about it; to re
 raise the version in `pubspec.yaml` and merge into `main`. Drafts are visible to people with
 write access to the repository only.
 
+## Testers: Firebase App Distribution
+
+Draft releases are visible only to people with write access, so testers get their builds
+from Firebase App Distribution instead. A tester opens the invitation link of the group
+`testers` once, signs in with a Google account, and then installs each new build from the
+App Distribution page or the notification. Nothing of Firebase is added to the app; the
+service is used by the build workflow only (job `distribute-firebase`). The complete setup,
+with every console step and command, is in
+[`firebase-app-distribution.md`](firebase-app-distribution.md).
+
+- **What is sent.** The arm64-v8a APK of the signed build, with the build number, the version
+  and the commit in the release notes. **Staging** keeps only its newest release: after each
+  upload the job deletes the older ones. **Production** keeps its history (Firebase removes a
+  release after 150 days).
+- **No stored key.** The job signs in to Google Cloud with the OIDC token of the run
+  (Workload Identity Federation) and acts as a service account whose only role is
+  Firebase App Distribution Admin. Each Firebase project has its own provider, which accepts
+  this repository and the GitHub environment of that project only, and the environments are
+  restricted to one branch each.
+- **Variables of each GitHub environment** (none is a secret): `FIREBASE_APP_ID` (the Android
+  app ID from the Firebase console), `GCP_WORKLOAD_IDENTITY_PROVIDER` (the full name of the
+  provider) and `GCP_SERVICE_ACCOUNT` (the email address of the service account). While all
+  three are empty the job is skipped and the build still passes; a wrong value stops it.
+- **The invitation link** comes from Firebase console → App Distribution → Testers & Groups →
+  `testers` → Invite links. Anyone with the link can join the group, so share it with the
+  people who should have the builds and revoke it there if it spreads.
+
 ## Not set up yet
 
 - **iOS flavors.** Flutter needs Xcode schemes named `staging` and `production`, build
@@ -98,7 +126,8 @@ write access to the repository only.
   recent-apps list and cannot be captured by a screenshot or a screen recording. Staging builds leave it
   off, so the screens can be checked. iOS has no flavors yet; hiding the app in its app switcher comes
   with the iOS work.
-- **Firebase Cloud Messaging.** Firebase is used for push notifications only; the backend
+- **Firebase Cloud Messaging.** In the app, Firebase is used for push notifications only (the
+  build workflow also uses App Distribution, see above); the backend
   (sign-in and data storage) is still undecided, and Analytics and crash reporting stay off.
   Each flavor gets its own `google-services.json` in `android/app/src/<flavor>/` (the file
   name is ignored by Git), from one Firebase project per environment, registered with the

@@ -40,6 +40,8 @@
 #     left alone (the build warns) and the next release needs a higher version.
 #   - The debug symbols of the obfuscated build are kept as a workflow artifact,
 #     never in a release, because the repository is public.
+#   - The arm64-v8a APK also goes to Firebase App Distribution for the testers
+#     (job distribute-firebase; staging keeps only its newest release there).
 #
 # An unsigned iOS compile check is available as an opt-in job (repository
 # variable BUILD_IOS=true). It cannot run until the iOS flavors (Xcode schemes)
@@ -503,6 +505,185 @@ jobs:
       - name: Remove the signing files
         if: always()
         run: rm -f android/key.*.properties "$RUNNER_TEMP/signing-keystore.jks" android/app/src/*/google-services.json
+
+  # ── Firebase App Distribution ────────────────────────────────────────────
+  # Sends the arm64-v8a APK of the signed build to the testers' group of the
+  # environment's Firebase project, so a tester opens one invitation link and
+  # installs from there. Nothing of Firebase is in the app. The job has no
+  # access to the signing secrets: it signs in to Google Cloud with the OIDC
+  # token of the run (Workload Identity Federation, no stored key) and acts as a
+  # service account that has the role Firebase App Distribution Admin only. The
+  # trust is limited to this repository and to the GitHub environment, which is
+  # restricted to one branch (docs/environments.md). Staging keeps only its
+  # newest release in App Distribution; production keeps its history (Firebase
+  # removes a release after 150 days).
+  #
+  # It does nothing, and the build still passes, until the three variables of the
+  # GitHub environment are set: FIREBASE_APP_ID, GCP_WORKLOAD_IDENTITY_PROVIDER
+  # and GCP_SERVICE_ACCOUNT. None of them is a secret.
+  distribute-firebase:
+    name: Firebase App Distribution (${{ needs.detect.outputs.environment }})
+    needs: [detect, build-android-signed]
+    if: needs.detect.outputs.ready == 'true' && github.event_name != 'pull_request'
+    environment: ${{ needs.detect.outputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: pubspec.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      # Skips the job quietly while Firebase App Distribution is not set up for
+      # this environment, and stops it on a value of the wrong shape.
+      - name: Check the configuration
+        id: config
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          APP_ID: ${{ vars.FIREBASE_APP_ID }}
+          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APP_ID" && -z "$PROVIDER" && -z "$SERVICE_ACCOUNT" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Firebase App Distribution is not set up for ${APP_ENV}; skipped (docs/environments.md)."
+            exit 0
+          fi
+          if [[ ! "$APP_ID" =~ ^1:([0-9]+):android:[0-9a-f]+$ ]]; then
+            echo "::error::The ${APP_ENV} variable FIREBASE_APP_ID must be the Android app ID from the Firebase console, such as 1:123456789012:android:0123456789abcdef."
+            exit 1
+          fi
+          if [[ ! "$PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[A-Za-z0-9-]+/providers/[A-Za-z0-9-]+$ ]]; then
+            echo "::error::The ${APP_ENV} variable GCP_WORKLOAD_IDENTITY_PROVIDER must be the full name of the workload identity provider."
+            exit 1
+          fi
+          if [[ ! "$SERVICE_ACCOUNT" =~ ^[A-Za-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$ ]]; then
+            echo "::error::The ${APP_ENV} variable GCP_SERVICE_ACCOUNT must be the email address of the service account."
+            exit 1
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "project_number=$(cut -d: -f2 <<< "$APP_ID")" >> "$GITHUB_OUTPUT"
+
+      - name: Download the signed files
+        if: steps.config.outputs.enabled == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: android-release-signed-${{ needs.detect.outputs.environment }}
+          path: dist
+
+      - name: Sign in to Google Cloud
+        id: auth
+        if: steps.config.outputs.enabled == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+
+      # Uploads the APK, waits for Firebase to process it, writes the release
+      # notes and sends the release to the testers' group. On staging it then
+      # deletes every other release of the app. The new release is looked up in
+      # the list first, and nothing is deleted unless it is there.
+      - name: Upload and distribute
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          APP_ENV: ${{ needs.detect.outputs.environment }}
+          APP_ID: ${{ vars.FIREBASE_APP_ID }}
+          PROJECT_NUMBER: ${{ steps.config.outputs.project_number }}
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+          TESTER_GROUP: testers
+        run: |
+          set -euo pipefail
+          api="https://firebaseappdistribution.googleapis.com"
+          app="projects/${PROJECT_NUMBER}/apps/${APP_ID}"
+          call() { curl --fail-with-body --silent --show-error --retry 3 -H "Authorization: Bearer ${ACCESS_TOKEN}" "$@"; }
+
+          mapfile -t apks < <(find dist -name '*-arm64-v8a.apk')
+          if [[ "${#apks[@]}" -ne 1 ]]; then
+            echo "::error::Expected 1 arm64-v8a APK in the signed files, found ${#apks[@]}."
+            exit 1
+          fi
+          apk="${apks[0]}"
+          full="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          version="${full%%+*}"
+
+          operation="$(call -X POST "${api}/upload/v1/${app}/releases:upload" \
+            -H "X-Goog-Upload-Protocol: raw" \
+            -H "X-Goog-Upload-File-Name: $(basename "$apk")" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@${apk}" | jq -r '.name')"
+
+          result=""
+          for _ in $(seq 1 36); do
+            result="$(call "${api}/v1/${operation}")"
+            if [[ "$(jq -r '.done // false' <<< "$result")" == "true" ]]; then break; fi
+            sleep 5
+          done
+          if [[ "$(jq -r '.done // false' <<< "$result")" != "true" ]]; then
+            echo "::error::Firebase did not finish processing the upload in 3 minutes."
+            exit 1
+          fi
+          if [[ "$(jq -r 'has("error")' <<< "$result")" == "true" ]]; then
+            echo "::error::Firebase rejected the upload: $(jq -r '.error.message // "unknown error"' <<< "$result")"
+            exit 1
+          fi
+          release="$(jq -r '.response.release.name // empty' <<< "$result")"
+          outcome="$(jq -r '.response.result // "unknown"' <<< "$result")"
+          if [[ -z "$release" ]]; then
+            echo "::error::The upload answer has no release name."
+            exit 1
+          fi
+
+          notes="Build ${BUILD_NUMBER} of version ${version} (${APP_ENV}), built from commit ${COMMIT_SHA:0:7}."
+          call -X PATCH "${api}/v1/${release}?updateMask=releaseNotes.text" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg text "$notes" '{releaseNotes: {text: $text}}')" > /dev/null
+          call -X POST "${api}/v1/${release}:distribute" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg group "$TESTER_GROUP" '{groupAliases: [$group]}')" > /dev/null
+          echo "Build ${BUILD_NUMBER} sent to the group ${TESTER_GROUP} of Firebase App Distribution (${outcome})." >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$APP_ENV" != "staging" ]]; then
+            exit 0
+          fi
+
+          keep="${release##*/}"
+          old=()
+          seen=false
+          page=""
+          while :; do
+            query=(--data-urlencode "pageSize=100")
+            if [[ -n "$page" ]]; then query+=(--data-urlencode "pageToken=${page}"); fi
+            list="$(call -G "${api}/v1/${app}/releases" "${query[@]}")"
+            if [[ "$(jq -r --arg keep "$keep" '[.releases[]? | select((.name | split("/") | last) == $keep)] | length' <<< "$list")" -gt 0 ]]; then
+              seen=true
+            fi
+            while IFS= read -r name; do
+              old+=("$name")
+            done < <(jq -r --arg keep "$keep" '.releases[]? | select((.name | split("/") | last) != $keep) | .name' <<< "$list")
+            page="$(jq -r '.nextPageToken // empty' <<< "$list")"
+            if [[ -z "$page" ]]; then break; fi
+          done
+          if [[ "$seen" != "true" ]]; then
+            echo "::warning::The new release was not found in the list, so the older releases were kept."
+            exit 0
+          fi
+          for ((i = 0; i < ${#old[@]}; i += 100)); do
+            printf '%s\n' "${old[@]:i:100}" \
+              | jq -R . | jq -s '{names: .}' \
+              | call -X POST "${api}/v1/${app}/releases:batchDelete" \
+                  -H "Content-Type: application/json" --data-binary @- > /dev/null
+          done
+          echo "Removed ${#old[@]} older release(s) from Firebase App Distribution; only build ${BUILD_NUMBER} is kept." >> "$GITHUB_STEP_SUMMARY"
 
   # ── Draft GitHub Release ─────────────────────────────────────────────────
   # Staging: the single draft "Staging" (tag staging), refreshed by every build on
