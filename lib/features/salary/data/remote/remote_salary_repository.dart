@@ -12,22 +12,18 @@ import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 
 /// The saved salary months on the server: the real [SalaryRepository].
 class RemoteSalaryRepository implements SalaryRepository {
-  new({required this._client, required this._dio});
+  new({required this._client});
 
   /// The salary calls over [dio], which carries the token of the session and
   /// renews it.
   factory create({required Dio dio}) {
-    return RemoteSalaryRepository(client: api.SalaryClient(dio), dio: dio);
+    return RemoteSalaryRepository(client: api.SalaryClient(dio));
   }
 
   /// Most months a page holds, to read a long history in few calls.
   static const _pageSize = 100;
 
   final api.SalaryClient _client;
-
-  /// The same client as [_client], for the one call the generated client
-  /// cannot make: [_create].
-  final Dio _dio;
 
   /// The server does not push changes, and the app is the only writer on this
   /// device: a screen loads again when it is opened.
@@ -74,13 +70,14 @@ class RemoteSalaryRepository implements SalaryRepository {
     final body = SalaryWire.monthInput(month);
     final version = month.version;
     final wire = await callApi(
-      () => version == null
-          ? _create(month.month, body)
-          : _client.salaryMonthPut(
-              month: month.month.param,
-              body: body,
-              ifMatch: WriteSafetyHeaders.ifMatch(version),
-            ),
+      // A month that was not found is created only if it still does not
+      // exist, so one made meanwhile on another device is never replaced.
+      () => _client.salaryMonthPut(
+        month: month.month.param,
+        body: body,
+        ifMatch: version == null ? null : WriteSafetyHeaders.ifMatch(version),
+        ifNoneMatch: version == null ? WriteSafetyHeaders.ifNoneMatchAny : null,
+      ),
       _map,
     );
     return SalaryWire.month(wire);
@@ -99,27 +96,6 @@ class RemoteSalaryRepository implements SalaryRepository {
     } on _Missing {
       // Already gone: the person wanted it gone.
     }
-  }
-
-  /// Creates a month that was not found: `If-None-Match: *` makes the server
-  /// refuse (`412`) when the month was created meanwhile on another device,
-  /// instead of replacing it.
-  ///
-  /// The contract describes that header in words but does not declare it as a
-  /// parameter, so the generated client has no way to send it. Once it is
-  /// declared, `salaryMonthPut` takes it and this method goes.
-  Future<api.SalaryMonth> _create(
-    YearMonth month,
-    api.SalaryMonthInputRequest body,
-  ) async {
-    final response = await _dio.put<Map<String, Object?>>(
-      '/api/v1/salary/months/${month.param}/',
-      data: body.toJson(),
-      options: Options(
-        headers: {'If-None-Match': WriteSafetyHeaders.ifNoneMatchAny},
-      ),
-    );
-    return api.SalaryMonth.fromJson(response.data!);
   }
 
   /// The cursor inside the address the server gave for the next page, which

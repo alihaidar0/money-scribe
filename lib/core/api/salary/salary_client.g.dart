@@ -144,11 +144,15 @@ class _SalaryClient implements SalaryClient {
     required String month,
     required SalaryMonthInputRequest body,
     String? ifMatch,
+    String? ifNoneMatch,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
-    final _headers = <String, dynamic>{r'If-Match': ifMatch};
+    final _headers = <String, dynamic>{
+      r'If-Match': ifMatch,
+      r'If-None-Match': ifNoneMatch,
+    };
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
     _data.addAll(body.toJson());

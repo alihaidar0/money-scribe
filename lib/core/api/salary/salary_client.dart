@@ -70,12 +70,15 @@ abstract class SalaryClient {
   ///
   /// [ifMatch] - The `version` of the record the edit was made from, as a quoted string: `"3"` (`*` matches any record). If the stored version is another one nothing changes and the answer is `412` `precondition_failed`. Without the header the last write wins.
   ///
+  /// [ifNoneMatch] - Only `*` is accepted: the record must not exist yet. Send it when the form is for a record the app did not find, so one created meanwhile on another device is not replaced. If the record exists nothing changes and the answer is `412` `precondition_failed`. Without the header a request on an existing record replaces it.
+  ///
   /// [month] - The month, `YYYY-MM`, from 2000-01 to 2099-12. Any other key is not a route (a plain `404`).
   @PUT('/api/v1/salary/months/{month}/')
   Future<SalaryMonth> salaryMonthPut({
     @Path('month') required String month,
     @Body() required SalaryMonthInputRequest body,
     @Header('If-Match') String? ifMatch,
+    @Header('If-None-Match') String? ifNoneMatch,
   });
 
   /// Delete a salary month.
