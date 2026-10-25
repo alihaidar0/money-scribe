@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/device/device_info.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -22,8 +24,14 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   final FakeAuthRepository _auth;
   final DateTime Function() _now;
 
+  final _changes = StreamController<void>.broadcast();
+
   FingerprintAccount? _account;
   DateTime? _enabledAt;
+
+  /// The password version the key was made under: a password change or reset
+  /// ends it, as the server removes every key then.
+  var _passwordVersion = 0;
 
   /// The phones the sample account turned the sign-in on for before this one.
   late final _others = <DeviceKeyEntry>[
@@ -51,6 +59,9 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   ];
 
   @override
+  Stream<void> get changes => _changes.stream;
+
+  @override
   Future<DeviceKeySupport> support() async {
     return switch (_demo.settings.fingerprint) {
       DemoFingerprint.notEnrolled => DeviceKeySupport.notEnrolled,
@@ -62,8 +73,12 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   @override
   Future<bool> isEnabled() async {
     final account = _account;
-    return account != null && account.accountId == _auth.accountId;
+    return account != null && account.accountId == _auth.accountId && !_isStale;
   }
+
+  /// Whether the password changed since the key was made, which the server
+  /// answers by removing the key.
+  bool get _isStale => _passwordVersion != _auth.passwordVersion;
 
   @override
   Future<void> enable({
@@ -103,13 +118,14 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
       maskedEmail: maskEmail(profile.email),
     );
     _enabledAt = _now();
+    _passwordVersion = _auth.passwordVersion;
+    _changes.add(null);
   }
 
   @override
   Future<void> disable() async {
     await _demo.simulateSave();
-    _account = null;
-    _enabledAt = null;
+    _forget();
   }
 
   @override
@@ -139,7 +155,7 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
           DemoFingerprint.limitReached:
         break;
     }
-    if (_account == null) {
+    if (_account == null || _isStale) {
       throw const FingerprintRefusedException(FingerprintRefusal.signInFailed);
     }
     await _auth.signInWithFingerprint();
@@ -148,17 +164,16 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   @override
   Future<void> sync() async {
     final account = _account;
-    if (account != null && account.accountId != _auth.accountId) {
-      // Another account signed in on this phone.
-      _account = null;
-      _enabledAt = null;
+    if (account != null && (account.accountId != _auth.accountId || _isStale)) {
+      // Another account signed in on this phone, or the server removed the key
+      // when the password changed.
+      _forget();
     }
   }
 
   @override
   Future<void> forgetLocal() async {
-    _account = null;
-    _enabledAt = null;
+    _forget();
   }
 
   @override
@@ -170,7 +185,7 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
         DeviceKeyEntry(
           id: 'fake-key-this',
           deviceId: thisDeviceId,
-          deviceName: 'This phone',
+          deviceName: 'Pixel 8',
           platform: DevicePlatform.android,
           attested: true,
           isCurrent: true,
@@ -184,10 +199,14 @@ class FakeDeviceKeyRepository implements DeviceKeyRepository {
   @override
   Future<void> removeKey(String deviceId) async {
     await _demo.simulateSave();
-    if (deviceId == thisDeviceId) {
-      _account = null;
-      _enabledAt = null;
-    }
+    if (deviceId == thisDeviceId) _forget();
     _others.removeWhere((entry) => entry.deviceId == deviceId);
+  }
+
+  /// This phone has no key any more, and the screens are told.
+  void _forget() {
+    _account = null;
+    _enabledAt = null;
+    _changes.add(null);
   }
 }

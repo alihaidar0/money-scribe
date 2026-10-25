@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,21 +13,37 @@ import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
 import 'package:money_scribe/features/auth/bloc/change_password_bloc.dart';
+import 'package:money_scribe/features/auth/bloc/device_key_setting_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/password_problem_text.dart';
+import 'package:money_scribe/features/auth/presentation/widgets/fingerprint_sign_in_tile.dart';
+import 'package:money_scribe/features/auth/presentation/widgets/turn_fingerprint_back_on_dialog.dart';
 
 /// ST-6: change the password: the current one, and a new one typed twice.
-/// Saving goes back to the Account screen with a message.
+/// Saving goes back to the Account screen with a message. When the fingerprint
+/// sign-in was on, the server removed its key with the old password, so the
+/// person is first offered to turn it on again, with the password just typed.
 class ChangePasswordScreen extends StatelessWidget {
   const new({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ChangePasswordBloc(
-        repository: context.read<AuthRepository>(),
-        ticker: context.read<Ticker>(),
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => ChangePasswordBloc(
+            repository: context.read<AuthRepository>(),
+            deviceKeys: context.read<DeviceKeyRepository>(),
+            ticker: context.read<Ticker>(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => DeviceKeySettingBloc(
+            repository: context.read<DeviceKeyRepository>(),
+          ),
+        ),
+      ],
       child: const _ChangePasswordView(),
     );
   }
@@ -65,18 +83,55 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
     context.read<ChangePasswordBloc>().add(const ChangePasswordSubmitted());
   }
 
+  /// The password was saved: say so, offer the fingerprint again when its key
+  /// was removed, and leave. Turning it on leaves when it has ended.
+  Future<void> _saved(ChangePasswordState state) async {
+    final l10n = context.l10n;
+    final deviceKeys = context.read<DeviceKeySettingBloc>();
+    showSuccessSnackBar(context, l10n.passwordChangedTitle);
+    if (state.offerFingerprint) {
+      final accepted = await confirmTurnFingerprintBackOn(context);
+      if (!mounted) return;
+      if (accepted) {
+        deviceKeys.add(
+          FingerprintSignInTurnedOn(
+            password: state.next,
+            prompt: l10n.fingerprintSignInReason,
+          ),
+        );
+        return;
+      }
+    }
+    context.popOrGo(AppRoutes.account);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return BlocListener<DeviceKeySettingBloc, DeviceKeySettingState>(
+      listenWhen: (previous, current) =>
+          previous.outcome != current.outcome && current.outcome != null,
+      listener: (context, state) {
+        // Turning the fingerprint back on has ended, well or not: say how, and
+        // leave. The password is saved either way.
+        tellDeviceKeyOutcome(context, state);
+        context.popOrGo(AppRoutes.account);
+      },
+      child: _form(context),
+    );
+  }
+
+  Widget _form(BuildContext context) {
     final l10n = context.l10n;
+    // The password is saved; the fingerprint is being turned on again.
+    final turningOnFingerprint = context.select<DeviceKeySettingBloc, bool>(
+      (bloc) => bloc.state.isBusy,
+    );
 
     return BlocConsumer<ChangePasswordBloc, ChangePasswordState>(
       listenWhen: (previous, current) =>
           previous.status != current.status &&
           current.status == ChangePasswordStatus.saved,
-      listener: (context, state) {
-        showSuccessSnackBar(context, l10n.passwordChangedTitle);
-        context.popOrGo(AppRoutes.account);
-      },
+      listener: (context, state) => unawaited(_saved(state)),
       builder: (context, state) {
         final failure = switch (state.status) {
           ChangePasswordStatus.unavailable => FailureKind.unavailable,
@@ -155,6 +210,14 @@ class _ChangePasswordViewState extends State<_ChangePasswordView> {
               if (failure != null)
                 Positioned.fill(
                   child: FailureView(kind: failure, onRetry: _submit),
+                ),
+              if (turningOnFingerprint)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: Theme.of(context).colorScheme.scrim
+                        .withValues(alpha: 0.3),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
                 ),
             ],
           ),

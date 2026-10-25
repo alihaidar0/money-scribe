@@ -8,6 +8,7 @@ import 'package:money_scribe/core/time/duration_seconds.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
 part 'change_password_event.dart';
@@ -17,10 +18,17 @@ part 'change_password_state.dart';
 /// twice. The app applies no password rule of its own: the server owns the
 /// policy and says what is wrong with the new password, and for how long to
 /// wait after too many wrong current passwords.
+///
+/// The server removes every fingerprint sign-in key when the password changes.
+/// When it was on for this phone, the saved state says so, so the screen can
+/// offer to turn it on again with the password just typed.
 class ChangePasswordBloc
     extends Bloc<ChangePasswordEvent, ChangePasswordState> {
-  new({required this._repository, required this._ticker})
-    : super(const ChangePasswordState()) {
+  new({
+    required this._repository,
+    required this._deviceKeys,
+    required this._ticker,
+  }) : super(const ChangePasswordState()) {
     on<ChangePasswordEdited>(_onEdited, transformer: sequential());
     // A second press while the first is being saved is ignored.
     on<ChangePasswordSubmitted>(_onSubmitted, transformer: droppable());
@@ -28,6 +36,7 @@ class ChangePasswordBloc
   }
 
   final AuthRepository _repository;
+  final DeviceKeyRepository _deviceKeys;
   final Ticker _ticker;
   StreamSubscription<int>? _waitTimer;
 
@@ -58,11 +67,17 @@ class ChangePasswordBloc
     if (!state.isValid || state.status == ChangePasswordStatus.waiting) return;
     emit(state.copyWith(status: ChangePasswordStatus.saving));
     try {
+      final hadFingerprint = await _fingerprintIsOn();
       await _repository.changePassword(
         current: state.current,
         next: state.next,
       );
-      emit(state.copyWith(status: ChangePasswordStatus.saved));
+      emit(
+        state.copyWith(
+          status: ChangePasswordStatus.saved,
+          offerFingerprint: hadFingerprint && await _fingerprintWasRemoved(),
+        ),
+      );
     } on WrongCredentialsException {
       emit(state.copyWith(status: ChangePasswordStatus.wrongCurrent));
     } on PasswordRejectedException catch (error) {
@@ -88,6 +103,27 @@ class ChangePasswordBloc
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(state.copyWith(status: ChangePasswordStatus.failure));
+    }
+  }
+
+  /// Whether the fingerprint sign-in is on for this phone. A phone that
+  /// cannot be asked counts as off: nothing is offered then.
+  Future<bool> _fingerprintIsOn() async {
+    try {
+      return await _deviceKeys.isEnabled();
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Compares the phone with the server and says whether the key is gone, as
+  /// it is after a password change.
+  Future<bool> _fingerprintWasRemoved() async {
+    try {
+      await _deviceKeys.sync();
+      return !await _deviceKeys.isEnabled();
+    } on Object {
+      return false;
     }
   }
 

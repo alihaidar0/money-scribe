@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -57,6 +58,11 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
 
   /// Starts the session of a sign-in made with the key.
   final Future<void> Function(SignedInResponse answer) _startSession;
+
+  final _changes = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get changes => _changes.stream;
 
   @override
   Future<DeviceKeySupport> support() => _store.support();
@@ -299,8 +305,8 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
     }
   }
 
-  Future<void> _writeLabel(FingerprintAccount account) {
-    return _secure.write(
+  Future<void> _writeLabel(FingerprintAccount account) async {
+    await _secure.write(
       _accountKey,
       jsonEncode({
         'id': account.accountId,
@@ -308,6 +314,7 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
         'email': account.maskedEmail,
       }),
     );
+    _changes.add(null);
   }
 
   @override
@@ -324,6 +331,7 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
   Future<void> _forgetLocal() async {
     await _store.delete();
     await _secure.delete(_accountKey);
+    _changes.add(null);
   }
 }
 

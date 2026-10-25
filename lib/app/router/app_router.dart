@@ -15,6 +15,7 @@ import 'package:money_scribe/features/auth/presentation/change_email_screen.dart
 import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/create_pin_screen.dart';
 import 'package:money_scribe/features/auth/presentation/email_verified_screen.dart';
+import 'package:money_scribe/features/auth/presentation/fingerprint_phones_screen.dart';
 import 'package:money_scribe/features/auth/presentation/forgot_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/new_password_screen.dart';
 import 'package:money_scribe/features/auth/presentation/password_changed_screen.dart';
@@ -132,6 +133,13 @@ GoRouter createAppRouter({
         builder: (context, state) => const WideFrame(
           width: FrameWidth.narrow,
           child: ChangePasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.fingerprintPhones,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: FingerprintPhonesScreen(),
         ),
       ),
       GoRoute(

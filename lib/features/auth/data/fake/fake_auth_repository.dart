@@ -39,6 +39,12 @@ class FakeAuthRepository implements AuthRepository {
   final _signedInChanges = StreamController<bool>.broadcast(sync: true);
 
   bool _isSignedIn;
+
+  /// How many times the password was changed or reset. Like the server, which
+  /// removes every fingerprint key then, the fake key of a phone notes the
+  /// number it was made under.
+  int _passwordVersion = 0;
+
   // A sample address, so the code screens have one to show when they are
   // opened from the demo panel; registering or resetting replaces it.
   String? _pendingEmail = 'alex@example.com';
@@ -67,6 +73,9 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   String? get accountId => _isSignedIn ? 'demo-account-$_accountNumber' : null;
+
+  /// How many times the password was changed or reset.
+  int get passwordVersion => _passwordVersion;
 
   @override
   Stream<bool> get signedInChanges => _signedInChanges.stream;
@@ -300,7 +309,9 @@ class FakeAuthRepository implements AuthRepository {
       case DemoPasswordReset.unavailable:
         throw const ServiceUnavailableException();
     }
-    // Like the server, a reset ends every session, this one included.
+    // Like the server, a reset ends every session, this one included, and
+    // removes every fingerprint key.
+    _passwordVersion++;
     _setSignedIn(value: false);
   }
 
@@ -394,6 +405,7 @@ class FakeAuthRepository implements AuthRepository {
         PasswordProblem(PasswordIssue.unchanged),
       );
     }
+    _passwordVersion++;
   }
 
   @override

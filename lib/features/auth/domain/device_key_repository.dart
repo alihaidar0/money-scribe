@@ -10,6 +10,10 @@ import 'package:money_scribe/features/auth/domain/device_key.dart';
 /// `FingerprintKeyInvalidatedException`, `FingerprintRefusedException`,
 /// `WrongCredentialsException`, `RateLimitedException`).
 abstract interface class DeviceKeyRepository {
+  /// Emits when the key of this phone was made, removed or found gone, so a
+  /// screen that shows whether the sign-in is on can ask again.
+  Stream<void> get changes;
+
   /// Whether this phone can hold the key.
   Future<DeviceKeySupport> support();
 

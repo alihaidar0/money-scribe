@@ -622,6 +622,17 @@ void main() {
       expect(await keys.signInAccount(), isNull);
       expect(server.requests, isEmpty);
     });
+
+    test('tells the screens that the key is gone', () async {
+      var announced = 0;
+      final listening = keys.changes.listen((_) => announced++);
+
+      await keys.forgetLocal();
+      await pumpEventQueue();
+      await listening.cancel();
+
+      expect(announced, 1);
+    });
   });
 
   group('the phones', () {
