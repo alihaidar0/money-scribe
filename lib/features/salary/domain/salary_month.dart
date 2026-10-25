@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_inputs.dart';
 
 /// A month's salary as it is saved: what it is calculated from, and the days
@@ -12,6 +13,7 @@ final class SalaryMonth extends Equatable {
     required this.firstPayDay,
     required this.secondPayDay,
     this.version,
+    this.figures,
   });
 
   final YearMonth month;
@@ -29,6 +31,11 @@ final class SalaryMonth extends Equatable {
   /// month that was not saved yet.
   final int? version;
 
+  /// What the server calculated for the saved month, or `null` when the month
+  /// does not come from the server's answer (a month that was not saved yet,
+  /// or the fake data). Never sent: the server calculates it from the inputs.
+  final SalaryFigures? figures;
+
   /// This month as the server saved it, under [version].
   SalaryMonth withVersion(int? version) {
     return SalaryMonth(
@@ -37,6 +44,7 @@ final class SalaryMonth extends Equatable {
       firstPayDay: firstPayDay,
       secondPayDay: secondPayDay,
       version: version,
+      figures: figures,
     );
   }
 
@@ -47,5 +55,6 @@ final class SalaryMonth extends Equatable {
     firstPayDay,
     secondPayDay,
     version,
+    figures,
   ];
 }

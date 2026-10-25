@@ -156,6 +156,14 @@ These rules hold for every resource after the account:
   `Idempotency-Key` and no `from`, so the server takes the most recent saved month before the month.
   Its refusals are worded for the person and never retried: `404` (no earlier saved month),
   `409 fixed_item_limit_reached` (nothing copied) and `400 currency_mismatch`.
+- **What the server calculates is shown, what is typed is calculated here.** A saved month's answer carries
+  its `results`, `payments` and `balances`; the app keeps them as `SalaryMonth.figures` and shows them while
+  the form is the saved month as it is (a month read, listed or just saved). Once the form is edited the live
+  calculation is shown with the saved total beside it. A change of a fixed item does not answer with the
+  balances, so the Fixed items screen adds them up itself until it has read the month again. A month that
+  does not come from the server (a new one, the fake data) has no figures and is calculated here. Payments
+  that are not those of the month's payment mode, or do not add up to the total after tax, break the contract
+  (`ServerException`).
 - The header values are quoted strings (`"<uuid>"`, `"<version>"`), written in one place
   (`WriteSafetyHeaders`). This is the first thing to check if the server answers `400` for a header.
 

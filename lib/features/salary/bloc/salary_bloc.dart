@@ -5,8 +5,10 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/domain/salary_calculator.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_form.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_result.dart';
@@ -99,6 +101,8 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
           isSaved: true,
           version: saved.version,
           baseline: sent,
+          figures: saved.figures,
+          clearFigures: saved.figures == null,
         ),
       );
     } on StaleRecordException {
@@ -176,6 +180,8 @@ class SalaryBloc extends Bloc<SalaryEvent, SalaryState> {
           isSaved: saved != null,
           version: saved?.version ?? 0,
           formVersion: state.formVersion + 1,
+          figures: saved?.figures,
+          clearFigures: saved?.figures == null,
         ),
       );
     } on NoConnectionException {

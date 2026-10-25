@@ -11,6 +11,7 @@ import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_summary.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_history_entry.dart';
 import 'package:money_scribe/features/salary/domain/salary_month.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
@@ -81,7 +82,7 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     if (!state.monthSaved) return Future.value();
     return _run(event, emit, () async {
       final item = await _fixedItems.add(state.month, event.draft);
-      emit(state.copyWith(items: [...state.items, item]));
+      await _itemsChanged(emit, [...state.items, item]);
     });
   }
 
@@ -97,14 +98,10 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
         event.draft,
         version: current.version,
       );
-      emit(
-        state.copyWith(
-          items: [
-            for (final item in state.items)
-              if (item.id == event.id) saved else item,
-          ],
-        ),
-      );
+      await _itemsChanged(emit, [
+        for (final item in state.items)
+          if (item.id == event.id) saved else item,
+      ]);
     });
   }
 
@@ -115,14 +112,10 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     return _run(event, emit, () async {
       final current = _itemOf(event.id);
       await _fixedItems.delete(state.month, event.id, version: current.version);
-      emit(
-        state.copyWith(
-          items: [
-            for (final item in state.items)
-              if (item.id != event.id) item,
-          ],
-        ),
-      );
+      await _itemsChanged(emit, [
+        for (final item in state.items)
+          if (item.id != event.id) item,
+      ]);
     });
   }
 
@@ -136,9 +129,28 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     emit(state.copyWith(copying: true));
     await _run(event, emit, () async {
       final items = await _fixedItems.copyFromPrevious(state.month);
-      emit(state.copyWith(items: items));
+      await _itemsChanged(emit, items);
     });
     emit(state.copyWith(copying: false));
+  }
+
+  /// The items are now [items]. The balances the server gave are out of date,
+  /// so the summary adds them up here until the server's come: a change of an
+  /// item does not answer with them, so the month is read again.
+  Future<void> _itemsChanged(
+    Emitter<FixedItemsState> emit,
+    List<FixedItem> items,
+  ) async {
+    final hadServerBalances = state.balances != null;
+    emit(state.copyWith(items: items, clearBalances: true));
+    if (!hadServerBalances) return;
+
+    try {
+      final saved = await _salary.month(state.month);
+      emit(state.copyWith(balances: saved?.figures?.balances));
+    } on Exception {
+      // The summary keeps adding them up here; the next load asks again.
+    }
   }
 
   @override
@@ -217,6 +229,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
           items: saved == null ? const [] : items,
           salary: entry?.result,
           clearSalary: entry == null,
+          balances: saved?.figures?.balances,
+          clearBalances: saved?.figures == null,
           twoPayments: mode == PaymentMode.twoPayments,
           currency: saved?.inputs.baseSalary.currency ?? Currency.rub,
         ),
