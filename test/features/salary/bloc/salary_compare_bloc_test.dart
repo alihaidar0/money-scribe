@@ -19,7 +19,7 @@ void main() {
   setUp(() {
     demo = DemoController(latency: Duration.zero);
     repository = FakeSalaryRepository(demo: demo);
-    fixedItems = FakeFixedItemsRepository(demo: demo);
+    fixedItems = FakeFixedItemsRepository(demo: demo, salary: repository);
   });
 
   SalaryCompareBloc build() {

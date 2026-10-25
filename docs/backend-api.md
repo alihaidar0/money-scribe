@@ -152,6 +152,10 @@ These rules hold for every resource after the account:
   app reads the record again. Without the header the last write wins. Creating a month with `PUT` sends
   `If-None-Match: *` when the app did not find the month, so another device's month is never replaced.
 - Lists are cursor-paginated (up to 100 items a page): the app follows `next` to the end.
+- "Copy from last month" (`POST /salary/months/{month}/fixed-items/copy/`) is an action with its own
+  `Idempotency-Key` and no `from`, so the server takes the most recent saved month before the month.
+  Its refusals are worded for the person and never retried: `404` (no earlier saved month),
+  `409 fixed_item_limit_reached` (nothing copied) and `400 currency_mismatch`.
 - The header values are quoted strings (`"<uuid>"`, `"<version>"`), written in one place
   (`WriteSafetyHeaders`). This is the first thing to check if the server answers `400` for a header.
 

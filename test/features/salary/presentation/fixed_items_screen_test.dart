@@ -7,6 +7,7 @@ import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
@@ -18,6 +19,8 @@ import 'salary_test_helpers.dart';
 const twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
 
 const october = YearMonth(2026, 10);
+
+const copyLabel = 'Copy from last month';
 
 /// A row's amount as shown, with a true minus sign for an expense.
 Finder figure(String text) => find.text(amount(text));
@@ -78,8 +81,10 @@ Finder saveButton() => inSheet(find.widgetWithText(FilledButton, 'Save'));
 
 /// The repository of a saved month whose items were all deleted.
 Future<FakeFixedItemsRepository> withoutItems() async {
+  final demo = DemoController(latency: Duration.zero);
   final repository = FakeFixedItemsRepository(
-    demo: DemoController(latency: Duration.zero),
+    demo: demo,
+    salary: FakeSalaryRepository(demo: demo),
   );
   for (final item in await repository.items(october)) {
     await repository.delete(october, item.id, version: item.version);
@@ -540,6 +545,159 @@ void main() {
     });
   });
 
+  group('copy from last month', () {
+    Finder copyButton() => find.widgetWithText(TextButton, copyLabel);
+
+    Finder confirmButton() => find.widgetWithText(FilledButton, 'Copy');
+
+    Future<void> openAugust(WidgetTester tester) async {
+      await pumpApp(tester);
+      GoRouter.of(tester.element(find.byType(Scaffold).first))
+          .go('/salary/fixed-items?month=2026-08');
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks before adding to a month that has items', (tester) async {
+      await pumpFixedItems(tester);
+      expect(find.text('Rent'), findsOneWidget);
+
+      await tester.tap(copyButton());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy from last month?'), findsOneWidget);
+      expect(
+        find.text(
+          "This month already has fixed items. Last month's items will be "
+          'added to them.',
+        ),
+        findsOneWidget,
+      );
+      // Nothing is copied until the person says so.
+      expect(find.text('Rent'), findsOneWidget);
+    });
+
+    testWidgets('Cancel copies nothing', (tester) async {
+      await pumpFixedItems(tester);
+      await tester.tap(copyButton());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy from last month?'), findsNothing);
+      expect(find.text('Rent'), findsOneWidget);
+    });
+
+    testWidgets("Copy adds last month's items to the list and the balance", (
+      tester,
+    ) async {
+      await pumpFixedItems(tester);
+      expect(figure('74,900.00 ₽'), findsOneWidget);
+      await tester.tap(copyButton());
+      await tester.pumpAndSettle();
+
+      await tester.tap(confirmButton());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy from last month?'), findsNothing);
+      expect(find.text('Rent'), findsNWidgets(2));
+      expect(find.text('Scholarship'), findsNWidgets(2));
+      // The salary of 104,400.00 ₽ and twice the items: +10,000.00 ₽ income
+      // and 69,000.00 ₽ of costs.
+      expect(figure('45,400.00 ₽'), findsOneWidget);
+    });
+
+    testWidgets('a month with no items copies without asking', (tester) async {
+      await pumpFixedItems(tester, fixedItemsRepository: await withoutItems());
+      expect(find.text('No fixed items yet'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, copyLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy from last month?'), findsNothing);
+      expect(find.text('No fixed items yet'), findsNothing);
+      expect(find.text('Rent'), findsOneWidget);
+      expect(find.text('Scholarship'), findsOneWidget);
+    });
+
+    testWidgets('the oldest month says there is nothing to copy from', (
+      tester,
+    ) async {
+      await openAugust(tester);
+      await tester.tap(copyButton());
+      await tester.pumpAndSettle();
+
+      await tester.tap(confirmButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'There is no earlier month with a saved salary to copy from.',
+        ),
+        findsOneWidget,
+      );
+      // Asking again changes nothing, so there is nothing to retry.
+      expect(find.text('Retry'), findsNothing);
+      expect(find.text('Rent'), findsOneWidget);
+    });
+
+    testWidgets('a copy that failed offers Retry, which copies', (
+      tester,
+    ) async {
+      final demo = await pumpFixedItems(tester);
+      demo.update(const DemoSettings(save: DemoSave.fails));
+      await tester.tap(copyButton());
+      await tester.pumpAndSettle();
+      await tester.tap(confirmButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Couldn't copy the items. Check your connection."),
+        findsOneWidget,
+      );
+      expect(find.text('Rent'), findsOneWidget);
+
+      demo.update(const DemoSettings());
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rent'), findsNWidgets(2));
+    });
+
+    testWidgets('is there in each part of a month paid in two payments', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+      expect(copyButton(), findsOneWidget);
+
+      await choosePart(tester, 'Part 2');
+
+      expect(copyButton(), findsOneWidget);
+    });
+
+    testWidgets('is not offered for a month that is not saved', (tester) async {
+      await pumpFixedItems(
+        tester,
+        settings: const DemoSettings(scenario: DemoScenario.empty),
+      );
+
+      expect(find.text(copyLabel), findsNothing);
+    });
+
+    testWidgets('is in Arabic', (tester) async {
+      await pumpFixedItems(tester, language: AppLanguage.arabic);
+
+      await tester.tap(
+        find.widgetWithText(TextButton, 'النسخ من الشهر الماضي'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('النسخ من الشهر الماضي؟'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'نسخ'), findsOneWidget);
+      expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
+    });
+  });
+
   group('a failed save', () {
     testWidgets('keeps the list and offers Retry', (tester) async {
       final demo = await pumpFixedItems(tester);
@@ -585,7 +743,10 @@ void main() {
       tester,
     ) async {
       final demo = DemoController(latency: Duration.zero);
-      final repository = FakeFixedItemsRepository(demo: demo);
+      final repository = FakeFixedItemsRepository(
+        demo: demo,
+        salary: FakeSalaryRepository(demo: demo),
+      );
       await pumpFixedItems(tester, fixedItemsRepository: repository);
       // Another device renames the rent first.
       final rent = (await repository.items(october))[1];

@@ -8,6 +8,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_summary.dart';
 import 'package:money_scribe/features/salary/domain/salary_history_entry.dart';
@@ -38,6 +39,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     on<FixedItemAdded>(_onAdded, transformer: sequential());
     on<FixedItemChanged>(_onChanged, transformer: sequential());
     on<FixedItemDeleted>(_onDeleted, transformer: sequential());
+    // A second press while the first copy runs would copy everything twice.
+    on<FixedItemsCopied>(_onCopied, transformer: droppable());
   }
 
   final FixedItemsRepository _fixedItems;
@@ -123,6 +126,21 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     });
   }
 
+  Future<void> _onCopied(
+    FixedItemsCopied event,
+    Emitter<FixedItemsState> emit,
+  ) async {
+    // The server has no month to copy into until the salary is saved.
+    if (!state.monthSaved) return;
+
+    emit(state.copyWith(copying: true));
+    await _run(event, emit, () async {
+      final items = await _fixedItems.copyFromPrevious(state.month);
+      emit(state.copyWith(items: items));
+    });
+    emit(state.copyWith(copying: false));
+  }
+
   @override
   Future<void> close() async {
     for (final subscription in _changes) {
@@ -145,18 +163,27 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
   /// holds [event], so the screen can offer to try again. When the item was
   /// changed on another device the list is loaded again and
   /// [FixedItemsState.staleAction] holds [event], so the screen can offer to
-  /// apply it to what is there now.
+  /// apply it to what is there now. When a copy is refused for a reason the
+  /// person can act on, [FixedItemsState.copyRefusal] holds it.
   Future<void> _run(
     FixedItemsEvent event,
     Emitter<FixedItemsState> emit,
     Future<void> Function() action,
   ) async {
-    emit(state.copyWith(clearFailedAction: true, clearStaleAction: true));
+    emit(
+      state.copyWith(
+        clearFailedAction: true,
+        clearStaleAction: true,
+        clearCopyRefusal: true,
+      ),
+    );
     try {
       await action();
     } on StaleRecordException {
       await _load(emit);
       emit(state.copyWith(staleAction: event));
+    } on FixedItemsCopyRefusedException catch (refused) {
+      emit(state.copyWith(copyRefusal: refused.refusal));
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {

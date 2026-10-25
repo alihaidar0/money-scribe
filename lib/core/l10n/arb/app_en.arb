@@ -1089,6 +1089,38 @@
   "@goToSalaryAction": {
     "description": "Button of the fixed items of a month whose salary is not saved: opens the Salary screen of that month."
   },
+  "copyFromLastMonthAction": "Copy from last month",
+  "@copyFromLastMonthAction": {
+    "description": "Button of the fixed items that adds a copy of the fixed items of the last saved month to this one."
+  },
+  "copyFixedItemsTitle": "Copy from last month?",
+  "@copyFixedItemsTitle": {
+    "description": "Title of the question asked before copying the fixed items of the last saved month into a month that already has some."
+  },
+  "copyFixedItemsMessage": "This month already has fixed items. Last month''s items will be added to them.",
+  "@copyFixedItemsMessage": {
+    "description": "Sentence of the question asked before copying the fixed items of the last saved month into a month that already has some."
+  },
+  "copyFixedItemsConfirmAction": "Copy",
+  "@copyFixedItemsConfirmAction": {
+    "description": "Button that confirms copying the fixed items of the last saved month."
+  },
+  "couldNotCopy": "Couldn''t copy the items. Check your connection.",
+  "@couldNotCopy": {
+    "description": "Message shown when copying the fixed items of another month failed because the server could not be reached or failed. It has a Retry button."
+  },
+  "copyNoEarlierMonth": "There is no earlier month with a saved salary to copy from.",
+  "@copyNoEarlierMonth": {
+    "description": "Message shown when the fixed items cannot be copied because no earlier month has a saved salary."
+  },
+  "copyLimitReached": "This month would hold too many fixed items. Nothing was copied.",
+  "@copyLimitReached": {
+    "description": "Message shown when copying the fixed items was refused because the month would pass the most items it may hold."
+  },
+  "copyCurrencyMismatch": "Last month is in another currency, so its items can''t be copied.",
+  "@copyCurrencyMismatch": {
+    "description": "Message shown when copying the fixed items was refused because the month to copy from has another currency."
+  },
   "addFixedItemTitle": "Add fixed item",
   "@addFixedItemTitle": {
     "description": "Title of the sheet that adds a fixed item."

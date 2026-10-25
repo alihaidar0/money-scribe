@@ -916,6 +916,15 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'fix-8-copy-from-last-month-confirm',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byIcon(Icons.content_copy_outlined));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'fix-6-fixed-items-empty',
     AppRoutes.fixedItems,
     signedIn: true,

@@ -53,6 +53,12 @@ final class FixedItemChanged extends FixedItemsEvent {
   List<Object> get props => [id, draft];
 }
 
+/// The user asked to copy the fixed items of the last saved month into this
+/// one (and confirmed, when this month already has some).
+final class FixedItemsCopied extends FixedItemsEvent {
+  const new();
+}
+
 /// The user confirmed deleting the item [id].
 final class FixedItemDeleted extends FixedItemsEvent {
   const new(this.id);

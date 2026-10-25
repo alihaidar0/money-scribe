@@ -29,11 +29,19 @@ class StateView extends StatelessWidget {
     required this.onAction,
     this.message,
     this.filledAction = false,
+    this.secondaryLabel,
+    this.onSecondary,
     super.key,
   });
 
   final IconData icon;
   final String title;
+
+  /// A second, quieter action under the first, such as "Copy from last
+  /// month" under "Add item". Shown when [secondaryLabel] is set; with no
+  /// [onSecondary] it is disabled.
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
 
   /// The sentence under the title, when the title does not say enough.
   final String? message;
@@ -82,6 +90,13 @@ class StateView extends StatelessWidget {
                   onPressed: onAction,
                   child: Text(actionLabel),
                 ),
+              if (secondaryLabel != null) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: onSecondary,
+                  child: Text(secondaryLabel!),
+                ),
+              ],
             ],
           ),
         ),

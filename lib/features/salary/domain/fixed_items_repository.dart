@@ -28,4 +28,11 @@ abstract interface class FixedItemsRepository {
   /// that is gone does nothing; one at another version throws a
   /// `StaleRecordException`.
   Future<void> delete(YearMonth month, String id, {required int version});
+
+  /// Adds to [month] a copy of the fixed items of the most recent saved month
+  /// before it, whatever [month] already holds, and returns every item of
+  /// [month] afterwards. A month that has none to copy from, would hold too
+  /// many items or is in another currency than the one to copy from throws a
+  /// `FixedItemsCopyRefusedException`, copying nothing.
+  Future<List<FixedItem>> copyFromPrevious(YearMonth month);
 }

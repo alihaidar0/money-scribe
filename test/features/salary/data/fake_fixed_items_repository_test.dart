@@ -5,7 +5,11 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
+import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
+import 'package:money_scribe/features/salary/domain/salary_inputs.dart';
+import 'package:money_scribe/features/salary/domain/salary_month.dart';
 
 const october = YearMonth(2026, 10);
 const september = YearMonth(2026, 9);
@@ -21,11 +25,13 @@ FixedItemDraft gym({int rubles = 1200}) {
 
 void main() {
   late DemoController demo;
+  late FakeSalaryRepository salary;
   late FakeFixedItemsRepository repository;
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
-    repository = FakeFixedItemsRepository(demo: demo);
+    salary = FakeSalaryRepository(demo: demo);
+    repository = FakeFixedItemsRepository(demo: demo, salary: salary);
   });
 
   List<String> names(List<FixedItem> items) =>
@@ -179,6 +185,155 @@ void main() {
       }
 
       expect(await repository.items(october), isEmpty);
+    });
+  });
+
+  group('copyFromPrevious', () {
+    const august = YearMonth(2026, 8);
+
+    Matcher refusedWith(FixedItemsCopyRefusal refusal) {
+      return throwsA(
+        isA<FixedItemsCopyRefusedException>().having(
+          (e) => e.refusal,
+          'refusal',
+          refusal,
+        ),
+      );
+    }
+
+    test('adds the items of the month before to those the month has', () async {
+      final items = await repository.copyFromPrevious(september);
+
+      expect(names(items), [
+        'Scholarship',
+        'Rent',
+        'Services',
+        'Scholarship',
+        'Rent',
+        'Services',
+      ]);
+      expect(await repository.items(september), items);
+    });
+
+    test('copies what each item is made of under new ids', () async {
+      final source = await repository.items(august);
+      final items = await repository.copyFromPrevious(september);
+
+      final copies = items.sublist(3);
+      expect(
+        [for (final item in copies) item.draft],
+        [for (final item in source) item.draft],
+      );
+      expect({for (final item in items) item.id}, hasLength(6));
+      expect(copies.map((item) => item.version), everyElement(1));
+      // The source month keeps its own items.
+      expect(await repository.items(august), source);
+    });
+
+    test('copies from the most recent month before it', () async {
+      // October is copied from September, not from August.
+      final rent = (await repository.items(september))[1];
+      await repository.delete(september, rent.id, version: rent.version);
+
+      final items = await repository.copyFromPrevious(october);
+
+      expect(names(items), [
+        'Scholarship',
+        'Rent',
+        'Services',
+        'Scholarship',
+        'Services',
+      ]);
+    });
+
+    test('the oldest saved month has none to copy from', () async {
+      await expectLater(
+        repository.copyFromPrevious(august),
+        refusedWith(FixedItemsCopyRefusal.noEarlierMonth),
+      );
+      expect(await repository.items(august), hasLength(3));
+    });
+
+    test('a month that is not saved cannot be copied into', () async {
+      await expectLater(
+        repository.copyFromPrevious(march),
+        refusedWith(FixedItemsCopyRefusal.noEarlierMonth),
+      );
+      expect(await repository.items(march), isEmpty);
+    });
+
+    test('an account with no saved month has nothing to copy from', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+
+      await expectLater(
+        repository.copyFromPrevious(october),
+        refusedWith(FixedItemsCopyRefusal.noEarlierMonth),
+      );
+    });
+
+    test('a month in another currency is refused, copying nothing', () async {
+      await salary.save(
+        SalaryMonth(
+          month: const YearMonth(2026, 11),
+          inputs: SalaryInputs(
+            baseSalary: const Money(10000000, Currency.usd),
+            foodPerDay: const Money(50000, Currency.usd),
+            workingDaysInMonth: 20,
+            workingHoursInMonth: 160,
+            extraHoursHundredths: 0,
+            taxRateBasisPoints: 1300,
+          ),
+          firstPayDay: 20,
+          secondPayDay: 5,
+        ),
+      );
+
+      await expectLater(
+        repository.copyFromPrevious(const YearMonth(2026, 11)),
+        refusedWith(FixedItemsCopyRefusal.currencyMismatch),
+      );
+      expect(await repository.items(const YearMonth(2026, 11)), isEmpty);
+    });
+
+    test(
+      'a month that would pass the limit is refused, copying nothing',
+      () async {
+        for (var i = 0; i < 98; i++) {
+          await repository.add(september, gym());
+        }
+
+        // 3 seeded, 98 added and 3 to copy: 104 items.
+        await expectLater(
+          repository.copyFromPrevious(september),
+          refusedWith(FixedItemsCopyRefusal.limitReached),
+        );
+        expect(await repository.items(september), hasLength(101));
+      },
+    );
+
+    test('reports no connection and a server failure', () async {
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+      await expectLater(
+        repository.copyFromPrevious(september),
+        throwsA(isA<NoConnectionException>()),
+      );
+
+      demo.update(const DemoSettings(scenario: DemoScenario.error));
+      await expectLater(
+        repository.copyFromPrevious(september),
+        throwsA(isA<ServerException>()),
+      );
+    });
+
+    test('a save that fails copies nothing', () async {
+      demo.update(const DemoSettings(save: DemoSave.fails));
+
+      await expectLater(
+        repository.copyFromPrevious(september),
+        throwsA(isA<NoConnectionException>()),
+      );
+      demo.update(const DemoSettings());
+      expect(await repository.items(september), hasLength(3));
     });
   });
 

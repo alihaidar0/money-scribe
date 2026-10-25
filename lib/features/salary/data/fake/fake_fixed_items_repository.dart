@@ -3,15 +3,24 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/features/salary/data/fake/fixed_items_seed.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
+import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 
 /// Fixed items made of invented figures, until the server exists. It follows
 /// the demo panel: no data, slow, failing or offline. What the app adds,
 /// changes or deletes is kept in memory for as long as it runs.
+///
+/// It asks [_salary] which months are saved, as the server knows it: copying
+/// needs a saved month to copy to and an earlier one to copy from.
 class FakeFixedItemsRepository implements FixedItemsRepository {
-  new({required this._demo});
+  new({required this._demo, required this._salary});
+
+  /// The most fixed items a month holds, as on the server.
+  static const _limit = 100;
 
   final DemoController _demo;
+  final SalaryRepository _salary;
 
   /// The months the app changed since it started; they replace the seed.
   final _edited = <YearMonth, List<FixedItem>>{};
@@ -69,6 +78,41 @@ class FakeFixedItemsRepository implements FixedItemsRepository {
       for (final item in _current(month))
         if (item.id != id) item,
     ];
+  }
+
+  @override
+  Future<List<FixedItem>> copyFromPrevious(YearMonth month) async {
+    await _demo.simulateSave();
+    final saved = await _salary.savedMonths();
+    final target = saved.where((entry) => entry.month == month).firstOrNull;
+    // Newest first, so the first one before [month] is the most recent.
+    final source = saved.where((entry) => entry.month < month).firstOrNull;
+    if (target == null || source == null) {
+      throw const FixedItemsCopyRefusedException(
+        FixedItemsCopyRefusal.noEarlierMonth,
+      );
+    }
+    if (target.inputs.baseSalary.currency !=
+        source.inputs.baseSalary.currency) {
+      throw const FixedItemsCopyRefusedException(
+        FixedItemsCopyRefusal.currencyMismatch,
+      );
+    }
+
+    final current = _current(month);
+    final copied = _current(source.month);
+    if (current.length + copied.length > _limit) {
+      throw const FixedItemsCopyRefusedException(
+        FixedItemsCopyRefusal.limitReached,
+      );
+    }
+    final items = [
+      ...current,
+      for (final item in copied)
+        FixedItem.fromDraft('added-${_nextId++}', item.draft),
+    ];
+    _edited[month] = items;
+    return List.unmodifiable(items);
   }
 
   /// The items of [month], without waiting for the server.

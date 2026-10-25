@@ -26,6 +26,8 @@ final class FixedItemsState extends Equatable {
     this.part = FixedItemPart.first,
     this.failedAction,
     this.staleAction,
+    this.copying = false,
+    this.copyRefusal,
   });
 
   final FixedItemsStatus status;
@@ -61,6 +63,13 @@ final class FixedItemsState extends Equatable {
   /// something else was done.
   final FixedItemsEvent? staleAction;
 
+  /// Whether the items of another month are being copied into this one.
+  final bool copying;
+
+  /// Why the last copy was refused, so the screen can say so. `null` once
+  /// something else was done.
+  final FixedItemsCopyRefusal? copyRefusal;
+
   /// The items on screen: all of them, or those of [part].
   List<FixedItem> get shownItems {
     return FixedItemsSummary.shown(items, twoPayments: twoPayments, part: part);
@@ -90,6 +99,9 @@ final class FixedItemsState extends Equatable {
     bool clearFailedAction = false,
     FixedItemsEvent? staleAction,
     bool clearStaleAction = false,
+    bool? copying,
+    FixedItemsCopyRefusal? copyRefusal,
+    bool clearCopyRefusal = false,
   }) {
     return FixedItemsState(
       month: month,
@@ -104,6 +116,8 @@ final class FixedItemsState extends Equatable {
           ? null
           : failedAction ?? this.failedAction,
       staleAction: clearStaleAction ? null : staleAction ?? this.staleAction,
+      copying: copying ?? this.copying,
+      copyRefusal: clearCopyRefusal ? null : copyRefusal ?? this.copyRefusal,
     );
   }
 
@@ -119,5 +133,7 @@ final class FixedItemsState extends Equatable {
     part,
     failedAction,
     staleAction,
+    copying,
+    copyRefusal,
   ];
 }

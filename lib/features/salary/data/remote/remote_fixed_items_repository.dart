@@ -8,14 +8,16 @@ import 'package:money_scribe/core/network/idempotency_keys.dart';
 import 'package:money_scribe/core/network/write_safety_headers.dart';
 import 'package:money_scribe/features/salary/data/remote/salary_wire.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 
 /// The fixed items of the months on the server: the real
 /// [FixedItemsRepository].
 ///
-/// Adding an item sends an `Idempotency-Key` that is kept until the call has
-/// an answer, so a retry after a lost answer adds nothing twice. A change and
-/// a delete send the `version` they were made from (`If-Match`).
+/// Adding an item and copying the items of another month send an
+/// `Idempotency-Key` that is kept until the call has an answer, so a retry
+/// after a lost answer adds nothing twice. A change and a delete send the
+/// `version` they were made from (`If-Match`).
 class RemoteFixedItemsRepository implements FixedItemsRepository {
   new({required this._client, required this._keys});
 
@@ -125,7 +127,42 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
     }
   }
 
+  @override
+  Future<List<FixedItem>> copyFromPrevious(YearMonth month) async {
+    // One action of the person: copying into this month. Without `from` the
+    // server copies from the most recent saved month before it.
+    final wire = await callApi(
+      () => _keys.run(
+        'fixed-items:copy:${month.param}',
+        (key) => _client.salaryFixedItemsCopy(
+          idempotencyKey: WriteSafetyHeaders.idempotencyKey(key),
+          month: month.param,
+          body: const api.CopyFixedItemsRequest(),
+        ),
+      ),
+      _mapCopy,
+    );
+    return [for (final item in wire.fixedItems) SalaryWire.fixedItem(item)];
+  }
+
   Exception _map(ApiFailure failure) => failure.toDataException();
+
+  /// The refusals of a copy that the person can act on; the rest are the
+  /// failures every repository shares.
+  Exception _mapCopy(ApiFailure failure) {
+    final refusal = switch (failure.statusCode) {
+      // This month, or the one to copy from, is not saved.
+      404 => FixedItemsCopyRefusal.noEarlierMonth,
+      409 when failure.hasCode('fixed_item_limit_reached') =>
+        FixedItemsCopyRefusal.limitReached,
+      400 when failure.hasCode('currency_mismatch') =>
+        FixedItemsCopyRefusal.currencyMismatch,
+      _ => null,
+    };
+    return refusal == null
+        ? _map(failure)
+        : FixedItemsCopyRefusedException(refusal);
+  }
 
   Exception _mapMissing(ApiFailure failure) {
     return failure.statusCode == 404 ? const _Missing() : _map(failure);
