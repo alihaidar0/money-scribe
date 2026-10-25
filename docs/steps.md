@@ -81,7 +81,7 @@ To do, in this order, one step at a time:
 - [x] Build workflow job that sends the arm64-v8a APK to Firebase App Distribution (staging keeps only the newest build), skipped until the variables are set
 - [x] Staging: turn on App Distribution and create the group `testers`
 - [x] Staging: service account with the App Distribution Admin role and the Workload Identity Federation provider for this repository and the `staging` environment
-- [ ] Staging: add the three variables to the `staging` GitHub environment; check the first upload and the invitation link
+- [x] Staging: add the three variables to the `staging` GitHub environment; check the first upload and the invitation link
 - [ ] Production: the same four steps for the production project and the `production` environment
 - [ ] Google Play: developer account, app, first internal-testing upload, store listing and privacy policy
 - [ ] Upload to Google Play from the build workflow (staging to an internal track, production on merge into `main`)
