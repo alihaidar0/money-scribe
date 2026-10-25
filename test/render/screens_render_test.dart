@@ -919,10 +919,37 @@ final _scenes = <_Scene>[
     'fix-6-fixed-items-empty',
     AppRoutes.fixedItems,
     signedIn: true,
+    setup: (tester, demo) async {
+      // A saved month whose items are all deleted.
+      for (var i = 0; i < 3; i++) {
+        await _openEditSheet(tester);
+        await tester.tap(
+          find
+              .descendant(
+                of: find.byType(BottomSheet),
+                matching: find.byType(TextButton),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(FilledButton),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'fix-7-save-salary-first',
+    AppRoutes.fixedItems,
+    signedIn: true,
     setup: (tester, demo) => _useScenario(tester, demo, DemoScenario.empty),
   ),
   _Scene(
-    'fix-6-fixed-items-empty-part',
+    'fix-7-save-salary-first-two-payments',
     AppRoutes.fixedItems,
     signedIn: true,
     setup: (tester, demo) async {

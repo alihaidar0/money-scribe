@@ -70,6 +70,7 @@ void main() {
         ),
         isA<FixedItemsState>()
             .having((s) => s.status, 'status', FixedItemsStatus.ready)
+            .having((s) => s.monthSaved, 'monthSaved', isTrue)
             .having((s) => s.items.length, 'items', 3)
             .having((s) => s.twoPayments, 'twoPayments', isFalse)
             .having((s) => s.salary?.totalAfterTax, 'salary', rub(104400)),
@@ -96,10 +97,53 @@ void main() {
       act: (bloc) => bloc.add(const FixedItemsStarted()),
       verify: (bloc) {
         expect(bloc.state.status, FixedItemsStatus.ready);
+        expect(bloc.state.monthSaved, isFalse);
         expect(bloc.state.items, isEmpty);
         expect(bloc.state.salary, isNull);
         expect(bloc.state.twoPayments, isTrue);
         expect(bloc.state.summary.pay, rub(0));
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'an account with no saved month has no month to hold items',
+      setUp: () =>
+          demo.update(const DemoSettings(scenario: DemoScenario.empty)),
+      build: build,
+      act: (bloc) => bloc.add(const FixedItemsStarted()),
+      verify: (bloc) {
+        expect(bloc.state.status, FixedItemsStatus.ready);
+        expect(bloc.state.monthSaved, isFalse);
+        expect(bloc.state.items, isEmpty);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'shows no items for a month that is not saved, whatever the server holds',
+      setUp: () async {
+        // Items that are left over for a month whose salary is gone.
+        await fixedItems.add(march, gym());
+      },
+      build: () => build(month: march),
+      act: (bloc) => bloc.add(const FixedItemsStarted()),
+      verify: (bloc) {
+        expect(bloc.state.monthSaved, isFalse);
+        expect(bloc.state.items, isEmpty);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'does not add an item to a month that is not saved',
+      build: () => build(month: march),
+      act: (bloc) async {
+        bloc.add(const FixedItemsStarted());
+        await bloc.stream.firstWhere((s) => s.status == FixedItemsStatus.ready);
+        bloc.add(FixedItemAdded(gym()));
+      },
+      verify: (bloc) async {
+        expect(bloc.state.items, isEmpty);
+        expect(bloc.state.failedAction, isNull);
+        expect(await fixedItems.items(march), isEmpty);
       },
     );
 

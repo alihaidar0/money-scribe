@@ -74,6 +74,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
   }
 
   Future<void> _onAdded(FixedItemAdded event, Emitter<FixedItemsState> emit) {
+    // The server refuses an item for a month that is not saved.
+    if (!state.monthSaved) return Future.value();
     return _run(event, emit, () async {
       final item = await _fixedItems.add(state.month, event.draft);
       emit(state.copyWith(items: [...state.items, item]));
@@ -183,7 +185,9 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       emit(
         state.copyWith(
           status: FixedItemsStatus.ready,
-          items: items,
+          monthSaved: saved != null,
+          // The server deletes the items with the month.
+          items: saved == null ? const [] : items,
           salary: entry?.result,
           clearSalary: entry == null,
           twoPayments: mode == PaymentMode.twoPayments,

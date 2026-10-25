@@ -318,7 +318,7 @@ Salary step (agreed with the backend; the screens and the fake data follow the a
 
 - [x] Versions on a month and on a fixed item; a save, edit or delete of a stale one is refused and the person chooses what to do
 - [x] A new month starts with the figures of the last saved month (currency, base salary, food allowance, working hours, tax rate, pay schedule); the monthly numbers stay empty
-- [ ] Fixed items need a saved month: "Save this month's salary first" instead of an empty list
+- [x] Fixed items need a saved month: "Save this month's salary first" instead of an empty list
 - [ ] "Copy from last month" for the fixed items of a month, with a confirmation when it already has some, and the refusals worded
 - [ ] Results, payments and balances as the server calculates them, next to the live preview
 - [x] Remote salary and fixed items repositories (month, history, defaults, per-item calls); the copy comes with "Copy from last month"

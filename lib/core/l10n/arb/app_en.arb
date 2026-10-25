@@ -1077,6 +1077,18 @@
   "@fixedItemsEmptyMessage": {
     "description": "Sentence under the title of the empty fixed items."
   },
+  "fixedItemsSaveFirstTitle": "Save this month''s salary first",
+  "@fixedItemsSaveFirstTitle": {
+    "description": "Title shown on the fixed items when the month's salary is not saved yet, so it cannot have any."
+  },
+  "fixedItemsSaveFirstMessage": "Fixed items belong to a saved month. Save its salary, then add them here.",
+  "@fixedItemsSaveFirstMessage": {
+    "description": "Sentence under the title shown on the fixed items of a month whose salary is not saved."
+  },
+  "goToSalaryAction": "Go to salary",
+  "@goToSalaryAction": {
+    "description": "Button of the fixed items of a month whose salary is not saved: opens the Salary screen of that month."
+  },
   "addFixedItemTitle": "Add fixed item",
   "@addFixedItemTitle": {
     "description": "Title of the sheet that adds a fixed item."
