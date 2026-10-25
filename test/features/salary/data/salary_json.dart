@@ -48,7 +48,10 @@ Map<String, Object?> salaryMonthJson({
   int? workingDaysFirstHalf = 10,
   int version = 1,
   List<Map<String, Object?>> fixedItems = const [],
+  List<Map<String, Object?>>? payments,
+  Map<String, Object?>? balances,
 }) {
+  final split = paymentMode == 'two_payments';
   return {
     'id': '0192a000-0000-7000-8000-0000000000aa',
     'month': month,
@@ -71,20 +74,26 @@ Map<String, Object?> salaryMonthJson({
       'tax': '15600.00',
       'total_after_tax': '104400.00',
     },
-    'payments': [
-      {'part': 'first', 'amount': '43500.00'},
-      {'part': 'second', 'amount': '60900.00'},
-    ],
+    'payments':
+        payments ??
+        (split
+            ? [
+                {'part': 'first', 'amount': '43500.00'},
+                {'part': 'second', 'amount': '60900.00'},
+              ]
+            : [
+                {'part': 'first', 'amount': '104400.00'},
+              ]),
     'fixed_items': fixedItems,
     'fixed_totals': {
       'first': {'income': '0.00', 'expense': '0.00'},
       'second': {'income': '0.00', 'expense': '0.00'},
     },
-    'balances': {
-      'first': '43500.00',
-      'second': '60900.00',
-      'month': '104400.00',
-    },
+    'balances':
+        balances ??
+        (split
+            ? {'first': '43500.00', 'second': '60900.00', 'month': '104400.00'}
+            : {'first': '104400.00', 'second': null, 'month': '104400.00'}),
     'version': version,
     'created_at': '2026-10-24T08:00:00Z',
     'updated_at': '2026-10-24T08:00:00Z',

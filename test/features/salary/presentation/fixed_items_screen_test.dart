@@ -3,17 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/money/currency.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
+import '../../../support/fake_server_salary_repository.dart';
 import 'salary_test_helpers.dart';
 
 const twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
@@ -695,6 +699,58 @@ void main() {
       expect(find.text('النسخ من الشهر الماضي؟'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'نسخ'), findsOneWidget);
       expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
+    });
+  });
+
+  group('the balances the server calculated', () {
+    // Not what the items add up to, so the server's can be told apart.
+    const month = Money(1234567, Currency.rub);
+
+    FakeServerSalaryRepository serverSalary([
+      DemoSettings settings = const DemoSettings(),
+    ]) {
+      final demo = DemoController(initial: settings, latency: Duration.zero);
+      return FakeServerSalaryRepository(FakeSalaryRepository(demo: demo))
+        ..balancesOf = (_, _) => const SalaryBalances(
+          first: Money(111100, Currency.rub),
+          second: Money(222200, Currency.rub),
+          month: month,
+        );
+    }
+
+    testWidgets('are the balance shown under the items', (tester) async {
+      await pumpFixedItems(tester, salaryRepository: serverSalary());
+
+      expect(figure('12,345.67 ₽'), findsOneWidget);
+      expect(figure('74,900.00 ₽'), findsNothing);
+    });
+
+    testWidgets("stay the server's after an item is added", (tester) async {
+      await pumpFixedItems(tester, salaryRepository: serverSalary());
+
+      await openAddSheet(tester);
+      await fillSheet(tester, name: 'Gym', amount: '1200');
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gym'), findsOneWidget);
+      expect(figure('12,345.67 ₽'), findsOneWidget);
+    });
+
+    testWidgets('are those of each part for a month paid twice', (
+      tester,
+    ) async {
+      await pumpFixedItems(
+        tester,
+        settings: twoPayments,
+        salaryRepository: serverSalary(twoPayments),
+      );
+
+      expect(figure('1,111.00 ₽'), findsOneWidget);
+
+      await choosePart(tester, 'Part 2');
+
+      expect(figure('2,222.00 ₽'), findsOneWidget);
     });
   });
 

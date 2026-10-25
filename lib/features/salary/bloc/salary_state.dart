@@ -62,6 +62,7 @@ final class SalaryState extends Equatable {
     this.saveStatus = SalarySaveStatus.idle,
     this.deleteStatus = SalaryDeleteStatus.idle,
     this.formVersion = 0,
+    this.figures,
   });
 
   final SalaryStatus status;
@@ -91,6 +92,10 @@ final class SalaryState extends Equatable {
   /// change it.
   final int formVersion;
 
+  /// What the server calculated for the month as it is saved, or `null` for a
+  /// month that is not saved or whose data is not the server's.
+  final SalaryFigures? figures;
+
   /// The calculation of the form, or `null` while a required number is
   /// missing.
   SalaryCalculation? get calculation {
@@ -104,6 +109,23 @@ final class SalaryState extends Equatable {
       SalaryComputed(:final result) => result,
       _ => null,
     };
+  }
+
+  /// The lines to show: the server's, while the form is the saved month as it
+  /// is, and otherwise what is calculated from what is typed.
+  SalaryResult? get shownResult {
+    final saved = figures;
+    return saved != null && isSaved && !isEdited ? saved.result : result;
+  }
+
+  /// The total after tax the server saved, to put beside the live total while
+  /// the form is being edited; `null` when the month is not saved or the form
+  /// is the saved month as it is (the total shown already is the server's).
+  Money? get savedTotalAfterTax {
+    final saved = figures;
+    return saved != null && isSaved && isEdited
+        ? saved.result.totalAfterTax
+        : null;
   }
 
   /// Whether the month can be saved.
@@ -122,6 +144,8 @@ final class SalaryState extends Equatable {
     SalarySaveStatus? saveStatus,
     SalaryDeleteStatus? deleteStatus,
     int? formVersion,
+    SalaryFigures? figures,
+    bool clearFigures = false,
   }) {
     return SalaryState(
       status: status ?? this.status,
@@ -133,11 +157,12 @@ final class SalaryState extends Equatable {
       saveStatus: saveStatus ?? this.saveStatus,
       deleteStatus: deleteStatus ?? this.deleteStatus,
       formVersion: formVersion ?? this.formVersion,
+      figures: clearFigures ? null : figures ?? this.figures,
     );
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
     status,
     month,
     form,
@@ -147,5 +172,6 @@ final class SalaryState extends Equatable {
     saveStatus,
     deleteStatus,
     formVersion,
+    figures,
   ];
 }

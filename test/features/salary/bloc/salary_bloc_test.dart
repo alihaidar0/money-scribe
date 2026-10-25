@@ -9,6 +9,9 @@ import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/bloc/salary_bloc.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_form.dart';
+import 'package:money_scribe/features/salary/domain/salary_result.dart';
+
+import '../../../support/fake_server_salary_repository.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
@@ -718,5 +721,121 @@ void main() {
         expect(bloc.state.result!.payments, hasLength(2));
       },
     );
+  });
+
+  group('the figures the server calculated', () {
+    late FakeServerSalaryRepository server;
+
+    setUp(() {
+      // The server's food allowance is a ruble more than the app's, so the
+      // two can be told apart on screen.
+      server = FakeServerSalaryRepository(repository)
+        ..resultOf = (result) => SalaryResult(
+          foodAllowance: result.foodAllowance + rub(1),
+          extraHoursPay: result.extraHoursPay,
+          incomeBeforeTax: result.incomeBeforeTax,
+          tax: result.tax,
+          totalAfterTax: result.totalAfterTax,
+          payments: result.payments,
+        );
+    });
+
+    SalaryBloc buildFromServer() {
+      return SalaryBloc(repository: server, now: () => DateTime(2026, 10, 11));
+    }
+
+    Future<void> ready(SalaryBloc bloc) async {
+      bloc.add(const SalaryStarted());
+      await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+    }
+
+    test('a saved month shows the lines the server calculated', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+
+      await ready(bloc);
+
+      expect(bloc.state.figures, isNotNull);
+      expect(bloc.state.result!.foodAllowance, rub(10000));
+      expect(bloc.state.shownResult!.foodAllowance, rub(10001));
+      expect(bloc.state.shownResult, bloc.state.figures!.result);
+      expect(bloc.state.savedTotalAfterTax, isNull);
+    });
+
+    test('an edit shows the live calculation, with the saved total', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await ready(bloc);
+
+      bloc.add(const SalaryFieldChanged(SalaryField.extraHours, '5'));
+      await bloc.stream.firstWhere((s) => s.isEdited);
+
+      expect(bloc.state.shownResult, bloc.state.result);
+      expect(bloc.state.shownResult!.foodAllowance, rub(10000));
+      expect(bloc.state.savedTotalAfterTax, rub(104400));
+    });
+
+    test(
+      'saving shows the lines the server calculated for what it saved',
+      () async {
+        final bloc = buildFromServer();
+        addTearDown(bloc.close);
+        await ready(bloc);
+        bloc.add(const SalaryFieldChanged(SalaryField.extraHours, '5'));
+        await bloc.stream.firstWhere((s) => s.isEdited);
+
+        bloc.add(const SalarySaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == SalarySaveStatus.saved,
+        );
+
+        expect(bloc.state.isEdited, isFalse);
+        expect(bloc.state.figures!.result.foodAllowance, rub(10001));
+        expect(bloc.state.shownResult, bloc.state.figures!.result);
+        // The extra hours of the saved month are the ones that were typed.
+        expect(bloc.state.shownResult!.extraHoursPay, isNot(rub(10000)));
+        expect(bloc.state.savedTotalAfterTax, isNull);
+      },
+    );
+
+    test('a month that is not saved has no figures to show', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+
+      bloc.add(const SalaryStarted(month: YearMonth(2026, 3)));
+      await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+
+      expect(bloc.state.isSaved, isFalse);
+      expect(bloc.state.figures, isNull);
+      expect(bloc.state.shownResult, bloc.state.result);
+      expect(bloc.state.savedTotalAfterTax, isNull);
+    });
+
+    test('loading another month drops the figures of the one before', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await ready(bloc);
+      expect(bloc.state.figures, isNotNull);
+
+      bloc.add(const SalaryMonthSelected(YearMonth(2026, 3)));
+      await bloc.stream.firstWhere(
+        (s) =>
+            s.month == const YearMonth(2026, 3) &&
+            s.status == SalaryStatus.ready,
+      );
+
+      expect(bloc.state.figures, isNull);
+    });
+
+    test("data that is not the server's is calculated here", () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+
+      bloc.add(const SalaryStarted());
+      await bloc.stream.firstWhere((s) => s.status == SalaryStatus.ready);
+
+      expect(bloc.state.figures, isNull);
+      expect(bloc.state.shownResult, bloc.state.result);
+    });
   });
 }

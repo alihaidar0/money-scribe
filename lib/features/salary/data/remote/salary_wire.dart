@@ -6,8 +6,10 @@ import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/domain/salary_defaults.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
 import 'package:money_scribe/features/salary/domain/salary_inputs.dart';
 import 'package:money_scribe/features/salary/domain/salary_month.dart';
+import 'package:money_scribe/features/salary/domain/salary_result.dart';
 
 /// Turns what the server sends into the types of the app, and back. An answer
 /// the app cannot read (an unknown currency, an amount that does not fit its
@@ -50,6 +52,7 @@ abstract final class SalaryWire {
     final month = YearMonth.tryParse(wire.month);
     if (month == null) throw const ServerException();
     final currency = SalaryWire.currency(wire.currency);
+    final mode = paymentMode(wire.paymentMode);
     return SalaryMonth(
       month: month,
       inputs: SalaryInputs(
@@ -59,12 +62,62 @@ abstract final class SalaryWire {
         workingHoursInMonth: wire.workingHoursInMonth,
         extraHoursHundredths: wire.extraHoursHundredths,
         taxRateBasisPoints: wire.taxRateBasisPoints,
-        paymentMode: paymentMode(wire.paymentMode),
+        paymentMode: mode,
         workingDaysFirstHalf: wire.workingDaysFirstHalf ?? 0,
       ),
       firstPayDay: wire.firstPayDay,
       secondPayDay: wire.secondPayDay,
       version: wire.version,
+      figures: figures(wire, currency, mode),
+    );
+  }
+
+  /// What the server calculated for [wire]. The payments must be the ones
+  /// the month's [mode] has and add up to the total after tax; otherwise the
+  /// answer breaks the contract.
+  static SalaryFigures figures(
+    api.SalaryMonth wire,
+    Currency currency,
+    PaymentMode mode,
+  ) {
+    Money? payment(api.PartEnum part) {
+      for (final entry in wire.payments) {
+        if (entry.partValue == part) return money(entry.amount, currency);
+      }
+      return null;
+    }
+
+    final first = payment(api.PartEnum.first);
+    final second = payment(api.PartEnum.second);
+    final twoPayments = mode == PaymentMode.twoPayments;
+    final payments = [?first, ?second];
+    if (first == null ||
+        (second != null) != twoPayments ||
+        wire.payments.length != payments.length) {
+      throw const ServerException();
+    }
+
+    final results = wire.results;
+    final totalAfterTax = money(results.totalAfterTax, currency);
+    final paid = payments.fold(Money.zero(currency), (sum, pay) => sum + pay);
+    if (paid != totalAfterTax) throw const ServerException();
+
+    final balances = wire.balances;
+    final secondBalance = balances.second;
+    return SalaryFigures(
+      result: SalaryResult(
+        foodAllowance: money(results.foodAllowance, currency),
+        extraHoursPay: money(results.extraHoursPay, currency),
+        incomeBeforeTax: money(results.incomeBeforeTax, currency),
+        tax: money(results.tax, currency),
+        totalAfterTax: totalAfterTax,
+        payments: payments,
+      ),
+      balances: SalaryBalances(
+        first: money(balances.first, currency),
+        second: secondBalance == null ? null : money(secondBalance, currency),
+        month: money(balances.month, currency),
+      ),
     );
   }
 

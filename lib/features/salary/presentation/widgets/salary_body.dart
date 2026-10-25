@@ -222,10 +222,13 @@ typedef _HeroFigures = (
   YearMonth,
   int,
   int,
+  Money?,
 );
 
 /// The total after tax, and for a month paid in two payments the pay of each
-/// part and the day it is paid.
+/// part and the day it is paid. It shows what the server calculated for a saved
+/// month as it is, and what is calculated from the form once it is edited, with
+/// the saved total beside it.
 class _Hero extends StatelessWidget {
   const new();
 
@@ -237,15 +240,24 @@ class _Hero extends StatelessWidget {
 
     final state = context.select<SalaryBloc, _HeroFigures>(
       (bloc) => (
-        bloc.state.result,
+        bloc.state.shownResult,
         bloc.state.form.paymentMode,
         bloc.state.form.currency,
         bloc.state.month,
         bloc.state.form.firstPayDay,
         bloc.state.form.secondPayDay,
+        bloc.state.savedTotalAfterTax,
       ),
     );
-    final (result, mode, currency, month, firstPayDay, secondPayDay) = state;
+    final (
+      result,
+      mode,
+      currency,
+      month,
+      firstPayDay,
+      secondPayDay,
+      savedTotal,
+    ) = state;
     final zero = Money.zero(currency);
     final payments = result?.payments ?? [zero, zero];
 
@@ -270,6 +282,11 @@ class _Hero extends StatelessWidget {
             amount: formatter.format(payments.last),
           ),
         ],
+        if (savedTotal != null)
+          HeroDetail(
+            label: l10n.salarySavedTotalLabel,
+            amount: formatter.format(savedTotal),
+          ),
       ],
     );
   }
@@ -284,7 +301,7 @@ class _Results extends StatelessWidget {
       (bloc) => bloc.state.form,
     );
     final result = context.select<SalaryBloc, SalaryResult?>(
-      (bloc) => bloc.state.result,
+      (bloc) => bloc.state.shownResult,
     );
 
     return SalaryResultsSection(inputs: form.inputs, result: result);

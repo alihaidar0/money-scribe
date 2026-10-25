@@ -21,6 +21,7 @@ final class FixedItemsState extends Equatable {
     this.monthSaved = false,
     this.items = const [],
     this.salary,
+    this.balances,
     this.twoPayments = false,
     this.currency = Currency.rub,
     this.part = FixedItemPart.first,
@@ -44,6 +45,11 @@ final class FixedItemsState extends Equatable {
 
   /// What the month's salary comes to, or `null` when none was saved.
   final SalaryResult? salary;
+
+  /// The balances the server calculated for the items of the month, or `null`
+  /// when it gave none or the items changed since: the summary then adds them
+  /// up here until the server's arrive.
+  final SalaryBalances? balances;
 
   /// Whether the month is paid in two payments, so its items have parts.
   final bool twoPayments;
@@ -83,6 +89,7 @@ final class FixedItemsState extends Equatable {
       currency: currency,
       twoPayments: twoPayments,
       part: part,
+      balances: balances,
     );
   }
 
@@ -92,6 +99,8 @@ final class FixedItemsState extends Equatable {
     List<FixedItem>? items,
     SalaryResult? salary,
     bool clearSalary = false,
+    SalaryBalances? balances,
+    bool clearBalances = false,
     bool? twoPayments,
     Currency? currency,
     FixedItemPart? part,
@@ -109,6 +118,7 @@ final class FixedItemsState extends Equatable {
       monthSaved: monthSaved ?? this.monthSaved,
       items: items ?? this.items,
       salary: clearSalary ? null : salary ?? this.salary,
+      balances: clearBalances ? null : balances ?? this.balances,
       twoPayments: twoPayments ?? this.twoPayments,
       currency: currency ?? this.currency,
       part: part ?? this.part,
@@ -128,6 +138,7 @@ final class FixedItemsState extends Equatable {
     monthSaved,
     items,
     salary,
+    balances,
     twoPayments,
     currency,
     part,

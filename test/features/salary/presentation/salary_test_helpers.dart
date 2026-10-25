@@ -108,6 +108,7 @@ Future<DemoController> pumpFixedItems(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
 }) async {
   final demo = await pumpApp(
@@ -115,6 +116,7 @@ Future<DemoController> pumpFixedItems(
     settings: settings,
     language: language,
     size: size,
+    salaryRepository: salaryRepository,
     fixedItemsRepository: fixedItemsRepository,
   );
   final arabic = language == AppLanguage.arabic;

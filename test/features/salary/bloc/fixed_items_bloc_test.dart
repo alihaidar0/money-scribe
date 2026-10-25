@@ -11,6 +11,9 @@ import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_reposito
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
+import 'package:money_scribe/features/salary/domain/salary_figures.dart';
+
+import '../../../support/fake_server_salary_repository.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
@@ -596,6 +599,140 @@ void main() {
         expect(bloc.state.items, isEmpty);
         expect(bloc.state.copyRefusal, isNull);
         expect(bloc.state.copying, isFalse);
+      },
+    );
+  });
+
+  group('the balances the server calculated', () {
+    late FakeServerSalaryRepository server;
+
+    // Numbers the app would never add up itself, so the server's can be told
+    // apart from its own.
+    final first = rub(12345);
+    final second = rub(54321);
+    final month = rub(66666);
+
+    setUp(() {
+      server = FakeServerSalaryRepository(salary)
+        ..balancesOf = (_, _) =>
+            SalaryBalances(first: first, second: second, month: month);
+    });
+
+    FixedItemsBloc buildFromServer({YearMonth forMonth = october}) {
+      return FixedItemsBloc(
+        fixedItems: fixedItems,
+        salary: server,
+        month: forMonth,
+      );
+    }
+
+    test('are the balance shown, whatever the items add up to', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+
+      await start(bloc);
+
+      expect(bloc.state.balances, isNotNull);
+      expect(bloc.state.summary.balance, month);
+      expect(bloc.state.summary.wholeMonth, isNull);
+    });
+
+    test('are those of each part for a month paid in two payments', () async {
+      demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments));
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await start(bloc);
+
+      expect(bloc.state.summary.balance, first);
+      expect(bloc.state.summary.wholeMonth, month);
+
+      bloc.add(const FixedItemsPartSelected(FixedItemPart.second));
+      await bloc.stream.firstWhere((s) => s.part == FixedItemPart.second);
+
+      expect(bloc.state.summary.balance, second);
+      expect(bloc.state.summary.wholeMonth, month);
+    });
+
+    test('are asked for again after an item changed', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await start(bloc);
+      final seen = <SalaryBalances?>[];
+      final listening = bloc.stream.listen((s) => seen.add(s.balances));
+
+      bloc.add(FixedItemAdded(gym()));
+      await bloc.stream.firstWhere(
+        (s) => s.items.length == 4 && s.balances != null,
+      );
+      await listening.cancel();
+
+      // They were dropped while the server had not answered, and came back.
+      expect(seen, contains(isNull));
+      expect(
+        seen.last,
+        SalaryBalances(first: first, second: second, month: month),
+      );
+      expect(server.monthReads, 2);
+    });
+
+    test('are asked for again after a change, a delete and a copy', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await start(bloc);
+
+      bloc.add(FixedItemChanged(bloc.state.items.first.id, gym()));
+      await bloc.stream.firstWhere(
+        (s) => s.balances != null && server.monthReads == 2,
+      );
+      bloc.add(FixedItemDeleted(bloc.state.items.first.id));
+      await bloc.stream.firstWhere(
+        (s) => s.balances != null && server.monthReads == 3,
+      );
+      bloc.add(const FixedItemsCopied());
+      await bloc.stream.firstWhere(
+        (s) => s.balances != null && server.monthReads == 4,
+      );
+
+      expect(bloc.state.balances, isNotNull);
+    });
+
+    test('are added up here when the server cannot be asked again', () async {
+      final bloc = buildFromServer();
+      addTearDown(bloc.close);
+      await start(bloc);
+      server.failReads = true;
+
+      bloc.add(FixedItemAdded(gym()));
+      await bloc.stream.firstWhere((s) => s.items.length == 4);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(bloc.state.balances, isNull);
+      // 104,400.00 less 29,500.00 of items less the gym.
+      expect(bloc.state.summary.balance, rub(73700));
+      expect(bloc.state.failedAction, isNull);
+    });
+
+    test('are none for a month that is not saved', () async {
+      final bloc = buildFromServer(forMonth: march);
+      addTearDown(bloc.close);
+
+      await start(bloc);
+
+      expect(bloc.state.balances, isNull);
+    });
+
+    test(
+      "are none for data that is not the server's, and not asked for",
+      () async {
+        final bloc = build();
+        addTearDown(bloc.close);
+        await start(bloc);
+
+        bloc.add(FixedItemAdded(gym()));
+        await bloc.stream.firstWhere((s) => s.items.length == 4);
+
+        expect(bloc.state.balances, isNull);
+        expect(bloc.state.summary.balance, rub(73700));
       },
     );
   });

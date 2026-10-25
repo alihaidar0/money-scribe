@@ -39,6 +39,18 @@ SalaryMonth _month({
   );
 }
 
+/// [month] as it was typed, without the figures the server calculated, which
+/// have their own tests.
+SalaryMonth _withoutFigures(SalaryMonth month) {
+  return SalaryMonth(
+    month: month.month,
+    inputs: month.inputs,
+    firstPayDay: month.firstPayDay,
+    secondPayDay: month.secondPayDay,
+    version: month.version,
+  );
+}
+
 void main() {
   late FakeHttpAdapter server;
   late ResponseBody Function(RequestOptions options) answer;
@@ -62,7 +74,7 @@ void main() {
 
       expect(lastRequest().method, 'GET');
       expect(lastRequest().path, '/api/v1/salary/months/2026-10/');
-      expect(month, _month(version: 4));
+      expect(_withoutFigures(month!), _month(version: 4));
     });
 
     test('a month that was not saved is null', () async {
@@ -161,6 +173,142 @@ void main() {
     });
   });
 
+  group('the figures the server calculated', () {
+    test(
+      'are the lines of the salary, the payments and the balances',
+      () async {
+        answer = (_) => jsonBody(200, salaryMonthJson());
+
+        final figures = (await build().month(_october))!.figures!;
+
+        expect(figures.result.foodAllowance, _rub(10000));
+        expect(figures.result.extraHoursPay, _rub(10000));
+        expect(figures.result.incomeBeforeTax, _rub(120000));
+        expect(figures.result.tax, _rub(15600));
+        expect(figures.result.totalAfterTax, _rub(104400));
+        expect(figures.result.payments, [_rub(43500), _rub(60900)]);
+        expect(figures.balances.first, _rub(43500));
+        expect(figures.balances.second, _rub(60900));
+        expect(figures.balances.month, _rub(104400));
+      },
+    );
+
+    test(
+      'of a month with one payment have one payment and no second balance',
+      () async {
+        answer = (_) => jsonBody(
+          200,
+          salaryMonthJson(
+            paymentMode: 'one_payment',
+            workingDaysFirstHalf: null,
+          ),
+        );
+
+        final figures = (await build().month(_october))!.figures!;
+
+        expect(figures.result.payments, [_rub(104400)]);
+        expect(figures.balances.first, _rub(104400));
+        expect(figures.balances.second, isNull);
+      },
+    );
+
+    test('keep a balance below zero and the kopecks', () async {
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          balances: {
+            'first': '-1500.25',
+            'second': '60900.00',
+            'month': '59399.75',
+          },
+        ),
+      );
+
+      final balances = (await build().month(_october))!.figures!.balances;
+
+      expect(balances.first, const Money(-150025, Currency.rub));
+      expect(balances.month, const Money(5939975, Currency.rub));
+    });
+
+    test('are read in the answer of a save', () async {
+      answer = (_) => jsonBody(201, salaryMonthJson());
+
+      final saved = await build().save(_month());
+
+      expect(saved.figures!.result.totalAfterTax, _rub(104400));
+    });
+
+    test('are read for every month of the history', () async {
+      answer = (_) => jsonBody(200, {
+        'next': null,
+        'previous': null,
+        'results': [salaryMonthJson(), salaryMonthJson(month: '2026-09')],
+      });
+
+      final months = await build().savedMonths();
+
+      expect(
+        months.map((month) => month.figures?.result.totalAfterTax),
+        everyElement(_rub(104400)),
+      );
+    });
+
+    test('payments that do not add up to the total break the contract', () {
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          payments: [
+            {'part': 'first', 'amount': '43500.00'},
+            {'part': 'second', 'amount': '60900.01'},
+          ],
+        ),
+      );
+
+      expect(build().month(_october), throwsA(isA<ServerException>()));
+    });
+
+    test('a payment that the mode does not have breaks the contract', () {
+      // Two payments listed for a month paid in one.
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          paymentMode: 'one_payment',
+          workingDaysFirstHalf: null,
+          payments: [
+            {'part': 'first', 'amount': '43500.00'},
+            {'part': 'second', 'amount': '60900.00'},
+          ],
+        ),
+      );
+
+      expect(build().month(_october), throwsA(isA<ServerException>()));
+    });
+
+    test('a missing payment breaks the contract', () {
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          payments: [
+            {'part': 'first', 'amount': '104400.00'},
+          ],
+        ),
+      );
+
+      expect(build().month(_october), throwsA(isA<ServerException>()));
+    });
+
+    test('a balance that is not an amount breaks the contract', () {
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          balances: {'first': 'x', 'second': '60900.00', 'month': '104400.00'},
+        ),
+      );
+
+      expect(build().month(_october), throwsA(isA<ServerException>()));
+    });
+  });
+
   group('defaults', () {
     test('asks for the month and reads what the server pre-fills', () async {
       answer = (_) => jsonBody(200, {
@@ -223,7 +371,7 @@ void main() {
       expect(lastRequest().path, '/api/v1/salary/months/2026-10/');
       expect(lastRequest().headers['If-None-Match'], '*');
       expect(lastRequest().headers.containsKey('If-Match'), isFalse);
-      expect(saved, _month(version: 1));
+      expect(_withoutFigures(saved), _month(version: 1));
     });
 
     test('sends the inputs, with the amounts as decimal strings', () async {

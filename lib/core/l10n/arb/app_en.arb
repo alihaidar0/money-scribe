@@ -1089,6 +1089,10 @@
   "@goToSalaryAction": {
     "description": "Button of the fixed items of a month whose salary is not saved: opens the Salary screen of that month."
   },
+  "salarySavedTotalLabel": "Saved total",
+  "@salarySavedTotalLabel": {
+    "description": "Label of the total after tax the server saved, shown under the live total while the salary of a saved month is being edited."
+  },
   "copyFromLastMonthAction": "Copy from last month",
   "@copyFromLastMonthAction": {
     "description": "Button of the fixed items that adds a copy of the fixed items of the last saved month to this one."
