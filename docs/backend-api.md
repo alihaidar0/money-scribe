@@ -14,6 +14,10 @@ Until a contract is pinned the app keeps reading invented data from its fake rep
 ([`architecture.md`](architecture.md), *Fake data now, the server later*), and nothing on this page
 runs: every check below is skipped without `api/openapi.yaml`.
 
+The endpoints after authentication and salary (accounts, categories, transactions, debts, reports, the
+Overview, sessions and CSV) are agreed with the backend and described in
+[`backend-data-api.md`](backend-data-api.md); they join this page once their contract is pinned.
+
 ```mermaid
 flowchart LR
     BE["Backend release vX.Y.Z<br/>asset: openapi.yaml"] -->|"scripts/sync-api.sh vX.Y.Z"| PIN["api/openapi.yaml<br/>api/BACKEND_VERSION"]
