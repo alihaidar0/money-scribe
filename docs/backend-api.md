@@ -736,10 +736,6 @@ endpoint.
   call (`ApiFailure`). A `429` without it (the contract says it always has one) gets a wait of 30
   seconds, so the screen never counts down from zero.
 - **The platform** is only `android` or `ios`; the contract lists `web`, which the app never sends.
-- **`If-None-Match`** is described in words but not declared as a parameter of `PUT /salary/months/{month}/`,
-  so the generated method cannot send it. `RemoteSalaryRepository` makes the creating `PUT` with the same
-  Dio and the header, in one private method; when the contract declares the header, the generated method
-  takes it and that method goes.
 - **Required fields of a `PATCH`.** The generated body of the settings and the fixed item `PATCH` marks every
   field required, so an edit sends them all: the fixed item sends its whole draft, and the settings edit
   reads the settings first and sends them with `If-Match`.
