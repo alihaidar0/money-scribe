@@ -13,7 +13,8 @@ is used by the build workflow only (job `distribute-firebase` in `.github/workfl
 | Releases kept in App Distribution | only the newest (older ones are deleted after each upload) | all (Firebase removes a release after 150 days) |
 
 The setup is done **once per environment**, in this order: the Firebase console (section 1), Google
-Cloud (section 2), GitHub (section 3). Nothing in the repository changes between environments.
+Cloud (section 2), GitHub (section 3). Nothing in the repository changes between environments;
+the one repository-wide setting (an allowed action) is needed once, at the start of section 3.
 
 No key is stored anywhere. The job signs in to Google Cloud with the identity token of the
 workflow run (Workload Identity Federation) and acts as a service account whose only role is
@@ -109,9 +110,22 @@ gcloud iam workload-identity-pools providers describe github-actions \
   --format="value(attributeCondition)"     # the repository and the environment
 ```
 
-## 3. GitHub (per environment)
+## 3. GitHub
 
-Repository → **Settings** → **Environments** → the environment (`staging` or `production`) →
+**Once for the repository: allow the sign-in action.** The repository only runs actions from
+GitHub and from a short list ([`github-setup.md`](github-setup.md), section 2). Without the entry
+below, GitHub refuses to start the whole Build workflow ("Startup failure": the action
+`google-github-actions/auth` is not allowed). Repository → **Settings** → **Actions** →
+**General** → **Allowed actions**: add one line and save.
+
+```text
+google-github-actions/auth@*
+```
+
+The workflow pins the action to a full commit SHA, which the setting "Require actions to be
+pinned to a full-length commit SHA" demands anyway.
+
+**Per environment: three variables.** Repository → **Settings** → **Environments** → the environment (`staging` or `production`) →
 **Environment variables** → **Add environment variable**, three times. They are variables, not
 secrets: none of them lets anyone do anything without the identity token of a run that the
 provider accepts. Paste each value as printed, with no quotes or spaces.
@@ -143,6 +157,7 @@ shape stops the job with a message that names the variable.
 | --- | --- |
 | The job is skipped ("not set up") | The three variables are empty in this GitHub environment |
 | The job stops on a variable | The message names it; the value has the wrong shape or extra characters |
+| The whole Build run ends with "Startup failure" | The action `google-github-actions/auth` is not in the list of allowed actions (section 3) |
 | The Google sign-in step is refused | The provider condition does not match the repository or the environment name, or the APIs of section 2 are not on |
 | The upload is refused (403) | The role of the service account is missing, or the App Distribution API is not on |
 | The upload says the app is not found | `FIREBASE_APP_ID` belongs to another project, or it is not the Android app of this environment |
