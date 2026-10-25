@@ -10,11 +10,13 @@ import 'package:money_scribe/features/salary/bloc/fixed_items_bloc.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
 const october = YearMonth(2026, 10);
 const march = YearMonth(2026, 3);
+const august = YearMonth(2026, 8);
 
 FixedItemDraft gym({FixedItemPart part = FixedItemPart.first}) {
   return FixedItemDraft(
@@ -32,8 +34,8 @@ void main() {
 
   setUp(() {
     demo = DemoController(latency: Duration.zero);
-    fixedItems = FakeFixedItemsRepository(demo: demo);
     salary = FakeSalaryRepository(demo: demo);
+    fixedItems = FakeFixedItemsRepository(demo: demo, salary: salary);
   });
 
   FixedItemsBloc build({YearMonth month = october}) {
@@ -455,6 +457,146 @@ void main() {
       },
       wait: const Duration(milliseconds: 50),
       verify: (bloc) => expect(bloc.state.failedAction, isNull),
+    );
+  });
+
+  group('FixedItemsCopied', () {
+    Future<void> copied(FixedItemsBloc bloc) {
+      return bloc.stream.firstWhere((s) => !s.copying);
+    }
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'adds the items of the month before to the ones the month has',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const FixedItemsCopied());
+        await bloc.stream.firstWhere((s) => s.items.length == 6);
+      },
+      verify: (bloc) {
+        expect(names(bloc), [
+          'Scholarship',
+          'Rent',
+          'Services',
+          'Scholarship',
+          'Rent',
+          'Services',
+        ]);
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.copyRefusal, isNull);
+      },
+    );
+
+    test('says it is copying until the server has answered', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      await start(bloc);
+      final copying = <bool>[];
+      final listening = bloc.stream.listen((s) => copying.add(s.copying));
+
+      bloc.add(const FixedItemsCopied());
+      await copied(bloc);
+      await Future<void>.delayed(Duration.zero);
+      await listening.cancel();
+
+      expect(copying.first, isTrue);
+      expect(copying.last, isFalse);
+      expect(bloc.state.copying, isFalse);
+    });
+
+    test('a second press while one copy runs is dropped', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      await start(bloc);
+
+      bloc
+        ..add(const FixedItemsCopied())
+        ..add(const FixedItemsCopied());
+      await copied(bloc);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(bloc.state.items, hasLength(6));
+    });
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'the oldest saved month is told it has nothing to copy from',
+      build: () => build(month: august),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const FixedItemsCopied());
+        await bloc.stream.firstWhere((s) => s.copyRefusal != null);
+      },
+      verify: (bloc) {
+        expect(bloc.state.copyRefusal, FixedItemsCopyRefusal.noEarlierMonth);
+        expect(bloc.state.items, hasLength(3));
+        // A refusal is not a failure: asking again changes nothing.
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.copying, isFalse);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'the next action clears the refusal',
+      build: () => build(month: august),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const FixedItemsCopied());
+        await bloc.stream.firstWhere((s) => s.copyRefusal != null);
+        bloc.add(FixedItemAdded(gym()));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.copyRefusal, isNull);
+        expect(bloc.state.items, hasLength(4));
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'a copy the server does not accept keeps the list and can be retried',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        demo.update(const DemoSettings(save: DemoSave.fails));
+        bloc.add(const FixedItemsCopied());
+        await bloc.stream.firstWhere((s) => s.failedAction != null);
+        demo.update(const DemoSettings());
+        bloc.add(bloc.state.failedAction!);
+        await bloc.stream.firstWhere((s) => s.items.length == 6);
+      },
+      verify: (bloc) {
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.copying, isFalse);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'the failure of a copy keeps the items as they were',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        demo.update(const DemoSettings(save: DemoSave.fails));
+        bloc.add(const FixedItemsCopied());
+        await bloc.stream.firstWhere((s) => s.failedAction != null);
+      },
+      verify: (bloc) {
+        expect(bloc.state.items, hasLength(3));
+        expect(bloc.state.failedAction, isA<FixedItemsCopied>());
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'does nothing for a month that is not saved',
+      build: () => build(month: march),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const FixedItemsCopied());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.items, isEmpty);
+        expect(bloc.state.copyRefusal, isNull);
+        expect(bloc.state.copying, isFalse);
+      },
     );
   });
 

@@ -85,6 +85,10 @@ Future<void> main() async {
           language: () => _accountLanguage(languageRepository),
           isSignedIn: () => authRepository.isSignedIn,
         );
+  // The fake fixed items ask the fake salary which months are saved.
+  final salary = apiDio == null
+      ? FakeSalaryRepository(demo: demo)
+      : RemoteSalaryRepository.create(dio: apiDio);
   // The app lock lives on the device. A signed-in person who has it on starts
   // on the lock screen, which is known before the first frame so no screen of
   // the app shows first.
@@ -118,11 +122,9 @@ Future<void> main() async {
       accountLocaleRepository: settings,
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
       overviewRepository: FakeOverviewRepository(demo: demo),
-      salaryRepository: apiDio == null
-          ? FakeSalaryRepository(demo: demo)
-          : RemoteSalaryRepository.create(dio: apiDio),
+      salaryRepository: salary,
       fixedItemsRepository: apiDio == null
-          ? FakeFixedItemsRepository(demo: demo)
+          ? FakeFixedItemsRepository(demo: demo, salary: salary)
           : RemoteFixedItemsRepository.create(dio: apiDio),
       transactionsRepository: transactions,
       accountsRepository: FakeAccountsRepository(

@@ -63,6 +63,7 @@ Widget buildApp({
 }) {
   final demoController = demo ?? DemoController(latency: Duration.zero);
   final transactions = FakeTransactionsRepository(demo: demoController);
+  final salary = salaryRepository ?? FakeSalaryRepository(demo: demoController);
   final account =
       authRepository ??
       FakeAuthRepository(demo: demoController, signedIn: signedIn);
@@ -94,10 +95,10 @@ Widget buildApp({
     ),
     csvTransferRepository: FakeCsvTransferRepository(demo: demoController),
     overviewRepository: FakeOverviewRepository(demo: demoController),
-    salaryRepository:
-        salaryRepository ?? FakeSalaryRepository(demo: demoController),
+    salaryRepository: salary,
     fixedItemsRepository:
-        fixedItemsRepository ?? FakeFixedItemsRepository(demo: demoController),
+        fixedItemsRepository ??
+        FakeFixedItemsRepository(demo: demoController, salary: salary),
     transactionsRepository: transactions,
     accountsRepository: FakeAccountsRepository(
       demo: demoController,

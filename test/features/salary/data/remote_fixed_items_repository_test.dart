@@ -7,6 +7,7 @@ import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/network/idempotency_keys.dart';
 import 'package:money_scribe/features/salary/data/remote/remote_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
+import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
 
 import '../../../support/fake_http_adapter.dart';
 import 'salary_json.dart';
@@ -247,6 +248,146 @@ void main() {
       expect(
         build().delete(_october, _id, version: 2),
         throwsA(isA<StaleRecordException>()),
+      );
+    });
+  });
+
+  group('copyFromPrevious', () {
+    Matcher refusedWith(FixedItemsCopyRefusal refusal) {
+      return throwsA(
+        isA<FixedItemsCopyRefusedException>().having(
+          (e) => e.refusal,
+          'refusal',
+          refusal,
+        ),
+      );
+    }
+
+    test('asks the server to copy, with a key for this action', () async {
+      answer = (_) => jsonBody(
+        200,
+        salaryMonthJson(
+          fixedItems: [
+            fixedItemJson(),
+            fixedItemJson(id: 'second', name: 'Rent', kind: 'expense'),
+          ],
+        ),
+      );
+
+      final items = await build().copyFromPrevious(_october);
+
+      expect(lastRequest().method, 'POST');
+      expect(
+        lastRequest().path,
+        '/api/v1/salary/months/2026-10/fixed-items/copy/',
+      );
+      expect(lastRequest().headers['Idempotency-Key'], '"key-1-aaaaaaaaaaaa"');
+      // No `from`: the server takes the most recent saved month before it.
+      expect(lastRequest().data, <String, Object?>{});
+      expect(items.map((item) => item.name), ['Scholarship', 'Rent']);
+    });
+
+    test('a retry after a lost answer sends the same key', () async {
+      final repository = build();
+      var lost = true;
+      answer = (options) {
+        if (lost) throw connectionLost(options);
+        return jsonBody(200, salaryMonthJson());
+      };
+
+      await expectLater(
+        repository.copyFromPrevious(_october),
+        throwsA(isA<NoConnectionException>()),
+      );
+      lost = false;
+      await repository.copyFromPrevious(_october);
+
+      final keys = [
+        for (final request in server.requests)
+          request.headers['Idempotency-Key'],
+      ];
+      expect(keys, ['"key-1-aaaaaaaaaaaa"', '"key-1-aaaaaaaaaaaa"']);
+    });
+
+    test('the next copy is a new action with a new key', () async {
+      final repository = build();
+      answer = (_) => jsonBody(200, salaryMonthJson());
+
+      await repository.copyFromPrevious(_october);
+      await repository.copyFromPrevious(_october);
+
+      final keys = [
+        for (final request in server.requests)
+          request.headers['Idempotency-Key'],
+      ];
+      expect(keys, ['"key-1-aaaaaaaaaaaa"', '"key-2-aaaaaaaaaaaa"']);
+    });
+
+    test('no earlier saved month is a refusal', () {
+      answer = (_) => jsonBody(404, errorBody('not_found'));
+
+      expect(
+        build().copyFromPrevious(_october),
+        refusedWith(FixedItemsCopyRefusal.noEarlierMonth),
+      );
+    });
+
+    test('too many items is a refusal', () {
+      answer = (_) => jsonBody(409, errorBody('fixed_item_limit_reached'));
+
+      expect(
+        build().copyFromPrevious(_october),
+        refusedWith(FixedItemsCopyRefusal.limitReached),
+      );
+    });
+
+    test('another currency is a refusal', () {
+      answer = (_) => jsonBody(400, errorBody('currency_mismatch'));
+
+      expect(
+        build().copyFromPrevious(_october),
+        refusedWith(FixedItemsCopyRefusal.currencyMismatch),
+      );
+    });
+
+    test('a first try that is still running is reported', () {
+      answer = (_) => jsonBody(409, errorBody('idempotency_in_progress'));
+
+      expect(
+        build().copyFromPrevious(_october),
+        throwsA(isA<RequestInProgressException>()),
+      );
+    });
+
+    test('a refusal ends the action, so the next try has a new key', () async {
+      final repository = build();
+      answer = (_) => jsonBody(404, errorBody('not_found'));
+      await expectLater(
+        repository.copyFromPrevious(_october),
+        refusedWith(FixedItemsCopyRefusal.noEarlierMonth),
+      );
+
+      answer = (_) => jsonBody(200, salaryMonthJson());
+      await repository.copyFromPrevious(_october);
+
+      final keys = [
+        for (final request in server.requests)
+          request.headers['Idempotency-Key'],
+      ];
+      expect(keys, ['"key-1-aaaaaaaaaaaa"', '"key-2-aaaaaaaaaaaa"']);
+    });
+
+    test('a server failure and a busy server are not refusals', () async {
+      answer = (_) => jsonBody(500, errorBody('server_error'));
+      await expectLater(
+        build().copyFromPrevious(_october),
+        throwsA(isA<ServerException>()),
+      );
+
+      answer = (_) => jsonBody(503, errorBody('server_error'));
+      await expectLater(
+        build().copyFromPrevious(_october),
+        throwsA(isA<ServiceUnavailableException>()),
       );
     });
   });
