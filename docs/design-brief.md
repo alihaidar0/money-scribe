@@ -88,7 +88,10 @@ user can add their own items.
 Everyday spending and income: amount, date, category, note and account.
 
 - A list grouped by day, newest first, with a search and filters (category, account,
-  date range).
+  date range). The search looks in the notes only (the box says so); the filters cover the
+  category and the account. Each day shows its total from the server, also when only part of
+  that day is loaded. A search with words shows the results under their dates, without totals.
+- The list loads more as the person scrolls.
 - An add/edit form that is fast to fill in with one hand; amount first.
 - Deleting asks for confirmation.
 
@@ -99,7 +102,12 @@ Money borrowed from others and money lent to others.
 - Each debt: direction (borrowed or lent), person, amount, start date, optional due
   date, note.
 - Partial repayments, each with an amount and date; the remaining amount is shown.
-- States: open, overdue (past the due date) and settled.
+- States: open, overdue (past the due date) and settled. The server works them out in the
+  person's day.
+- The direction and the currency cannot be changed once a debt exists: the edit screen shows
+  them as fixed. A repayment cannot be dated before the debt starts.
+- The totals (owed to the person, owed by the person) are added up per currency: the default
+  currency is shown, with a notice when debts in another currency exist.
 - Sample: lent 10,000 to *Sam*, repaid 4,000, remaining 6,000, due at the end of the
   month.
 
@@ -107,20 +115,29 @@ Money borrowed from others and money lent to others.
 
 The home screen: one month at a glance, with month switching.
 
-- Income (salary and recurring income), fixed costs, purchases, debt movements and the
-  resulting balance.
+- Income (salary, recurring income and other income, the income transactions), fixed costs,
+  purchases, debt movements (repayments only) and the resulting balance, which the server
+  works out so every line can be checked.
+- For a month paid in two payments the same lines for each part and for the whole month.
 - Shortcuts to add a purchase or a repayment.
+- A short notice when the month has records in a currency other than the one shown.
 
 ### 3.6 Reports
 
-- Spending by category (for one month or a range).
-- Month over month comparison.
+- Spending by category for one month or one part: the purchases by category, and the fixed
+  costs as one more slice ("Fixed costs"), so the chart adds up to the spending of the
+  Overview.
+- Month over month and part over part comparison, with the same income and spending as the
+  Overview.
 - Debts summary: total owed to the user, total the user owes, overdue items.
+- The same notice as the Overview when records in another currency are not shown.
 
 ### 3.7 Settings
 
 Account (section 3.9), default currency, theme (system, light, dark), app lock, CSV
-export/import, language, notifications.
+export/import (export asks for the password; import takes a `.csv` or a `.zip` and says
+why each skipped row was skipped), language, notifications, and a Security section with
+the fingerprint sign-in, "Where you are signed in" and "Security activity" (section 3.9).
 
 ### 3.9 Account and sign-in
 
@@ -157,6 +174,23 @@ the app has no password rule of its own, and a password is sent exactly as typed
   secure hardware. Turning it off removes the key from the server and the phone. Every refusal has its own
   message (wrong password, fingerprint not recognised, the server refusing the key without a reason, the most
   phones reached, a wait after too many wrong passwords).
+
+- **Where you are signed in** (Settings, Security) has two tabs. **Active** lists the devices signed in now
+  (at most 10), this one first and marked, each with its name, system, app version, when it signed in and
+  when it was last used. A device opens a sheet with the details (how it signed in, when the session ends,
+  the approximate network) and "End this session", which says that fingerprint sign-in on that phone is
+  turned off too. Under the list, "Sign out of all other devices" asks for the password. **Previous** lists
+  the sessions of the last 90 days that have ended, grouped by device, each with when it ended and why
+  ("Signed out", "Ended by you", "Expired", "Password was changed", "Ended for security"...). A previous
+  session cannot be deleted by the person. A device the person does not recognise is met with one sentence
+  ("End its session and change your password").
+- **Security activity** is a timeline of what happened to the account in the last 90 days, newest first,
+  under day headings: sign-ins, sign-outs, ended sessions, password and email changes, fingerprint keys,
+  exports and imports (a long import is one entry). Nothing in it shows an address, an amount or a note. A
+  sign of a stolen sign-in ("Possible reuse of an old sign-in") is a warning entry with a "Change password"
+  action. A person who is signed out because the account reached ten devices sees that reason on Sign in.
+- **A reference** (a short code) is shown on "Something went wrong" with a Copy action, so a problem can be
+  found on the server without any personal data. A wait after too many requests counts down on the control.
 
 ### 3.8 States every screen needs
 

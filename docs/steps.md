@@ -103,6 +103,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-2 Sign in
 - [x] AUTH-2b Sign in, wrong password
 - [x] AUTH-2c Sign in, too many attempts
+- [ ] AUTH-2d Sign in, signed out because of too many devices
 - [x] AUTH-3 Register
 - [x] AUTH-3b Register, errors
 - [x] AUTH-4 Verify email
@@ -211,6 +212,14 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-9 Default currency
 - [x] ST-10 Sign out
 - [x] ST-11 Delete account
+- [ ] ST-7b Export CSV, confirm the password
+- [ ] ST-7c Export CSV, too many attempts
+- [ ] ST-12 Where you are signed in, Active
+- [ ] ST-12b Where you are signed in, Previous
+- [ ] ST-12c Session details
+- [ ] ST-12d End this session
+- [ ] ST-12e Sign out of all other devices
+- [ ] ST-13 Security activity
 
 ### H. Loading, empty, error and no connection
 
@@ -238,6 +247,8 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] NC-1 No connection, full screen
 - [x] ERR-1 Could not save
 - [x] ERR-2 Something went wrong
+- [ ] ERR-3 Too many requests
+- [ ] ST-14 Sessions and Security activity: loading, empty, error, no connection
 
 ### I. Arabic (right-to-left) screens
 
@@ -249,6 +260,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AR-6 Settings (Arabic)
 - [x] AR-7 Sign in (Arabic)
 - [x] AR-8 Verify email (Arabic)
+- [ ] AR-9 Where you are signed in (Arabic)
 
 ### J. Tablet and web layouts
 
@@ -263,6 +275,16 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
+
+### L. Changes to finished screens after the backend agreements
+
+- [ ] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
+- [ ] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
+- [ ] Overview and Reports: the notice "records in other currencies are not shown here"
+- [ ] Transactions: the search box searches the notes only
+- [ ] Debts: the direction and the currency are fixed when editing; the repayment date cannot be before the start; totals by currency
+- [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
+- [ ] Something went wrong: the reference the person can copy
 
 ## 7. Backend connection
 
@@ -322,5 +344,18 @@ Salary step (agreed with the backend; the screens and the fake data follow the a
 - [x] "Copy from last month" for the fixed items of a month, with a confirmation when it already has some, and the refusals worded
 - [x] Results, payments and balances as the server calculates them, next to the live preview
 - [x] Remote salary and fixed items repositories (month, history, defaults, per-item calls); the copy comes with "Copy from last month"
+
+Money data step (agreed with the backend, backend issues #63 to #69; summary in [`backend-data-api.md`](backend-data-api.md)). Each line waits for its endpoint to be merged and pinned; until then the screens and the fake data follow the agreement:
+
+- [ ] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
+- [ ] Follow a `next` link only when it points at the API address
+- [ ] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
+- [ ] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
+- [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
+- [ ] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
+- [ ] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports), `session_limit_reached` as a sign-in reason
+- [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
+- [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
+- [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
