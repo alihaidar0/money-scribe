@@ -150,6 +150,10 @@ shape stops the job with a message that names the variable.
    the people who should have the builds. Anyone who has the link can join the group, so revoke
    it there if it spreads. A tester opens it on the phone, signs in with a Google account, and
    installs from the page or the notification each new build sends.
+4. **Join the group yourself too.** Owning the Firebase project does not make you a tester: the
+   release page opens for you, but the download answers 403 until your Google account is in the
+   group. Add it under **Testers & Groups** → `testers` → **Add tester**, or open an invite link
+   with that account. The release page then counts it as invited, accepted and downloaded.
 
 ## Troubleshooting
 
@@ -161,6 +165,7 @@ shape stops the job with a message that names the variable.
 | The Google sign-in step is refused | The provider condition does not match the repository or the environment name, or the APIs of section 2 are not on |
 | The upload is refused (403) | The role of the service account is missing, or the App Distribution API is not on |
 | The upload says the app is not found | `FIREBASE_APP_ID` belongs to another project, or it is not the Android app of this environment |
+| The release page opens on the phone, but **Download** shows a 403 error | The Google account of the browser is not in the group `testers`, or it is another account than the one added (section 4, step 4) |
 | Testers get no build | The group alias is not `testers`, or the person has not joined the group yet |
 
 To switch the feature off, empty the three variables: the job is skipped again.
