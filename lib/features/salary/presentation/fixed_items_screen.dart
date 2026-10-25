@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
+import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -120,7 +122,9 @@ class _Body extends StatelessWidget {
     );
     final showParts = context.select<FixedItemsBloc, bool>(
       (bloc) =>
-          bloc.state.status == FixedItemsStatus.ready && bloc.state.twoPayments,
+          bloc.state.status == FixedItemsStatus.ready &&
+          bloc.state.monthSaved &&
+          bloc.state.twoPayments,
     );
 
     return Column(
@@ -231,6 +235,18 @@ class _Content extends StatelessWidget {
     final l10n = context.l10n;
     final state = context.watch<FixedItemsBloc>().state;
     final items = state.shownItems;
+
+    // Fixed items belong to a saved month: the way to one is its salary.
+    if (!state.monthSaved) {
+      return StateView(
+        icon: Icons.event_note_outlined,
+        title: l10n.fixedItemsSaveFirstTitle,
+        message: l10n.fixedItemsSaveFirstMessage,
+        actionLabel: l10n.goToSalaryAction,
+        filledAction: true,
+        onAction: () => context.go(AppRoutes.salaryTab(state.month)),
+      );
+    }
 
     if (items.isEmpty) {
       return StateView(

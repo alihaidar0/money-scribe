@@ -18,6 +18,7 @@ final class FixedItemsState extends Equatable {
   const new({
     required this.month,
     this.status = FixedItemsStatus.loading,
+    this.monthSaved = false,
     this.items = const [],
     this.salary,
     this.twoPayments = false,
@@ -31,6 +32,10 @@ final class FixedItemsState extends Equatable {
 
   /// The month the fixed items belong to.
   final YearMonth month;
+
+  /// Whether the month's salary is saved. Fixed items belong to a saved month,
+  /// so a month that is not saved has none and cannot take any.
+  final bool monthSaved;
 
   /// Every fixed item of the month, in the order they were added.
   final List<FixedItem> items;
@@ -74,6 +79,7 @@ final class FixedItemsState extends Equatable {
 
   FixedItemsState copyWith({
     FixedItemsStatus? status,
+    bool? monthSaved,
     List<FixedItem>? items,
     SalaryResult? salary,
     bool clearSalary = false,
@@ -88,6 +94,7 @@ final class FixedItemsState extends Equatable {
     return FixedItemsState(
       month: month,
       status: status ?? this.status,
+      monthSaved: monthSaved ?? this.monthSaved,
       items: items ?? this.items,
       salary: clearSalary ? null : salary ?? this.salary,
       twoPayments: twoPayments ?? this.twoPayments,
@@ -104,6 +111,7 @@ final class FixedItemsState extends Equatable {
   List<Object?> get props => [
     status,
     month,
+    monthSaved,
     items,
     salary,
     twoPayments,

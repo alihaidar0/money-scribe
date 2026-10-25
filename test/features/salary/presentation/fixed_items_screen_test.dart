@@ -76,6 +76,17 @@ Future<void> fillSheet(
 
 Finder saveButton() => inSheet(find.widgetWithText(FilledButton, 'Save'));
 
+/// The repository of a saved month whose items were all deleted.
+Future<FakeFixedItemsRepository> withoutItems() async {
+  final repository = FakeFixedItemsRepository(
+    demo: DemoController(latency: Duration.zero),
+  );
+  for (final item in await repository.items(october)) {
+    await repository.delete(october, item.id, version: item.version);
+  }
+  return repository;
+}
+
 void main() {
   group('one payment (FIX-1)', () {
     testWidgets('is the second segment of the Salary tab', (tester) async {
@@ -486,10 +497,8 @@ void main() {
   });
 
   group('no fixed items (FIX-6)', () {
-    const empty = DemoSettings(scenario: DemoScenario.empty);
-
     testWidgets('says so and offers Add item', (tester) async {
-      await pumpFixedItems(tester, settings: empty);
+      await pumpFixedItems(tester, fixedItemsRepository: await withoutItems());
 
       expect(find.text('No fixed items yet'), findsOneWidget);
       expect(find.text('Add your rent, services or scholarship.'), findsOne);
@@ -502,7 +511,7 @@ void main() {
     });
 
     testWidgets('Add item adds the first one', (tester) async {
-      await pumpFixedItems(tester, settings: empty);
+      await pumpFixedItems(tester, fixedItemsRepository: await withoutItems());
       await tester.tap(find.widgetWithText(FilledButton, 'Add item'));
       await tester.pumpAndSettle();
       expect(find.text('Add fixed item'), findsOneWidget);
@@ -686,16 +695,57 @@ void main() {
       expect(find.text('September 2026'), findsOneWidget);
     });
 
-    testWidgets('a month with no saved salary has no pay to count', (
+    testWidgets('a month with no saved salary asks to save it first', (
       tester,
     ) async {
-      await pumpApp(tester);
+      await pumpApp(tester, settings: twoPayments);
 
       GoRouter.of(tester.element(find.byType(Scaffold).first))
           .go('/salary/fixed-items?month=2026-03');
       await tester.pumpAndSettle();
 
-      expect(find.text('No fixed items yet'), findsOneWidget);
+      expect(find.text("Save this month's salary first"), findsOneWidget);
+      expect(
+        find.text(
+          'Fixed items belong to a saved month. Save its salary, then add '
+          'them here.',
+        ),
+        findsOneWidget,
+      );
+      // There is nothing to add to, count or split into parts.
+      expect(find.text('No fixed items yet'), findsNothing);
+      expect(find.text('Add item'), findsNothing);
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.text('Balance after fixed items'), findsNothing);
+      expect(find.text('Part 1'), findsNothing);
+      // The segments and the navigation bar stay.
+      expect(find.text('Month'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+    });
+
+    testWidgets('Go to salary opens the salary of that month', (tester) async {
+      await pumpApp(tester);
+
+      GoRouter.of(tester.element(find.byType(Scaffold).first))
+          .go('/salary/fixed-items?month=2026-03');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Go to salary'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('March 2026'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Save month'), findsOneWidget);
+    });
+
+    testWidgets('an empty account has no month to add items to', (
+      tester,
+    ) async {
+      await pumpFixedItems(
+        tester,
+        settings: const DemoSettings(scenario: DemoScenario.empty),
+      );
+
+      expect(find.text("Save this month's salary first"), findsOneWidget);
+      expect(find.text('Add item'), findsNothing);
     });
 
     testWidgets('an address with a month that does not exist shows today', (
@@ -738,10 +788,23 @@ void main() {
       await pumpFixedItems(
         tester,
         language: AppLanguage.arabic,
-        settings: const DemoSettings(scenario: DemoScenario.empty),
+        fixedItemsRepository: await withoutItems(),
       );
 
       expect(find.text('لا توجد بنود ثابتة بعد'), findsOneWidget);
+    });
+
+    testWidgets('a month that is not saved asks to save it, in Arabic', (
+      tester,
+    ) async {
+      await pumpFixedItems(
+        tester,
+        language: AppLanguage.arabic,
+        settings: const DemoSettings(scenario: DemoScenario.empty),
+      );
+
+      expect(find.text('احفظ راتب هذا الشهر أولًا'), findsOneWidget);
+      expect(find.text('الذهاب إلى الراتب'), findsOneWidget);
     });
   });
 
