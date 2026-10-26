@@ -137,17 +137,8 @@ void main() {
   });
 
   group('TransactionFilter', () {
-    bool matches(
-      TransactionFilter filter,
-      Transaction transaction, {
-      String category = 'Groceries',
-      String account = 'Card',
-    }) {
-      return filter.matches(
-        transaction,
-        categoryName: category,
-        accountName: account,
-      );
+    bool matches(TransactionFilter filter, Transaction transaction) {
+      return filter.matches(transaction);
     }
 
     test('an empty filter matches everything and is not active', () {
@@ -157,14 +148,35 @@ void main() {
       expect(matches(filter, transaction()), isTrue);
     });
 
-    test('searches the category, the account and the note, in any case', () {
+    test('searches the note only, in any case', () {
       final item = transaction(note: 'Weekly shopping');
 
-      expect(matches(const TransactionFilter(query: 'groc'), item), isTrue);
-      expect(matches(const TransactionFilter(query: 'CARD'), item), isTrue);
       expect(matches(const TransactionFilter(query: 'weekly'), item), isTrue);
+      expect(matches(const TransactionFilter(query: 'SHOP'), item), isTrue);
       expect(matches(const TransactionFilter(query: 'xyz'), item), isFalse);
       expect(matches(const TransactionFilter(query: '   '), item), isTrue);
+      // Neither the category nor the account is searched.
+      expect(
+        matches(const TransactionFilter(query: 'groceries'), item),
+        isFalse,
+      );
+      expect(matches(const TransactionFilter(query: 'card'), item), isFalse);
+    });
+
+    test('a search of one letter is no search, as for the server', () {
+      final item = transaction(note: 'Weekly shopping');
+      const one = TransactionFilter(query: ' w ');
+
+      expect(one.searchTerm, isNull);
+      expect(one.isSearching, isFalse);
+      expect(matches(one, transaction(note: 'xyz')), isTrue);
+      expect(matches(one, item), isTrue);
+    });
+
+    test('the words sent are trimmed and cut to what the server takes', () {
+      expect(const TransactionFilter(query: '  tax  ').searchTerm, 'tax');
+      expect(TransactionFilter(query: 'x' * 150).searchTerm, 'x' * 100);
+      expect(const TransactionFilter(query: 'tax').isSearching, isTrue);
     });
 
     test('filters by category and by account', () {
@@ -226,8 +238,19 @@ void main() {
   });
 
   group('TransactionGroups.byDay', () {
-    test('lists the newest day first, with its total', () {
-      final days = TransactionGroups.byDay(TransactionsSeed.transactions());
+    List<Transaction> newestFirst() =>
+        TransactionsSeed.transactions().reversed.toList();
+
+    test('lists the newest day first, with the totals it is given', () {
+      final days = TransactionGroups.byDay(
+        newestFirst(),
+        totals: {
+          DateTime(2026, 10, 19): [rub(-640)],
+          DateTime(2026, 10, 17): [rub(-220)],
+          DateTime(2026, 10, 5): [const Money(-128450, Currency.rub)],
+          DateTime(2026, 10): [rub(5000)],
+        },
+      );
 
       expect(days.map((day) => day.date), [
         DateTime(2026, 10, 19),
@@ -235,34 +258,55 @@ void main() {
         DateTime(2026, 10, 5),
         DateTime(2026, 10),
       ]);
-      expect(days.map((day) => day.total), [
-        rub(-640),
-        rub(-220),
-        const Money(-128450, Currency.rub),
-        rub(5000),
+      expect(days.map((day) => day.totals), [
+        [rub(-640)],
+        [rub(-220)],
+        [const Money(-128450, Currency.rub)],
+        [rub(5000)],
       ]);
     });
 
-    test('puts the transaction added last first within a day', () {
+    test('keeps the order of the server within a day', () {
       final days = TransactionGroups.byDay([
-        transaction(id: 'first', rubles: 10),
         transaction(id: 'second', rubles: 20),
+        transaction(id: 'first', rubles: 10),
       ]);
 
       expect(days.single.transactions.map((item) => item.id), [
         'second',
         'first',
       ]);
-      expect(days.single.total, rub(-30));
     });
 
-    test('adds income and expenses of a day', () {
-      final days = TransactionGroups.byDay([
-        transaction(),
-        transaction(rubles: 250, kind: TransactionKind.income),
-      ]);
+    test('has no total for a day it was not given one for', () {
+      final days = TransactionGroups.byDay(
+        [transaction(), transaction(date: DateTime(2026, 10, 6))],
+        totals: {
+          DateTime(2026, 10, 6): [rub(-100)],
+        },
+      );
 
-      expect(days.single.total, rub(150));
+      expect(days.map((day) => day.totals), [
+        [rub(-100)],
+        null,
+      ]);
+    });
+
+    test('has no totals at all while none are given (a search is on)', () {
+      final days = TransactionGroups.byDay([transaction()]);
+
+      expect(days.single.totals, isNull);
+    });
+
+    test('keeps a total for each currency', () {
+      final days = TransactionGroups.byDay(
+        [transaction()],
+        totals: {
+          DateTime(2026, 10, 5): [rub(-100), const Money(4250, Currency.usd)],
+        },
+      );
+
+      expect(days.single.totals, [rub(-100), const Money(4250, Currency.usd)]);
     });
 
     test('is empty for no transactions', () {
@@ -273,7 +317,7 @@ void main() {
   group('TransactionGroups.byPeriod', () {
     test('splits a month at the 15th, the newest part first', () {
       final periods = TransactionGroups.byPeriod(
-        TransactionsSeed.transactions(),
+        TransactionsSeed.transactions().reversed.toList(),
       );
 
       expect(periods.map((period) => period.part), [

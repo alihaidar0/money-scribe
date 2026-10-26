@@ -10,6 +10,7 @@ import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repos
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
+import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 
 void main() {
   late DemoController demo;
@@ -154,7 +155,10 @@ void main() {
       wait: const Duration(milliseconds: 50),
       verify: (bloc) async {
         expect(bloc.state.saveStatus, TransactionFormSaveStatus.saved);
-        final saved = (await transactions.transactions()).last;
+        final page = await transactions.transactions(const TransactionFilter());
+        final saved = page.items.firstWhere(
+          (item) => item.date == DateTime(2026, 10, 11),
+        );
         expect(saved.amount, const Money(120050, Currency.rub));
         expect(saved.categoryId, 'dining');
         expect(saved.accountId, 'card');
@@ -249,7 +253,9 @@ void main() {
       wait: const Duration(milliseconds: 50),
       verify: (bloc) async {
         expect(bloc.state.saveStatus, TransactionFormSaveStatus.saved);
-        final items = await transactions.transactions();
+        final items = (await transactions.transactions(
+          const TransactionFilter(),
+        )).items;
         expect(items, hasLength(4));
         final saved = items.firstWhere((item) => item.id == 'seed-groceries');
         expect(saved.amount, const Money(130000, Currency.rub));
@@ -310,6 +316,172 @@ void main() {
       },
       verify: (bloc) =>
           expect(bloc.state.status, TransactionFormStatus.notFound),
+    );
+  });
+
+  group('an existing transaction on the server', () {
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'keeps the version and the currency it was made in',
+      build: () => build(id: 'seed-groceries'),
+      act: start,
+      verify: (bloc) {
+        expect(bloc.state.version, 1);
+        expect(bloc.state.currency, Currency.rub);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a transaction in another currency keeps it when changed',
+      // The fake gives the first transaction it adds this id.
+      build: () => build(id: 'added-1'),
+      setUp: () async {
+        await transactions.add(
+          TransactionDraft(
+            amount: const Money(1250, Currency.usd),
+            kind: TransactionKind.expense,
+            date: DateTime(2026, 10, 24),
+            categoryId: 'dining',
+            accountId: 'cash',
+            note: 'Lunch',
+          ),
+        );
+      },
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionAmountChanged('13.00'))
+          ..add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == TransactionFormSaveStatus.saved,
+        );
+      },
+      verify: (bloc) async {
+        final saved = await transactions.transaction('added-1');
+        expect(saved?.amount, const Money(1300, Currency.usd));
+        expect(saved?.version, 2);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a change made on another device reloads it and says so',
+      build: () => build(id: 'seed-groceries'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionAmountChanged('1300'));
+        // Another device changes the note first.
+        await transactions.update(
+          'seed-groceries',
+          TransactionDraft(
+            amount: const Money(128450, Currency.rub),
+            kind: TransactionKind.expense,
+            date: DateTime(2026, 10, 5),
+            categoryId: 'groceries',
+            accountId: 'card',
+            note: 'Changed elsewhere',
+          ),
+          version: 1,
+        );
+        bloc.add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) =>
+              s.saveStatus == TransactionFormSaveStatus.stale &&
+              s.status == TransactionFormStatus.ready &&
+              s.version == 2,
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.values.note, 'Changed elsewhere');
+        expect(bloc.state.isEdited, isFalse);
+        expect(bloc.state.version, 2);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'deleting a transaction that changed elsewhere reloads it instead',
+      build: () => build(id: 'seed-taxi'),
+      act: (bloc) async {
+        await start(bloc);
+        await transactions.update(
+          'seed-taxi',
+          TransactionDraft(
+            amount: const Money(70000, Currency.rub),
+            kind: TransactionKind.expense,
+            date: DateTime(2026, 10, 19),
+            categoryId: 'transport',
+            accountId: 'card',
+            note: 'Taxi',
+          ),
+          version: 1,
+        );
+        bloc.add(const TransactionDeleteRequested());
+        await bloc.stream.firstWhere(
+          (s) =>
+              s.deleteStatus == TransactionFormDeleteStatus.stale &&
+              s.status == TransactionFormStatus.ready &&
+              s.version == 2,
+        );
+      },
+      verify: (bloc) async {
+        expect(await transactions.transaction('seed-taxi'), isNotNull);
+        expect(bloc.state.values.amountText, '700.00');
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'one deleted on another device is not found when it reloads',
+      build: () => build(id: 'seed-taxi'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionAmountChanged('1'));
+        await transactions.delete('seed-taxi', version: 1);
+        bloc.add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.status == TransactionFormStatus.notFound,
+        );
+      },
+      verify: (bloc) =>
+          expect(bloc.state.status, TransactionFormStatus.notFound),
+    );
+  });
+
+  group('a transaction the server refuses', () {
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a date outside the years it keeps is reported, and what was typed stays',
+      build: build,
+      act: (bloc) async {
+        await fill(bloc);
+        bloc
+          ..add(TransactionDateChosen(DateTime(2100, 1, 5)))
+          ..add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == TransactionFormSaveStatus.refused,
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.refusal, TransactionRefusal.dateOutOfRange);
+        expect(bloc.state.values.amountText, '1200.50');
+        expect(bloc.state.canSave, isTrue);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'the limit of transactions is reported',
+      build: () {
+        transactions = FakeTransactionsRepository(
+          demo: demo,
+          maxTransactions: 4,
+        );
+        return build();
+      },
+      act: (bloc) async {
+        await fill(bloc);
+        bloc.add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == TransactionFormSaveStatus.refused,
+        );
+      },
+      verify: (bloc) =>
+          expect(bloc.state.refusal, TransactionRefusal.limitReached),
     );
   });
 

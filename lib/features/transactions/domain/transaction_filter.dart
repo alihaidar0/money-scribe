@@ -12,8 +12,18 @@ final class TransactionFilter extends Equatable {
     this.to,
   });
 
-  /// The words of the search. A transaction matches when its category, its
-  /// account or its note contains them, whatever the case.
+  /// The most categories, and the most accounts, one filter takes.
+  static const maxIds = 20;
+
+  /// The shortest search the server takes.
+  static const minSearchLength = 2;
+
+  /// The longest search the server takes.
+  static const maxSearchLength = 100;
+
+  /// The words of the search. A transaction matches when its note contains
+  /// them, whatever the case. The category and the account are narrowed with
+  /// the Filters sheet, not by searching.
   final String query;
 
   /// The categories to show, or every category when empty.
@@ -28,6 +38,21 @@ final class TransactionFilter extends Equatable {
 
   /// Whether the search has words.
   bool get hasQuery => query.trim().isNotEmpty;
+
+  /// The words to send to the server, or `null` while there are fewer than the
+  /// server takes (one letter is not a search). A longer text is cut.
+  String? get searchTerm {
+    final words = query.trim();
+    if (words.length < minSearchLength) return null;
+    return words.length <= maxSearchLength
+        ? words
+        : words.substring(0, maxSearchLength);
+  }
+
+  /// Whether the server is asked to search the notes. The totals of a day
+  /// would mislead then (they are of every transaction of the day, not of the
+  /// ones found), so they are not shown.
+  bool get isSearching => searchTerm != null;
 
   /// Whether the Filters sheet narrows the list by category, account or day.
   bool get hasSheetFilters {
@@ -101,13 +126,10 @@ final class TransactionFilter extends Equatable {
     );
   }
 
-  /// Whether [transaction] passes the filter. [categoryName] and
-  /// [accountName] are what the search looks in besides the note.
-  bool matches(
-    Transaction transaction, {
-    required String categoryName,
-    required String accountName,
-  }) {
+  /// Whether [transaction] passes the filter, as the server decides it: the
+  /// categories, the accounts, the days (both included) and the words in the
+  /// note.
+  bool matches(Transaction transaction) {
     if (categoryIds.isNotEmpty &&
         !categoryIds.contains(transaction.categoryId)) {
       return false;
@@ -119,11 +141,9 @@ final class TransactionFilter extends Equatable {
     if (from != null && date.isBefore(_day(from!))) return false;
     if (to != null && date.isAfter(_day(to!))) return false;
 
-    final words = query.trim().toLowerCase();
-    if (words.isEmpty) return true;
-    return categoryName.toLowerCase().contains(words) ||
-        accountName.toLowerCase().contains(words) ||
-        transaction.note.toLowerCase().contains(words);
+    final words = searchTerm?.toLowerCase();
+    if (words == null) return true;
+    return transaction.note.toLowerCase().contains(words);
   }
 
   static DateTime _day(DateTime date) =>

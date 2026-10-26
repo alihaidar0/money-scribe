@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:money_scribe/core/network/date_only_interceptor.dart';
 import 'package:money_scribe/core/network/omit_nulls_interceptor.dart';
 
 import '../../../support/fake_http_adapter.dart';
@@ -12,7 +13,7 @@ Dio transactionsTestDio(FakeHttpAdapter adapter) {
         contentType: Headers.jsonContentType,
       ),
     )
-    ..interceptors.add(const OmitNullsInterceptor())
+    ..interceptors.addAll(const [OmitNullsInterceptor(), DateOnlyInterceptor()])
     ..httpClientAdapter = adapter;
 }
 
@@ -61,4 +62,42 @@ Map<String, Object?> pageJson(
   String? next,
 }) {
   return {'next': next, 'previous': null, 'results': results};
+}
+
+/// A transaction as the server sends it.
+Map<String, Object?> transactionJson({
+  String id = '0198f2b0-4e5a-7d12-a3c4-6b7e8f9a0c1d',
+  String kind = 'expense',
+  String amount = '12.50',
+  String currency = 'USD',
+  String date = '2026-10-24',
+  String categoryId = '0198f2a0-0000-7000-8000-000000000001',
+  String accountId = '0198f2a4-7c3e-7b1d-9a52-3e6f1d0c4b21',
+  String note = 'Weekly shop',
+  int version = 1,
+}) {
+  return {
+    'id': id,
+    'kind': kind,
+    'amount': amount,
+    'currency': currency,
+    'date': date,
+    'category_id': categoryId,
+    'account_id': accountId,
+    'note': note,
+    'version': version,
+    'created_at': '2026-10-25T18:02:11Z',
+    'updated_at': '2026-10-25T18:02:11Z',
+  };
+}
+
+/// One day of the day totals as the server sends it.
+Map<String, Object?> dayTotalJson(String date, Map<String, String> totals) {
+  return {
+    'date': date,
+    'totals': [
+      for (final entry in totals.entries)
+        {'currency': entry.key, 'total': entry.value},
+    ],
+  };
 }

@@ -2199,6 +2199,26 @@
   "@accountLimitReached": {
     "description": "Message shown when an account could not be added because the person has as many accounts as the server allows."
   },
+  "transactionLimitReached": "You have the most transactions allowed. Delete some to add more.",
+  "@transactionLimitReached": {
+    "description": "Message shown when a transaction could not be saved because the person has as many transactions as the server allows."
+  },
+  "transactionChoicesChanged": "The category or the account is no longer available. Choose them again.",
+  "@transactionChoicesChanged": {
+    "description": "Message shown when a transaction could not be saved because its category or account was deleted on another device, or its category does not take this kind of transaction. The lists have been loaded again."
+  },
+  "transactionDateOutOfRange": "Choose a date between 2000 and 2099.",
+  "@transactionDateOutOfRange": {
+    "description": "Message shown when a transaction could not be saved because its date is outside the years the server keeps."
+  },
+  "transactionChangedElsewhere": "This transaction was changed on another device. It has been loaded again.",
+  "@transactionChangedElsewhere": {
+    "description": "Message shown when saving or deleting a transaction was refused because another device changed it first. The form shows what is on the server now."
+  },
+  "transactionsLoadMoreFailed": "Couldn''t load more transactions.",
+  "@transactionsLoadMoreFailed": {
+    "description": "Message at the end of the transactions list when the next page did not load. A Try again button follows it."
+  },
   "categoryLimitReached": "You have the most categories of your own allowed. Delete one to add another.",
   "@categoryLimitReached": {
     "description": "Message shown when a category could not be added because the person has as many categories of their own as the server allows."

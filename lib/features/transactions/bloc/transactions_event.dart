@@ -28,6 +28,16 @@ final class TransactionsRefreshed extends TransactionsEvent {
   const new();
 }
 
+/// The end of the loaded list came into view: load the next page.
+final class TransactionsMoreRequested extends TransactionsEvent {
+  const new();
+}
+
+/// The user pressed Try again under a page that did not load.
+final class TransactionsMoreRetried extends TransactionsEvent {
+  const new();
+}
+
 /// The user typed in the search field.
 final class TransactionsSearched extends TransactionsEvent {
   const new(this.query);

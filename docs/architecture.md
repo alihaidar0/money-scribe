@@ -163,6 +163,11 @@ contract, which only a feature's `data/` imports.
   server does not sleep. `warmUpServer` sends one `GET /healthz` at start in staging, to wake it early.
 - **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
   optional field as `null`, and the server wants it left out.
+- **`DateOnlyInterceptor`** sends a day as `YYYY-MM-DD`: the generated client has no type for a day, so a date
+  field is a `DateTime` written as `2026-10-24T00:00:00.000`, which the server refuses. The app only ever sends
+  the midnight of a day, so a text that is exactly midnight is cut to its day, in the query and the body.
+- **`LastFailure`** keeps the reference (`X-Request-ID`) and the `429` wait of the latest failed answer for the
+  failure screens, which read them through `LastFailureScope`.
 - **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
   `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
   A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,

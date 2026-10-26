@@ -139,19 +139,35 @@ class _TransactionsView extends StatelessWidget {
           bloc.state.hasTransactions,
     );
 
-    return BlocListener<TransactionsBloc, TransactionsState>(
-      listenWhen: (previous, current) =>
-          previous.deleteStatus != current.deleteStatus &&
-          current.deleteStatus == TransactionsDeleteStatus.failed,
-      listener: (context, state) {
-        final id = state.deletingId;
-        if (id == null) return;
-        showFailureSnackBar(
-          context,
-          l10n.couldNotDelete,
-          onRetry: () => bloc.add(TransactionDeleteConfirmed(id)),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<TransactionsBloc, TransactionsState>(
+          listenWhen: (previous, current) =>
+              previous.deleteStatus != current.deleteStatus &&
+              current.deleteStatus == TransactionsDeleteStatus.failed,
+          listener: (context, state) {
+            final id = state.deletingId;
+            if (id == null) return;
+            showFailureSnackBar(
+              context,
+              l10n.couldNotDelete,
+              onRetry: () => bloc.add(TransactionDeleteConfirmed(id)),
+            );
+          },
+        ),
+        BlocListener<TransactionsBloc, TransactionsState>(
+          listenWhen: (previous, current) =>
+              previous.deleteStatus != current.deleteStatus &&
+              current.deleteStatus == TransactionsDeleteStatus.stale,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(l10n.transactionChangedElsewhere)),
+              );
+          },
+        ),
+      ],
       child: _screen(context, showAdd),
     );
   }
@@ -603,6 +619,7 @@ class _FilterBar extends StatelessWidget {
 }
 
 /// The transactions that pass the search and filters, or TX-8 when none do.
+/// The list grows by a page each time its end comes into view.
 class _Results extends StatelessWidget {
   const new({required this.wide});
 
@@ -612,24 +629,46 @@ class _Results extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final bloc = context.read<TransactionsBloc>();
     final state = context.watch<TransactionsBloc>().state;
-    final visible = state.visible;
 
-    if (visible.isEmpty) {
+    switch (state.resultsStatus) {
+      case TransactionsResultsStatus.loading:
+        return const _Skeleton();
+      case TransactionsResultsStatus.noConnection:
+        return FailureView(
+          kind: FailureKind.noConnection,
+          onRetry: () => bloc.add(const TransactionsRetried()),
+        );
+      case TransactionsResultsStatus.failure:
+        return FailureView(
+          kind: FailureKind.error,
+          errorTitle: l10n.transactionsLoadFailed,
+          onRetry: () => bloc.add(const TransactionsRetried()),
+        );
+      case TransactionsResultsStatus.ready:
+        break;
+    }
+
+    final visible = state.visible;
+    final waitingForMore = state.nextCursor != null && !state.loadMoreFailed;
+    if (visible.isEmpty && !waitingForMore && !state.loadMoreFailed) {
       return StateView(
         icon: Icons.search_off,
         title: l10n.noResultsTitle,
         message: l10n.noResultsMessage,
         actionLabel: l10n.clearFiltersAction,
-        onAction: () => context.read<TransactionsBloc>().add(
-          const TransactionFiltersCleared(),
-        ),
+        onAction: () => bloc.add(const TransactionFiltersCleared()),
       );
     }
 
+    final totals = state.shownDayTotals;
     final entries = <_Entry>[];
     if (state.twoPayments) {
-      for (final period in TransactionGroups.byPeriod(visible)) {
+      for (final period in TransactionGroups.byPeriod(
+        visible,
+        totals: totals,
+      )) {
         entries.add(_PeriodEntry(period));
         for (final day in period.days) {
           entries
@@ -638,11 +677,14 @@ class _Results extends StatelessWidget {
         }
       }
     } else {
-      for (final day in TransactionGroups.byDay(visible)) {
+      for (final day in TransactionGroups.byDay(visible, totals: totals)) {
         entries
           ..add(_DayEntry(day))
           ..addAll(day.transactions.map(_TransactionEntry.new));
       }
+    }
+    if (state.loadingMore || waitingForMore || state.loadMoreFailed) {
+      entries.add(_FooterEntry(failed: state.loadMoreFailed));
     }
 
     final categories = {
@@ -656,25 +698,37 @@ class _Results extends StatelessWidget {
       // Room under the last row for the button.
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       itemCount: entries.length,
-      itemBuilder: (context, index) => switch (entries[index]) {
-        _PeriodEntry(:final period) => _PeriodHeader(period: period),
-        _DayEntry(:final day) => _DayHeader(day: day),
-        _TransactionEntry(:final transaction) => _TransactionRow(
-          transaction: transaction,
-          categoryName: categories[transaction.categoryId] == null
-              ? ''
-              : context.l10n.categoryName(categories[transaction.categoryId]!),
-          icon: categoryIcon(
-            categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
+      itemBuilder: (context, index) {
+        // The end of the list is near: ask for the next page. The Bloc takes
+        // one request at a time, so building this row again asks nothing more.
+        if (waitingForMore &&
+            !state.loadingMore &&
+            index >= entries.length - 3) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!bloc.isClosed) bloc.add(const TransactionsMoreRequested());
+          });
+        }
+        return switch (entries[index]) {
+          _PeriodEntry(:final period) => _PeriodHeader(period: period),
+          _DayEntry(:final day) => _DayHeader(day: day),
+          _FooterEntry(:final failed) => _ListFooter(failed: failed),
+          _TransactionEntry(:final transaction) => _TransactionRow(
+            transaction: transaction,
+            categoryName: categories[transaction.categoryId] == null
+                ? ''
+                : context.l10n.categoryName(
+                    categories[transaction.categoryId]!,
+                  ),
+            icon: categoryIcon(
+              categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
+            ),
+            accountName: accounts[transaction.accountId]?.name ?? '',
+            selected: wide && transaction.id == state.selected?.id,
+            onTap: wide
+                ? () => bloc.add(TransactionSelected(transaction.id))
+                : () => _openTransaction(context, transaction.id),
           ),
-          accountName: accounts[transaction.accountId]?.name ?? '',
-          selected: wide && transaction.id == state.selected?.id,
-          onTap: wide
-              ? () => context.read<TransactionsBloc>().add(
-                  TransactionSelected(transaction.id),
-                )
-              : () => _openTransaction(context, transaction.id),
-        ),
+        };
       },
     );
   }
@@ -694,6 +748,14 @@ final class _DayEntry extends _Entry {
   const new(this.day);
 
   final DayGroup day;
+}
+
+/// The end of the list: a spinner while the next page loads, or a message and
+/// Try again when it did not.
+final class _FooterEntry extends _Entry {
+  const new({required this.failed});
+
+  final bool failed;
 }
 
 final class _TransactionEntry extends _Entry {
@@ -755,6 +817,39 @@ class _PeriodHeader extends StatelessWidget {
   }
 }
 
+/// The end of the list while more is coming, or when it did not come.
+class _ListFooter extends StatelessWidget {
+  const new({required this.failed});
+
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    if (!failed) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(l10n.transactionsLoadMoreFailed),
+          TextButton(
+            onPressed: () => context.read<TransactionsBloc>().add(
+              const TransactionsMoreRetried(),
+            ),
+            child: Text(l10n.tryAgain),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A day with what its transactions come to at the end.
 class _DayHeader extends StatelessWidget {
   const new({required this.day});
@@ -777,7 +872,8 @@ class _DayHeader extends StatelessWidget {
     } else {
       name = context.dayFormatter.formatWithWeekday(day.date, today: today);
     }
-    final total = day.total;
+    final totals = day.totals;
+    final formatter = context.moneyFormatter;
 
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -790,15 +886,24 @@ class _DayHeader extends StatelessWidget {
             spacing: 12,
             children: [
               Text(name, style: theme.textTheme.titleSmall),
-              Text(
-                context.moneyFormatter.formatSigned(total),
-                style: theme.textTheme.titleSmall?.amount.copyWith(
-                  color: total.isNegative
-                      ? colors.expense.color
-                      : colors.income.color,
+              // One line for each currency the day has transactions in. A
+              // day whose total is not known (a search is on) shows none.
+              if (totals != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final total in totals)
+                      Text(
+                        formatter.formatSigned(total),
+                        style: theme.textTheme.titleSmall?.amount.copyWith(
+                          color: total.isNegative
+                              ? colors.expense.color
+                              : colors.income.color,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                  ],
                 ),
-                textAlign: TextAlign.end,
-              ),
             ],
           ),
         ),

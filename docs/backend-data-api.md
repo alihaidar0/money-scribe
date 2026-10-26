@@ -106,10 +106,14 @@ These come with the hardening issue and hold for every signed-in call.
   expenses). The same filters as the list, without `search`; `date_from` and `date_to` are optional;
   paginated by days (`limit` 50, at most 100), so a day always arrives complete.
 - **How the list and the totals are read together.** The list is read in cursor pages of about 50 as the person
-  scrolls. The app keeps a map from day to totals, and when it draws a day header that has none yet it reads
-  the next page of totals; both use the same filters and the same order, so they stay level however sparse
-  the data is. A list with words in the search box has no day totals and does not call the endpoint. A change
-  to a record reloads the list and drops the map.
+  scrolls. The app keeps a map from day to totals, and each time it loads a page of the list it reads pages of
+  totals until the map reaches the oldest day of the list; both use the same filters and the same order, so
+  they stay level however sparse the data is. A list with words in the search box has no day totals and does
+  not call the endpoint. A change to a record reloads the list and drops the map.
+- **The search** waits half a second after the last key and asks the server only when it has two letters or
+  more; a newer search drops the answer to an older one. The part of a two-payment month (1st-15th or
+  16th-end) is not a filter of the server: the app cuts it from the pages it has and loads more pages when a
+  part shows too little. A filter takes at most 20 categories, and the Filters sheet stops at 20.
 
 ## 4. Debts and repayments
 

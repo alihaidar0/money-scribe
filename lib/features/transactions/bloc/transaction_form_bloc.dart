@@ -100,6 +100,7 @@ class TransactionFormBloc
           note: transaction.note,
         );
       }
+      final loaded = id == null ? null : results[3]! as Transaction;
       emit(
         state.copyWith(
           status: TransactionFormStatus.ready,
@@ -108,6 +109,9 @@ class TransactionFormBloc
           twoPayments: twoPayments,
           values: values,
           baseline: values,
+          // The currency of a transaction cannot be changed.
+          currency: loaded?.amount.currency,
+          version: loaded?.version,
         ),
       );
     } on NoConnectionException {
@@ -138,6 +142,42 @@ class TransactionFormBloc
       );
     } on Exception catch (error, stackTrace) {
       // The list on screen is still good: keep it.
+      addError(error, stackTrace);
+    }
+  }
+
+  /// Reads the accounts and the categories again. A chosen account or category
+  /// that is gone, or does not fit the kind, is dropped (the first account
+  /// takes the place of a gone one), so the person chooses again.
+  Future<void> _refreshChoices(Emitter<TransactionFormState> emit) async {
+    try {
+      final results = await Future.wait<Object?>([
+        _accounts.accounts(),
+        _categories.categories(),
+      ]);
+      final accounts = results[0]! as List<Account>;
+      final categories = results[1]! as List<TransactionCategory>;
+      var values = state.values;
+      if (!accounts.any((account) => account.id == values.accountId)) {
+        values = accounts.isEmpty
+            ? values.copyWith(clearAccount: true)
+            : values.copyWith(accountId: accounts.first.id);
+      }
+      final category = categories
+          .where((category) => category.id == values.categoryId)
+          .firstOrNull;
+      if (category == null || !category.isFor(values.kind)) {
+        values = values.copyWith(clearCategory: true);
+      }
+      emit(
+        state.copyWith(
+          accounts: accounts,
+          categories: categories,
+          values: values,
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      // The lists on screen are still what the person can use: keep them.
       addError(error, stackTrace);
     }
   }
@@ -219,10 +259,11 @@ class TransactionFormBloc
     emit(state.copyWith(saveStatus: TransactionFormSaveStatus.saving));
     try {
       final id = state.transactionId;
-      if (id == null) {
+      final version = state.version;
+      if (id == null || version == null) {
         await _transactions.add(draft);
       } else {
-        await _transactions.update(id, draft);
+        await _transactions.update(id, draft, version: version);
       }
       emit(
         state.copyWith(
@@ -230,6 +271,22 @@ class TransactionFormBloc
           baseline: sent,
         ),
       );
+    } on StaleRecordException {
+      emit(state.copyWith(saveStatus: TransactionFormSaveStatus.stale));
+      add(const TransactionFormRetried());
+    } on TransactionRefusedException catch (refused) {
+      emit(
+        state.copyWith(
+          saveStatus: TransactionFormSaveStatus.refused,
+          refusal: refused.refusal,
+        ),
+      );
+      // The category or the account is not what the lists said: read them
+      // again, so the person chooses from what exists.
+      if (refused.refusal == TransactionRefusal.categoryOrAccountGone ||
+          refused.refusal == TransactionRefusal.categoryNotAllowed) {
+        await _refreshChoices(emit);
+      }
     } on NoConnectionException {
       emit(state.copyWith(saveStatus: TransactionFormSaveStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -243,12 +300,16 @@ class TransactionFormBloc
     Emitter<TransactionFormState> emit,
   ) async {
     final id = state.transactionId;
-    if (id == null) return;
+    final version = state.version;
+    if (id == null || version == null) return;
 
     emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.deleting));
     try {
-      await _transactions.delete(id);
+      await _transactions.delete(id, version: version);
       emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.deleted));
+    } on StaleRecordException {
+      emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.stale));
+      add(const TransactionFormRetried());
     } on NoConnectionException {
       emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.failed));
     } on Exception catch (error, stackTrace) {
