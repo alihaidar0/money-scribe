@@ -28,6 +28,7 @@ import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_groups.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/transaction_filters_sheet.dart';
 
 /// TX-1, TX-2, TX-8 to TX-12: every transaction, newest first, grouped by day
@@ -326,7 +327,7 @@ class _DetailPane extends StatelessWidget {
                   const SizedBox(height: 24),
                   _DetailLine(
                     label: l10n.categoryLabel,
-                    value: category?.name ?? '',
+                    value: category == null ? '' : l10n.categoryName(category),
                     icon: categoryIcon(category?.icon ?? CategoryIcon.other),
                   ),
                   _DetailLine(
@@ -660,7 +661,9 @@ class _Results extends StatelessWidget {
         _DayEntry(:final day) => _DayHeader(day: day),
         _TransactionEntry(:final transaction) => _TransactionRow(
           transaction: transaction,
-          categoryName: categories[transaction.categoryId]?.name ?? '',
+          categoryName: categories[transaction.categoryId] == null
+              ? ''
+              : context.l10n.categoryName(categories[transaction.categoryId]!),
           icon: categoryIcon(
             categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
           ),

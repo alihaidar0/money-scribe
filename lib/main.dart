@@ -51,6 +51,8 @@ import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
+import 'package:money_scribe/features/transactions/data/remote/remote_accounts_repository.dart';
+import 'package:money_scribe/features/transactions/data/remote/remote_categories_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -130,14 +132,12 @@ Future<void> main() async {
           ? FakeFixedItemsRepository(demo: demo, salary: salary)
           : RemoteFixedItemsRepository.create(dio: apiDio),
       transactionsRepository: transactions,
-      accountsRepository: FakeAccountsRepository(
-        demo: demo,
-        transactions: transactions,
-      ),
-      categoriesRepository: FakeCategoriesRepository(
-        demo: demo,
-        transactions: transactions,
-      ),
+      accountsRepository: apiDio == null
+          ? FakeAccountsRepository(demo: demo, transactions: transactions)
+          : RemoteAccountsRepository.create(dio: apiDio),
+      categoriesRepository: apiDio == null
+          ? FakeCategoriesRepository(demo: demo, transactions: transactions)
+          : RemoteCategoriesRepository.create(dio: apiDio),
       debtsRepository: FakeDebtsRepository(demo: demo),
       reportsRepository: FakeReportsRepository(demo: demo),
       demo: demo,

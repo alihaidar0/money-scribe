@@ -174,4 +174,90 @@ void main() {
       },
     );
   });
+
+  group('a change made on another device', () {
+    blocTest<CategoriesBloc, CategoriesState>(
+      'loads the list again and keeps the action to apply once more',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        // Another device renames the category first.
+        await repository.update(
+          'gifts',
+          const CategoryDraft(name: 'Presents', icon: CategoryIcon.gifts),
+          version: 1,
+        );
+        bloc.add(
+          const CategoryChanged(
+            'gifts',
+            CategoryDraft(name: 'Treats', icon: CategoryIcon.gifts),
+          ),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isA<CategoryChanged>());
+        expect(bloc.state.failedAction, isNull);
+        final gifts = bloc.state.categories.firstWhere((c) => c.id == 'gifts');
+        expect(gifts.name, 'Presents');
+        expect(gifts.version, 2);
+      },
+    );
+
+    blocTest<CategoriesBloc, CategoriesState>(
+      'deleting a category that changed is not done',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await repository.update(
+          'gifts',
+          const CategoryDraft(name: 'Presents', icon: CategoryIcon.gifts),
+          version: 1,
+        );
+        bloc.add(const CategoryDeleted('gifts'));
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isA<CategoryDeleted>());
+        expect(bloc.state.categories.any((c) => c.id == 'gifts'), isTrue);
+      },
+    );
+  });
+
+  group('a refusal the person can act on', () {
+    blocTest<CategoriesBloc, CategoriesState>(
+      'a name that is taken is reported, not retried',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(
+          const CategoryAdded(
+            CategoryDraft(name: 'gifts', icon: CategoryIcon.health),
+          ),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.refusal, CategoryRefusal.nameTaken);
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.categories, hasLength(8));
+      },
+    );
+
+    blocTest<CategoriesBloc, CategoriesState>(
+      'the next action clears the refusal',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(
+          const CategoryAdded(
+            CategoryDraft(name: 'gifts', icon: CategoryIcon.health),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const CategoryAdded(draft));
+      },
+      verify: (bloc) {
+        expect(bloc.state.refusal, isNull);
+        expect(bloc.state.categories.last.name, 'Pets');
+      },
+    );
+  });
 }

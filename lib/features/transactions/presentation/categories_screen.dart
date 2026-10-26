@@ -9,6 +9,7 @@ import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/features/transactions/bloc/categories_bloc.dart';
 import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/category_sheet.dart';
 
 /// ST-4: the categories: the built-in ones, which cannot be changed, and the
@@ -39,19 +40,63 @@ class _CategoriesView extends StatelessWidget {
       (bloc) => bloc.state.status,
     );
 
-    return BlocListener<CategoriesBloc, CategoriesState>(
-      listenWhen: (previous, current) =>
-          previous.failedAction != current.failedAction &&
-          current.failedAction != null,
-      listener: (context, state) {
-        final action = state.failedAction;
-        if (action == null) return;
-        showFailureSnackBar(
-          context,
-          action is CategoryDeleted ? l10n.couldNotDelete : l10n.couldNotSave,
-          onRetry: () => bloc.add(action),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<CategoriesBloc, CategoriesState>(
+          listenWhen: (previous, current) =>
+              previous.failedAction != current.failedAction &&
+              current.failedAction != null,
+          listener: (context, state) {
+            final action = state.failedAction;
+            if (action == null) return;
+            showFailureSnackBar(
+              context,
+              action is CategoryDeleted
+                  ? l10n.couldNotDelete
+                  : l10n.couldNotSave,
+              onRetry: () => bloc.add(action),
+            );
+          },
+        ),
+        BlocListener<CategoriesBloc, CategoriesState>(
+          listenWhen: (previous, current) =>
+              previous.staleAction != current.staleAction &&
+              current.staleAction != null,
+          listener: (context, state) {
+            final action = state.staleAction;
+            if (action == null) return;
+            // A category that is gone has nothing to apply the change to.
+            final id = switch (action) {
+              CategoryChanged(:final id) || CategoryDeleted(:final id) => id,
+              _ => null,
+            };
+            final gone = !state.categories.any((category) => category.id == id);
+            showFailureSnackBar(
+              context,
+              l10n.itemChangedElsewhere,
+              actionLabel: l10n.applyAgainAction,
+              onRetry: gone ? null : () => bloc.add(action),
+            );
+          },
+        ),
+        BlocListener<CategoriesBloc, CategoriesState>(
+          listenWhen: (previous, current) =>
+              previous.refusal != current.refusal && current.refusal != null,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(switch (state.refusal) {
+                    CategoryRefusal.nameTaken => l10n.categoryNameTaken,
+                    CategoryRefusal.limitReached => l10n.categoryLimitReached,
+                    null => '',
+                  }),
+                ),
+              );
+          },
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.categoriesTitle)),
         floatingActionButton: status == CategoriesStatus.ready
@@ -81,9 +126,27 @@ class _CategoriesView extends StatelessWidget {
 
   Future<void> _add(BuildContext context) async {
     final bloc = context.read<CategoriesBloc>();
-    final result = await showCategorySheet(context);
+    final result = await showCategorySheet(
+      context,
+      takenNames: _takenNames(context, bloc.state.categories),
+    );
     if (result is CategorySheetSaved) bloc.add(CategoryAdded(result.draft));
   }
+}
+
+/// The names a category cannot take, in lower case: those of the built-in
+/// ones, and of the person's own except the one of [except].
+Set<String> _takenNames(
+  BuildContext context,
+  List<TransactionCategory> categories, {
+  String? except,
+}) {
+  return {
+    ...context.l10n.reservedCategoryNames(categories),
+    for (final category in categories)
+      if (category.isCustom && category.id != except)
+        category.name.toLowerCase(),
+  };
 }
 
 class _List extends StatelessWidget {
@@ -141,14 +204,16 @@ class _CategoryRow extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      category.name,
+                      l10n.categoryName(category),
                       style: theme.textTheme.bodyLarge,
                     ),
                   ),
                   if (custom)
                     IconButton(
                       icon: const Icon(Icons.edit_outlined),
-                      tooltip: l10n.editItemTooltip(name: category.name),
+                      tooltip: l10n.editItemTooltip(
+                        name: l10n.categoryName(category),
+                      ),
                       onPressed: () => _edit(context),
                     )
                   else
@@ -172,7 +237,15 @@ class _CategoryRow extends StatelessWidget {
 
   Future<void> _edit(BuildContext context) async {
     final bloc = context.read<CategoriesBloc>();
-    final result = await showCategorySheet(context, category: category);
+    final result = await showCategorySheet(
+      context,
+      category: category,
+      takenNames: _takenNames(
+        context,
+        bloc.state.categories,
+        except: category.id,
+      ),
+    );
     switch (result) {
       case CategorySheetSaved(:final draft):
         bloc.add(CategoryChanged(category.id, draft));

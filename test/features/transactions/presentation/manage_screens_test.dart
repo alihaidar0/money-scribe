@@ -246,6 +246,96 @@ void main() {
       expect(find.text('افتراضية'), findsNWidgets(7));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('shows the built-in categories by their key, in Arabic', (
+      tester,
+    ) async {
+      await openRows(
+        tester,
+        'Categories',
+        language: AppLanguage.arabic,
+        arabic: 'الفئات',
+      );
+
+      for (final name in [
+        'البقالة',
+        'المطاعم',
+        'المواصلات',
+        'السكن',
+        'الخدمات',
+        'المنحة الدراسية',
+        'أخرى',
+      ]) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      // The English names the fake server sends are not shown.
+      expect(find.text('Groceries'), findsNothing);
+      // The category the person made keeps the name they typed.
+      expect(find.text('Gifts'), findsOneWidget);
+    });
+
+    testWidgets('a name another category has cannot be saved', (tester) async {
+      await openRows(tester, 'Categories');
+      await tester.tap(find.text('Add category'));
+      await tester.pumpAndSettle();
+
+      for (final name in ['gifts', 'GROCERIES', ' Other ']) {
+        await tester.enterText(inSheet(find.byType(TextField)), name);
+        await tester.pumpAndSettle();
+
+        expect(
+          inSheet(find.text('A category with this name already exists.')),
+          findsOneWidget,
+          reason: name,
+        );
+        expect(
+          tester
+              .widget<FilledButton>(
+                inSheet(find.widgetWithText(FilledButton, 'Save')),
+              )
+              .onPressed,
+          isNull,
+          reason: name,
+        );
+      }
+    });
+
+    testWidgets('the own name stays allowed while editing', (tester) async {
+      await openRows(tester, 'Categories');
+      await tester.tap(find.text('Gifts'));
+      await tester.pumpAndSettle();
+
+      expect(
+        inSheet(find.text('A category with this name already exists.')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              inSheet(find.widgetWithText(FilledButton, 'Save')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('an Arabic name of a built-in category cannot be taken', (
+      tester,
+    ) async {
+      await openRows(
+        tester,
+        'Categories',
+        language: AppLanguage.arabic,
+        arabic: 'الفئات',
+      );
+      await tester.tap(find.text('إضافة فئة'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(inSheet(find.byType(TextField)), 'البقالة');
+      await tester.pumpAndSettle();
+
+      expect(inSheet(find.text('توجد فئة بهذا الاسم بالفعل.')), findsOneWidget);
+    });
   });
 
   group('the accounts (ST-5)', () {
@@ -389,6 +479,39 @@ void main() {
       expect(find.widgetWithText(AppBar, 'الحسابات'), findsOneWidget);
       expect(find.text('إضافة حساب'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a name another account has cannot be saved', (tester) async {
+      await openRows(tester, 'Accounts');
+      await tester.tap(find.text('Add account'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(inSheet(find.byType(TextField)), ' cash ');
+      await tester.pumpAndSettle();
+
+      expect(
+        inSheet(find.text('You already have an account with this name.')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              inSheet(find.widgetWithText(FilledButton, 'Save')),
+            )
+            .onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('keeping the own name while editing is fine', (tester) async {
+      await openRows(tester, 'Accounts');
+      await tester.tap(find.text('Cash'));
+      await tester.pumpAndSettle();
+
+      expect(
+        inSheet(find.text('You already have an account with this name.')),
+        findsNothing,
+      );
     });
   });
 }

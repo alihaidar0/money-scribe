@@ -25,10 +25,14 @@ final class CategorySheetDeleted extends CategorySheetResult {
 
 /// ST-4b: the bottom sheet that adds a category, or with [category] changes
 /// it, which also offers Delete. Closes with what was done, or with `null`
-/// when dismissed.
+/// when dismissed. [takenNames] are the names, in lower case, that the
+/// sheet refuses: the other custom categories' and every built-in category's,
+/// in the language of the app and in English, because the server accepts a
+/// name once and only knows the English ones.
 Future<CategorySheetResult?> showCategorySheet(
   BuildContext context, {
   TransactionCategory? category,
+  Set<String> takenNames = const {},
 }) {
   return showModalBottomSheet<CategorySheetResult>(
     context: context,
@@ -36,14 +40,16 @@ Future<CategorySheetResult?> showCategorySheet(
     isScrollControlled: true,
     // Over the navigation bar too, which stays dimmed and inactive.
     useRootNavigator: true,
-    builder: (sheetContext) => _CategorySheet(category: category),
+    builder: (sheetContext) =>
+        _CategorySheet(category: category, takenNames: takenNames),
   );
 }
 
 class _CategorySheet extends StatefulWidget {
-  const new({required this.category});
+  const new({required this.category, required this.takenNames});
 
   final TransactionCategory? category;
+  final Set<String> takenNames;
 
   @override
   State<_CategorySheet> createState() => _CategorySheetState();
@@ -64,6 +70,9 @@ class _CategorySheetState extends State<_CategorySheet> {
   CategoryDraft? get _draft =>
       CategoryDraft.tryCreate(name: _name.text, icon: _icon);
 
+  bool get _nameTaken =>
+      widget.takenNames.contains(_name.text.trim().toLowerCase());
+
   Future<void> _delete() async {
     final category = widget.category;
     if (category == null) return;
@@ -83,6 +92,7 @@ class _CategorySheetState extends State<_CategorySheet> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final draft = _draft;
+    final nameTaken = _nameTaken;
     final editing = widget.category != null;
 
     return SafeArea(
@@ -109,6 +119,7 @@ class _CategorySheetState extends State<_CategorySheet> {
             AppTextField(
               controller: _name,
               label: l10n.nameLabel,
+              errorText: nameTaken ? l10n.categoryNameTaken : null,
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
             ),
@@ -158,7 +169,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: draft == null
+                      onPressed: draft == null || nameTaken
                           ? null
                           : () =>
                                 Navigator.of(context)

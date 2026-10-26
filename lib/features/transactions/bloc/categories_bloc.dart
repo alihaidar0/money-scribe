@@ -27,7 +27,12 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) async {
     emit(
-      state.copyWith(status: CategoriesStatus.loading, clearFailedAction: true),
+      state.copyWith(
+        status: CategoriesStatus.loading,
+        clearFailedAction: true,
+        clearStaleAction: true,
+        clearRefusal: true,
+      ),
     );
     try {
       final categories = await _repository.categories();
@@ -54,7 +59,11 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) {
     return _run(event, emit, () async {
-      final category = await _repository.update(event.id, event.draft);
+      final category = await _repository.update(
+        event.id,
+        event.draft,
+        version: _categoryOf(event.id).version,
+      );
       emit(
         state.copyWith(
           categories: [
@@ -71,7 +80,10 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) {
     return _run(event, emit, () async {
-      await _repository.delete(event.id);
+      await _repository.delete(
+        event.id,
+        version: _categoryOf(event.id).version,
+      );
       emit(
         state.copyWith(
           categories: [
@@ -83,22 +95,56 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     });
   }
 
+  /// The category [id] as the list shows it. A category that is not there was
+  /// deleted on another device, which is the same as a version that moved on.
+  TransactionCategory _categoryOf(String id) {
+    return state.categories.firstWhere(
+      (category) => category.id == id,
+      orElse: () => throw const StaleRecordException(),
+    );
+  }
+
   /// Does [action], which saves [event] on the server. When the server does
   /// not accept it the list stays as it was and [CategoriesState.failedAction]
-  /// holds [event], so the screen can offer to try again.
+  /// holds [event], so the screen can offer to try again. When the category
+  /// was changed on another device the list is loaded again and
+  /// [CategoriesState.staleAction] holds [event], so the screen can offer to
+  /// apply it to what is there now. When the name is taken or there are too
+  /// many categories, [CategoriesState.refusal] says so.
   Future<void> _run(
     CategoriesEvent event,
     Emitter<CategoriesState> emit,
     Future<void> Function() action,
   ) async {
-    emit(state.copyWith(clearFailedAction: true));
+    emit(
+      state.copyWith(
+        clearFailedAction: true,
+        clearStaleAction: true,
+        clearRefusal: true,
+      ),
+    );
     try {
       await action();
+    } on StaleRecordException {
+      await _reload(emit);
+      emit(state.copyWith(staleAction: event));
+    } on CategoryRefusedException catch (refused) {
+      emit(state.copyWith(refusal: refused.refusal));
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(state.copyWith(failedAction: event));
+    }
+  }
+
+  /// Reads the categories again without the loading state. If the server
+  /// cannot be reached the list stays as it was.
+  Future<void> _reload(Emitter<CategoriesState> emit) async {
+    try {
+      emit(state.copyWith(categories: await _repository.categories()));
+    } on Exception {
+      // The list stays; the next load asks again.
     }
   }
 }

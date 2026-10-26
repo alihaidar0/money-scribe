@@ -10,14 +10,24 @@ abstract interface class CategoriesRepository {
   /// Every category, in the order the person arranged them.
   Future<List<TransactionCategory>> categories();
 
-  /// Adds the category [draft] and returns it with its id.
+  /// Adds the category [draft] and returns it with its id. Throws
+  /// [CategoryRefusedException] when the name is taken or the person has the
+  /// most categories allowed.
   Future<TransactionCategory> add(CategoryDraft draft);
 
-  /// Replaces what the category [id] is made of and returns it. A built-in
-  /// category cannot be changed.
-  Future<TransactionCategory> update(String id, CategoryDraft draft);
+  /// Replaces what the category [id] is made of and returns it. [version] is
+  /// the version the change was made from: a category that changed since
+  /// throws a `StaleRecordException` and nothing is changed. A built-in
+  /// category cannot be changed. Throws [CategoryRefusedException] when the
+  /// name is taken.
+  Future<TransactionCategory> update(
+    String id,
+    CategoryDraft draft, {
+    required int version,
+  });
 
-  /// Deletes the category [id]; its transactions move to Other. A built-in
-  /// category cannot be deleted. Deleting one that is gone does nothing.
-  Future<void> delete(String id);
+  /// Deletes the category [id] at [version]; its transactions move to Other.
+  /// A built-in category cannot be deleted. A category that changed since
+  /// throws a `StaleRecordException`. Deleting one that is gone does nothing.
+  Future<void> delete(String id, {required int version});
 }

@@ -19,6 +19,8 @@ final class AccountsState extends Equatable {
     this.status = AccountsStatus.loading,
     this.accounts = const [],
     this.failedAction,
+    this.staleAction,
+    this.refusal,
     this.deleteBlocked = false,
   });
 
@@ -31,6 +33,15 @@ final class AccountsState extends Equatable {
   /// screen can offer to try it again. `null` once something else was done.
   final AccountsEvent? failedAction;
 
+  /// The last change or delete that was refused because the account was
+  /// changed on another device; the list was loaded again. `null` once
+  /// something else was done.
+  final AccountsEvent? staleAction;
+
+  /// Why the last add or change was refused, if the person can act on it. It
+  /// stays until something else is done.
+  final AccountRefusal? refusal;
+
   /// Whether the last delete was refused because the account has
   /// transactions. It stays until something else is done.
   final bool deleteBlocked;
@@ -39,8 +50,12 @@ final class AccountsState extends Equatable {
     AccountsStatus? status,
     List<Account>? accounts,
     AccountsEvent? failedAction,
+    AccountsEvent? staleAction,
+    AccountRefusal? refusal,
     bool? deleteBlocked,
     bool clearFailedAction = false,
+    bool clearStaleAction = false,
+    bool clearRefusal = false,
   }) {
     return AccountsState(
       status: status ?? this.status,
@@ -48,10 +63,19 @@ final class AccountsState extends Equatable {
       failedAction: clearFailedAction
           ? null
           : failedAction ?? this.failedAction,
+      staleAction: clearStaleAction ? null : staleAction ?? this.staleAction,
+      refusal: clearRefusal ? null : refusal ?? this.refusal,
       deleteBlocked: deleteBlocked ?? this.deleteBlocked,
     );
   }
 
   @override
-  List<Object?> get props => [status, accounts, failedAction, deleteBlocked];
+  List<Object?> get props => [
+    status,
+    accounts,
+    failedAction,
+    staleAction,
+    refusal,
+    deleteBlocked,
+  ];
 }

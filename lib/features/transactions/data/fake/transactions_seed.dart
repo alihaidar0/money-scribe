@@ -19,37 +19,44 @@ abstract final class TransactionsSeed {
   static const categories = [
     TransactionCategory(
       id: 'groceries',
+      key: 'groceries',
       name: 'Groceries',
       icon: CategoryIcon.groceries,
     ),
     TransactionCategory(
       id: 'dining',
+      key: 'dining',
       name: 'Dining',
       icon: CategoryIcon.dining,
     ),
     TransactionCategory(
       id: 'transport',
+      key: 'transport',
       name: 'Transport',
       icon: CategoryIcon.transport,
     ),
     TransactionCategory(
       id: 'housing',
+      key: 'housing',
       name: 'Housing',
       icon: CategoryIcon.housing,
     ),
     TransactionCategory(
       id: 'utilities',
+      key: 'utilities',
       name: 'Utilities',
       icon: CategoryIcon.utilities,
     ),
     TransactionCategory(
       id: 'scholarship',
+      key: 'scholarship',
       name: 'Scholarship',
       icon: CategoryIcon.scholarship,
       kind: CategoryKind.income,
     ),
     TransactionCategory(
       id: 'other',
+      key: 'other',
       name: 'Other',
       icon: CategoryIcon.other,
       kind: CategoryKind.both,
