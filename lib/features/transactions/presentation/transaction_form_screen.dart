@@ -25,6 +25,7 @@ import 'package:money_scribe/features/transactions/domain/categories_repository.
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
 import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/account_sheet.dart';
 
 /// TX-4, TX-5, TX-6 and TX-7: the form that adds a transaction, or with [id]
@@ -303,7 +304,7 @@ class _FormState extends State<_Form> {
                   for (final category in state.availableCategories)
                     ChoiceChip(
                       avatar: Icon(categoryIcon(category.icon), size: 18),
-                      label: Text(category.name),
+                      label: Text(context.l10n.categoryName(category)),
                       selected: values.categoryId == category.id,
                       showCheckmark: false,
                       onSelected: (_) =>

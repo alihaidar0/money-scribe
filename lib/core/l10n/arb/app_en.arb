@@ -2159,6 +2159,50 @@
   "@accountInUse": {
     "description": "Message when an account that has transactions is deleted."
   },
+  "categoryNameGroceries": "Groceries",
+  "@categoryNameGroceries": {
+    "description": "Name of the built-in category Groceries."
+  },
+  "categoryNameDining": "Dining",
+  "@categoryNameDining": {
+    "description": "Name of the built-in category Dining."
+  },
+  "categoryNameTransport": "Transport",
+  "@categoryNameTransport": {
+    "description": "Name of the built-in category Transport."
+  },
+  "categoryNameHousing": "Housing",
+  "@categoryNameHousing": {
+    "description": "Name of the built-in category Housing."
+  },
+  "categoryNameUtilities": "Utilities",
+  "@categoryNameUtilities": {
+    "description": "Name of the built-in category Utilities."
+  },
+  "categoryNameScholarship": "Scholarship",
+  "@categoryNameScholarship": {
+    "description": "Name of the built-in category Scholarship."
+  },
+  "categoryNameOther": "Other",
+  "@categoryNameOther": {
+    "description": "Name of the built-in category Other."
+  },
+  "accountNameTaken": "You already have an account with this name.",
+  "@accountNameTaken": {
+    "description": "Error under the name field of the account sheet when another account has the name, and message when the server refused the name."
+  },
+  "categoryNameTaken": "A category with this name already exists.",
+  "@categoryNameTaken": {
+    "description": "Error under the name field of the category sheet when another category, a built-in one included, has the name, and message when the server refused the name."
+  },
+  "accountLimitReached": "You have the most accounts allowed. Delete one to add another.",
+  "@accountLimitReached": {
+    "description": "Message shown when an account could not be added because the person has as many accounts as the server allows."
+  },
+  "categoryLimitReached": "You have the most categories of your own allowed. Delete one to add another.",
+  "@categoryLimitReached": {
+    "description": "Message shown when a category could not be added because the person has as many categories of their own as the server allows."
+  },
   "accountsEmptyTitle": "No accounts yet",
   "@accountsEmptyTitle": {
     "description": "Title of the Accounts screen when there is none."

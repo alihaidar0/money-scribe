@@ -354,7 +354,7 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 
 - [x] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
 - [x] Follow a `next` link only when it points at the API address
-- [ ] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
+- [x] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
 - [ ] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
 - [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
 - [ ] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice

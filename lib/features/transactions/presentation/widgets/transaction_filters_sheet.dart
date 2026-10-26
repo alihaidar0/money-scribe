@@ -7,6 +7,7 @@ import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 
 /// What the Filters sheet answers with: the choices to apply and the part of
 /// the month to show.
@@ -171,7 +172,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                   for (final category in widget.categories)
                     FilterChip(
                       avatar: Icon(categoryIcon(category.icon), size: 18),
-                      label: Text(category.name),
+                      label: Text(context.l10n.categoryName(category)),
                       selected: _categoryIds.contains(category.id),
                       onSelected: (selected) => _toggle(
                         _categoryIds,
