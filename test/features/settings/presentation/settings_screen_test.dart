@@ -83,10 +83,14 @@ void main() {
         'Import CSV',
         'Security',
         'App lock',
-        'Money Scribe 0.1.0',
+        'Where you are signed in',
+        'Security activity',
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
+      // The version is at the very end of the list.
+      await tester.scrollUntilVisible(find.text('Money Scribe 0.1.0'), 200);
+      expect(find.text('Money Scribe 0.1.0'), findsOneWidget);
     });
 
     testWidgets('the switches start off', (tester) async {

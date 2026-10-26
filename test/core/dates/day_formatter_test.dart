@@ -98,4 +98,55 @@ void main() {
       expect(PeriodScope.partOfDay(31), PeriodScope.secondPart);
     });
   });
+
+  group('formatWithYear', () {
+    test('always has the year', () {
+      expect(DayFormatter(english).formatWithYear(october5), '5 Oct 2026');
+    });
+
+    test('uses Western digits in Arabic', () {
+      expect(
+        DayFormatter(arabic).formatWithYear(october5),
+        isNot(matches('[٠-٩]')),
+      );
+    });
+  });
+
+  group('formatTime', () {
+    test('is on a 24-hour clock', () {
+      expect(
+        DayFormatter(english).formatTime(DateTime(2026, 10, 5, 18, 40)),
+        '18:40',
+      );
+      expect(
+        DayFormatter(english).formatTime(DateTime(2026, 10, 5, 9, 5)),
+        '09:05',
+      );
+    });
+
+    test('uses Western digits in Arabic', () {
+      expect(
+        DayFormatter(arabic).formatTime(DateTime(2026, 10, 5, 18, 40)),
+        '18:40',
+      );
+    });
+  });
+
+  group('isSameDay', () {
+    test('compares the calendar day, not the time', () {
+      final formatter = DayFormatter(english);
+
+      expect(
+        formatter.isSameDay(
+          DateTime(2026, 10, 5, 1),
+          DateTime(2026, 10, 5, 23),
+        ),
+        isTrue,
+      );
+      expect(
+        formatter.isSameDay(DateTime(2026, 10, 5), DateTime(2025, 10, 5)),
+        isFalse,
+      );
+    });
+  });
 }

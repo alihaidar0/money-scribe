@@ -227,6 +227,16 @@ route.
   apart, as one (the counts added, the kinds joined), and reads the next page before it shows a group that
   touches the end of the page.
 - A sign-in from a device with no session in the last 90 days sends the account owner an email (no link).
+- **How the app uses them.** Settings, in the Security section, has "Where you are signed in" and "Security
+  activity" (`features/sessions`). Active shows one page of at most ten, this device first and marked; Previous
+  is read the first time its tab is opened, a page at a time, and grouped by `device_id` under the device's
+  name. A row opens a read-only sheet; "End this session" is offered only for another active session and asks
+  first, saying that fingerprint sign-in on that device is turned off too. Ending a session that is already
+  gone counts as done. "Sign out of all other devices" asks for the password in a dialog that stays open: a
+  wrong password is said under the field, and `429` locks the button with the `Retry-After` countdown. The
+  activity groups consecutive imports of one session less than 15 minutes apart, and reads the next page before
+  it shows a run that touches the end of a page. An unknown type, kind, platform, method or reason is shown with
+  generic wording. The sign-in reason for `session_limit_reached` is a separate step.
 
 ## 7. CSV export and import
 

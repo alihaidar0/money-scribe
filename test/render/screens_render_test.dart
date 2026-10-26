@@ -1652,6 +1652,77 @@ final _scenes = <_Scene>[
       await tester.pumpAndSettle();
     },
   ),
+  const _Scene('st-12-sessions', AppRoutes.sessions, signedIn: true),
+  _Scene(
+    'st-12b-sessions-previous',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(Tab).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12c-session-details',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.text('Chrome on Windows'));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12d-end-session',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.text('Chrome on Windows'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(OutlinedButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12e-sign-out-others',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'st-13-security-activity',
+    AppRoutes.securityActivity,
+    signedIn: true,
+  ),
+  _Scene(
+    'st-14-sessions-previous-empty',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Tab).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-14b-security-activity-empty',
+    AppRoutes.securityActivity,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+      await tester.pumpAndSettle();
+    },
+  ),
   _Scene(
     'st-11-delete-account',
     AppRoutes.account,

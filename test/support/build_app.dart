@@ -25,6 +25,8 @@ import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_reposito
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
+import 'package:money_scribe/features/sessions/data/fake/fake_sessions_repository.dart';
+import 'package:money_scribe/features/sessions/domain/sessions_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
@@ -57,6 +59,7 @@ Widget buildApp({
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
   DebtsRepository? debtsRepository,
+  SessionsRepository? sessionsRepository,
   OverviewRepository? overviewRepository,
   ReportsRepository? reportsRepository,
   Ticker? ticker,
@@ -117,6 +120,8 @@ Widget buildApp({
     ),
     debtsRepository:
         debtsRepository ?? FakeDebtsRepository(demo: demoController),
+    sessionsRepository:
+        sessionsRepository ?? FakeSessionsRepository(demo: demoController),
     reportsRepository:
         reportsRepository ?? FakeReportsRepository(demo: demoController),
     demo: demoController,
