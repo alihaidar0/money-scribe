@@ -2604,5 +2604,37 @@
   "fingerprintPhonesEmptyAction": "Back to settings",
   "@fingerprintPhonesEmptyAction": {
     "description": "Button that leaves the empty list of phones for the Settings."
+  },
+  "debtLimitReached": "You have the most debts allowed. Delete one to add another.",
+  "@debtLimitReached": {
+    "description": "Message shown when a debt could not be added because the person has as many debts as the server allows."
+  },
+  "repaymentLimitReached": "This debt has the most repayments allowed.",
+  "@repaymentLimitReached": {
+    "description": "Message shown when a repayment could not be added because the debt has as many repayments as the server allows."
+  },
+  "debtAmountBelowRepaidChanged": "The amount can''t be less than what was already repaid.",
+  "@debtAmountBelowRepaidChanged": {
+    "description": "Message shown when a debt could not be saved because its amount is less than what was repaid, which another device may have changed."
+  },
+  "debtStartAfterRepayment": "The debt can''t start after one of its repayments.",
+  "@debtStartAfterRepayment": {
+    "description": "Message shown when a debt could not be saved because its start day is after one of its repayments."
+  },
+  "repaymentBeforeStart": "A repayment can''t be dated before the debt starts.",
+  "@repaymentBeforeStart": {
+    "description": "Message shown when a repayment could not be saved because its day is before the day the debt starts."
+  },
+  "debtDateOutOfRange": "Choose a date between 2000 and 2099.",
+  "@debtDateOutOfRange": {
+    "description": "Message shown when a debt or a repayment could not be saved because a day is outside the years the server keeps."
+  },
+  "debtChangedElsewhere": "This debt was changed on another device. It has been loaded again.",
+  "@debtChangedElsewhere": {
+    "description": "Message shown when saving or deleting a debt or a repayment was refused because another device changed the debt first. The screen shows what is on the server now."
+  },
+  "debtsOtherCurrenciesNotice": "Debts in other currencies are not included in these totals.",
+  "@debtsOtherCurrenciesNotice": {
+    "description": "Note under the totals of the Debts screen when some debts are in a currency other than the default one, because amounts of different currencies are never added."
   }
 }

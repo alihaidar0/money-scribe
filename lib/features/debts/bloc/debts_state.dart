@@ -27,6 +27,10 @@ enum DebtsDeleteStatus {
 
   /// The server did not delete it.
   failed,
+
+  /// The debt had been changed on another device, so it was not deleted; the
+  /// list is read again.
+  stale,
 }
 
 final class DebtsState extends Equatable {
@@ -38,11 +42,12 @@ final class DebtsState extends Equatable {
     this.selectedId,
     this.deleteStatus = DebtsDeleteStatus.idle,
     this.deletingId,
+    this.defaultCurrency,
   });
 
   final DebtsStatus status;
 
-  /// Every debt, in the order they were added.
+  /// Every debt, in the order they were added, in every currency.
   final List<Debt> debts;
   final DebtsFilter filter;
 
@@ -56,6 +61,20 @@ final class DebtsState extends Equatable {
 
   /// The day of today, which decides which debts are overdue.
   final DateTime today;
+
+  /// The default currency of the account, which the totals are in, once it
+  /// is known.
+  final Currency? defaultCurrency;
+
+  /// The currency of the totals.
+  Currency get totalsCurrency =>
+      defaultCurrency ?? debts.firstOrNull?.amount.currency ?? Currency.rub;
+
+  /// Whether some debt is in another currency than the totals', and so is not
+  /// in them: amounts of two currencies are never added.
+  bool get hasOtherCurrencies {
+    return debts.any((debt) => debt.amount.currency != totalsCurrency);
+  }
 
   /// The debts of the chosen kind, those still to be repaid first.
   List<Debt> get shown {
@@ -92,11 +111,13 @@ final class DebtsState extends Equatable {
 
   Money _remaining(DebtDirection direction) {
     return debts
-        .where((debt) => debt.direction == direction)
+        .where(
+          (debt) =>
+              debt.direction == direction &&
+              debt.amount.currency == totalsCurrency,
+        )
         .fold<Money>(
-          Money.zero(
-            debts.isEmpty ? Currency.rub : debts.first.amount.currency,
-          ),
+          Money.zero(totalsCurrency),
           (sum, debt) => sum + debt.remaining,
         );
   }
@@ -109,6 +130,7 @@ final class DebtsState extends Equatable {
     String? selectedId,
     DebtsDeleteStatus? deleteStatus,
     String? deletingId,
+    Currency? defaultCurrency,
   }) {
     return DebtsState(
       status: status ?? this.status,
@@ -118,6 +140,7 @@ final class DebtsState extends Equatable {
       selectedId: selectedId ?? this.selectedId,
       deleteStatus: deleteStatus ?? this.deleteStatus,
       deletingId: deletingId ?? this.deletingId,
+      defaultCurrency: defaultCurrency ?? this.defaultCurrency,
     );
   }
 
@@ -130,5 +153,6 @@ final class DebtsState extends Equatable {
     selectedId,
     deleteStatus,
     deletingId,
+    defaultCurrency,
   ];
 }

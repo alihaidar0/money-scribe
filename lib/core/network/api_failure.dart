@@ -12,6 +12,7 @@ final class ApiErrorItem extends Equatable {
     this.attemptsLeft,
     this.minLength,
     this.maxLength,
+    this.remaining,
   });
 
   /// A stable, machine-readable code such as `code_invalid`.
@@ -33,6 +34,10 @@ final class ApiErrorItem extends Equatable {
   /// Only on `password_too_long`: the longest password the server accepts.
   final int? maxLength;
 
+  /// Only on `exceeds_remaining`: what is left of the debt, as the decimal
+  /// string the server sent.
+  final String? remaining;
+
   @override
   List<Object?> get props => [
     code,
@@ -41,6 +46,7 @@ final class ApiErrorItem extends Equatable {
     attemptsLeft,
     minLength,
     maxLength,
+    remaining,
   ];
 }
 
@@ -158,6 +164,9 @@ final class ApiFailure {
             attemptsLeft: _int(error['attempts_left']),
             minLength: _int(error['min_length']),
             maxLength: _int(error['max_length']),
+            remaining: error['remaining'] is String
+                ? error['remaining'] as String
+                : null,
           ),
     ];
   }

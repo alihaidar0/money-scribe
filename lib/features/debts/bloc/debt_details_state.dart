@@ -39,6 +39,9 @@ final class DebtDetailsState extends Equatable {
     this.debt,
     this.failedAction,
     this.deleteStatus = DebtDeleteStatus.idle,
+    this.refusal,
+    this.refusedRemaining,
+    this.changedElsewhere = false,
   });
 
   final String debtId;
@@ -56,6 +59,17 @@ final class DebtDetailsState extends Equatable {
 
   final DebtDeleteStatus deleteStatus;
 
+  /// Why the server refused the last change, until something else is done.
+  final DebtRefusal? refusal;
+
+  /// What the server said is left to repay, when it refused a repayment for
+  /// being more than that.
+  final Money? refusedRemaining;
+
+  /// Whether the last change was not applied because the debt had been changed
+  /// on another device; the debt shown is the one read again.
+  final bool changedElsewhere;
+
   DebtDetailsState copyWith({
     DebtDetailsStatus? status,
     Debt? debt,
@@ -63,6 +77,10 @@ final class DebtDetailsState extends Equatable {
     DebtDetailsEvent? failedAction,
     bool clearFailedAction = false,
     DebtDeleteStatus? deleteStatus,
+    DebtRefusal? refusal,
+    Money? refusedRemaining,
+    bool? changedElsewhere,
+    bool clearNotices = false,
   }) {
     return DebtDetailsState(
       debtId: debtId,
@@ -73,6 +91,12 @@ final class DebtDetailsState extends Equatable {
           ? null
           : failedAction ?? this.failedAction,
       deleteStatus: deleteStatus ?? this.deleteStatus,
+      refusal: clearNotices ? null : refusal ?? this.refusal,
+      refusedRemaining: clearNotices
+          ? null
+          : refusedRemaining ?? this.refusedRemaining,
+      changedElsewhere:
+          !clearNotices && (changedElsewhere ?? this.changedElsewhere),
     );
   }
 
@@ -84,5 +108,8 @@ final class DebtDetailsState extends Equatable {
     today,
     failedAction,
     deleteStatus,
+    refusal,
+    refusedRemaining,
+    changedElsewhere,
   ];
 }

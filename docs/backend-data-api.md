@@ -122,7 +122,8 @@ These come with the hardening issue and hold for every signed-in call.
   `status` (`open`, `overdue`, `settled`) and `repayments[]`, then `version`. `direction` and `currency` are
   fixed after creation (`400 read_only`): the edit screen shows them as fixed. `PATCH {"due_date": null}`
   clears the due date and `{"note": ""}` the note. At most 500 debts.
-- **Status** is counted in the person's day, from the time zone in the settings; the app does not send `today`.
+- **Status** is counted in the person's day, from the time zone in the settings; the app does not send `today`
+  and shows the status the server sent (a status it does not know is worked out on the device).
 - **List:** filters `direction`, `status` (repeatable), `search` (the person, 2 to 50). The repayments come
   with each debt (up to 200). The app reads every page (`limit=100`, at most 5 calls) and sorts the debts
   itself: those still to be repaid first, then the settled ones, each oldest first. The totals are added up
@@ -137,6 +138,16 @@ These come with the hardening issue and hold for every signed-in call.
   `debt_limit_reached`, `repayment_limit_reached`. The app checks the first rules on the form before it
   sends (a repayment cannot be dated before the debt starts, the amount cannot go below what was repaid, the
   start date cannot move after a repayment); the server's code is the last word.
+- **Two devices.** A change or a delete of a debt sends the debt's `version`, and one of a repayment sends
+  the repayment's own. A `412` (or a `404` on a change) means another device got there first: nothing is
+  changed, the debt is read again and the screen says so. A delete that finds the record already gone
+  (`404 not_found`) counts as done. An `exceeds_remaining` shows the `remaining` of the answer and reads the
+  debt again.
+- **A new debt** is in the default currency of the settings, which is also the currency of the totals; the
+  direction and the currency are fixed afterwards. The start-day picker of a debt with repayments stops at its
+  last repayment, and the picker of a repayment starts at the day the debt starts.
+- **The due day** is taken away with `{"due_date": null}`, so that one request goes through a copy of the HTTP
+  client that keeps `null` fields (see `docs/architecture.md`).
 
 ## 5. Reports and the Overview
 

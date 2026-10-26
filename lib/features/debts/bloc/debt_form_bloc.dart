@@ -12,7 +12,9 @@ part 'debt_form_event.dart';
 part 'debt_form_state.dart';
 
 /// The Add debt and Edit debt form. Without an id it starts a new debt that
-/// begins today; with one it loads that debt to be changed.
+/// begins today, in the default currency of the account; with one it loads
+/// that debt to be changed. The direction and the currency of a debt cannot be
+/// changed after it is added.
 class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
   new({required this._repository, required DateTime Function() now, String? id})
     : _today = _day(now()),
@@ -48,19 +50,20 @@ class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
     Emitter<DebtFormState> emit,
   ) async {
     final id = state.debtId;
-    if (id == null) {
-      emit(
-        state.copyWith(
-          status: DebtFormStatus.ready,
-          values: DebtFormValues(startDate: _today),
-          baseline: DebtFormValues(startDate: _today),
-        ),
-      );
-      return;
-    }
-
     emit(state.copyWith(status: DebtFormStatus.loading));
     try {
+      if (id == null) {
+        final currency = await _repository.defaultCurrency();
+        emit(
+          state.copyWith(
+            status: DebtFormStatus.ready,
+            values: DebtFormValues(startDate: _today),
+            baseline: DebtFormValues(startDate: _today),
+            currency: currency,
+          ),
+        );
+        return;
+      }
       final debt = await _repository.debt(id);
       if (debt == null) {
         emit(state.copyWith(status: DebtFormStatus.notFound));
@@ -80,6 +83,8 @@ class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
           values: values,
           baseline: values,
           repaid: debt.repaid,
+          lastRepaymentDate: debt.lastRepaymentDate,
+          version: debt.version,
           currency: debt.amount.currency,
         ),
       );
@@ -97,6 +102,7 @@ class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
         values: values,
         // Edited since it was last saved.
         saveStatus: DebtFormSaveStatus.idle,
+        clearRefusal: true,
       ),
     );
   }
@@ -151,13 +157,25 @@ class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
     emit(state.copyWith(saveStatus: DebtFormSaveStatus.saving));
     try {
       final id = state.debtId;
-      if (id == null) {
+      final version = state.version;
+      if (id == null || version == null) {
         await _repository.add(draft);
       } else {
-        await _repository.update(id, draft);
+        await _repository.update(id, draft, version: version);
       }
       emit(
         state.copyWith(saveStatus: DebtFormSaveStatus.saved, baseline: sent),
+      );
+    } on StaleRecordException {
+      // Changed on another device: read it again, and the person decides.
+      emit(state.copyWith(saveStatus: DebtFormSaveStatus.stale));
+      add(const DebtFormRetried());
+    } on DebtRefusedException catch (refused) {
+      emit(
+        state.copyWith(
+          saveStatus: DebtFormSaveStatus.refused,
+          refusal: refused.refusal,
+        ),
       );
     } on NoConnectionException {
       emit(state.copyWith(saveStatus: DebtFormSaveStatus.failed));

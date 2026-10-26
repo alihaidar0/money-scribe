@@ -7,6 +7,7 @@ import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/features/debts/bloc/debt_form_bloc.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/domain/debt.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
@@ -267,6 +268,182 @@ void main() {
       act: (bloc) => bloc.add(const DebtFormStarted()),
       verify: (bloc) => expect(bloc.state.status, DebtFormStatus.failure),
       errors: () => [isA<ServerException>()],
+    );
+  });
+
+  group('the currency', () {
+    blocTest<DebtFormBloc, DebtFormState>(
+      'a new debt is in the default currency of the account',
+      setUp: () => repository = FakeDebtsRepository(
+        demo: demo,
+        defaultCurrency: () async => Currency.usd,
+      ),
+      build: build,
+      act: fill,
+      verify: (bloc) {
+        expect(bloc.state.currency, Currency.usd);
+        expect(bloc.state.draft?.amount, const Money(150000, Currency.usd));
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'a new debt waits for the default currency, and asks again on Retry',
+      setUp: () {
+        var calls = 0;
+        repository = FakeDebtsRepository(
+          demo: demo,
+          defaultCurrency: () async {
+            if (calls++ == 0) throw const NoConnectionException();
+            return Currency.eur;
+          },
+        );
+      },
+      build: build,
+      act: (bloc) async {
+        bloc.add(const DebtFormStarted());
+        await bloc.stream.firstWhere(
+          (s) => s.status == DebtFormStatus.noConnection,
+        );
+        bloc.add(const DebtFormRetried());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.status, DebtFormStatus.ready);
+        expect(bloc.state.currency, Currency.eur);
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'a debt being changed keeps its own, whatever the default is',
+      setUp: () => repository = FakeDebtsRepository(
+        demo: demo,
+        defaultCurrency: () async => Currency.usd,
+      ),
+      build: () => build(id: 'sam'),
+      act: start,
+      verify: (bloc) {
+        expect(bloc.state.currency, Currency.rub);
+        expect(bloc.state.version, 1);
+      },
+    );
+  });
+
+  group('the start day of a debt with repayments', () {
+    blocTest<DebtFormBloc, DebtFormState>(
+      'cannot go past the last repayment',
+      build: () => build(id: 'sam'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(DebtStartDateChosen(DateTime(2026, 10, 13)));
+      },
+      verify: (bloc) {
+        expect(bloc.state.lastRepaymentDate, DateTime(2026, 10, 12));
+        expect(bloc.state.startAfterRepayment, isTrue);
+        expect(bloc.state.canSave, isFalse);
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'can be the day of the last repayment',
+      build: () => build(id: 'sam'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(DebtStartDateChosen(DateTime(2026, 10, 12)));
+      },
+      verify: (bloc) {
+        expect(bloc.state.startAfterRepayment, isFalse);
+        expect(bloc.state.canSave, isTrue);
+      },
+    );
+  });
+
+  group('what the server says to Save', () {
+    blocTest<DebtFormBloc, DebtFormState>(
+      'a debt changed on another device is not overwritten, and is read again',
+      build: () => build(id: 'sam'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtPersonChanged('Samuel'));
+        // Another device changes the debt first.
+        final sam = (await repository.debt('sam'))!;
+        await repository.update(
+          'sam',
+          DebtDraft(
+            direction: sam.direction,
+            person: sam.person,
+            amount: sam.amount,
+            startDate: sam.startDate,
+            dueDate: sam.dueDate,
+            note: 'Other',
+          ),
+          version: 1,
+        );
+        bloc.add(const DebtSaveRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) async {
+        expect(bloc.state.saveStatus, DebtFormSaveStatus.stale);
+        expect((await repository.debt('sam'))?.person, 'Sam');
+        // What the server holds now is on the form, at its new version.
+        expect(bloc.state.status, DebtFormStatus.ready);
+        expect(bloc.state.values.note, 'Other');
+        expect(bloc.state.values.person, 'Sam');
+        expect(bloc.state.version, 2);
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'a refusal is kept with what was typed',
+      setUp: () => repository = FakeDebtsRepository(demo: demo, maxDebts: 3),
+      build: build,
+      act: (bloc) async {
+        await fill(bloc);
+        bloc.add(const DebtSaveRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.saveStatus, DebtFormSaveStatus.refused);
+        expect(bloc.state.refusal, DebtRefusal.limitReached);
+        expect(bloc.state.values.person, 'Lee');
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'editing after a refusal clears it',
+      setUp: () => repository = FakeDebtsRepository(demo: demo, maxDebts: 3),
+      build: build,
+      act: (bloc) async {
+        await fill(bloc);
+        bloc.add(const DebtSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == DebtFormSaveStatus.refused,
+        );
+        bloc.add(const DebtNoteChanged('x'));
+      },
+      verify: (bloc) {
+        expect(bloc.state.saveStatus, DebtFormSaveStatus.idle);
+        expect(bloc.state.refusal, isNull);
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
+      'more repaid elsewhere than the new amount is a refusal',
+      build: () => build(id: 'sam'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtAmountChanged('4500'));
+        // Another device repays more than the form knows of.
+        await repository.addRepayment(
+          'sam',
+          RepaymentDraft(amount: rub(1000), date: DateTime(2026, 10, 14)),
+        );
+        bloc.add(const DebtSaveRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.saveStatus, DebtFormSaveStatus.refused);
+        expect(bloc.state.refusal, DebtRefusal.amountBelowRepaid);
+      },
     );
   });
 }
