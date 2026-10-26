@@ -89,8 +89,15 @@ class _DebtsView extends StatelessWidget {
     return BlocListener<DebtsBloc, DebtsState>(
       listenWhen: (previous, current) =>
           previous.deleteStatus != current.deleteStatus &&
-          current.deleteStatus == DebtsDeleteStatus.failed,
+          (current.deleteStatus == DebtsDeleteStatus.failed ||
+              current.deleteStatus == DebtsDeleteStatus.stale),
       listener: (context, state) {
+        if (state.deleteStatus == DebtsDeleteStatus.stale) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l10n.debtChangedElsewhere)));
+          return;
+        }
         final id = state.deletingId;
         if (id == null) return;
         showFailureSnackBar(
@@ -196,6 +203,16 @@ class _ListPane extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       children: [
         DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+        if (state.hasOtherCurrencies)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              context.l10n.debtsOtherCurrenciesNotice,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         const SizedBox(height: 16),
         const _FilterSwitch(),
         const SizedBox(height: 16),

@@ -32,6 +32,7 @@ import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/data/monitored_server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/data/remote/remote_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
@@ -93,6 +94,9 @@ Future<void> main() async {
   final payScheduleRepository = settings == null
       ? FakePayScheduleRepository(demo: demo)
       : RemotePayScheduleRepository(settings);
+  final defaultCurrencyRepository = settings == null
+      ? FakeDefaultCurrencyRepository(demo: demo)
+      : RemoteDefaultCurrencyRepository(settings);
   // The fake accounts and categories ask the fake transactions whether they
   // are in use.
   final fakeTransactions = apiDio == null
@@ -133,9 +137,7 @@ Future<void> main() async {
       deviceKeyRepository: deviceKeyRepository,
       startsLocked: startsLocked,
       payScheduleRepository: payScheduleRepository,
-      defaultCurrencyRepository: settings == null
-          ? FakeDefaultCurrencyRepository(demo: demo)
-          : RemoteDefaultCurrencyRepository(settings),
+      defaultCurrencyRepository: defaultCurrencyRepository,
       accountLocaleRepository: settings,
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
       overviewRepository: FakeOverviewRepository(demo: demo),
@@ -150,7 +152,15 @@ Future<void> main() async {
       categoriesRepository: apiDio == null
           ? FakeCategoriesRepository(demo: demo, transactions: fakeTransactions)
           : RemoteCategoriesRepository.create(dio: apiDio),
-      debtsRepository: FakeDebtsRepository(demo: demo),
+      debtsRepository: apiDio == null
+          ? FakeDebtsRepository(
+              demo: demo,
+              defaultCurrency: defaultCurrencyRepository.load,
+            )
+          : RemoteDebtsRepository.create(
+              dio: apiDio,
+              defaultCurrency: defaultCurrencyRepository.load,
+            ),
       reportsRepository: FakeReportsRepository(demo: demo),
       demo: demo,
       environment: AppEnvironment.current,

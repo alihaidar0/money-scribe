@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/features/debts/domain/debt.dart';
 import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 
@@ -11,7 +12,9 @@ part 'debt_details_event.dart';
 part 'debt_details_state.dart';
 
 /// The Debt details screen: one debt with its repayments, adding, changing
-/// and deleting repayments, and deleting the debt.
+/// and deleting repayments, and deleting the debt. A change names the version
+/// it was made from; one that was made on another device meanwhile is not
+/// applied, the debt is read again and the screen says so.
 class DebtDetailsBloc extends Bloc<DebtDetailsEvent, DebtDetailsState> {
   new({
     required this._repository,
@@ -86,7 +89,12 @@ class DebtDetailsBloc extends Bloc<DebtDetailsEvent, DebtDetailsState> {
     return _run(
       event,
       emit,
-      () => _repository.updateRepayment(state.debtId, event.id, event.draft),
+      () => _repository.updateRepayment(
+        state.debtId,
+        event.id,
+        event.draft,
+        version: _repaymentOf(event.id).version,
+      ),
     );
   }
 
@@ -97,7 +105,11 @@ class DebtDetailsBloc extends Bloc<DebtDetailsEvent, DebtDetailsState> {
     return _run(
       event,
       emit,
-      () => _repository.deleteRepayment(state.debtId, event.id),
+      () => _repository.deleteRepayment(
+        state.debtId,
+        event.id,
+        version: _repaymentOf(event.id).version,
+      ),
     );
   }
 
@@ -105,10 +117,26 @@ class DebtDetailsBloc extends Bloc<DebtDetailsEvent, DebtDetailsState> {
     DebtDeleteRequested event,
     Emitter<DebtDetailsState> emit,
   ) async {
-    emit(state.copyWith(deleteStatus: DebtDeleteStatus.deleting));
+    final debt = state.debt;
+    if (debt == null) return;
+
+    emit(
+      state.copyWith(
+        deleteStatus: DebtDeleteStatus.deleting,
+        clearNotices: true,
+      ),
+    );
     try {
-      await _repository.delete(state.debtId);
+      await _repository.delete(state.debtId, version: debt.version);
       emit(state.copyWith(deleteStatus: DebtDeleteStatus.deleted));
+    } on StaleRecordException {
+      emit(
+        state.copyWith(
+          deleteStatus: DebtDeleteStatus.idle,
+          changedElsewhere: true,
+        ),
+      );
+      await _load(emit, showLoading: false);
     } on NoConnectionException {
       emit(state.copyWith(deleteStatus: DebtDeleteStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -123,18 +151,47 @@ class DebtDetailsBloc extends Bloc<DebtDetailsEvent, DebtDetailsState> {
     await super.close();
   }
 
+  /// The repayment [id] of the debt being shown. One that is not there any
+  /// more was deleted on another device, which is the same as a version that
+  /// moved on.
+  Repayment _repaymentOf(String id) {
+    final debt = state.debt;
+    if (debt != null) {
+      for (final repayment in debt.repayments) {
+        if (repayment.id == id) return repayment;
+      }
+    }
+    throw const StaleRecordException();
+  }
+
   /// Does [action], which changes a repayment on the server and answers with
   /// the debt. When the server does not accept it the debt stays as it was and
   /// [DebtDetailsState.failedAction] holds [event], so the screen can offer to
-  /// try again.
+  /// try again. A refusal the person can act on is kept in
+  /// [DebtDetailsState.refusal] instead, and a debt that changed on another
+  /// device is read again.
   Future<void> _run(
     DebtDetailsEvent event,
     Emitter<DebtDetailsState> emit,
     Future<Debt> Function() action,
   ) async {
-    emit(state.copyWith(clearFailedAction: true));
+    emit(state.copyWith(clearFailedAction: true, clearNotices: true));
     try {
       emit(state.copyWith(debt: await action()));
+    } on StaleRecordException {
+      emit(state.copyWith(changedElsewhere: true));
+      await _load(emit, showLoading: false);
+    } on DebtRefusedException catch (refused) {
+      emit(
+        state.copyWith(
+          refusal: refused.refusal,
+          refusedRemaining: refused.remaining,
+        ),
+      );
+      // Another device repaid some of it: show what is left now.
+      if (refused.refusal == DebtRefusal.exceedsRemaining) {
+        await _load(emit, showLoading: false);
+      }
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {

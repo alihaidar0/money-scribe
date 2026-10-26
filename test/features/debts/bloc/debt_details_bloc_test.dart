@@ -278,11 +278,155 @@ void main() {
       build: build,
       act: (bloc) async {
         await start(bloc);
-        await repository.deleteRepayment('sam', 'sam-repayment-1');
+        await repository.deleteRepayment('sam', 'sam-repayment-1', version: 1);
         bloc.add(const DebtDetailsRefreshed());
       },
       wait: const Duration(milliseconds: 50),
       verify: (bloc) => expect(bloc.state.debt?.remaining, rub(10000)),
+    );
+  });
+
+  group('a change made on another device', () {
+    /// What another device does to the debt `sam` after the screen loaded it.
+    Future<void> changeSamElsewhere() async {
+      final sam = (await repository.debt('sam'))!;
+      await repository.update(
+        'sam',
+        DebtDraft(
+          direction: sam.direction,
+          person: 'Samuel',
+          amount: sam.amount,
+          startDate: sam.startDate,
+          dueDate: sam.dueDate,
+          note: sam.note,
+        ),
+        version: 1,
+      );
+    }
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'a repayment changed there is not overwritten, the debt is read again',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await repository.updateRepayment(
+          'sam',
+          'sam-repayment-1',
+          payment(500),
+          version: 1,
+        );
+        bloc.add(RepaymentChanged('sam-repayment-1', payment(1000)));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.changedElsewhere, isTrue);
+        expect(bloc.state.failedAction, isNull);
+        final repayment = bloc.state.debt!.repayments.single;
+        expect(repayment.amount, rub(500));
+        expect(repayment.version, 2);
+      },
+    );
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'deleting a repayment that is already gone there is done',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await repository.deleteRepayment('sam', 'sam-repayment-1', version: 1);
+        bloc.add(const RepaymentDeleted('sam-repayment-1'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.changedElsewhere, isFalse);
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.debt!.repayments, isEmpty);
+      },
+    );
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'deleting the debt changed there deletes nothing and reads it again',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await changeSamElsewhere();
+        bloc.add(const DebtDeleteRequested());
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) async {
+        expect(bloc.state.changedElsewhere, isTrue);
+        expect(bloc.state.deleteStatus, DebtDeleteStatus.idle);
+        expect(bloc.state.debt?.person, 'Samuel');
+        expect(await repository.debt('sam'), isNotNull);
+      },
+    );
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'the next action clears the notice',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await changeSamElsewhere();
+        bloc.add(const DebtDeleteRequested());
+        await bloc.stream.firstWhere((s) => s.changedElsewhere);
+        bloc.add(RepaymentAdded(payment(100)));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) => expect(bloc.state.changedElsewhere, isFalse),
+    );
+  });
+
+  group('a repayment the server refuses', () {
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'more than what is left keeps what is left, and reads the debt again',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        // Another device repays 1,000 first.
+        await repository.addRepayment('sam', payment(1000));
+        bloc.add(RepaymentAdded(payment(5500)));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.refusal, DebtRefusal.exceedsRemaining);
+        expect(bloc.state.refusedRemaining, rub(5000));
+        expect(bloc.state.failedAction, isNull);
+        // The debt shows what another device did.
+        expect(bloc.state.debt!.remaining, rub(5000));
+      },
+    );
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'a day before the debt starts is a refusal',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(
+          RepaymentAdded(
+            RepaymentDraft(amount: rub(100), date: DateTime(2026, 9, 30)),
+          ),
+        );
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.refusal, DebtRefusal.repaymentBeforeStart);
+        expect(bloc.state.debt!.repayments, hasLength(1));
+      },
+    );
+
+    blocTest<DebtDetailsBloc, DebtDetailsState>(
+      'the next action clears the refusal',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(RepaymentAdded(payment(7000)));
+        await bloc.stream.firstWhere((s) => s.refusal != null);
+        bloc.add(RepaymentAdded(payment(100)));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) {
+        expect(bloc.state.refusal, isNull);
+        expect(bloc.state.refusedRemaining, isNull);
+      },
     );
   });
 }

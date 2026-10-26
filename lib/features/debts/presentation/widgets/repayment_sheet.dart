@@ -27,12 +27,14 @@ final class RepaymentSheetDeleted extends RepaymentSheetResult {
 
 /// DB-4 and DB-5: the bottom sheet that adds a repayment, or with [repayment]
 /// changes or deletes it. It cannot be more than [maxAmount], what is still to
-/// be repaid (with the repayment's own amount added back when changing it).
-/// Closes with what was done, or with `null` when dismissed.
+/// be repaid (with the repayment's own amount added back when changing it),
+/// and cannot be dated before the debt's [startDate]. Closes with what was
+/// done, or with `null` when dismissed.
 Future<RepaymentSheetResult?> showRepaymentSheet(
   BuildContext context, {
   required Currency currency,
   required Money maxAmount,
+  required DateTime startDate,
   required DateTime today,
   Repayment? repayment,
 }) {
@@ -45,6 +47,7 @@ Future<RepaymentSheetResult?> showRepaymentSheet(
     builder: (sheetContext) => _RepaymentSheet(
       currency: currency,
       maxAmount: maxAmount,
+      startDate: startDate,
       today: today,
       repayment: repayment,
     ),
@@ -55,12 +58,14 @@ class _RepaymentSheet extends StatefulWidget {
   const new({
     required this.currency,
     required this.maxAmount,
+    required this.startDate,
     required this.today,
     required this.repayment,
   });
 
   final Currency currency;
   final Money maxAmount;
+  final DateTime startDate;
   final DateTime today;
   final Repayment? repayment;
 
@@ -76,9 +81,17 @@ class _RepaymentSheetState extends State<_RepaymentSheet> {
   /// The amount as typed. The field shows it grouped when it is not being
   /// edited, so the text of the controller is not what is parsed.
   late String _amountText = _amount.text;
-  late DateTime _date =
-      widget.repayment?.date ??
-      DateTime(widget.today.year, widget.today.month, widget.today.day);
+  late DateTime _date = widget.repayment?.date ?? _firstSuggestedDay;
+
+  /// Today, or the day the debt starts when that is still to come.
+  DateTime get _firstSuggestedDay {
+    final today = DateTime(
+      widget.today.year,
+      widget.today.month,
+      widget.today.day,
+    );
+    return today.isBefore(widget.startDate) ? widget.startDate : today;
+  }
 
   @override
   void dispose() {
@@ -86,12 +99,14 @@ class _RepaymentSheetState extends State<_RepaymentSheet> {
     super.dispose();
   }
 
-  RepaymentDraft? get _draft => RepaymentDraft.tryCreate(
-    amount: _amountText,
-    currency: widget.currency,
-    date: _date,
-    maxAmount: widget.maxAmount,
-  );
+  RepaymentDraft? get _draft => _date.isBefore(widget.startDate)
+      ? null
+      : RepaymentDraft.tryCreate(
+          amount: _amountText,
+          currency: widget.currency,
+          date: _date,
+          maxAmount: widget.maxAmount,
+        );
 
   Future<void> _delete() async {
     final repayment = widget.repayment;
@@ -164,6 +179,8 @@ class _RepaymentSheetState extends State<_RepaymentSheet> {
               label: l10n.dateLabel,
               value: _date,
               today: widget.today,
+              // A repayment is not dated before the debt starts.
+              firstDate: widget.startDate,
               onChanged: (date) => setState(() => _date = date),
             ),
             const SizedBox(height: 24),
