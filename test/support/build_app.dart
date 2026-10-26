@@ -14,6 +14,7 @@ import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
@@ -53,6 +54,7 @@ Widget buildApp({
   DemoController? demo,
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
+  DebtsRepository? debtsRepository,
   Ticker? ticker,
   Clock? clock,
   bool signedIn = false,
@@ -108,7 +110,8 @@ Widget buildApp({
       demo: demoController,
       transactions: transactions,
     ),
-    debtsRepository: FakeDebtsRepository(demo: demoController),
+    debtsRepository:
+        debtsRepository ?? FakeDebtsRepository(demo: demoController),
     reportsRepository: FakeReportsRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),

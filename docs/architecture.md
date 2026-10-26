@@ -162,7 +162,9 @@ contract, which only a feature's `data/` imports.
   staging server sleeps after 15 minutes and its first request takes about a minute, while a production
   server does not sleep. `warmUpServer` sends one `GET /healthz` at start in staging, to wake it early.
 - **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
-  optional field as `null`, and the server wants it left out.
+  optional field as `null`, and the server wants it left out. The one request that needs a `null` is the change
+  of a debt, where `"due_date": null` takes the due day away: `RemoteDebtsRepository` sends it through a copy of
+  the client (`Dio.clone`) without this interceptor.
 - **`DateOnlyInterceptor`** sends a day as `YYYY-MM-DD`: the generated client has no type for a day, so a date
   field is a `DateTime` written as `2026-10-24T00:00:00.000`, which the server refuses. The app only ever sends
   the midnight of a day, so a text that is exactly midnight is cut to its day, in the query and the body.

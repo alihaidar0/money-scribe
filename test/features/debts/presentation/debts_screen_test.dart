@@ -1,15 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/currency.dart';
+import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
+import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/domain/debt.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debt_form_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/open_screen.dart';
+import '../../../support/refusing_debts_repository.dart';
 
 Finder filter(String label) {
   return find.descendant(
@@ -392,6 +401,87 @@ void main() {
 
       expect(find.text("Couldn't delete. Check your connection."), findsOne);
       expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
+  group('debts in other currencies', () {
+    testWidgets('are left out of the totals, which say so', (tester) async {
+      await openDebts(
+        tester,
+        debtsRepository: (demo) {
+          final repository = FakeDebtsRepository(demo: demo);
+          unawaited(
+            repository.add(
+              DebtDraft(
+                direction: DebtDirection.borrowed,
+                person: 'Kim',
+                amount: const Money(5000, Currency.usd),
+                startDate: DateTime(2026, 10, 5),
+              ),
+            ),
+          );
+          return repository;
+        },
+      );
+
+      expect(find.text('Kim'), findsOneWidget);
+      expect(
+        find.text(
+          'Debts in other currencies are not included in these totals.',
+        ),
+        findsOneWidget,
+      );
+      expect(amountText('8,500.00 ₽'), findsOneWidget);
+    });
+
+    testWidgets('are not mentioned when every debt matches', (tester) async {
+      await openDebts(tester);
+
+      expect(find.textContaining('other currencies'), findsNothing);
+    });
+
+    testWidgets('the totals follow the default currency of the account', (
+      tester,
+    ) async {
+      await openDebts(
+        tester,
+        debtsRepository: (demo) => FakeDebtsRepository(
+          demo: demo,
+          defaultCurrency: () async => Currency.usd,
+        ),
+      );
+
+      expect(find.textContaining('other currencies'), findsOneWidget);
+      expect(amountText('8,500.00 ₽'), findsNothing);
+    });
+  });
+
+  group('a debt changed on another device', () {
+    testWidgets('is not deleted from the detail pane, and the list says so', (
+      tester,
+    ) async {
+      late RefusingDebtsRepository repository;
+      await openDebts(
+        tester,
+        size: const Size(1280, 800),
+        debtsRepository: (demo) => repository = RefusingDebtsRepository(
+          demo: demo,
+          failure: const StaleRecordException(),
+        ),
+      );
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This debt was changed on another device. It has been loaded again.',
+        ),
+        findsOneWidget,
+      );
+      expect(await repository.debts(), hasLength(3));
     });
   });
 }

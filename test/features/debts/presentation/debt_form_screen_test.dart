@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debt_form_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/open_screen.dart';
+import '../../../support/refusing_debts_repository.dart';
 
 /// Opens the form that adds a debt, from the list.
 Future<DemoController> openAddForm(
@@ -317,6 +321,84 @@ void main() {
       expect(find.text('تاريخ الاستحقاق (اختياري)'), findsOneWidget);
       expect(find.text('حفظ'), findsOneWidget);
       expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
+    });
+  });
+
+  group('what the server says to Save', () {
+    testWidgets('a refusal for too many debts says so and keeps the form', (
+      tester,
+    ) async {
+      await openDebts(
+        tester,
+        debtsRepository: (demo) => FakeDebtsRepository(demo: demo, maxDebts: 3),
+      );
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(field(0), 'Lee');
+      await tester.enterText(field(1), '1500');
+      await tester.pumpAndSettle();
+
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'You have the most debts allowed. Delete one to add another.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(DebtFormScreen), findsOneWidget);
+      expect(find.text('Lee'), findsOneWidget);
+    });
+
+    testWidgets('a debt changed on another device is loaded again', (
+      tester,
+    ) async {
+      late RefusingDebtsRepository repository;
+      await openDebts(
+        tester,
+        debtsRepository: (demo) =>
+            repository = RefusingDebtsRepository(demo: demo),
+      );
+      await tester.tap(find.text('Sam'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+      await tester.enterText(field(2), 'Dinner');
+      await tester.pumpAndSettle();
+      repository.failure = const StaleRecordException();
+
+      await tester.tap(saveChangesButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This debt was changed on another device. It has been loaded again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(DebtFormScreen), findsOneWidget);
+    });
+  });
+
+  group('the currency of a new debt', () {
+    testWidgets('is the default currency of the account', (tester) async {
+      await openDebts(
+        tester,
+        debtsRepository: (demo) => FakeDebtsRepository(
+          demo: demo,
+          defaultCurrency: () async => Currency.usd,
+        ),
+      );
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(field(1), '1500');
+      await tester.pumpAndSettle();
+
+      expect(find.text(r'$'), findsOneWidget);
+      expect(find.text('₽'), findsNothing);
     });
   });
 }
