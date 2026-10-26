@@ -13,6 +13,7 @@ ErrorItem _$ErrorItemFromJson(Map<String, dynamic> json) => ErrorItem(
   attemptsLeft: (json['attempts_left'] as num?)?.toInt(),
   minLength: (json['min_length'] as num?)?.toInt(),
   maxLength: (json['max_length'] as num?)?.toInt(),
+  remaining: json['remaining'] as Amount?,
 );
 
 Map<String, dynamic> _$ErrorItemToJson(ErrorItem instance) => <String, dynamic>{
@@ -22,4 +23,5 @@ Map<String, dynamic> _$ErrorItemToJson(ErrorItem instance) => <String, dynamic>{
   'attempts_left': instance.attemptsLeft,
   'min_length': instance.minLength,
   'max_length': instance.maxLength,
+  'remaining': instance.remaining,
 };

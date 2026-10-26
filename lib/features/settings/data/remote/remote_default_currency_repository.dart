@@ -1,4 +1,6 @@
-import 'package:money_scribe/core/api/export.dart';
+// The contract also has a `Currency` of its own (money data); this file uses
+// the app's `Currency` and the settings' `CurrencyEnum`.
+import 'package:money_scribe/core/api/export.dart' hide Currency;
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/features/settings/data/remote/remote_settings.dart';
