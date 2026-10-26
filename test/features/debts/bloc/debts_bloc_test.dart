@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
@@ -191,7 +192,7 @@ void main() {
       build: build,
       act: (bloc) async {
         await start(bloc);
-        await repository.delete('maria');
+        await repository.delete('maria', version: 1);
         bloc.add(const DebtsRefreshed());
       },
       expect: () => [
@@ -286,6 +287,113 @@ void main() {
         expect(bloc.state.deleteStatus, DebtsDeleteStatus.failed);
         expect(bloc.state.deletingId, 'sam');
       },
+    );
+  });
+
+  group('the totals', () {
+    blocTest<DebtsBloc, DebtsState>(
+      'are in the default currency, with nothing to note when all match',
+      build: build,
+      act: start,
+      verify: (bloc) {
+        expect(bloc.state.defaultCurrency, Currency.rub);
+        expect(bloc.state.owedToYou, rub(8500));
+        expect(bloc.state.youOwe, rub(0));
+        expect(bloc.state.hasOtherCurrencies, isFalse);
+      },
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'leave out the debts in other currencies, and say so',
+      build: build,
+      act: (bloc) async {
+        await repository.add(
+          DebtDraft(
+            direction: DebtDirection.borrowed,
+            person: 'Kim',
+            amount: const Money(5000, Currency.usd),
+            startDate: DateTime(2026, 10, 5),
+          ),
+        );
+        await start(bloc);
+      },
+      verify: (bloc) {
+        expect(bloc.state.owedToYou, rub(8500));
+        expect(bloc.state.youOwe, rub(0));
+        expect(bloc.state.hasOtherCurrencies, isTrue);
+      },
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'follow the default currency of the account',
+      setUp: () => repository = FakeDebtsRepository(
+        demo: demo,
+        defaultCurrency: () async => Currency.usd,
+      ),
+      build: build,
+      act: start,
+      verify: (bloc) {
+        expect(bloc.state.totalsCurrency, Currency.usd);
+        expect(bloc.state.owedToYou, const Money(0, Currency.usd));
+        // The three seeded debts are in roubles.
+        expect(bloc.state.hasOtherCurrencies, isTrue);
+      },
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'fail with the screen when the default currency cannot be read',
+      setUp: () => repository = FakeDebtsRepository(
+        demo: demo,
+        defaultCurrency: () async => throw const NoConnectionException(),
+      ),
+      build: build,
+      act: (bloc) => bloc.add(const DebtsStarted()),
+      verify: (bloc) => expect(bloc.state.status, DebtsStatus.noConnection),
+    );
+  });
+
+  group('deleting a debt changed on another device', () {
+    blocTest<DebtsBloc, DebtsState>(
+      'deletes nothing, says so and reads the list again',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        final sam = (await repository.debt('sam'))!;
+        await repository.update(
+          'sam',
+          DebtDraft(
+            direction: sam.direction,
+            person: 'Samuel',
+            amount: sam.amount,
+            startDate: sam.startDate,
+            dueDate: sam.dueDate,
+            note: sam.note,
+          ),
+          version: 1,
+        );
+        bloc.add(const DebtDeleteConfirmed('sam'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) async {
+        expect(bloc.state.deleteStatus, DebtsDeleteStatus.stale);
+        expect(bloc.state.debts, hasLength(3));
+        expect(
+          bloc.state.debts.firstWhere((debt) => debt.id == 'sam').person,
+          'Samuel',
+        );
+      },
+    );
+
+    blocTest<DebtsBloc, DebtsState>(
+      'a debt that is no longer listed counts as changed elsewhere',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtDeleteConfirmed('missing'));
+      },
+      wait: const Duration(milliseconds: 50),
+      verify: (bloc) =>
+          expect(bloc.state.deleteStatus, DebtsDeleteStatus.stale),
     );
   });
 }

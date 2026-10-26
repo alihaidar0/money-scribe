@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/leave_screen.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -62,6 +63,7 @@ class _DebtDetailsViewState extends State<_DebtDetailsView> {
       context,
       currency: debt.amount.currency,
       maxAmount: debt.remaining,
+      startDate: debt.startDate,
       today: context.read<Clock>().now(),
     );
     if (result is RepaymentSheetSaved) bloc.add(RepaymentAdded(result.draft));
@@ -75,6 +77,7 @@ class _DebtDetailsViewState extends State<_DebtDetailsView> {
       context,
       currency: debt.amount.currency,
       maxAmount: debt.remaining + repayment.amount,
+      startDate: debt.startDate,
       today: context.read<Clock>().now(),
       repayment: repayment,
     );
@@ -116,7 +119,9 @@ class _DebtDetailsViewState extends State<_DebtDetailsView> {
       listenWhen: (previous, current) =>
           previous.status != current.status ||
           previous.deleteStatus != current.deleteStatus ||
-          previous.failedAction != current.failedAction,
+          previous.failedAction != current.failedAction ||
+          previous.refusal != current.refusal ||
+          previous.changedElsewhere != current.changedElsewhere,
       listener: (context, state) {
         if (state.status == DebtDetailsStatus.notFound ||
             state.deleteStatus == DebtDeleteStatus.deleted) {
@@ -136,6 +141,32 @@ class _DebtDetailsViewState extends State<_DebtDetailsView> {
                 : l10n.couldNotSave,
             onRetry: () => bloc.add(action),
           );
+        }
+        final refusal = state.refusal;
+        if (refusal != null) {
+          final remaining = state.refusedRemaining;
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(switch (refusal) {
+                  DebtRefusal.repaymentLimitReached =>
+                    l10n.repaymentLimitReached,
+                  DebtRefusal.exceedsRemaining when remaining != null =>
+                    l10n.repaymentTooHigh(
+                      remaining: context.moneyFormatter.format(remaining),
+                    ),
+                  DebtRefusal.repaymentBeforeStart => l10n.repaymentBeforeStart,
+                  DebtRefusal.dateOutOfRange => l10n.debtDateOutOfRange,
+                  _ => l10n.couldNotSave,
+                }),
+              ),
+            );
+        }
+        if (state.changedElsewhere) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l10n.debtChangedElsewhere)));
         }
         if (state.deleteStatus == DebtDeleteStatus.failed) {
           showFailureSnackBar(

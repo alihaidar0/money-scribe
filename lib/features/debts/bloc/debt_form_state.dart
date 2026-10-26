@@ -29,6 +29,14 @@ enum DebtFormSaveStatus {
 
   /// The debt could not be saved; what was typed is kept.
   failed,
+
+  /// The debt was changed on another device since it was loaded; nothing was
+  /// saved, and it is being loaded again.
+  stale,
+
+  /// The server refused the debt for a reason the person can act on, which
+  /// [DebtFormState.refusal] names; what was typed is kept.
+  refused,
 }
 
 /// What can be typed into the form.
@@ -88,8 +96,11 @@ final class DebtFormState extends Equatable {
     this.debtId,
     this.status = DebtFormStatus.loading,
     this.repaid,
+    this.lastRepaymentDate,
+    this.version,
     this.currency = Currency.rub,
     this.saveStatus = DebtFormSaveStatus.idle,
+    this.refusal,
   });
 
   final DebtFormStatus status;
@@ -106,8 +117,22 @@ final class DebtFormState extends Equatable {
   /// cannot fall below.
   final Money? repaid;
 
+  /// The day of the latest repayment of the debt being changed, which the
+  /// start day cannot go past.
+  final DateTime? lastRepaymentDate;
+
+  /// The version of the debt being changed, as the server holds it, or `null`
+  /// for a new debt.
+  final int? version;
+
+  /// The currency of the amount: the default one for a new debt, and the
+  /// debt's own, which cannot be changed, for one being changed.
   final Currency currency;
   final DebtFormSaveStatus saveStatus;
+
+  /// Why the server refused the debt, while [saveStatus] is
+  /// [DebtFormSaveStatus.refused].
+  final DebtRefusal? refusal;
 
   /// Whether an existing debt is being changed.
   bool get isEditing => debtId != null;
@@ -131,9 +156,15 @@ final class DebtFormState extends Equatable {
     return due != null && due.isBefore(values.startDate);
   }
 
+  /// Whether the debt would start after one of its repayments.
+  bool get startAfterRepayment {
+    final last = lastRepaymentDate;
+    return last != null && values.startDate.isAfter(last);
+  }
+
   /// What was typed as a debt, or `null` while it is incomplete or wrong.
   DebtDraft? get draft {
-    if (amountBelowRepaid) return null;
+    if (amountBelowRepaid || startAfterRepayment) return null;
     return DebtDraft.tryCreate(
       direction: values.direction,
       person: values.person,
@@ -158,8 +189,12 @@ final class DebtFormState extends Equatable {
     DebtFormValues? values,
     DebtFormValues? baseline,
     Money? repaid,
+    DateTime? lastRepaymentDate,
+    int? version,
     Currency? currency,
     DebtFormSaveStatus? saveStatus,
+    DebtRefusal? refusal,
+    bool clearRefusal = false,
   }) {
     return DebtFormState(
       debtId: debtId,
@@ -167,8 +202,11 @@ final class DebtFormState extends Equatable {
       values: values ?? this.values,
       baseline: baseline ?? this.baseline,
       repaid: repaid ?? this.repaid,
+      lastRepaymentDate: lastRepaymentDate ?? this.lastRepaymentDate,
+      version: version ?? this.version,
       currency: currency ?? this.currency,
       saveStatus: saveStatus ?? this.saveStatus,
+      refusal: clearRefusal ? null : refusal ?? this.refusal,
     );
   }
 
@@ -179,7 +217,10 @@ final class DebtFormState extends Equatable {
     values,
     baseline,
     repaid,
+    lastRepaymentDate,
+    version,
     currency,
     saveStatus,
+    refusal,
   ];
 }

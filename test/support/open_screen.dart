@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import 'build_app.dart';
@@ -31,6 +32,7 @@ Future<DemoController> openTab(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  DebtsRepository Function(DemoController demo)? debtsRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -42,6 +44,7 @@ Future<DemoController> openTab(
       demo: demo,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: demo, signedIn: true),
+      debtsRepository: debtsRepository?.call(demo),
     ),
   );
   await tester.pumpAndSettle();
@@ -80,6 +83,7 @@ Future<DemoController> openDebts(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  DebtsRepository Function(DemoController demo)? debtsRepository,
 }) {
   return openTab(
     tester,
@@ -88,6 +92,7 @@ Future<DemoController> openDebts(
     settings: settings,
     language: language,
     size: size,
+    debtsRepository: debtsRepository,
   );
 }
 

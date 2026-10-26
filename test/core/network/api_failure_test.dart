@@ -55,6 +55,36 @@ void main() {
       expect(failure.first?.maxLength, isNull);
     });
 
+    test('carries what is left of a debt when the server says', () {
+      final failure = ApiFailure.from(
+        failedCall(
+          400,
+          errorBody(
+            'exceeds_remaining',
+            type: 'validation_error',
+            extra: {'remaining': '60.00'},
+          ),
+        ),
+      );
+
+      expect(failure.first?.remaining, '60.00');
+    });
+
+    test('ignores a remaining amount that is not text', () {
+      final failure = ApiFailure.from(
+        failedCall(
+          400,
+          errorBody(
+            'exceeds_remaining',
+            type: 'validation_error',
+            extra: {'remaining': 60},
+          ),
+        ),
+      );
+
+      expect(failure.first?.remaining, isNull);
+    });
+
     test(
       'ignores an item without a code and a number that is not a number',
       () {

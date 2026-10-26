@@ -89,6 +89,32 @@ class _FormView extends StatelessWidget {
             onRetry: () => bloc.add(const DebtSaveRequested()),
           );
         }
+        if (state.saveStatus == DebtFormSaveStatus.refused) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(switch (state.refusal) {
+                  DebtRefusal.limitReached => l10n.debtLimitReached,
+                  DebtRefusal.amountBelowRepaid =>
+                    l10n.debtAmountBelowRepaidChanged,
+                  DebtRefusal.dueBeforeStart => l10n.dueBeforeStartError,
+                  DebtRefusal.startAfterRepayment =>
+                    l10n.debtStartAfterRepayment,
+                  DebtRefusal.dateOutOfRange => l10n.debtDateOutOfRange,
+                  DebtRefusal.repaymentLimitReached ||
+                  DebtRefusal.exceedsRemaining ||
+                  DebtRefusal.repaymentBeforeStart ||
+                  null => l10n.couldNotSave,
+                }),
+              ),
+            );
+        }
+        if (state.saveStatus == DebtFormSaveStatus.stale) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l10n.debtChangedElsewhere)));
+        }
       },
       child: PopScope<Object?>(
         canPop: !isEdited,
@@ -237,6 +263,8 @@ class _FormState extends State<_Form> {
                 label: l10n.startDateLabel,
                 value: values.startDate,
                 today: today,
+                // The debt cannot start after one of its repayments.
+                lastDate: state.lastRepaymentDate,
                 onChanged: (date) => bloc.add(DebtStartDateChosen(date)),
               ),
               const SizedBox(height: 16),

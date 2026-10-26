@@ -356,7 +356,7 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Follow a `next` link only when it points at the API address
 - [x] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
 - [x] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
-- [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
+- [x] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
 - [ ] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
 - [ ] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports), `session_limit_reached` as a sign-in reason
 - [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row

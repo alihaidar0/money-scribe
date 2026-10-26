@@ -33,9 +33,14 @@ final class RepaymentDraft extends Equatable {
 
 /// A part of a debt that was paid back.
 final class Repayment extends Equatable {
-  const new({required this.id, required this.amount, required this.date});
+  const new({
+    required this.id,
+    required this.amount,
+    required this.date,
+    this.version = 1,
+  });
 
-  new fromDraft(this.id, RepaymentDraft draft)
+  new fromDraft(this.id, RepaymentDraft draft, {this.version = 1})
     : amount = draft.amount,
       date = draft.date;
 
@@ -43,11 +48,15 @@ final class Repayment extends Equatable {
   final Money amount;
   final DateTime date;
 
+  /// The version of the repayment on the server, which a change or a delete
+  /// of it must name. It is not the version of the debt.
+  final int version;
+
   /// What the repayment is made of, to edit it.
   RepaymentDraft get draft => RepaymentDraft(amount: amount, date: date);
 
   @override
-  List<Object> get props => [id, amount, date];
+  List<Object> get props => [id, amount, date, version];
 }
 
 /// A debt as it is typed, before the server gives it an id.
@@ -132,6 +141,8 @@ final class Debt extends Equatable {
     this.dueDate,
     this.note = '',
     this.repayments = const [],
+    this.version = 1,
+    this.reportedStatus,
   });
 
   final String id;
@@ -144,8 +155,16 @@ final class Debt extends Equatable {
   final DateTime? dueDate;
   final String note;
 
-  /// The repayments, in the order they were added.
+  /// The repayments, in the order the server keeps them (by day).
   final List<Repayment> repayments;
+
+  /// The version of the debt on the server, which a change or a delete of it
+  /// must name. A repayment does not change it.
+  final int version;
+
+  /// The status the server worked out, in the day of the person's time zone,
+  /// or `null` for a debt the app made up itself (the fake data).
+  final DebtStatus? reportedStatus;
 
   /// What was paid back so far.
   Money get repaid {
@@ -171,9 +190,22 @@ final class Debt extends Equatable {
     return ratio.clamp(0, 1).toDouble();
   }
 
+  /// The day of the latest repayment, or `null` while there is none. The debt
+  /// cannot start after it.
+  DateTime? get lastRepaymentDate {
+    DateTime? last;
+    for (final repayment in repayments) {
+      if (last == null || repayment.date.isAfter(last)) last = repayment.date;
+    }
+    return last;
+  }
+
   /// Where the debt stands on the day [today]: settled, overdue once its due
-  /// day has passed with something left to repay, or open.
+  /// day has passed with something left to repay, or open. The status the
+  /// server reported wins: it counts the day in the person's own time zone.
   DebtStatus statusOn(DateTime today) {
+    final reported = reportedStatus;
+    if (reported != null) return reported;
     if (isSettled) return DebtStatus.settled;
     final due = dueDate;
     if (due != null && due.isBefore(_day(today))) return DebtStatus.overdue;
@@ -203,6 +235,7 @@ final class Debt extends Equatable {
       dueDate: draft.dueDate,
       note: draft.note,
       repayments: repayments,
+      version: version,
     );
   }
 
@@ -217,6 +250,7 @@ final class Debt extends Equatable {
       dueDate: dueDate,
       note: note,
       repayments: repayments,
+      version: version,
     );
   }
 
@@ -230,5 +264,50 @@ final class Debt extends Equatable {
     dueDate,
     note,
     repayments,
+    version,
+    reportedStatus,
   ];
+}
+
+/// Why the server did not accept a debt or a repayment the person typed.
+enum DebtRefusal {
+  /// The person has as many debts as the server allows.
+  limitReached,
+
+  /// The debt has as many repayments as the server allows.
+  repaymentLimitReached,
+
+  /// The repayment is more than what is left of the debt. The server says how
+  /// much is left, which another device may have changed.
+  exceedsRemaining,
+
+  /// The amount of the debt is less than what was already repaid.
+  amountBelowRepaid,
+
+  /// The debt is due before it starts.
+  dueBeforeStart,
+
+  /// The repayment is dated before the debt starts.
+  repaymentBeforeStart,
+
+  /// The debt would start after one of its repayments.
+  startAfterRepayment,
+
+  /// A day is outside the years the server keeps (2000 to 2099).
+  dateOutOfRange,
+}
+
+/// Thrown when the server refuses a debt or a repayment for a reason the
+/// person can act on.
+final class DebtRefusedException implements Exception {
+  const new(this.refusal, {this.remaining});
+
+  final DebtRefusal refusal;
+
+  /// What is left to repay, when the refusal is
+  /// [DebtRefusal.exceedsRemaining] and the server said.
+  final Money? remaining;
+
+  @override
+  String toString() => 'DebtRefusedException($refusal)';
 }
