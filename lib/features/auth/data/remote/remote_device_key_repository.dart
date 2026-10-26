@@ -237,9 +237,9 @@ class RemoteDeviceKeyRepository implements DeviceKeyRepository {
     try {
       await callApi(
         () => _authenticated.authDeviceKeyRemove(deviceId: id),
-        // A path the server does not route (`404`, not JSON) means there is no
-        // such key: it is gone, which is what was asked for.
-        (failure) => failure.statusCode == 404
+        // `404 not_found` means there is no such key: it is gone, which is what
+        // was asked for. A `404` of another kind is a failure.
+        (failure) => failure.isNotFound
             ? const _AlreadyGone()
             : mapCommonFailure(failure),
       );

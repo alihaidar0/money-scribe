@@ -9,6 +9,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/text/api_text_formatter.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -459,6 +460,7 @@ class _SearchFieldState extends State<_SearchField> {
       },
       child: TextField(
         controller: _controller,
+        inputFormatters: const [ApiTextFormatter()],
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: l10n.transactionSearchHint,

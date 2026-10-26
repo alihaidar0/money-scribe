@@ -33,7 +33,8 @@ These come with the hardening issue and hold for every signed-in call.
   newline and a tab included) and the bidirectional override, embedding and isolate characters (U+202A to
   U+202E, U+2066 to U+2069) with `400 invalid_characters` on the field. The direction marks and the joiners
   that Arabic needs stay allowed. The app removes the rejected characters from every text field before it
-  sends, on typing and on paste (a pasted line break becomes a space), because it wraps amounts in exactly
+  sends, on typing and on paste (a line break becomes a space; a single-line field drops it before the app
+  sees it), because it wraps amounts in exactly
   those isolates in Arabic and a copied amount must not become an error. Imported CSV cells are **not**
   stripped: the server reports the row.
 - **Limits per signed-in user,** shared by all the devices of one person. Each call belongs to exactly one
@@ -50,8 +51,9 @@ These come with the hardening issue and hold for every signed-in call.
   | Session actions | 30 an hour |
 
   A limited call is `429 throttled` with `Retry-After` (whole seconds, at least 1, always present). Any `429`
-  is handled with `Retry-After`: the control that caused it is disabled with a countdown. The search box waits
-  about half a second after the last key and cancels the call still in flight.
+  is handled with `Retry-After`: the control that caused it is disabled with a countdown. A full-screen failure
+  counts down on its Try again button, and the message of a failed action shows the time left with no Retry
+  button. The search box waits about half a second after the last key and cancels the call still in flight.
 - **Size.** A body over 256 KB is `400 request_too_large` (the CSV import has 1 MB); a person should never meet it.
 - **`503 service_unavailable`** (with `Retry-After`) only for export, import and "sign out of all other
   devices", when the limit store is down. Plain reads and writes keep working.

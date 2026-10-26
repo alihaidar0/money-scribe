@@ -60,3 +60,16 @@ final class RequestInProgressException extends DataException {
   @override
   String toString() => 'RequestInProgressException';
 }
+
+/// The server asks the app to slow down (the answer `429`) and says for how
+/// long: the control that caused the request stays disabled until then.
+/// Nothing was changed.
+final class TooManyRequestsException extends DataException {
+  const new(this.retryAfter);
+
+  /// How long until the same request may be made again (`Retry-After`).
+  final Duration retryAfter;
+
+  @override
+  String toString() => 'TooManyRequestsException';
+}

@@ -51,6 +51,7 @@ final class ApiFailure {
     this.statusCode,
     this.items = const [],
     this.retryAfter,
+    this.requestId,
     this.reachedServer = true,
     this.cause,
   });
@@ -69,8 +70,14 @@ final class ApiFailure {
       statusCode: response.statusCode,
       items: _items(response.data),
       retryAfter: _retryAfter(response.headers.value('retry-after')),
+      requestId: _requestId(response.headers.value('x-request-id')),
     );
   }
+
+  /// The wait to show when the server answers `429` without `Retry-After`,
+  /// which the contract says it never does. It is only a safety net for a
+  /// server that breaks the contract: every real wait comes from the answer.
+  static const missingRetryAfter = Duration(seconds: 30);
 
   /// The status of the answer, or `null` when the server was not reached.
   final int? statusCode;
@@ -81,6 +88,11 @@ final class ApiFailure {
 
   /// How long the server asks to wait (`Retry-After`, whole seconds).
   final Duration? retryAfter;
+
+  /// The reference of the request (`X-Request-ID`), which support can find in
+  /// the server's logs without any personal data. `null` when the answer has
+  /// none or it is not of the documented form.
+  final String? requestId;
 
   /// Whether the server answered at all. `false` for a lost connection, a
   /// timeout or any failure before an answer.
@@ -96,6 +108,11 @@ final class ApiFailure {
   /// The code of the first error, if any.
   String? get code => first?.code;
 
+  /// Whether the server said the record does not exist: a `404` with the
+  /// documented body and the code `not_found`. Any other `404` (a page of the
+  /// platform, a path the server does not route) is a failure, not "gone".
+  bool get isNotFound => statusCode == 404 && hasCode('not_found');
+
   bool hasCode(String code) => items.any((item) => item.code == code);
 
   /// The error of the field [attr], if the server named one.
@@ -107,13 +124,16 @@ final class ApiFailure {
   }
 
   /// The failure as the exceptions every repository shares: no connection, a
-  /// busy server (`503`), a record that changed meanwhile (`412`), a first try
-  /// that is still running (`409 idempotency_in_progress`), or a server that
-  /// failed.
+  /// wait the server asks for (`429`), a busy server (`503`), a record that
+  /// changed meanwhile (`412`), a first try that is still running (`409
+  /// idempotency_in_progress`), or a server that failed.
   DataException toDataException() {
     final cause = this.cause;
     if (cause != null) return cause;
     if (!reachedServer) return const NoConnectionException();
+    if (statusCode == 429) {
+      return TooManyRequestsException(retryAfter ?? missingRetryAfter);
+    }
     if (statusCode == 503) return const ServiceUnavailableException();
     if (statusCode == 412) return const StaleRecordException();
     if (statusCode == 409 && hasCode('idempotency_in_progress')) {
@@ -140,6 +160,13 @@ final class ApiFailure {
             maxLength: _int(error['max_length']),
           ),
     ];
+  }
+
+  static final _requestIdForm = RegExp(r'^[A-Za-z0-9-]{8,64}$');
+
+  static String? _requestId(String? header) {
+    final id = header?.trim();
+    return id != null && _requestIdForm.hasMatch(id) ? id : null;
   }
 
   static int? _int(Object? value) => value is int ? value : null;

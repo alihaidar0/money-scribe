@@ -9,6 +9,7 @@ import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/call_api.dart';
 import 'package:money_scribe/core/network/session_tokens.dart';
 import 'package:money_scribe/core/network/token_store.dart';
+import 'package:money_scribe/core/text/api_text.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/features/auth/data/remote/device_request.dart';
 import 'package:money_scribe/features/auth/data/remote/remote_auth_errors.dart';
@@ -163,7 +164,7 @@ class RemoteAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final body = RegisterRequest(
-      name: name,
+      name: ApiText.clean(name),
       email: email,
       password: password,
       language: _languageEnum(),
@@ -344,7 +345,7 @@ class RemoteAuthRepository implements AuthRepository {
     final profile = await _call(
       // Sent as typed: the server trims it.
       () => _authenticated.authProfileUpdate(
-        body: PatchedProfileUpdateRequest(name: name),
+        body: PatchedProfileUpdateRequest(name: ApiText.clean(name)),
       ),
       mapUpdateNameFailure,
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
@@ -6,6 +7,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
+import 'package:money_scribe/core/widgets/app_text_field.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -22,6 +24,63 @@ Widget _host(Widget child, {Locale locale = const Locale('en')}) {
 }
 
 void main() {
+  group('AppTextField', () {
+    testWidgets('removes what the server refuses, typed or pasted', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _host(AppTextField(controller: controller, label: 'Note')),
+      );
+
+      await tester.enterText(
+        find.byType(TextField),
+        'Rent\u202E for October\u2066 (60,650.00)\u2069',
+      );
+
+      expect(controller.text, 'Rent for October (60,650.00)');
+    });
+
+    testWidgets('keeps the formatters of the field after its own', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _host(
+          AppTextField(
+            controller: controller,
+            label: 'Digits',
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), '1\u202E2a3');
+
+      expect(controller.text, '123');
+    });
+
+    testWidgets('sends a hidden text exactly as typed', (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _host(
+          AppTextField(
+            controller: controller,
+            label: 'Secret',
+            obscureText: true,
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'a\u202Eb c');
+
+      expect(controller.text, 'a\u202Eb c');
+    });
+  });
+
   group('AmountField', () {
     late TextEditingController controller;
     late List<String> changes;

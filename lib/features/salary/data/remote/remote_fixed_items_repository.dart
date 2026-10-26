@@ -6,6 +6,7 @@ import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/call_api.dart';
 import 'package:money_scribe/core/network/idempotency_keys.dart';
 import 'package:money_scribe/core/network/write_safety_headers.dart';
+import 'package:money_scribe/core/text/api_text.dart';
 import 'package:money_scribe/features/salary/data/remote/salary_wire.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_copy_refusal.dart';
@@ -67,7 +68,7 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
           idempotencyKey: WriteSafetyHeaders.idempotencyKey(key),
           month: month.param,
           body: api.FixedItemInputRequest(
-            name: draft.name,
+            name: ApiText.clean(draft.name),
             amount: draft.amount.toDecimalString(),
             kind: SalaryWire.kindToWire(draft.kind),
             currency: SalaryWire.currencyToWire(draft.amount.currency),
@@ -92,7 +93,7 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
         id: id,
         ifMatch: WriteSafetyHeaders.ifMatch(version),
         body: api.PatchedFixedItemInputRequest(
-          name: draft.name,
+          name: ApiText.clean(draft.name),
           amount: draft.amount.toDecimalString(),
           kind: SalaryWire.kindToWire(draft.kind),
           currency: SalaryWire.currencyToWire(draft.amount.currency),
@@ -101,9 +102,8 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
       ),
       // An item that is gone was deleted on another device: the same answer
       // as an item that changed there.
-      (failure) => failure.statusCode == 404
-          ? const StaleRecordException()
-          : _map(failure),
+      (failure) =>
+          failure.isNotFound ? const StaleRecordException() : _map(failure),
     );
     return SalaryWire.fixedItem(wire);
   }
@@ -152,7 +152,7 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
   Exception _mapCopy(ApiFailure failure) {
     final refusal = switch (failure.statusCode) {
       // This month, or the one to copy from, is not saved.
-      404 => FixedItemsCopyRefusal.noEarlierMonth,
+      404 when failure.isNotFound => FixedItemsCopyRefusal.noEarlierMonth,
       409 when failure.hasCode('fixed_item_limit_reached') =>
         FixedItemsCopyRefusal.limitReached,
       400 when failure.hasCode('currency_mismatch') =>
@@ -165,11 +165,11 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
   }
 
   Exception _mapMissing(ApiFailure failure) {
-    return failure.statusCode == 404 ? const _Missing() : _map(failure);
+    return failure.isNotFound ? const _Missing() : _map(failure);
   }
 }
 
-/// The answer was `404`: nothing is saved there.
+/// The answer was `404 not_found`: nothing is saved there.
 final class _Missing implements Exception {
   const new();
 }

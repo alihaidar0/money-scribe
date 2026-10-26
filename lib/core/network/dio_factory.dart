@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
+import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/network/omit_nulls_interceptor.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
@@ -20,11 +21,17 @@ abstract final class ApiTimeouts {
 /// of the refresh itself.
 ///
 /// With a [monitor], every request that goes out is watched, so the app can
-/// tell the person when the server is slow to answer.
+/// tell the person when the server is slow to answer. With a [lastFailure],
+/// every failed answer is noted for the failure screens (see
+/// [LastFailureInterceptor]).
 ///
 /// Nothing is logged: requests and answers hold personal and financial data,
 /// so no logging interceptor is ever added.
-Dio createPlainDio(ApiConfig config, {SlowRequestMonitor? monitor}) {
+Dio createPlainDio(
+  ApiConfig config, {
+  SlowRequestMonitor? monitor,
+  LastFailure? lastFailure,
+}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl,
@@ -36,6 +43,9 @@ Dio createPlainDio(ApiConfig config, {SlowRequestMonitor? monitor}) {
     ),
   );
   dio.interceptors.add(const OmitNullsInterceptor());
+  if (lastFailure != null) {
+    dio.interceptors.add(LastFailureInterceptor(lastFailure));
+  }
   if (monitor != null) {
     dio.httpClientAdapter = MonitoredHttpAdapter(
       dio.httpClientAdapter,
@@ -55,8 +65,13 @@ Dio createAuthenticatedDio({
   required bool Function(RequestOptions options) needsAuth,
   SessionEnded? onSessionEnded,
   SlowRequestMonitor? monitor,
+  LastFailure? lastFailure,
 }) {
-  final dio = createPlainDio(config, monitor: monitor);
+  final dio = createPlainDio(
+    config,
+    monitor: monitor,
+    lastFailure: lastFailure,
+  );
   dio.interceptors.add(
     AuthInterceptor(
       dio: dio,

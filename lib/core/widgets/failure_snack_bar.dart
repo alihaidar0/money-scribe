@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/time/duration_seconds.dart';
+import 'package:money_scribe/core/widgets/last_failure_scope.dart';
 
 /// How long a failure message stays: long enough to press Retry, and to be
 /// read on the next screen when the person has already moved on. A snack bar
@@ -11,6 +14,9 @@ const failureSnackBarDuration = Duration(seconds: 8);
 /// With no [onRetry] there is no button. It replaces any snack bar that is
 /// showing and goes away by itself after [failureSnackBarDuration], also when
 /// the person has moved to another screen.
+///
+/// When the server has just asked the app to wait (`429`), the message says so
+/// with the time left and there is no Retry button: a try now would fail.
 void showFailureSnackBar(
   BuildContext context,
   String message, {
@@ -18,6 +24,12 @@ void showFailureSnackBar(
   String? actionLabel,
 }) {
   final colors = Theme.of(context).colorScheme;
+  final l10n = context.l10n;
+  final wait = LastFailureScope.maybeOf(context)?.wait;
+  final text = wait == null
+      ? message
+      : '${l10n.tooManyRequestsTitle}. '
+            '${l10n.tryAgainIn(time: formatCountdown(wait.ceilSeconds))}';
 
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -32,13 +44,13 @@ void showFailureSnackBar(
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                message,
+                text,
                 style: TextStyle(color: colors.onErrorContainer),
               ),
             ),
           ],
         ),
-        action: onRetry == null
+        action: onRetry == null || wait != null
             ? null
             : SnackBarAction(
                 label: actionLabel ?? context.l10n.retryAction,
