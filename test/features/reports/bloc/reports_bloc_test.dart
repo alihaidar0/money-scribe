@@ -65,7 +65,8 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.status, ReportsStatus.empty);
         expect(bloc.state.report, isNull);
-        expect(bloc.state.debts, isNull);
+        // The debts do not depend on the month, so they are still there.
+        expect(bloc.state.debts?.isEmpty, isTrue);
       },
     );
 

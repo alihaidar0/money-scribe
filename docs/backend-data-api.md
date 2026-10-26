@@ -182,6 +182,15 @@ route.
 - **`has_data` and `currencies`.** An empty month is `200` with zeros and `has_data: false`. `currencies`
   lists every currency with data in the month; when it holds more than the report currency, the Overview and
   Reports say that records in other currencies are not shown.
+- **How the app uses them.** Every call sends the default currency of the settings, and the amounts are in
+  it. The Overview shows "Other income" (the income transactions) as its own row and counts it in the income;
+  the balance shown is the one the server sends. A month of the Reports is read from the Overview and the
+  month report together, so its income and spending are the Overview's, and its categories get one more slice,
+  "Fixed costs", which opens the fixed items instead of the transactions. A built-in category is named by the
+  app from its `key`, in the language of the app; a custom one shows its own name. The debts report is shown for
+  the default currency, and the "Add repayment" sheet of the Overview lists the unsettled debts of every
+  currency. A month outside 2000 to 2099 is not asked and has no data. A month with `has_data: false` keeps
+  the month controls, so another month can be chosen, and the debts do not depend on the month.
 - There is no year or custom-period report and no comparison endpoint.
 
 ## 6. Sessions and security activity

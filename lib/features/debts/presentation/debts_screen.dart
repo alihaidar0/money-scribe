@@ -9,6 +9,7 @@ import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -206,12 +207,7 @@ class _ListPane extends StatelessWidget {
         if (state.hasOtherCurrencies)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              context.l10n.debtsOtherCurrenciesNotice,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+            child: CurrencyNotice(context.l10n.debtsOtherCurrenciesNotice),
           ),
         const SizedBox(height: 16),
         const _FilterSwitch(),

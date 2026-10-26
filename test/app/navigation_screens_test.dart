@@ -186,7 +186,9 @@ void main() {
     testWidgets('the debt movements row opens the Debts', (tester) async {
       await _open(tester);
 
-      await _tap(tester, find.widgetWithText(AmountRow, 'Debt movements'));
+      final row = find.widgetWithText(AmountRow, 'Debt movements');
+      await tester.scrollUntilVisible(row, 200);
+      await _tap(tester, row);
 
       expect(find.byType(DebtsScreen), findsOneWidget);
     });

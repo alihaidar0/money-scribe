@@ -18,7 +18,9 @@ import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
+import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
@@ -55,6 +57,8 @@ Widget buildApp({
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
   DebtsRepository? debtsRepository,
+  OverviewRepository? overviewRepository,
+  ReportsRepository? reportsRepository,
   Ticker? ticker,
   Clock? clock,
   bool signedIn = false,
@@ -96,7 +100,8 @@ Widget buildApp({
       demo: demoController,
     ),
     csvTransferRepository: FakeCsvTransferRepository(demo: demoController),
-    overviewRepository: FakeOverviewRepository(demo: demoController),
+    overviewRepository:
+        overviewRepository ?? FakeOverviewRepository(demo: demoController),
     salaryRepository: salary,
     fixedItemsRepository:
         fixedItemsRepository ??
@@ -112,7 +117,8 @@ Widget buildApp({
     ),
     debtsRepository:
         debtsRepository ?? FakeDebtsRepository(demo: demoController),
-    reportsRepository: FakeReportsRepository(demo: demoController),
+    reportsRepository:
+        reportsRepository ?? FakeReportsRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),
     ticker: ticker ?? FakeTicker(),

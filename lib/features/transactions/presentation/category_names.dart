@@ -1,3 +1,4 @@
+import 'package:money_scribe/core/l10n/built_in_category_names.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
 
@@ -8,16 +9,7 @@ extension CategoryNames on AppLocalizations {
   /// category the person made shows the name they typed. A key this version
   /// of the app does not know shows the name the server sent.
   String categoryName(TransactionCategory category) {
-    return switch (category.key) {
-      'groceries' => categoryNameGroceries,
-      'dining' => categoryNameDining,
-      'transport' => categoryNameTransport,
-      'housing' => categoryNameHousing,
-      'utilities' => categoryNameUtilities,
-      'scholarship' => categoryNameScholarship,
-      'other' => categoryNameOther,
-      _ => category.name,
-    };
+    return builtInCategoryName(key: category.key, name: category.name);
   }
 
   /// The names a category the person makes cannot take, lower case: the

@@ -7,6 +7,7 @@ import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
+import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
@@ -16,6 +17,7 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
+import '../../../support/other_currency_repositories.dart';
 
 const _nbsp = ' ';
 
@@ -27,6 +29,7 @@ Future<void> _pumpOverview(
   AppLanguage language = AppLanguage.english,
   Size size = const Size(412, 915),
   Duration latency = Duration.zero,
+  OverviewRepository Function(DemoController demo)? overviewRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -38,6 +41,7 @@ Future<void> _pumpOverview(
       demo: _demo,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: _demo, signedIn: true),
+      overviewRepository: overviewRepository?.call(_demo),
     ),
   );
   await tester.pumpAndSettle();
@@ -60,7 +64,7 @@ Finder _inRow(String title, String amount) {
 
 void main() {
   group('one payment (OV-1)', () {
-    testWidgets('shows the balance, income, spending and the five rows', (
+    testWidgets('shows the balance, income, spending and the six rows', (
       tester,
     ) async {
       await _pumpOverview(tester);
@@ -74,8 +78,11 @@ void main() {
       expect(_text('−52,750.00 ₽'), findsOneWidget);
       expect(_inRow('Salary', '+104,400.00 ₽'), findsOneWidget);
       expect(_inRow('Recurring income', '+5,000.00 ₽'), findsOneWidget);
+      expect(_inRow('Other income', '+0.00 ₽'), findsOneWidget);
       expect(_inRow('Fixed costs', '−34,500.00 ₽'), findsOneWidget);
       expect(_inRow('Purchases', '−18,250.00 ₽'), findsOneWidget);
+      // The last row is below the fold of a phone.
+      await tester.scrollUntilVisible(find.text('Debt movements'), 200);
       expect(_inRow('Debt movements', '+4,000.00 ₽'), findsOneWidget);
     });
 
@@ -207,7 +214,8 @@ void main() {
         find.text('Add your first salary month to see your balance.'),
         findsOneWidget,
       );
-      expect(find.byTooltip('Previous month'), findsNothing);
+      // An empty month can be left for another one.
+      expect(find.byTooltip('Previous month'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
 
       await tester.tap(find.text('Enter your first salary month'));
@@ -454,5 +462,58 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+  });
+
+  group('income transactions and other currencies', () {
+    testWidgets('Other income is a row, and the income counts it', (
+      tester,
+    ) async {
+      await _pumpOverview(
+        tester,
+        overviewRepository: (demo) =>
+            OtherCurrencyOverviewRepository(demo: demo),
+      );
+
+      expect(_inRow('Other income', '+2,000.00 ₽'), findsOneWidget);
+      // 104,400 pay + 5,000 recurring + 2,000 other.
+      expect(_text('+111,400.00 ₽'), findsOneWidget);
+    });
+
+    testWidgets('a month with records in other currencies says so', (
+      tester,
+    ) async {
+      await _pumpOverview(
+        tester,
+        overviewRepository: (demo) =>
+            OtherCurrencyOverviewRepository(demo: demo),
+      );
+
+      expect(
+        find.text(
+          'Records in other currencies are not included in these figures.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an ordinary month does not', (tester) async {
+      await _pumpOverview(tester);
+
+      expect(find.textContaining('other currencies'), findsNothing);
+    });
+
+    testWidgets('a month with nothing in it can be left for another', (
+      tester,
+    ) async {
+      await _pumpOverview(
+        tester,
+        settings: const DemoSettings(scenario: DemoScenario.empty),
+      );
+
+      await tester.tap(find.byTooltip('Previous month'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('September 2026'), findsOneWidget);
+    });
   });
 }

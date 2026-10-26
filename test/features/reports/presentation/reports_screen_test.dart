@@ -9,10 +9,12 @@ import 'package:money_scribe/features/debts/presentation/debt_details_screen.dar
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
 import 'package:money_scribe/features/reports/presentation/widgets/donut_chart.dart';
+import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
 import '../../../support/open_screen.dart';
+import '../../../support/other_currency_repositories.dart';
 
 const _twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
 
@@ -433,5 +435,100 @@ void main() {
     expect(find.text('التقارير'), findsWidgets);
     expect(find.text('الفئات'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  group('the fixed costs and other currencies', () {
+    testWidgets('the fixed costs are a slice of the spending', (tester) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      expect(find.text('Fixed costs'), findsOneWidget);
+      expect(amountText('8,000.00 ₽'), findsOneWidget);
+      // 8,000 of 12,000.
+      expect(find.textContaining('66.7'), findsOneWidget);
+    });
+
+    testWidgets('the fixed costs slice opens the fixed items, not purchases', (
+      tester,
+    ) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      await tester.tap(find.text('Fixed costs'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FixedItemsScreen), findsOneWidget);
+    });
+
+    testWidgets('records in other currencies are noted on the spending', (
+      tester,
+    ) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      expect(
+        find.text(
+          'Records in other currencies are not included in these figures.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('and on the comparison, but not on the debts', (tester) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      await tapView(tester, 'Month vs month');
+      expect(
+        find.textContaining('Records in other currencies'),
+        findsOneWidget,
+      );
+
+      await tapView(tester, 'Debts');
+      expect(find.textContaining('Records in other currencies'), findsNothing);
+      expect(
+        find.text(
+          'Debts in other currencies are not included in these totals.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an ordinary month has no note', (tester) async {
+      await openReports(tester);
+
+      expect(find.textContaining('other currencies'), findsNothing);
+    });
+  });
+
+  group('a month with nothing in it', () {
+    const empty = DemoSettings(scenario: DemoScenario.empty);
+
+    testWidgets('keeps the controls, so another month can be chosen', (
+      tester,
+    ) async {
+      await openReports(tester, settings: empty);
+
+      expect(find.text('Not enough data yet'), findsOneWidget);
+      expect(find.byType(MonthChip), findsOneWidget);
+      expect(view('Debts'), findsOneWidget);
+    });
+
+    testWidgets('does not hide the debts', (tester) async {
+      await openReports(tester, settings: empty);
+
+      await tapView(tester, 'Debts');
+
+      expect(find.text('Not enough data yet'), findsNothing);
+      expect(find.text('No open debts.'), findsOneWidget);
+    });
   });
 }

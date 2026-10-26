@@ -43,6 +43,7 @@ final class DebtsReport extends Equatable {
     required this.youOwe,
     this.overdue = const [],
     this.open = const [],
+    this.hasOtherCurrencies = false,
   });
 
   /// What others still owe the person.
@@ -57,9 +58,19 @@ final class DebtsReport extends Equatable {
   /// The debts still being repaid on time.
   final List<DebtReportItem> open;
 
+  /// Whether there are debts in a currency other than the one reported. They
+  /// are in neither total nor list: amounts of two currencies are never added.
+  final bool hasOtherCurrencies;
+
   /// Whether there is no debt to report.
   bool get isEmpty => overdue.isEmpty && open.isEmpty;
 
   @override
-  List<Object> get props => [owedToYou, youOwe, overdue, open];
+  List<Object> get props => [
+    owedToYou,
+    youOwe,
+    overdue,
+    open,
+    hasOtherCurrencies,
+  ];
 }

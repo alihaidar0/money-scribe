@@ -35,7 +35,9 @@ import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart
 import 'package:money_scribe/features/debts/data/remote/remote_debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/push_messaging_setup.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+import 'package:money_scribe/features/overview/data/remote/remote_overview_repository.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
+import 'package:money_scribe/features/reports/data/remote/remote_reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/data/remote/remote_fixed_items_repository.dart';
@@ -140,7 +142,12 @@ Future<void> main() async {
       defaultCurrencyRepository: defaultCurrencyRepository,
       accountLocaleRepository: settings,
       csvTransferRepository: FakeCsvTransferRepository(demo: demo),
-      overviewRepository: FakeOverviewRepository(demo: demo),
+      overviewRepository: apiDio == null
+          ? FakeOverviewRepository(demo: demo)
+          : RemoteOverviewRepository.create(
+              dio: apiDio,
+              defaultCurrency: defaultCurrencyRepository.load,
+            ),
       salaryRepository: salary,
       fixedItemsRepository: apiDio == null
           ? FakeFixedItemsRepository(demo: demo, salary: salary)
@@ -161,7 +168,12 @@ Future<void> main() async {
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
             ),
-      reportsRepository: FakeReportsRepository(demo: demo),
+      reportsRepository: apiDio == null
+          ? FakeReportsRepository(demo: demo)
+          : RemoteReportsRepository.create(
+              dio: apiDio,
+              defaultCurrency: defaultCurrencyRepository.load,
+            ),
       demo: demo,
       environment: AppEnvironment.current,
       challengeViewFactory: _createChallengeViewFactory(apiConfig),
