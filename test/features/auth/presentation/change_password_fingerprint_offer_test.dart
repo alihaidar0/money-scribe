@@ -39,6 +39,9 @@ Future<DemoController> _openChangePassword(
     );
     await tester.pumpAndSettle();
   }
+  // The longer list of the Settings may have scrolled the account away.
+  await tester.ensureVisible(find.text('Alex'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text('Alex'));
   await tester.pumpAndSettle();
   await tester.tap(find.text(arabic ? 'تغيير كلمة المرور' : 'Change password'));

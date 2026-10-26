@@ -358,7 +358,8 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
 - [x] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
 - [x] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
-- [ ] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports), `session_limit_reached` as a sign-in reason
+- [x] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports)
+- [ ] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
 - [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server

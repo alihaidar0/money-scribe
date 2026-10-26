@@ -35,6 +35,8 @@ import 'package:money_scribe/features/salary/presentation/salary_compare_screen.
 import 'package:money_scribe/features/salary/presentation/salary_edit_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
+import 'package:money_scribe/features/sessions/presentation/security_activity_screen.dart';
+import 'package:money_scribe/features/sessions/presentation/sessions_screen.dart';
 import 'package:money_scribe/features/settings/presentation/csv_import_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_schedule_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
@@ -140,6 +142,18 @@ GoRouter createAppRouter({
         builder: (context, state) => const WideFrame(
           width: FrameWidth.narrow,
           child: FingerprintPhonesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.sessions,
+        builder: (context, state) =>
+            const WideFrame(width: FrameWidth.narrow, child: SessionsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.securityActivity,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: SecurityActivityScreen(),
         ),
       ),
       GoRoute(

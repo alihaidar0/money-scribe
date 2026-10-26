@@ -42,6 +42,8 @@ import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_reposito
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/data/remote/remote_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/remote/remote_salary_repository.dart';
+import 'package:money_scribe/features/sessions/data/fake/fake_sessions_repository.dart';
+import 'package:money_scribe/features/sessions/data/remote/remote_sessions_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
@@ -168,6 +170,9 @@ Future<void> main() async {
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
             ),
+      sessionsRepository: apiDio == null
+          ? FakeSessionsRepository(demo: demo)
+          : RemoteSessionsRepository.create(dio: apiDio),
       reportsRepository: apiDio == null
           ? FakeReportsRepository(demo: demo)
           : RemoteReportsRepository.create(

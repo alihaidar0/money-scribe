@@ -38,6 +38,8 @@ const List<String> _screens = [
   AppRoutes.changeEmail,
   AppRoutes.changeEmailCode,
   AppRoutes.fingerprintPhones,
+  AppRoutes.sessions,
+  AppRoutes.securityActivity,
   AppRoutes.paySchedule,
   AppRoutes.categories,
   AppRoutes.accounts,

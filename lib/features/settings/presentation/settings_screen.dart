@@ -111,7 +111,11 @@ enum _Section {
       _Notifications(),
     ],
     _Section.data => const [_DataRows()],
-    _Section.security => const [AppLockSettingsTile(), FingerprintSignInTile()],
+    _Section.security => const [
+      AppLockSettingsTile(),
+      FingerprintSignInTile(),
+      _SecurityRows(),
+    ],
   };
 
   String title(AppLocalizations l10n) => switch (this) {
@@ -513,6 +517,35 @@ class _DataRows extends StatelessWidget {
           leading: const Icon(Icons.file_download_outlined),
           title: Text(l10n.importCsvTitle),
           onTap: () => context.push(AppRoutes.importCsv),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Where you are signed in" and "Security activity".
+class _SecurityRows extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.devices_outlined),
+          title: Text(l10n.sessionsTitle),
+          subtitle: Text(l10n.sessionsRowHint),
+          trailing: const _Chevron(),
+          onTap: () => context.push(AppRoutes.sessions),
+        ),
+        ListTile(
+          leading: const Icon(Icons.history),
+          title: Text(l10n.securityActivityTitle),
+          subtitle: Text(l10n.securityActivityRowHint),
+          trailing: const _Chevron(),
+          onTap: () => context.push(AppRoutes.securityActivity),
         ),
       ],
     );

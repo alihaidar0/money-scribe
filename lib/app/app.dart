@@ -36,6 +36,7 @@ import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
+import 'package:money_scribe/features/sessions/domain/sessions_repository.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/bloc/theme_bloc.dart';
 import 'package:money_scribe/features/settings/domain/account_locale_repository.dart';
@@ -71,6 +72,7 @@ class MoneyScribeApp extends StatefulWidget {
     required this.accountsRepository,
     required this.categoriesRepository,
     required this.debtsRepository,
+    required this.sessionsRepository,
     required this.reportsRepository,
     required this.demo,
     required this.environment,
@@ -101,6 +103,7 @@ class MoneyScribeApp extends StatefulWidget {
   final AccountsRepository accountsRepository;
   final CategoriesRepository categoriesRepository;
   final DebtsRepository debtsRepository;
+  final SessionsRepository sessionsRepository;
   final ReportsRepository reportsRepository;
 
   /// What the fake data pretends; changed by the demo panel.
@@ -220,6 +223,7 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
             RepositoryProvider.value(value: widget.accountsRepository),
             RepositoryProvider.value(value: widget.categoriesRepository),
             RepositoryProvider.value(value: widget.debtsRepository),
+            RepositoryProvider.value(value: widget.sessionsRepository),
             RepositoryProvider.value(value: widget.reportsRepository),
             RepositoryProvider.value(value: widget.clock),
             RepositoryProvider.value(value: widget.ticker),
