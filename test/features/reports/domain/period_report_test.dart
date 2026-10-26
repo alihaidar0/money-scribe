@@ -67,4 +67,29 @@ void main() {
       expect(period.permilleOf(period.categories.first), 0);
     });
   });
+
+  group('CategorySpend.fixedCosts', () {
+    test('is the slice of the fixed costs, not a category', () {
+      final slice = CategorySpend.fixedCosts(rub(8000));
+
+      expect(slice.isFixedCosts, isTrue);
+      expect(slice.categoryId, isEmpty);
+      expect(slice.key, isNull);
+      expect(slice.amount, rub(8000));
+    });
+
+    test('counts in the share of the spending like any category', () {
+      final period = PeriodReport(
+        income: rub(20000),
+        spent: rub(10000),
+        categories: [CategorySpend.fixedCosts(rub(7500)), spend('food', 2500)],
+      );
+
+      expect(period.permilleOf(period.categories.first), 750);
+    });
+
+    test('is not equal to a category of the same amount', () {
+      expect(CategorySpend.fixedCosts(rub(100)), isNot(spend('x', 100)));
+    });
+  });
 }

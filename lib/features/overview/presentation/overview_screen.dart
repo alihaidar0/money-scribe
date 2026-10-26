@@ -8,6 +8,7 @@ import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/amount_row.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
@@ -50,7 +51,7 @@ class _OverviewView extends StatelessWidget {
       body: BlocBuilder<OverviewBloc, OverviewState>(
         builder: (context, state) => switch (state.status) {
           OverviewStatus.loading => const _OverviewSkeleton(),
-          OverviewStatus.firstLaunch => const _FirstLaunch(),
+          OverviewStatus.firstLaunch => _FirstLaunch(state: state),
           OverviewStatus.noConnection => FailureView(
             kind: FailureKind.noConnection,
             onRetry: () => bloc.add(const OverviewRetried()),
@@ -113,6 +114,10 @@ class _OverviewContent extends StatelessWidget {
           ),
         ],
       ),
+      if (overview.hasOtherCurrencies) ...[
+        const SizedBox(height: 8),
+        CurrencyNotice(l10n.recordsInOtherCurrenciesNotice),
+      ],
       const SizedBox(height: 16),
       const _Actions(),
       if (firstPart != null &&
@@ -187,6 +192,13 @@ class _OverviewContent extends StatelessWidget {
       ),
       const SizedBox(height: 8),
       AmountRow(
+        icon: Icons.savings_outlined,
+        title: l10n.overviewOtherIncome,
+        amount: figures.otherIncome,
+        onTap: () => context.go(AppRoutes.transactions),
+      ),
+      const SizedBox(height: 8),
+      AmountRow(
         icon: Icons.home_outlined,
         title: l10n.overviewFixedCosts,
         amount: figures.fixedCosts,
@@ -258,13 +270,38 @@ class _Actions extends StatelessWidget {
 
 /// OV-3: the Overview of an account with no data yet.
 class _FirstLaunch extends StatelessWidget {
-  const new();
+  const new({required this.state});
+
+  final OverviewState state;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final bloc = context.read<OverviewBloc>();
 
+    return Column(
+      children: [
+        // A month with nothing in it can be left for another month.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: MonthSwitcher(
+            month: state.month,
+            canStepForward: state.canStepForward,
+            onPrevious: () => bloc.add(const MonthStepped(forward: false)),
+            onNext: () => bloc.add(const MonthStepped(forward: true)),
+          ),
+        ),
+        Expanded(child: _firstLaunchContent(context, l10n, theme)),
+      ],
+    );
+  }
+
+  Widget _firstLaunchContent(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

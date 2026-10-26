@@ -110,7 +110,17 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
       ]);
       final report = results[0] as MonthReport?;
       if (report == null) {
-        emit(state.copyWith(status: ReportsStatus.empty, clearReports: true));
+        // Nothing to report for the month, but the debts do not depend on it.
+        emit(
+          ReportsState(
+            status: ReportsStatus.empty,
+            month: month,
+            view: state.view,
+            scope: state.scope,
+            comparedWith: comparedWith,
+            debts: results[2]! as DebtsReport,
+          ),
+        );
         return;
       }
       // Built whole, not copied: a month with nothing to compare with must not

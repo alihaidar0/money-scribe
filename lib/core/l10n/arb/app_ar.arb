@@ -565,5 +565,7 @@
   "repaymentBeforeStart": "لا يمكن أن يسبق تاريخ السداد تاريخ بدء الدين.",
   "debtDateOutOfRange": "اختر تاريخًا بين عامي 2000 و2099.",
   "debtChangedElsewhere": "تم تغيير هذا الدين على جهاز آخر. تم تحميله من جديد.",
-  "debtsOtherCurrenciesNotice": "الديون بعملات أخرى غير محتسبة في هذه الإجماليات."
+  "debtsOtherCurrenciesNotice": "الديون بعملات أخرى غير محتسبة في هذه الإجماليات.",
+  "overviewOtherIncome": "دخل آخر",
+  "recordsInOtherCurrenciesNotice": "السجلات بعملات أخرى غير محتسبة في هذه الأرقام."
 }

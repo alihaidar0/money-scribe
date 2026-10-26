@@ -7,6 +7,7 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
@@ -65,15 +66,9 @@ class _ReportsView extends StatelessWidget {
           errorTitle: l10n.reportsLoadFailed,
           onRetry: () => bloc.add(const ReportsRetried()),
         ),
-        ReportsStatus.empty => StateView(
-          icon: Icons.bar_chart_outlined,
-          title: l10n.reportsEmptyTitle,
-          message: l10n.reportsEmptyMessage,
-          actionLabel: l10n.reportsEmptyAction,
-          filledAction: true,
-          onAction: () => context.push<void>(AppRoutes.addTransaction),
-        ),
-        ReportsStatus.ready => const _Content(),
+        // A month with nothing in it still has the controls, so another month
+        // can be chosen, and the debts do not depend on the month.
+        ReportsStatus.empty || ReportsStatus.ready => const _Content(),
       },
     );
   }
@@ -137,6 +132,11 @@ class _Content extends StatelessWidget {
                 ),
               ),
             ),
+            if (view != ReportsView.debts &&
+                (state.report?.hasOtherCurrencies ?? false)) ...[
+              const SizedBox(height: 12),
+              CurrencyNotice(context.l10n.recordsInOtherCurrenciesNotice),
+            ],
             const SizedBox(height: 24),
             switch (view) {
               ReportsView.categories when period != null => CategoriesView(
@@ -164,7 +164,19 @@ class _Content extends StatelessWidget {
                 report: state.debts!,
                 today: context.read<Clock>().now(),
               ),
-              _ => const SizedBox.shrink(),
+              ReportsView.debts => const SizedBox.shrink(),
+              // The month has no report: say so under the controls.
+              _ => SizedBox(
+                height: 360,
+                child: StateView(
+                  icon: Icons.bar_chart_outlined,
+                  title: context.l10n.reportsEmptyTitle,
+                  message: context.l10n.reportsEmptyMessage,
+                  actionLabel: context.l10n.reportsEmptyAction,
+                  filledAction: true,
+                  onAction: () => context.push<void>(AppRoutes.addTransaction),
+                ),
+              ),
             },
           ],
         ),

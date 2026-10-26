@@ -2636,5 +2636,13 @@
   "debtsOtherCurrenciesNotice": "Debts in other currencies are not included in these totals.",
   "@debtsOtherCurrenciesNotice": {
     "description": "Note under the totals of the Debts screen when some debts are in a currency other than the default one, because amounts of different currencies are never added."
+  },
+  "overviewOtherIncome": "Other income",
+  "@overviewOtherIncome": {
+    "description": "Row of the Overview: income that was recorded as transactions, such as a gift or a refund. The salary and the recurring income are not in it."
+  },
+  "recordsInOtherCurrenciesNotice": "Records in other currencies are not included in these figures.",
+  "@recordsInOtherCurrenciesNotice": {
+    "description": "Note on the Overview and the Reports when the month has records in a currency other than the default one, because amounts of different currencies are never added."
   }
 }

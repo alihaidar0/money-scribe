@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
+import 'package:money_scribe/core/l10n/built_in_category_names.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -156,6 +157,9 @@ class _LegendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final name = category.isFixedCosts
+        ? l10n.overviewFixedCosts
+        : l10n.builtInCategoryName(key: category.key, name: category.name);
     final amount = context.moneyFormatter.format(category.amount);
     final share = l10n.reportsShare(
       value: '${permille ~/ 10}.${permille % 10}',
@@ -165,7 +169,7 @@ class _LegendRow extends StatelessWidget {
       button: true,
       excludeSemantics: true,
       label: l10n.reportsLegendSemantics(
-        name: category.name,
+        name: name,
         amount: amount,
         share: share,
       ),
@@ -201,7 +205,7 @@ class _LegendRow extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 2,
                       children: [
-                        Text(category.name, style: theme.textTheme.bodyLarge),
+                        Text(name, style: theme.textTheme.bodyLarge),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisSize: MainAxisSize.min,
@@ -233,6 +237,11 @@ class _LegendRow extends StatelessWidget {
   }
 
   void _open(BuildContext context) {
+    if (category.isFixedCosts) {
+      // The fixed costs are not purchases: they are kept on the Salary tab.
+      context.go(AppRoutes.fixedItemsTab(month));
+      return;
+    }
     context.go(
       AppRoutes.transactionsFor(
         categoryId: category.categoryId,

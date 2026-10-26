@@ -132,6 +132,7 @@ abstract final class ReportsSeed {
         if (rubles > 0)
           CategorySpend(
             categoryId: id,
+            key: id,
             name: _names[id]!.$1,
             icon: _names[id]!.$2,
             amount: _rub(rubles),
