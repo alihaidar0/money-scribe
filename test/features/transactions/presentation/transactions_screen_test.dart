@@ -178,11 +178,18 @@ void main() {
   });
 
   group('the search', () {
+    /// Types [text] and waits for the search to ask: it waits half a second
+    /// after the last key.
+    Future<void> search(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(TextField), text);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('filters the list while typing', (tester) async {
       await openTransactions(tester);
 
-      await tester.enterText(find.byType(TextField), 'coffee');
-      await tester.pumpAndSettle();
+      await search(tester, 'coffee');
 
       expect(find.text('Dining'), findsOneWidget);
       expect(find.text('Transport'), findsNothing);
@@ -194,8 +201,7 @@ void main() {
     ) async {
       await openTransactions(tester);
 
-      await tester.enterText(find.byType(TextField), 'xyz');
-      await tester.pumpAndSettle();
+      await search(tester, 'xyz');
 
       expect(find.text('No results'), findsOneWidget);
       expect(find.text('Try another word or clear the filters.'), findsOne);
@@ -210,8 +216,7 @@ void main() {
       tester,
     ) async {
       await openTransactions(tester);
-      await tester.enterText(find.byType(TextField), 'xyz');
-      await tester.pumpAndSettle();
+      await search(tester, 'xyz');
 
       await tester.tap(find.text('Clear filters'));
       await tester.pumpAndSettle();

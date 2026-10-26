@@ -53,6 +53,7 @@ import 'package:money_scribe/features/transactions/data/fake/fake_categories_rep
 import 'package:money_scribe/features/transactions/data/fake/fake_transactions_repository.dart';
 import 'package:money_scribe/features/transactions/data/remote/remote_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/remote/remote_categories_repository.dart';
+import 'package:money_scribe/features/transactions/data/remote/remote_transactions_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -70,7 +71,6 @@ Future<void> main() async {
   // a message, rather than falling back to fake data.
   final apiConfig = ApiConfig.current;
   final demo = DemoController(fakeAccount: apiConfig == null);
-  final transactions = FakeTransactionsRepository(demo: demo);
   final languageRepository = SharedPreferencesLanguageRepository(preferences);
   final monitor = SlowRequestMonitor();
   final lastFailure = LastFailure();
@@ -90,6 +90,20 @@ Future<void> main() async {
           language: () => _accountLanguage(languageRepository),
           isSignedIn: () => authRepository.isSignedIn,
         );
+  final payScheduleRepository = settings == null
+      ? FakePayScheduleRepository(demo: demo)
+      : RemotePayScheduleRepository(settings);
+  // The fake accounts and categories ask the fake transactions whether they
+  // are in use.
+  final fakeTransactions = apiDio == null
+      ? FakeTransactionsRepository(demo: demo)
+      : null;
+  final transactions =
+      fakeTransactions ??
+      RemoteTransactionsRepository.create(
+        dio: apiDio!,
+        paymentMode: () async => (await payScheduleRepository.load()).mode,
+      );
   // The fake fixed items ask the fake salary which months are saved.
   final salary = apiDio == null
       ? FakeSalaryRepository(demo: demo)
@@ -118,9 +132,7 @@ Future<void> main() async {
       appLockRepository: appLock,
       deviceKeyRepository: deviceKeyRepository,
       startsLocked: startsLocked,
-      payScheduleRepository: settings == null
-          ? FakePayScheduleRepository(demo: demo)
-          : RemotePayScheduleRepository(settings),
+      payScheduleRepository: payScheduleRepository,
       defaultCurrencyRepository: settings == null
           ? FakeDefaultCurrencyRepository(demo: demo)
           : RemoteDefaultCurrencyRepository(settings),
@@ -133,10 +145,10 @@ Future<void> main() async {
           : RemoteFixedItemsRepository.create(dio: apiDio),
       transactionsRepository: transactions,
       accountsRepository: apiDio == null
-          ? FakeAccountsRepository(demo: demo, transactions: transactions)
+          ? FakeAccountsRepository(demo: demo, transactions: fakeTransactions)
           : RemoteAccountsRepository.create(dio: apiDio),
       categoriesRepository: apiDio == null
-          ? FakeCategoriesRepository(demo: demo, transactions: transactions)
+          ? FakeCategoriesRepository(demo: demo, transactions: fakeTransactions)
           : RemoteCategoriesRepository.create(dio: apiDio),
       debtsRepository: FakeDebtsRepository(demo: demo),
       reportsRepository: FakeReportsRepository(demo: demo),

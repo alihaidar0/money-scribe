@@ -174,11 +174,17 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                       avatar: Icon(categoryIcon(category.icon), size: 18),
                       label: Text(context.l10n.categoryName(category)),
                       selected: _categoryIds.contains(category.id),
-                      onSelected: (selected) => _toggle(
-                        _categoryIds,
-                        category.id,
-                        selected: selected,
-                      ),
+                      // The server takes a limited number of categories in
+                      // one filter: the rest wait until one is taken off.
+                      onSelected:
+                          _categoryIds.length >= TransactionFilter.maxIds &&
+                              !_categoryIds.contains(category.id)
+                          ? null
+                          : (selected) => _toggle(
+                              _categoryIds,
+                              category.id,
+                              selected: selected,
+                            ),
                     ),
                 ],
               ),

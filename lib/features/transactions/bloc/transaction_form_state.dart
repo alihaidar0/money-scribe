@@ -29,6 +29,14 @@ enum TransactionFormSaveStatus {
 
   /// The transaction could not be saved; what was typed is kept.
   failed,
+
+  /// The server did not accept the transaction for a reason the person can act
+  /// on; [TransactionFormState.refusal] says which. What was typed is kept.
+  refused,
+
+  /// The transaction was changed on another device first. Nothing was saved,
+  /// and the form is loaded again with what is on the server.
+  stale,
 }
 
 enum TransactionFormDeleteStatus {
@@ -43,6 +51,10 @@ enum TransactionFormDeleteStatus {
 
   /// The transaction could not be deleted; it is still there.
   failed,
+
+  /// The transaction was changed on another device first. Nothing was
+  /// deleted, and the form is loaded again with what is on the server.
+  stale,
 }
 
 /// What can be typed into the form.
@@ -72,6 +84,7 @@ final class TransactionFormValues extends Equatable {
     String? categoryId,
     bool clearCategory = false,
     String? accountId,
+    bool clearAccount = false,
     String? note,
   }) {
     return TransactionFormValues(
@@ -79,7 +92,7 @@ final class TransactionFormValues extends Equatable {
       amountText: amountText ?? this.amountText,
       date: date ?? this.date,
       categoryId: clearCategory ? null : categoryId ?? this.categoryId,
-      accountId: accountId ?? this.accountId,
+      accountId: clearAccount ? null : accountId ?? this.accountId,
       note: note ?? this.note,
     );
   }
@@ -105,6 +118,8 @@ final class TransactionFormState extends Equatable {
     this.categories = const [],
     this.twoPayments = false,
     this.currency = Currency.rub,
+    this.version,
+    this.refusal,
     this.saveStatus = TransactionFormSaveStatus.idle,
     this.deleteStatus = TransactionFormDeleteStatus.idle,
   });
@@ -125,7 +140,17 @@ final class TransactionFormState extends Equatable {
   /// Whether the salary is paid in two payments, so the day shows its part.
   final bool twoPayments;
 
+  /// The currency of the amount: the one the transaction was made in when
+  /// changing one, which cannot be changed.
   final Currency currency;
+
+  /// The version of the transaction being changed, as the server holds it, or
+  /// `null` for a new one.
+  final int? version;
+
+  /// Why the server refused the last save, while [saveStatus] says so.
+  final TransactionRefusal? refusal;
+
   final TransactionFormSaveStatus saveStatus;
   final TransactionFormDeleteStatus deleteStatus;
 
@@ -180,6 +205,9 @@ final class TransactionFormState extends Equatable {
     List<Account>? accounts,
     List<TransactionCategory>? categories,
     bool? twoPayments,
+    Currency? currency,
+    int? version,
+    TransactionRefusal? refusal,
     TransactionFormSaveStatus? saveStatus,
     TransactionFormDeleteStatus? deleteStatus,
   }) {
@@ -191,7 +219,9 @@ final class TransactionFormState extends Equatable {
       accounts: accounts ?? this.accounts,
       categories: categories ?? this.categories,
       twoPayments: twoPayments ?? this.twoPayments,
-      currency: currency,
+      currency: currency ?? this.currency,
+      version: version ?? this.version,
+      refusal: refusal ?? this.refusal,
       saveStatus: saveStatus ?? this.saveStatus,
       deleteStatus: deleteStatus ?? this.deleteStatus,
     );
@@ -207,6 +237,8 @@ final class TransactionFormState extends Equatable {
     categories,
     twoPayments,
     currency,
+    version,
+    refusal,
     saveStatus,
     deleteStatus,
   ];

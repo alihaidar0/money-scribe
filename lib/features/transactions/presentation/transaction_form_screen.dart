@@ -89,6 +89,32 @@ class _FormView extends StatelessWidget {
             onRetry: () => bloc.add(const TransactionSaveRequested()),
           );
         }
+        if (state.saveStatus == TransactionFormSaveStatus.refused) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(switch (state.refusal) {
+                  TransactionRefusal.limitReached =>
+                    l10n.transactionLimitReached,
+                  TransactionRefusal.dateOutOfRange =>
+                    l10n.transactionDateOutOfRange,
+                  TransactionRefusal.categoryNotAllowed ||
+                  TransactionRefusal.categoryOrAccountGone =>
+                    l10n.transactionChoicesChanged,
+                  null => l10n.couldNotSave,
+                }),
+              ),
+            );
+        }
+        if (state.saveStatus == TransactionFormSaveStatus.stale ||
+            state.deleteStatus == TransactionFormDeleteStatus.stale) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(l10n.transactionChangedElsewhere)),
+            );
+        }
         if (state.deleteStatus == TransactionFormDeleteStatus.failed) {
           showFailureSnackBar(
             context,
@@ -273,6 +299,8 @@ class _FormState extends State<_Form> {
                 label: l10n.dateLabel,
                 value: values.date,
                 today: today,
+                // The years the server keeps.
+                lastDate: DateTime(2099, 12, 31),
                 onChanged: (date) => bloc.add(TransactionDateChosen(date)),
               ),
               if (state.twoPayments)

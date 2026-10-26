@@ -74,9 +74,10 @@ final class Transaction extends Equatable {
     required this.categoryId,
     required this.accountId,
     this.note = '',
+    this.version = 1,
   });
 
-  new fromDraft(this.id, TransactionDraft draft)
+  new fromDraft(this.id, TransactionDraft draft, {this.version = 1})
     : amount = draft.amount,
       kind = draft.kind,
       date = draft.date,
@@ -93,6 +94,11 @@ final class Transaction extends Equatable {
   final String categoryId;
   final String accountId;
   final String note;
+
+  /// The version of the record on the server, sent back with a change or a
+  /// delete so a change made on another device in between is never
+  /// overwritten.
+  final int version;
 
   /// The amount with its sign: positive for income, negative for an expense.
   Money get signedAmount => kind == TransactionKind.income ? amount : -amount;
@@ -118,5 +124,34 @@ final class Transaction extends Equatable {
     categoryId,
     accountId,
     note,
+    version,
   ];
+}
+
+/// Why the server did not accept a transaction the person typed.
+enum TransactionRefusal {
+  /// The person has as many transactions as the server allows.
+  limitReached,
+
+  /// The chosen category does not take this kind of transaction (an expense in
+  /// a category for income).
+  categoryNotAllowed,
+
+  /// The chosen category or account does not exist any more: it was deleted
+  /// on another device.
+  categoryOrAccountGone,
+
+  /// The date is outside the years the server keeps (2000 to 2099).
+  dateOutOfRange,
+}
+
+/// Thrown when the server refuses a transaction for a reason the person can
+/// act on.
+final class TransactionRefusedException implements Exception {
+  const new(this.refusal);
+
+  final TransactionRefusal refusal;
+
+  @override
+  String toString() => 'TransactionRefusedException($refusal)';
 }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/auth_interceptor.dart';
+import 'package:money_scribe/core/network/date_only_interceptor.dart';
 import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/network/omit_nulls_interceptor.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
@@ -15,8 +16,9 @@ abstract final class ApiTimeouts {
   static const receive = Duration(seconds: 90);
 }
 
-/// A Dio for the server, with no session handling. It talks JSON only and
-/// leaves out any field that is `null` (see [OmitNullsInterceptor]). It is the
+/// A Dio for the server, with no session handling. It talks JSON only,
+/// leaves out any field that is `null` (see [OmitNullsInterceptor]) and sends
+/// a day as `YYYY-MM-DD` (see [DateOnlyInterceptor]). It is the
 /// Dio of the calls that need no token (register, sign in, the code calls) and
 /// of the refresh itself.
 ///
@@ -42,7 +44,10 @@ Dio createPlainDio(
       headers: {Headers.acceptHeader: Headers.jsonContentType},
     ),
   );
-  dio.interceptors.add(const OmitNullsInterceptor());
+  dio.interceptors.addAll(const [
+    OmitNullsInterceptor(),
+    DateOnlyInterceptor(),
+  ]);
   if (lastFailure != null) {
     dio.interceptors.add(LastFailureInterceptor(lastFailure));
   }
