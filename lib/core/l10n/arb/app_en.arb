@@ -183,6 +183,29 @@
   "@unavailableMessage": {
     "description": "Sentence under the title of the busy state."
   },
+  "tooManyRequestsTitle": "Too many requests",
+  "@tooManyRequestsTitle": {
+    "description": "Title shown when the server asks the app to slow down (the answer 429)."
+  },
+  "tooManyRequestsMessage": "Please wait a little before trying again.",
+  "@tooManyRequestsMessage": {
+    "description": "Explanation under the Too many requests title. The Try again button below it counts down."
+  },
+  "requestReference": "Reference: {reference}",
+  "@requestReference": {
+    "description": "Line under a Something went wrong message with the reference of the failed request, which support can look up. The placeholder is a code of letters, digits and hyphens, such as 7c1f0d52-3b8e-4a49-9d1e-5b6a2f0c8e11.",
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "copyReferenceTooltip": "Copy the reference",
+  "@copyReferenceTooltip": {
+    "description": "Tooltip and label of the button that copies the reference of a failed request."
+  },
+  "referenceCopied": "Reference copied",
+  "@referenceCopied": {
+    "description": "Message shown after the reference of a failed request was copied to the clipboard."
+  },
   "notAvailableTitle": "Not available yet",
   "@notAvailableTitle": {
     "description": "Title of the full-screen state shown when the server does not offer a feature yet, such as resetting a password."

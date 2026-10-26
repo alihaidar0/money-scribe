@@ -72,4 +72,49 @@ void main() {
       );
     });
   });
+
+  group('cursorOfNextPage', () {
+    const base = 'https://api.example.test';
+
+    test('no next page has no cursor', () {
+      expect(cursorOfNextPage(null, baseUrl: base), isNull);
+    });
+
+    test('reads the cursor of an address on the API origin', () {
+      expect(
+        cursorOfNextPage(
+          'https://api.example.test/api/v1/x/?cursor=abc&limit=50',
+          baseUrl: base,
+        ),
+        'abc',
+      );
+    });
+
+    test('refuses an address on another host, scheme or port', () {
+      for (final next in [
+        'https://evil.example.test/api/v1/x/?cursor=abc',
+        'http://api.example.test/api/v1/x/?cursor=abc',
+        'https://api.example.test:8443/api/v1/x/?cursor=abc',
+        'https://api.example.test.evil.test/api/v1/x/?cursor=abc',
+        '/api/v1/x/?cursor=abc',
+        '//evil.example.test/api/v1/x/?cursor=abc',
+      ]) {
+        expect(
+          () => cursorOfNextPage(next, baseUrl: base),
+          throwsA(isA<ServerException>()),
+          reason: next,
+        );
+      }
+    });
+
+    test('refuses an address with no cursor', () {
+      expect(
+        () => cursorOfNextPage(
+          'https://api.example.test/api/v1/x/',
+          baseUrl: base,
+        ),
+        throwsA(isA<ServerException>()),
+      );
+    });
+  });
 }

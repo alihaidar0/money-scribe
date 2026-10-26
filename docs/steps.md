@@ -352,8 +352,8 @@ Salary step (agreed with the backend; the screens and the fake data follow the a
 
 Money data step (agreed with the backend, backend issues #63 to #69; summary in [`backend-data-api.md`](backend-data-api.md)). Each line waits for its endpoint to be merged and pinned; until then the screens and the fake data follow the agreement:
 
-- [ ] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
-- [ ] Follow a `next` link only when it points at the API address
+- [x] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
+- [x] Follow a `next` link only when it points at the API address
 - [ ] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
 - [ ] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
 - [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency

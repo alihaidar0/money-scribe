@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:money_scribe/core/text/api_text_formatter.dart';
 
 /// An outlined text field (radius 12, from the theme) with the options the
 /// forms of the app need.
@@ -81,6 +82,10 @@ class AppTextField extends StatelessWidget {
   /// amount).
   final TextStyle? style;
 
+  /// Formatters that run after the one that removes what the server refuses
+  /// (control characters, direction overrides): that one is always first, on
+  /// typing and on paste, except for a hidden text such as a password, which
+  /// is sent exactly as typed.
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -101,7 +106,9 @@ class AppTextField extends StatelessWidget {
       textInputAction: textInputAction,
       autofillHints: autofillHints,
       textDirection: textDirection,
-      inputFormatters: inputFormatters,
+      inputFormatters: obscureText
+          ? inputFormatters
+          : [const ApiTextFormatter(), ...?inputFormatters],
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       autocorrect: !obscureText && keyboardType != TextInputType.emailAddress,

@@ -18,9 +18,11 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/environment/app_environment_scope.dart';
 import 'package:money_scribe/core/formatting/western_digits.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/time/ticker.dart';
+import 'package:money_scribe/core/widgets/last_failure_scope.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_repository.dart';
 import 'package:money_scribe/features/auth/domain/app_lock_session.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
@@ -76,6 +78,7 @@ class MoneyScribeApp extends StatefulWidget {
     this.startsLocked = false,
     this.accountLocaleRepository,
     this.serverActivity,
+    this.lastFailure,
     this.textClipboard = const SystemTextClipboard(),
     this.ticker = const PeriodicTicker(),
     this.clock = const SystemClock(),
@@ -109,6 +112,10 @@ class MoneyScribeApp extends StatefulWidget {
   /// builds use it to tell the person the free server is starting.
   final ServerActivity? serverActivity;
 
+  /// What the latest failed answer of the server said, for the failure
+  /// screens. `null` for a build with no server: there is nothing to show.
+  final LastFailure? lastFailure;
+
   /// Tells the server the language of the app when it changes; `null` in a
   /// build with no server.
   final AccountLocaleRepository? accountLocaleRepository;
@@ -131,6 +138,7 @@ class MoneyScribeApp extends StatefulWidget {
 
 class _MoneyScribeAppState extends State<MoneyScribeApp> {
   late final PushTokenCleanup _pushTokenCleanup;
+  late final LastFailure _lastFailure = widget.lastFailure ?? LastFailure();
   late final AppLockGate _lockGate;
   late final DeviceKeySync _deviceKeySync;
 
@@ -192,49 +200,55 @@ class _MoneyScribeAppState extends State<MoneyScribeApp> {
   Widget build(BuildContext context) {
     return AppEnvironmentScope(
       environment: widget.environment,
-      child: MultiRepositoryProvider(
-        providers: [
-          RepositoryProvider.value(value: widget.pushMessagingRepository),
-          RepositoryProvider.value(value: widget.textClipboard),
-          RepositoryProvider.value(value: widget.authRepository),
-          RepositoryProvider.value(value: widget.appLockRepository),
-          RepositoryProvider.value(value: widget.deviceKeyRepository),
-          RepositoryProvider<AppLockSession>.value(value: _lockGate),
-          RepositoryProvider.value(value: widget.payScheduleRepository),
-          RepositoryProvider.value(value: widget.defaultCurrencyRepository),
-          RepositoryProvider.value(value: widget.csvTransferRepository),
-          RepositoryProvider.value(value: widget.overviewRepository),
-          RepositoryProvider.value(value: widget.salaryRepository),
-          RepositoryProvider.value(value: widget.fixedItemsRepository),
-          RepositoryProvider.value(value: widget.transactionsRepository),
-          RepositoryProvider.value(value: widget.accountsRepository),
-          RepositoryProvider.value(value: widget.categoriesRepository),
-          RepositoryProvider.value(value: widget.debtsRepository),
-          RepositoryProvider.value(value: widget.reportsRepository),
-          RepositoryProvider.value(value: widget.clock),
-          RepositoryProvider.value(value: widget.ticker),
-          RepositoryProvider.value(value: widget.demo),
-          RepositoryProvider.value(value: widget.challengeViewFactory),
-        ],
-        child: MultiBlocProvider(
+      child: LastFailureScope(
+        failure: _lastFailure,
+        child: MultiRepositoryProvider(
           providers: [
-            BlocProvider(
-              create: (_) => LanguageBloc(
-                repository: widget.languageRepository,
-                accountLocale: widget.accountLocaleRepository,
-              ),
-            ),
-            BlocProvider(
-              create: (_) => ThemeBloc(repository: widget.themeRepository),
-            ),
-            if (_showServerNotice)
-              BlocProvider(
-                create: (_) =>
-                    ServerWakeBloc(activity: widget.serverActivity!)
-                      ..add(const ServerWakeStarted()),
-              ),
+            RepositoryProvider.value(value: widget.pushMessagingRepository),
+            RepositoryProvider.value(value: widget.textClipboard),
+            RepositoryProvider.value(value: widget.authRepository),
+            RepositoryProvider.value(value: widget.appLockRepository),
+            RepositoryProvider.value(value: widget.deviceKeyRepository),
+            RepositoryProvider<AppLockSession>.value(value: _lockGate),
+            RepositoryProvider.value(value: widget.payScheduleRepository),
+            RepositoryProvider.value(value: widget.defaultCurrencyRepository),
+            RepositoryProvider.value(value: widget.csvTransferRepository),
+            RepositoryProvider.value(value: widget.overviewRepository),
+            RepositoryProvider.value(value: widget.salaryRepository),
+            RepositoryProvider.value(value: widget.fixedItemsRepository),
+            RepositoryProvider.value(value: widget.transactionsRepository),
+            RepositoryProvider.value(value: widget.accountsRepository),
+            RepositoryProvider.value(value: widget.categoriesRepository),
+            RepositoryProvider.value(value: widget.debtsRepository),
+            RepositoryProvider.value(value: widget.reportsRepository),
+            RepositoryProvider.value(value: widget.clock),
+            RepositoryProvider.value(value: widget.ticker),
+            RepositoryProvider.value(value: widget.demo),
+            RepositoryProvider.value(value: widget.challengeViewFactory),
           ],
-          child: _AppView(router: _router, showServerNotice: _showServerNotice),
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => LanguageBloc(
+                  repository: widget.languageRepository,
+                  accountLocale: widget.accountLocaleRepository,
+                ),
+              ),
+              BlocProvider(
+                create: (_) => ThemeBloc(repository: widget.themeRepository),
+              ),
+              if (_showServerNotice)
+                BlocProvider(
+                  create: (_) =>
+                      ServerWakeBloc(activity: widget.serverActivity!)
+                        ..add(const ServerWakeStarted()),
+                ),
+            ],
+            child: _AppView(
+              router: _router,
+              showServerNotice: _showServerNotice,
+            ),
+          ),
         ),
       ),
     );

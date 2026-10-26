@@ -1,6 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:money_scribe/core/clipboard/text_clipboard.dart';
+import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/time/duration_seconds.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/last_failure_scope.dart';
 
 /// Why a screen cannot show its content.
 enum FailureKind {
@@ -31,6 +38,7 @@ class StateView extends StatelessWidget {
     this.filledAction = false,
     this.secondaryLabel,
     this.onSecondary,
+    this.footer,
     super.key,
   });
 
@@ -45,6 +53,10 @@ class StateView extends StatelessWidget {
 
   /// The sentence under the title, when the title does not say enough.
   final String? message;
+
+  /// Quiet content under the buttons, such as the reference of a failed
+  /// request.
+  final Widget? footer;
 
   /// Shows the action as a filled primary button instead of a tonal one, for
   /// an empty state that leads to the next thing to do.
@@ -97,6 +109,7 @@ class StateView extends StatelessWidget {
                   child: Text(secondaryLabel!),
                 ),
               ],
+              if (footer != null) ...[const SizedBox(height: 16), footer!],
             ],
           ),
         ),
@@ -127,6 +140,22 @@ class FailureView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final failure = LastFailureScope.maybeOf(context);
+
+    // The server asked the app to slow down: whatever the screen reports, the
+    // button counts down the wait instead of inviting a try that would fail.
+    final wait = failure?.wait;
+    if (wait != null &&
+        (kind == FailureKind.error || kind == FailureKind.unavailable)) {
+      return _WaitView(wait: wait, onRetry: onRetry);
+    }
+
+    // The reference helps support find a request that failed on the server.
+    final reference =
+        kind == FailureKind.error || kind == FailureKind.unavailable
+        ? failure?.requestId
+        : null;
+    final footer = reference == null ? null : _ReferenceLine(reference);
 
     return switch (kind) {
       FailureKind.noConnection => StateView(
@@ -142,6 +171,7 @@ class FailureView extends StatelessWidget {
         message: errorTitle == null ? l10n.errorMessage : null,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
+        footer: footer,
       ),
       FailureKind.unavailable => StateView(
         icon: Icons.hourglass_empty,
@@ -149,6 +179,7 @@ class FailureView extends StatelessWidget {
         message: l10n.unavailableMessage,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
+        footer: footer,
       ),
       FailureKind.notAvailable => StateView(
         icon: Icons.construction_outlined,
@@ -158,5 +189,96 @@ class FailureView extends StatelessWidget {
         onAction: () => Navigator.of(context).maybePop(),
       ),
     };
+  }
+}
+
+/// "Reference: 7c1f0d52-..." with a button that copies the code.
+class _ReferenceLine extends StatelessWidget {
+  const new(this.reference);
+
+  final String reference;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final style = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SelectableText(
+            // The code is Latin letters, digits and hyphens: isolated so it
+            // reads left to right inside Arabic text.
+            l10n.requestReference(reference: '\u2066$reference\u2069'),
+            style: style,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy_outlined, size: 18),
+          tooltip: l10n.copyReferenceTooltip,
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.maybeOf(context);
+            final message = l10n.referenceCopied;
+            await context.read<TextClipboard>().copy(reference);
+            messenger?.showSnackBar(SnackBar(content: Text(message)));
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// "Too many requests" with a Try again button that stays disabled and counts
+/// down until the wait the server asked for is over.
+class _WaitView extends StatefulWidget {
+  const new({required this.wait, required this.onRetry});
+
+  final Duration wait;
+  final VoidCallback onRetry;
+
+  @override
+  State<_WaitView> createState() => _WaitViewState();
+}
+
+class _WaitViewState extends State<_WaitView> {
+  late int _secondsLeft = widget.wait.ceilSeconds;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_secondsLeft <= 1) {
+        _timer?.cancel();
+        setState(() => _secondsLeft = 0);
+      } else {
+        setState(() => _secondsLeft--);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final waiting = _secondsLeft > 0;
+
+    return StateView(
+      icon: Icons.hourglass_empty,
+      title: l10n.tooManyRequestsTitle,
+      message: l10n.tooManyRequestsMessage,
+      actionLabel: waiting
+          ? l10n.tryAgainIn(time: formatCountdown(_secondsLeft))
+          : l10n.tryAgain,
+      onAction: waiting ? null : widget.onRetry,
+    );
   }
 }

@@ -15,6 +15,7 @@ import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/environment/turnstile_config.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
+import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/network/server_warm_up.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
@@ -70,11 +71,13 @@ Future<void> main() async {
   final transactions = FakeTransactionsRepository(demo: demo);
   final languageRepository = SharedPreferencesLanguageRepository(preferences);
   final monitor = SlowRequestMonitor();
+  final lastFailure = LastFailure();
   final (authRepository, deviceKeyRepository, apiDio) = await _createAccount(
     apiConfig: apiConfig,
     demo: demo,
     languageRepository: languageRepository,
     monitor: monitor,
+    lastFailure: lastFailure,
   );
   // The settings of the account are on the server when there is one.
   final settings = apiDio == null
@@ -143,6 +146,7 @@ Future<void> main() async {
       serverActivity: apiConfig == null
           ? null
           : MonitoredServerActivity(monitor),
+      lastFailure: lastFailure,
     ),
   );
 }
@@ -184,6 +188,7 @@ Future<(AuthRepository, DeviceKeyRepository, Dio?)> _createAccount({
   required DemoController demo,
   required SharedPreferencesLanguageRepository languageRepository,
   required SlowRequestMonitor monitor,
+  required LastFailure lastFailure,
 }) async {
   if (apiConfig == null) {
     final auth = FakeAuthRepository(demo: demo);
@@ -197,6 +202,7 @@ Future<(AuthRepository, DeviceKeyRepository, Dio?)> _createAccount({
     device: PlatformDeviceInfoSource(secureStore),
     timeZone: const PlatformTimeZoneSource(),
     monitor: monitor,
+    lastFailure: lastFailure,
     secureStore: secureStore,
     deviceKeyStore: BiometricSignatureDeviceKeyStore(
       // Only Android can vouch for a key with an attestation.

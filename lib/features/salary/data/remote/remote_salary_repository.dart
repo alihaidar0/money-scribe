@@ -12,18 +12,24 @@ import 'package:money_scribe/features/salary/domain/salary_repository.dart';
 
 /// The saved salary months on the server: the real [SalaryRepository].
 class RemoteSalaryRepository implements SalaryRepository {
-  new({required this._client});
+  new({required this._client, required this._baseUrl});
 
   /// The salary calls over [dio], which carries the token of the session and
   /// renews it.
   factory create({required Dio dio}) {
-    return RemoteSalaryRepository(client: api.SalaryClient(dio));
+    return RemoteSalaryRepository(
+      client: api.SalaryClient(dio),
+      baseUrl: dio.options.baseUrl,
+    );
   }
 
   /// Most months a page holds, to read a long history in few calls.
   static const _pageSize = 100;
 
   final api.SalaryClient _client;
+
+  /// The address of the server: a page of a list is followed only there.
+  final String _baseUrl;
 
   /// The server does not push changes, and the app is the only writer on this
   /// device: a screen loads again when it is opened.
@@ -47,8 +53,10 @@ class RemoteSalaryRepository implements SalaryRepository {
   Future<List<SalaryMonth>> savedMonths() async {
     final wire = await readAllPages<api.SalaryMonth>((next) async {
       final page = await callApi(
-        () =>
-            _client.salaryMonthList(cursor: _cursorOf(next), limit: _pageSize),
+        () => _client.salaryMonthList(
+          cursor: cursorOfNextPage(next, baseUrl: _baseUrl),
+          limit: _pageSize,
+        ),
         _map,
       );
       return Paged(items: page.results, next: page.next);
@@ -98,23 +106,16 @@ class RemoteSalaryRepository implements SalaryRepository {
     }
   }
 
-  /// The cursor inside the address the server gave for the next page, which
-  /// is sent back as it came and never built by the app.
-  static String? _cursorOf(String? next) {
-    if (next == null) return null;
-    return Uri.tryParse(next)?.queryParameters['cursor'];
-  }
-
   Exception _map(ApiFailure failure) => failure.toDataException();
 
-  /// Like [_map], but a `404` is "there is no such month", which is not a
-  /// failure.
+  /// Like [_map], but a `404` with the code `not_found` is "there is no such
+  /// month", which is not a failure.
   Exception _mapMissing(ApiFailure failure) {
-    return failure.statusCode == 404 ? const _Missing() : _map(failure);
+    return failure.isNotFound ? const _Missing() : _map(failure);
   }
 }
 
-/// The answer was `404`: nothing is saved there.
+/// The answer was `404 not_found`: nothing is saved there.
 final class _Missing implements Exception {
   const new();
 }

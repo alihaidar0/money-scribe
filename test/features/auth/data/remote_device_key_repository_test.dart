@@ -677,8 +677,19 @@ void main() {
     });
 
     test('one that is already gone is fine', () async {
-      // The server answers a plain 404 for an id its route does not match.
+      routes['/api/v1/auth/device-keys/b1c2d3e4-0000-4000-8000-000000000001/'] =
+          (_) => jsonBody(404, errorBody('not_found'));
+
       await keys.removeKey('b1c2d3e4-0000-4000-8000-000000000001');
+    });
+
+    test('a 404 that is not the documented one is a failure', () async {
+      // A server that does not know the path (an older one) must not look
+      // like "the key is gone".
+      await expectLater(
+        keys.removeKey('b1c2d3e4-0000-4000-8000-000000000001'),
+        throwsA(isA<ServerException>()),
+      );
     });
 
     test('removing this phone deletes its key too', () async {

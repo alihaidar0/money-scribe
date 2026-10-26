@@ -4,6 +4,7 @@ import 'package:money_scribe/core/device/device_info.dart';
 import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
+import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/network/slow_request_monitor.dart';
 import 'package:money_scribe/core/network/token_store.dart';
 import 'package:money_scribe/core/storage/secure_value_store.dart';
@@ -40,8 +41,8 @@ final class RemoteAuth {
 
   /// Wires the repository and the client to each other: the client renews the
   /// session through the repository, and the repository hears when the server
-  /// ended it. A [monitor] watches every request. [httpAdapter] replaces the
-  /// network, for tests.
+  /// ended it. A [monitor] watches every request, and a [lastFailure] notes
+  /// every failed answer. [httpAdapter] replaces the network, for tests.
   factory create({
     required ApiConfig config,
     required TokenStore tokens,
@@ -52,9 +53,14 @@ final class RemoteAuth {
     required SecureValueStore secureStore,
     Clock clock = const SystemClock(),
     SlowRequestMonitor? monitor,
+    LastFailure? lastFailure,
     HttpClientAdapter? httpAdapter,
   }) {
-    final plain = createPlainDio(config, monitor: monitor);
+    final plain = createPlainDio(
+      config,
+      monitor: monitor,
+      lastFailure: lastFailure,
+    );
     late final RemoteAuthRepository repository;
     final dio = createAuthenticatedDio(
       config: config,
@@ -63,6 +69,7 @@ final class RemoteAuth {
       needsAuth: (options) => !authPublicPaths.contains(options.path),
       onSessionEnded: (code) => repository.sessionEnded(code),
       monitor: monitor,
+      lastFailure: lastFailure,
     );
     if (httpAdapter != null) {
       final adapter = monitor == null

@@ -3,10 +3,8 @@ import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
 
-/// The wait to show when the server answers `429` without `Retry-After`, which
-/// the contract says it never does. It is only a safety net for a server that
-/// breaks the contract: every real wait comes from the answer.
-const missingRetryAfter = Duration(seconds: 30);
+/// The wait to show when the server answers `429` without `Retry-After`.
+const Duration missingRetryAfter = ApiFailure.missingRetryAfter;
 
 /// What an answer of the server means for each call, in the exceptions the
 /// screens already know. The code of the error decides, never its text.

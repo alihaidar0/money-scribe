@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/text/api_text_formatter.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
 import 'package:money_scribe/features/auth/bloc/edit_name_bloc.dart';
@@ -95,6 +96,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.name],
                   inputFormatters: [
+                    const ApiTextFormatter(),
                     LengthLimitingTextInputFormatter(_maxNameLength),
                   ],
                   decoration: InputDecoration(
