@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_screen.dart';
 import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
@@ -93,5 +94,31 @@ void main() {
 
       expect(find.byType(WelcomeScreen), findsOneWidget);
     });
+
+    testWidgets(
+      'a sign-out by the server opens Sign in, whose back arrow leads to '
+      'Welcome',
+      (tester) async {
+        final demo = DemoController(latency: Duration.zero);
+        final auth = FakeAuthRepository(demo: demo, signedIn: true);
+        await tester.pumpWidget(buildApp(demo: demo, authRepository: auth));
+        await tester.pumpAndSettle();
+        await _go(tester, AppRoutes.salary);
+
+        auth.endSession(SignOutReason.tooManyDevices);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SignInScreen), findsOneWidget);
+        expect(
+          find.textContaining('signed in on too many devices'),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(WelcomeScreen), findsOneWidget);
+      },
+    );
   });
 }

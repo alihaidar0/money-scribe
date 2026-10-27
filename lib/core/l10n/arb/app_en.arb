@@ -319,6 +319,34 @@
   "@signInFingerprintKeyChanged": {
     "description": "Message of the Sign in screen when the fingerprints of the phone changed, which makes its sign-in key stop working."
   },
+  "signedOutTooManyDevices": "You were signed out because your account is signed in on too many devices. Sign in again to continue.",
+  "@signedOutTooManyDevices": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the account reached its limit of devices."
+  },
+  "signedOutElsewhere": "You were signed out from another device. Sign in again to continue.",
+  "@signedOutElsewhere": {
+    "description": "Notice on the Sign in screen when the person ended this device's session from another device."
+  },
+  "signedOutPasswordChanged": "You were signed out because the password of your account was changed. Sign in with the new password.",
+  "@signedOutPasswordChanged": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the password was changed or reset."
+  },
+  "signedOutEmailChanged": "You were signed out because the email of your account was changed. Sign in with the new email.",
+  "@signedOutEmailChanged": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the email address of the account was changed."
+  },
+  "signedOutSecurity": "You were signed out to keep your account safe. Sign in again to continue.",
+  "@signedOutSecurity": {
+    "description": "Notice on the Sign in screen when the server ended this device's session to protect the account."
+  },
+  "signedOutExpired": "Your session has expired. Sign in again to continue.",
+  "@signedOutExpired": {
+    "description": "Notice on the Sign in screen when this device's session ran out."
+  },
+  "signedOutOther": "You were signed out. Sign in again to continue.",
+  "@signedOutOther": {
+    "description": "Notice on the Sign in screen when the server ended this device's session for any other reason."
+  },
   "forgotPasswordLink": "Forgot password?",
   "@forgotPasswordLink": {
     "description": "Title of the Forgot password screen and the text button on the Sign in screen that opens it."

@@ -18,6 +18,7 @@ import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
@@ -48,6 +49,7 @@ class _Scene {
     this.lockOn = false,
     this.fingerprintKey = false,
     this.fingerprintOn = false,
+    this.signedOutBy,
   });
 
   final String name;
@@ -73,6 +75,9 @@ class _Scene {
 
   /// The fingerprint sign-in is on for the signed-in account on this phone.
   final bool fingerprintOn;
+
+  /// The server signed the device out for this reason: Sign in says why.
+  final SignOutReason? signedOutBy;
   final _Setup? setup;
   final Size size;
 }
@@ -229,6 +234,16 @@ final _scenes = <_Scene>[
       demo.update(const DemoSettings(signIn: DemoSignIn.unavailable));
       await _tapPrimary(tester);
     },
+  ),
+  const _Scene(
+    'auth-2d-sign-in-too-many-devices',
+    AppRoutes.signIn,
+    signedOutBy: SignOutReason.tooManyDevices,
+  ),
+  const _Scene(
+    'auth-2d-sign-in-ended-elsewhere',
+    AppRoutes.signIn,
+    signedOutBy: SignOutReason.endedElsewhere,
   ),
   const _Scene(
     'auth-2h-sign-in-fingerprint',
@@ -1882,13 +1897,17 @@ void main() {
           final demo = DemoController(latency: Duration.zero);
           final auth = FakeAuthRepository(
             demo: demo,
-            signedIn: scene.signedIn || scene.fingerprintKey,
+            signedIn:
+                scene.signedIn ||
+                scene.fingerprintKey ||
+                scene.signedOutBy != null,
           );
           final deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: auth);
           if (scene.fingerprintKey || scene.fingerprintOn) {
             await deviceKeys.enable(password: 'p', prompt: 'Confirm');
           }
           if (scene.fingerprintKey) await auth.signOut();
+          if (scene.signedOutBy case final reason?) auth.endSession(reason);
           final key = GlobalKey();
           await tester.pumpWidget(
             RenderTarget(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:money_scribe/app/demo/demo_handle.dart';
@@ -7,7 +8,10 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/auth/presentation/app_lock_screen.dart';
+import 'package:money_scribe/features/auth/presentation/sign_in_screen.dart';
 import 'package:money_scribe/features/auth/presentation/welcome_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
@@ -55,7 +59,7 @@ void main() {
     }) async {
       tester.view
         ..devicePixelRatio = 1
-        ..physicalSize = const Size(412, 3600);
+        ..physicalSize = const Size(412, 4400);
       addTearDown(tester.view.reset);
       demo = DemoController(latency: Duration.zero);
       await tester.pumpWidget(
@@ -198,6 +202,22 @@ void main() {
 
       expect(find.byType(WelcomeScreen), findsOneWidget);
       GoRouter.of(tester.element(find.byType(Scaffold).first));
+    });
+
+    testWidgets('lets the server sign the device out, with its reason', (
+      tester,
+    ) async {
+      await openPanel(tester, signedIn: true);
+
+      await tester.tap(find.text('Too many devices'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(find.textContaining('too many devices'), findsOneWidget);
+      final auth = tester
+          .element(find.byType(SignInScreen))
+          .read<AuthRepository>();
+      expect(auth.signOutReason, SignOutReason.tooManyDevices);
     });
   });
 }

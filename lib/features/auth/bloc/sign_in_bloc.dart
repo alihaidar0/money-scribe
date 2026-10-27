@@ -10,6 +10,7 @@ import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/device_key.dart';
 import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 part 'sign_in_event.dart';
 part 'sign_in_state.dart';
@@ -17,7 +18,9 @@ part 'sign_in_state.dart';
 /// The Sign in screen: sends the email and password, and counts down while
 /// the server asks to wait (sign-in locked after too many wrong attempts, or
 /// too many requests). It never checks the password against a policy. A phone
-/// that has a fingerprint key offers to sign in with it first.
+/// that has a fingerprint key offers to sign in with it first. When the server
+/// signed this device out, the screen says why until the person tries to sign
+/// in.
 class SignInBloc extends Bloc<SignInEvent, SignInState> {
   new({
     required this._repository,
@@ -51,11 +54,13 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
   StreamSubscription<int>? _lockTimer;
 
   static SignInState _initialState(AuthRepository repository) {
+    final reason = repository.signOutReason;
     final locked = repository.signInLockRemaining;
-    if (locked == null) return const SignInState();
+    if (locked == null) return SignInState(signOutReason: reason);
     return SignInState(
       status: SignInStatus.locked,
       lockSecondsLeft: locked.ceilSeconds,
+      signOutReason: reason,
     );
   }
 
@@ -92,7 +97,13 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
   ) async {
     if (state.fingerprintAccount == null) return;
 
-    emit(_to(SignInStatus.fingerprintSubmitting, viaFingerprint: true));
+    emit(
+      _to(
+        SignInStatus.fingerprintSubmitting,
+        viaFingerprint: true,
+        keepSignOutReason: false,
+      ),
+    );
     try {
       await _deviceKeys.signIn(prompt: event.prompt);
       emit(_to(SignInStatus.success));
@@ -126,14 +137,16 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     }
   }
 
-  /// The state with [status], keeping the account of the key and the choice of
-  /// the password form, and forgetting everything else.
+  /// The state with [status], keeping the account of the key, the choice of
+  /// the password form and, unless [keepSignOutReason] is off, why the server
+  /// signed the device out, and forgetting everything else.
   SignInState _to(
     SignInStatus status, {
     int lockSecondsLeft = 0,
     bool? usePassword,
     bool viaFingerprint = false,
     bool clearAccount = false,
+    bool keepSignOutReason = true,
   }) {
     return SignInState(
       status: status,
@@ -141,6 +154,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       fingerprintAccount: clearAccount ? null : state.fingerprintAccount,
       usePassword: usePassword ?? state.usePassword,
       viaFingerprint: viaFingerprint,
+      signOutReason: keepSignOutReason ? state.signOutReason : null,
     );
   }
 
@@ -148,7 +162,8 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     SignInSubmitted event,
     Emitter<SignInState> emit,
   ) async {
-    emit(_to(SignInStatus.submitting));
+    // The person acted on the notice: the answer to this attempt replaces it.
+    emit(_to(SignInStatus.submitting, keepSignOutReason: false));
     try {
       await _repository.signIn(
         email: event.email,

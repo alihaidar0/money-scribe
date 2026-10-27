@@ -2,6 +2,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 /// The wait to show when the server answers `429` without `Retry-After`.
 const Duration missingRetryAfter = ApiFailure.missingRetryAfter;
@@ -20,6 +21,18 @@ Exception mapCommonFailure(ApiFailure failure) {
   }
   return failure.toDataException();
 }
+
+/// Why the server ended the session, from the code of its final `401`. A code
+/// this version of the app does not know, or none, is [SignOutReason.other].
+SignOutReason signOutReasonOf(String? code) => switch (code) {
+  'session_limit_reached' => SignOutReason.tooManyDevices,
+  'session_revoked_by_user' => SignOutReason.endedElsewhere,
+  'session_password_changed' => SignOutReason.passwordChanged,
+  'session_email_changed' => SignOutReason.emailChanged,
+  'session_token_reuse' => SignOutReason.security,
+  'session_expired' => SignOutReason.expired,
+  _ => SignOutReason.other,
+};
 
 /// Sign in: `400 captcha_required` or `captcha_invalid` (the bot challenge,
 /// asked for before the email is looked up), `401 email_not_registered` (the

@@ -5,7 +5,9 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/settings/bloc/language_bloc.dart';
 import 'package:money_scribe/features/settings/bloc/theme_bloc.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
@@ -113,6 +115,17 @@ class DemoPanelScreen extends StatelessWidget {
                   onSelected: (value) =>
                       demo.update(demo.settings.copyWith(fingerprint: value)),
                 ),
+                const _Heading('Server signs this device out (AUTH-2d)'),
+                for (final reason in SignOutReason.values)
+                  _GoTo(
+                    label: _signOutLabel(reason),
+                    onTap: () {
+                      final auth = context.read<AuthRepository>();
+                      if (auth is! FakeAuthRepository) return;
+                      auth.endSession(reason);
+                      context.go(AppRoutes.signIn);
+                    },
+                  ),
               ],
               const _Heading('Saving and deleting, next attempt'),
               _Choice<DemoSave>(
@@ -169,6 +182,16 @@ class DemoPanelScreen extends StatelessWidget {
   static String _paymentModeLabel(PaymentMode value) => switch (value) {
     PaymentMode.onePayment => 'One payment',
     PaymentMode.twoPayments => 'Two payments (parts)',
+  };
+
+  static String _signOutLabel(SignOutReason value) => switch (value) {
+    SignOutReason.tooManyDevices => 'Too many devices',
+    SignOutReason.endedElsewhere => 'Ended from another device',
+    SignOutReason.passwordChanged => 'Password changed',
+    SignOutReason.emailChanged => 'Email changed',
+    SignOutReason.security => 'To protect the account (token reuse)',
+    SignOutReason.expired => 'Session expired',
+    SignOutReason.other => 'Another reason',
   };
 
   static String _saveLabel(DemoSave value) => switch (value) {

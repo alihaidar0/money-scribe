@@ -154,7 +154,9 @@ contract, which only a feature's `data/` imports.
   runs at a time, and requests that expire together wait for it. The new pair is stored before it is
   used. A refresh whose answer is lost is sent again with the same token inside the server's 30
   seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
-  Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
+  Any other `401` on a signed-in request is final, and its code reaches the auth repository as the
+  reason the Sign in screen gives (too many devices, ended from another device, password or email
+  changed, security, expired). The refresh call is injected, so `core/` never
   imports `core/api/`: the feature that owns the paths builds it with its generated client.
 - **`SlowRequestMonitor`** notices a request that has waited more than 5 seconds, and `MonitoredHttpAdapter`
   tells it about every real request (below the interceptors, so a request sent again after a refresh counts
@@ -212,7 +214,8 @@ contract, which only a feature's `data/` imports.
 `go_router` with a `StatefulShellRoute` around the five top-level screens: a navigation bar below
 840 dp and a rail from 840 dp (`app/shell/`). Secondary screens and the whole authentication flow
 sit above the shell, so they hide the bar. The exception is a screen that is a segment of a tab, such
-as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen
+as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen,
+or to Sign in when the server ended the session (Sign in says why and its back arrow leads to Welcome),
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
 
