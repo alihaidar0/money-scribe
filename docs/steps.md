@@ -219,12 +219,12 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-11 Delete account
 - [ ] ST-7b Export CSV, confirm the password
 - [ ] ST-7c Export CSV, too many attempts
-- [ ] ST-12 Where you are signed in, Active
-- [ ] ST-12b Where you are signed in, Previous
-- [ ] ST-12c Session details
-- [ ] ST-12d End this session
-- [ ] ST-12e Sign out of all other devices
-- [ ] ST-13 Security activity
+- [x] ST-12 Where you are signed in, Active
+- [x] ST-12b Where you are signed in, Previous
+- [x] ST-12c Session details
+- [x] ST-12d End this session
+- [x] ST-12e Sign out of all other devices
+- [x] ST-13 Security activity
 
 ### H. Loading, empty, error and no connection
 
@@ -253,7 +253,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ERR-1 Could not save
 - [x] ERR-2 Something went wrong
 - [ ] ERR-3 Too many requests
-- [ ] ST-14 Sessions and Security activity: loading, empty, error, no connection
+- [x] ST-14 Sessions and Security activity: loading, empty, error, no connection
 
 ### I. Arabic (right-to-left) screens
 
@@ -265,7 +265,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AR-6 Settings (Arabic)
 - [x] AR-7 Sign in (Arabic)
 - [x] AR-8 Verify email (Arabic)
-- [ ] AR-9 Where you are signed in (Arabic)
+- [x] AR-9 Where you are signed in (Arabic)
 
 ### J. Tablet and web layouts
 
@@ -359,7 +359,7 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
 - [x] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
 - [x] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports)
-- [ ] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
+- [x] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
 - [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server

@@ -236,7 +236,12 @@ route.
   wrong password is said under the field, and `429` locks the button with the `Retry-After` countdown. The
   activity groups consecutive imports of one session less than 15 minutes apart, and reads the next page before
   it shows a run that touches the end of a page. An unknown type, kind, platform, method or reason is shown with
-  generic wording. The sign-in reason for `session_limit_reached` is a separate step.
+  generic wording.
+- **Signed out by the server.** A final `401` on any call or on the refresh opens Sign in with a notice that
+  says why: `session_limit_reached` (too many devices), `session_revoked_by_user` (ended from another
+  device), `session_password_changed`, `session_email_changed`, `session_token_reuse` (to keep the account
+  safe), `session_expired`; any other code gets a plain "You were signed out". The reason is kept in memory
+  only, until the person signs in or signs out themselves; the person's own sign-out shows Welcome.
 
 ## 7. CSV export and import
 

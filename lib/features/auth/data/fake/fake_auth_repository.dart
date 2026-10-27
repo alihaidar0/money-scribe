@@ -6,6 +6,7 @@ import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 /// An account that lives in memory, until the server exists. It accepts any
 /// email and password and any code, unless the demo panel says otherwise (see
@@ -39,6 +40,7 @@ class FakeAuthRepository implements AuthRepository {
   final _signedInChanges = StreamController<bool>.broadcast(sync: true);
 
   bool _isSignedIn;
+  SignOutReason? _signOutReason;
 
   /// How many times the password was changed or reset. Like the server, which
   /// removes every fingerprint key then, the fake key of a phone notes the
@@ -73,6 +75,9 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   String? get accountId => _isSignedIn ? 'demo-account-$_accountNumber' : null;
+
+  @override
+  SignOutReason? get signOutReason => _signOutReason;
 
   /// How many times the password was changed or reset.
   int get passwordVersion => _passwordVersion;
@@ -320,6 +325,12 @@ class FakeAuthRepository implements AuthRepository {
     _setSignedIn(value: false);
   }
 
+  /// The server ends the session of this device for [reason], as the demo
+  /// panel asks: the person has to sign in again.
+  void endSession(SignOutReason reason) {
+    _setSignedIn(value: false, reason: reason);
+  }
+
   @override
   Future<AccountProfile> profile() async {
     await _demo.simulateRequest();
@@ -493,7 +504,10 @@ class FakeAuthRepository implements AuthRepository {
     );
   }
 
-  void _setSignedIn({required bool value}) {
+  /// A sign-out with no [reason] is the person's own, so an earlier reason is
+  /// forgotten too.
+  void _setSignedIn({required bool value, SignOutReason? reason}) {
+    _signOutReason = value ? null : reason;
     if (_isSignedIn == value) return;
     _isSignedIn = value;
     _signedInChanges.add(value);

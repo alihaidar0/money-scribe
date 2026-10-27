@@ -16,6 +16,7 @@ import 'package:money_scribe/features/auth/data/remote/remote_auth_errors.dart';
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 /// The account on the server: the real [AuthRepository].
 ///
@@ -53,6 +54,7 @@ class RemoteAuthRepository implements AuthRepository {
 
   bool _isSignedIn = false;
   String? _accountId;
+  SignOutReason? _signOutReason;
   String? _pendingEmail;
   DateTime? _resendAvailableAt;
   DateTime? _lockedUntil;
@@ -66,6 +68,9 @@ class RemoteAuthRepository implements AuthRepository {
 
   @override
   String? get accountId => _accountId;
+
+  @override
+  SignOutReason? get signOutReason => _signOutReason;
 
   @override
   Stream<bool> get signedInChanges => _signedInChanges.stream;
@@ -99,8 +104,9 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   /// Called when the server ended the session (the tokens are already
-  /// cleared): the person has to sign in again.
-  void sessionEnded(String? code) => _setSignedIn(value: false);
+  /// cleared): the person has to sign in again, and [code] says why.
+  void sessionEnded(String? code) =>
+      _setSignedIn(value: false, reason: signOutReasonOf(code));
 
   /// Trades a refresh token for a new pair. Used by the session handling of
   /// the HTTP client; it throws the [DioException] of a failed call as it is.
@@ -494,7 +500,10 @@ class RemoteAuthRepository implements AuthRepository {
     _resendAvailableAt = null;
   }
 
-  void _setSignedIn({required bool value}) {
+  /// A sign-out with no [reason] is the person's own, so an earlier reason is
+  /// forgotten too.
+  void _setSignedIn({required bool value, SignOutReason? reason}) {
+    _signOutReason = value ? null : reason;
     if (_isSignedIn == value) return;
     _isSignedIn = value;
     if (!value) _accountId = null;
