@@ -22,8 +22,8 @@ class _ImportsClient implements ImportsClient {
 
   @override
   Future<ImportResult> importCreate({
-    required ImportRequestRequest body,
     String? idempotencyKey,
+    ImportRequest? body,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -31,7 +31,7 @@ class _ImportsClient implements ImportsClient {
     final _headers = <String, dynamic>{r'Idempotency-Key': idempotencyKey};
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
-    _data.addAll(body.toJson());
+    _data.addAll(body?.toJson() ?? <String, dynamic>{});
     final _options = _setStreamType<ImportResult>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
