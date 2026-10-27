@@ -4,23 +4,17 @@ enum CsvExportStatus {
   /// The person is choosing what to export.
   editing,
 
-  /// The file is being made.
-  exporting,
-
-  /// The file was made and shared.
-  exported,
-
-  /// The server could not be reached.
-  noConnection,
-
-  /// The server failed.
-  failure,
+  /// The person pressed Export: [CsvExportState.request] goes to the password
+  /// dialog.
+  chosen,
 }
 
 final class CsvExportState extends Equatable {
   const new({
     this.status = CsvExportStatus.editing,
     this.kinds = const {
+      CsvDataKind.accounts,
+      CsvDataKind.categories,
       CsvDataKind.transactions,
       CsvDataKind.debts,
       CsvDataKind.salaryMonths,
@@ -28,6 +22,7 @@ final class CsvExportState extends Equatable {
     this.period = CsvPeriod.allTime,
     this.from,
     this.to,
+    this.request,
   });
 
   final CsvExportStatus status;
@@ -39,6 +34,9 @@ final class CsvExportState extends Equatable {
   /// The first and the last day of a custom period.
   final DateTime? from;
   final DateTime? to;
+
+  /// What to export, once [status] is `chosen`: "this year" as its days.
+  final CsvExportRequest? request;
 
   /// Whether the choices make an export: something to export, and for a
   /// custom period both days with the first not after the last.
@@ -78,5 +76,5 @@ final class CsvExportState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, kinds, period, from, to];
+  List<Object?> get props => [status, kinds, period, from, to, request];
 }

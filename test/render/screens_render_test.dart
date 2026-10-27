@@ -101,6 +101,35 @@ Future<void> _typeCode(WidgetTester tester, String code) async {
   await tester.pumpAndSettle();
 }
 
+/// Opens Settings > Export CSV, presses Export and types a password.
+Future<void> _openExportPassword(WidgetTester tester) async {
+  final row = find.byIcon(Icons.file_upload_outlined);
+  await tester.ensureVisible(row);
+  await tester.pumpAndSettle();
+  await tester.tap(row);
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byType(FilledButton),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextField), 'password');
+  await tester.pumpAndSettle();
+}
+
+/// Presses the filled button of the open dialog.
+Future<void> _tapDialogPrimary(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(FilledButton),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 Future<void> _tapPrimary(WidgetTester tester) async {
   await tester.tap(find.byType(FilledButton).first);
   await tester.pumpAndSettle();
@@ -1602,7 +1631,7 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
-    'st-7b-export-csv-custom',
+    'st-7-export-csv-custom',
     AppRoutes.settings,
     signedIn: true,
     size: _tallPhone,
@@ -1613,7 +1642,73 @@ final _scenes = <_Scene>[
       await tester.pumpAndSettle();
     },
   ),
+  _Scene(
+    'st-7b-export-password',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _openExportPassword(tester);
+    },
+  ),
+  _Scene(
+    'st-7b-export-wrong-password',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await _openExportPassword(tester);
+      await _tapDialogPrimary(tester);
+    },
+  ),
+  _Scene(
+    'st-7c-export-locked',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await _openExportPassword(tester);
+      await _tapDialogPrimary(tester);
+    },
+  ),
   const _Scene('st-8-import-csv', AppRoutes.importCsv, signedIn: true),
+  _Scene(
+    'st-8d-import-zip',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'st-8d-import-zip-result',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-8c-import-file-problem',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      // The fourth choice of the demo picker is not an export.
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
   _Scene(
     'st-8b-import-result',
     AppRoutes.importCsv,

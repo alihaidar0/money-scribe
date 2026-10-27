@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/settings/domain/csv_transfer.dart';
 import 'package:money_scribe/features/settings/presentation/csv_import_screen.dart';
 import 'package:money_scribe/features/settings/presentation/settings_screen.dart';
 
 import '../../../support/open_screen.dart';
+
+/// A picker that offers a file with a day of more rows than one call takes.
+class _CrowdedFile extends FakeCsvTransferRepository {
+  new({required super.demo});
+
+  @override
+  Future<CsvFile?> chooseFile() async {
+    return CsvFile(
+      name: 'transactions.csv',
+      parts: [
+        CsvFilePart(
+          kind: CsvDataKind.transactions,
+          records: [
+            for (var row = 2; row < 504; row++)
+              CsvRecord(row: row, day: '2026-10-24', cells: const {}),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
 Finder inSheet(Finder finder) =>
     find.descendant(of: find.byType(BottomSheet), matching: finder);
@@ -53,7 +76,12 @@ void main() {
 
       expect(inSheet(find.text('Export CSV')), findsOneWidget);
       expect(inSheet(find.text('What to export')), findsOneWidget);
-      for (final kind in ['Transactions', 'Debts', 'Salary months']) {
+      for (final kind in [
+        'Accounts and categories',
+        'Transactions',
+        'Debts',
+        'Salary months',
+      ]) {
         final chip = tester.widget<FilterChip>(
           find.widgetWithText(FilterChip, kind),
         );
@@ -73,7 +101,12 @@ void main() {
     testWidgets('unticking every kind turns Export off', (tester) async {
       await openExport(tester);
 
-      for (final kind in ['Transactions', 'Debts', 'Salary months']) {
+      for (final kind in [
+        'Accounts and categories',
+        'Transactions',
+        'Debts',
+        'Salary months',
+      ]) {
         await tester.tap(find.widgetWithText(FilterChip, kind));
         await tester.pumpAndSettle();
       }
@@ -113,7 +146,52 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
-    testWidgets('Export closes the sheet and says the file is ready', (
+    testWidgets('one chip stands for the accounts and the categories', (
+      tester,
+    ) async {
+      await openExport(tester);
+
+      await tester.tap(
+        find.widgetWithText(FilterChip, 'Accounts and categories'),
+      );
+      await tester.pumpAndSettle();
+      final chip = tester.widget<FilterChip>(
+        find.widgetWithText(FilterChip, 'Accounts and categories'),
+      );
+
+      expect(chip.selected, isFalse);
+      expect(
+        inSheet(
+          find.text('The period does not apply to accounts and categories.'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.widgetWithText(FilterChip, 'Accounts and categories'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        inSheet(
+          find.text('The period does not apply to accounts and categories.'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says several kinds go in one .zip file', (tester) async {
+      await openExport(tester);
+
+      expect(
+        inSheet(
+          find.text('Several kinds are saved together in one .zip file.'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Export closes the sheet and asks for the password', (
       tester,
     ) async {
       await openExport(tester);
@@ -122,31 +200,130 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('Confirm your password'), findsOneWidget);
+      expect(
+        find.text(
+          'We ask for your password before exporting your data. We will also '
+          'send you an email to say an export was made.',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('the password dialog (ST-7b, ST-7c)', () {
+    Future<DemoController> openDialog(
+      WidgetTester tester, {
+      DemoSettings settings = const DemoSettings(),
+    }) async {
+      final demo = await openExport(tester, settings: settings);
+      await tester.tap(inSheet(find.text('Export')));
+      await tester.pumpAndSettle();
+      return demo;
+    }
+
+    Finder exportButton() => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(FilledButton),
+    );
+
+    testWidgets('Export waits for a password', (tester) async {
+      await openDialog(tester);
+
+      expect(tester.widget<FilledButton>(exportButton()).onPressed, isNull);
+
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pump();
+
+      expect(tester.widget<FilledButton>(exportButton()).onPressed, isNotNull);
+    });
+
+    testWidgets('the password makes the file and says it is ready', (
+      tester,
+    ) async {
+      await openDialog(tester);
+
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pump();
+      await tester.tap(exportButton());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Your CSV file is ready.'), findsOneWidget);
     });
 
-    testWidgets('keeps the sheet and says so when the export fails', (
-      tester,
-    ) async {
-      final demo = await openExport(tester);
-      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+    testWidgets('a wrong password is said under the field', (tester) async {
+      await openDialog(
+        tester,
+        settings: const DemoSettings(signIn: DemoSignIn.wrongPassword),
+      );
 
-      await tester.tap(inSheet(find.text('Export')));
+      await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.pump();
+      await tester.tap(exportButton());
       await tester.pumpAndSettle();
 
-      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('The password is incorrect.'), findsOneWidget);
+    });
+
+    testWidgets('too many attempts lock the field and the button', (
+      tester,
+    ) async {
+      await openDialog(
+        tester,
+        settings: const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+
+      await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.pump();
+      await tester.tap(exportButton());
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.text('Too many attempts. Try again in 15:00.'),
+        findsOneWidget,
+      );
+      expect(find.text('Try again in 15:00'), findsOneWidget);
+      expect(tester.widget<FilledButton>(exportButton()).onPressed, isNull);
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('no connection is said, and the dialog stays', (tester) async {
+      final demo = await openDialog(tester);
+      demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pump();
+      await tester.tap(exportButton());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
       expect(
         find.text("Couldn't export. Check your connection."),
         findsOneWidget,
       );
     });
 
-    testWidgets('is in Arabic', (tester) async {
-      await openExport(tester, language: AppLanguage.arabic);
+    testWidgets('Cancel closes it with nothing exported', (tester) async {
+      await openDialog(tester);
 
-      expect(inSheet(find.text('تصدير CSV')), findsOneWidget);
-      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Your CSV file is ready.'), findsNothing);
+      expect(find.byType(SettingsScreen), findsOneWidget);
     });
+  });
+
+  testWidgets('the export sheet is in Arabic', (tester) async {
+    await openExport(tester, language: AppLanguage.arabic);
+
+    expect(inSheet(find.text('تصدير CSV')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   group('the import screen (ST-8)', () {
@@ -159,7 +336,7 @@ void main() {
       expect(find.text('transactions.csv'), findsOneWidget);
       expect(find.text('42 rows'), findsOneWidget);
       expect(
-        find.text('Ready to import: 42 rows, 0 problems.'),
+        find.text('Estimate: 42 rows can be imported, 0 problems found.'),
         findsOneWidget,
       );
       expect(find.text('Choose another file'), findsOneWidget);
@@ -176,6 +353,87 @@ void main() {
       expect(find.text('12 rows'), findsOneWidget);
     });
 
+    testWidgets('warns about a day with more rows than one call takes', (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        csvTransferRepository: (demo) => _CrowdedFile(demo: demo),
+      );
+      await tester.tap(find.text('Import CSV'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          '1 day has more than 500 rows. Rows that repeat inside such a day '
+          'may be imported twice.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says nothing about days when no day is crowded', (
+      tester,
+    ) async {
+      await openImport(tester);
+
+      expect(find.textContaining('more than 500 rows'), findsNothing);
+    });
+
+    testWidgets('a file that is not an export says why, before sending', (
+      tester,
+    ) async {
+      await openImport(tester);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.text('Choose another file'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text("This file can't be imported"), findsOneWidget);
+      expect(
+        find.text(
+          'Its first row does not have the columns of a Money Scribe export.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(FilledButton, 'Import'), findsNothing);
+
+      await tester.tap(find.text('Choose another file'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('transactions.csv'), findsOneWidget);
+    });
+
+    testWidgets('an export of several kinds names the kind of each row', (
+      tester,
+    ) async {
+      await openImport(tester);
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.text('Choose another file'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('money-scribe-export.zip'), findsOneWidget);
+      expect(find.text('25 rows'), findsOneWidget);
+      expect(
+        find.text('Estimate: 25 rows can be imported, 0 problems found.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Import finished: 23 imported, 2 skipped.'),
+        findsOneWidget,
+      );
+      expect(find.text('Accounts, row 3: already exists'), findsOneWidget);
+      expect(
+        find.text('Categories, row 2: the name is used by a built-in category'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('Import shows how many rows were skipped, and why', (
       tester,
     ) async {
@@ -185,11 +443,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Import finished: 40 imported, 2 skipped.'),
+        find.text('Import finished: 38 imported, 4 skipped.'),
         findsOneWidget,
       );
       expect(find.text('Row 7: the amount is not valid'), findsOneWidget);
       expect(find.text('Row 19: the date is missing'), findsOneWidget);
+      expect(find.text('Row 23: already exists'), findsOneWidget);
+      expect(find.text('Row 31: the account does not exist'), findsOneWidget);
       expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     });
 
@@ -250,7 +510,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Import finished: 40 imported, 2 skipped.'),
+        find.text('Import finished: 38 imported, 4 skipped.'),
         findsOneWidget,
       );
     });

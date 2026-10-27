@@ -21,6 +21,7 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/settings/domain/default_currency_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/domain/theme_choice.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/csv_export_password_dialog.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/csv_export_sheet.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_names.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_sheet.dart';
@@ -505,11 +506,14 @@ class _DataRows extends StatelessWidget {
           leading: const Icon(Icons.file_upload_outlined),
           title: Text(l10n.exportCsvTitle),
           onTap: () async {
-            final exported = await showCsvExportSheet(context);
-            if (exported ?? false) {
-              if (context.mounted) {
-                showSuccessSnackBar(context, l10n.csvExportReady);
-              }
+            final request = await showCsvExportSheet(context);
+            if (request == null || !context.mounted) return;
+            final exported = await showCsvExportPasswordDialog(
+              context,
+              request: request,
+            );
+            if ((exported ?? false) && context.mounted) {
+              showSuccessSnackBar(context, l10n.csvExportReady);
             }
           },
         ),

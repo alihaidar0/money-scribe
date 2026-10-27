@@ -2306,13 +2306,6 @@
       "rows": {"type": "int"}
     }
   },
-  "csvReadyToImport": "Ready to import: {rows, plural, one{{rows} row} other{{rows} rows}}, 0 problems.",
-  "@csvReadyToImport": {
-    "description": "Status of a chosen CSV file that can be imported.",
-    "placeholders": {
-      "rows": {"type": "int"}
-    }
-  },
   "csvChooseAnotherFile": "Choose another file",
   "@csvChooseAnotherFile": {
     "description": "Text button that opens the file picker again."
@@ -2325,7 +2318,7 @@
   "@csvNoFileTitle": {
     "description": "Title of the import screen when no file is chosen."
   },
-  "csvNoFileMessage": "Choose a CSV file to import.",
+  "csvNoFileMessage": "Choose a .csv or .zip file to import.",
   "@csvNoFileMessage": {
     "description": "Sentence of the import screen when no file is chosen."
   },
@@ -2341,23 +2334,155 @@
       "skipped": {"type": "int"}
     }
   },
-  "csvProblemInvalidAmount": "Row {row}: the amount is not valid",
-  "@csvProblemInvalidAmount": {
-    "description": "A row of the file that was skipped because its amount cannot be read. The placeholder is the number of the row.",
-    "placeholders": {
-      "row": {"type": "int"}
-    }
-  },
-  "csvProblemMissingDate": "Row {row}: the date is missing",
-  "@csvProblemMissingDate": {
-    "description": "A row of the file that was skipped because it has no date. The placeholder is the number of the row.",
-    "placeholders": {
-      "row": {"type": "int"}
-    }
-  },
   "csvImportFailed": "Couldn''t import the file. Check your connection.",
   "@csvImportFailed": {
     "description": "Message when the import failed."
+  },
+  "csvSeveralKindsZip": "Several kinds are saved together in one .zip file.",
+  "@csvSeveralKindsZip": {
+    "description": "Caption under the choices of the Export CSV sheet."
+  },
+  "csvExportPasswordTitle": "Confirm your password",
+  "@csvExportPasswordTitle": {
+    "description": "Title of the dialog that asks for the password before an export."
+  },
+  "csvExportPasswordMessage": "We ask for your password before exporting your data. We will also send you an email to say an export was made.",
+  "@csvExportPasswordMessage": {
+    "description": "Sentence of the dialog that asks for the password before an export."
+  },
+  "csvExportWrongPassword": "The password is incorrect.",
+  "@csvExportWrongPassword": {
+    "description": "Error under the password field of the export dialog."
+  },
+  "csvExportLocked": "Too many attempts. Try again in {time}.",
+  "@csvExportLocked": {
+    "description": "Banner of the export dialog after too many wrong passwords or too many exports. The placeholder is the wait, such as 14:32.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "csvExportFailed": "Couldn''t export. Try again.",
+  "@csvExportFailed": {
+    "description": "Error of the export dialog when the server failed."
+  },
+  "csvExportBusy": "The service is busy. Please try again shortly.",
+  "@csvExportBusy": {
+    "description": "Error of the export dialog when the server is busy."
+  },
+  "csvChecking": "Checking the file…",
+  "@csvChecking": {
+    "description": "Status of a chosen file while the server checks what it would import."
+  },
+  "csvImportEstimate": "Estimate: {imported, plural, one{{imported} row can} other{{imported} rows can}} be imported, {problems, plural, one{{problems} problem} other{{problems} problems}} found.",
+  "@csvImportEstimate": {
+    "description": "Status of a chosen file after the check. It is only an estimate: the import itself can skip more rows. The placeholders are how many rows the check would import and how many it would skip.",
+    "placeholders": {
+      "imported": {"type": "int"},
+      "problems": {"type": "int"}
+    }
+  },
+  "csvImportProgress": "Importing… {done} of {total} rows",
+  "@csvImportProgress": {
+    "description": "Status while the rows of a file are sent. The placeholders are how many rows were sent and how many the file has.",
+    "placeholders": {
+      "done": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "csvFileProblemTitle": "This file can''t be imported",
+  "@csvFileProblemTitle": {
+    "description": "Title of the import screen when the chosen file cannot be imported at all."
+  },
+  "csvFileUnreadable": "It isn''t a .csv or .zip file that can be read.",
+  "@csvFileUnreadable": {
+    "description": "Why a chosen file cannot be imported: it cannot be read."
+  },
+  "csvFileUnknownColumns": "Its first row does not have the columns of a Money Scribe export.",
+  "@csvFileUnknownColumns": {
+    "description": "Why a chosen file cannot be imported: its header row is not one of the app's exports. Money Scribe is the app name and stays in Latin letters."
+  },
+  "csvFileNoRows": "It has no rows to import.",
+  "@csvFileNoRows": {
+    "description": "Why a chosen file cannot be imported: it has the header row only."
+  },
+  "csvFileTooManyRows": "It has more than {limit} rows. Split it into smaller files.",
+  "@csvFileTooManyRows": {
+    "description": "Why a chosen file cannot be imported: it has too many rows. The placeholder is the most rows a file may have.",
+    "placeholders": {
+      "limit": {"type": "int", "format": "decimalPattern"}
+    }
+  },
+  "csvFileTooLarge": "It is too large to import.",
+  "@csvFileTooLarge": {
+    "description": "Why a chosen file cannot be imported: it is too large."
+  },
+  "csvProblemRow": "Row {row}: {reason}",
+  "@csvProblemRow": {
+    "description": "A row of the file that was or would be skipped. The placeholders are the number of the row and the reason, such as \"the date is missing\".",
+    "placeholders": {
+      "row": {"type": "int"},
+      "reason": {"type": "String"}
+    }
+  },
+  "csvProblemPartRow": "{part}, row {row}: {reason}",
+  "@csvProblemPartRow": {
+    "description": "A row of a file of several kinds that was or would be skipped. The placeholders are the kind (Transactions, Debts or Salary months), the number of the row and the reason.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "row": {"type": "int"},
+      "reason": {"type": "String"}
+    }
+  },
+  "csvReasonMissingDate": "the date is missing",
+  "@csvReasonMissingDate": {
+    "description": "Why a row was skipped: it has no date."
+  },
+  "csvReasonInvalidAmount": "the amount is not valid",
+  "@csvReasonInvalidAmount": {
+    "description": "Why a row was skipped: its amount cannot be read."
+  },
+  "csvReasonDuplicate": "already exists",
+  "@csvReasonDuplicate": {
+    "description": "Why a row was skipped: the same record already exists."
+  },
+  "csvReasonUnknownCategory": "the category does not exist",
+  "@csvReasonUnknownCategory": {
+    "description": "Why a row was skipped: no category has its name."
+  },
+  "csvReasonUnknownAccount": "the account does not exist",
+  "@csvReasonUnknownAccount": {
+    "description": "Why a row was skipped: no account has its name."
+  },
+  "csvReasonLimitReached": "the limit of records is reached",
+  "@csvReasonLimitReached": {
+    "description": "Why a row was skipped: the account holds as many records of this kind as it may."
+  },
+  "csvKindSetup": "Accounts and categories",
+  "@csvKindSetup": {
+    "description": "Chip of the Export CSV sheet that exports the accounts and the custom categories together. They are needed to restore transactions into a new account."
+  },
+  "csvPeriodNotForSetup": "The period does not apply to accounts and categories.",
+  "@csvPeriodNotForSetup": {
+    "description": "Caption under the period chips of the Export CSV sheet when accounts and categories are chosen."
+  },
+  "csvCrowdedDays": "{days, plural, one{{days} day has} other{{days} days have}} more than 500 rows. Rows that repeat inside such a day may be imported twice.",
+  "@csvCrowdedDays": {
+    "description": "Warning on the Import CSV screen when some days of the file have more rows than one import call takes, so repeats inside them cannot be recognised. The placeholder is how many days.",
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  "csvReasonNameTaken": "the name is used by a built-in category",
+  "@csvReasonNameTaken": {
+    "description": "Why a category row was skipped: its name is the name of a built-in category."
+  },
+  "csvReasonMissingIcon": "the icon is missing",
+  "@csvReasonMissingIcon": {
+    "description": "Why a category row was skipped: it has no icon."
+  },
+  "csvReasonOther": "it could not be imported",
+  "@csvReasonOther": {
+    "description": "Why a row was skipped, for any other reason."
   },
   "currencyNameRub": "Russian ruble",
   "@currencyNameRub": {

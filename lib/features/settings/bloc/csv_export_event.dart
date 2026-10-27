@@ -17,6 +17,17 @@ final class CsvKindToggled extends CsvExportEvent {
   List<Object> get props => [kind];
 }
 
+/// The user ticked or unticked a chip that stands for several kinds at once
+/// (Accounts and categories): all of them are ticked unless they all were.
+final class CsvKindsToggled extends CsvExportEvent {
+  const new(this.kinds);
+
+  final Set<CsvDataKind> kinds;
+
+  @override
+  List<Object> get props => [kinds];
+}
+
 /// The user chose All time, This year or Custom.
 final class CsvPeriodSelected extends CsvExportEvent {
   const new(this.period);
