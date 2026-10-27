@@ -21,14 +21,14 @@ class ExportRequestRequest {
   factory ExportRequestRequest.fromJson(Map<String, Object?> json) =>
       _$ExportRequestRequestFromJson(json);
 
-  /// 1 to 3 different kinds. One kind is answered as a CSV file, several as a ZIP archive with one file per kind.
+  /// 1 to 5 different kinds. One kind is answered as a CSV file, several as a ZIP archive with one file per kind (always in the order accounts, categories, transactions, debts, salary months).
   final List<DatasetEnum> kinds;
 
   /// The account password; it is never put in a URL.
   @JsonKey(name: 'current_password')
   final String currentPassword;
 
-  /// The first day, inclusive (`YYYY-MM-DD`). It applies to a transaction's `date`, a debt's `start_date` and, counted in months, to a salary month's month. Both left out means all time.
+  /// The first day, inclusive (`YYYY-MM-DD`). It applies to a transaction's `date`, a debt's `start_date` and, counted in months, to a salary month's month; accounts and categories have no date, so it does not apply to them. Both left out means all time.
   final DateTime? from;
 
   /// The last day, inclusive (`YYYY-MM-DD`); the same rules as `from`.

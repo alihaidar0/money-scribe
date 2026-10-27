@@ -5,6 +5,7 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 
 import 'build_app.dart';
 import 'fake_language_repository.dart';
@@ -127,6 +128,7 @@ Future<DemoController> openSettings(
   Size size = tallPhone,
   FakeThemeRepository? themeRepository,
   FakeLanguageRepository? languageRepository,
+  CsvTransferRepository Function(DemoController demo)? csvTransferRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -136,6 +138,7 @@ Future<DemoController> openSettings(
   await tester.pumpWidget(
     buildApp(
       demo: demo,
+      csvTransferRepository: csvTransferRepository?.call(demo),
       languageRepository:
           languageRepository ?? FakeLanguageRepository(language),
       themeRepository: themeRepository,

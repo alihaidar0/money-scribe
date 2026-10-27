@@ -245,14 +245,21 @@ route.
 
 ## 7. CSV export and import
 
-- **Export:** `POST /api/v1/exports/` with `kinds` (`transactions`, `debts`, `salary_months`), a period
-  (`from` and `to`, both left out for all time; "this year" is sent as dates) and `current_password`. The
-  answer is a CSV file for one kind, or a zip with one file per kind. The app asks for the password in a
-  dialog first, saves the file in its private cache, shares it and deletes it afterwards. The server also
+- **Export:** `POST /api/v1/exports/` with `kinds` (1 to 5 of `accounts`, `categories`, `transactions`,
+  `debts`, `salary_months`), a period (`from` and `to`, both left out for all time; "this year" is sent as
+  dates; they do not apply to accounts and categories, which have no date) and `current_password`. The answer
+  is a CSV file for one kind, or a zip with one file per kind, always in that order. The sheet has one chip,
+  "Accounts and categories", for the first two: a restore needs both, because an import never creates an
+  account or a category. The app asks for the password in a
+  dialog first, saves the file in its private cache and shares it; the file stays there only until the next
+  export or the next start of the app, because the app it was shared with may still be reading it. The server also
   sends the owner an email that an export was made. A wrong password is `400 invalid_password`, then the
   shared countdown; five exports an hour.
 - **Files:** UTF-8 with a byte order mark, `,` as the separator, a fixed header, dates `YYYY-MM-DD`, amounts
-  as decimal strings, an empty cell means none, oldest first. Columns: `transactions` has `date`, `kind`,
+  as decimal strings, an empty cell means none, oldest first. Columns: `accounts` has `name` and `kind`
+  (`card`, `cash`, `other`) and holds every account, the two made at sign-up included; `categories` has `name`
+  and `icon` (one of `gifts`, `health`, `entertainment`, `shopping`, `education`, `travel`, `subscriptions`,
+  `other`) and holds the custom categories only; `transactions` has `date`, `kind`,
   `amount`, `currency`, `category_key`, `category_name`, `account_name`, `note` (a built-in category has its
   key and no name, a custom one the reverse); `debts` has `direction`, `person`, `amount`, `currency`,
   `start_date`, `due_date`, `note` and `repayments` (a JSON cell); `salary_months` has the month's inputs,
@@ -267,11 +274,30 @@ route.
   the dataset, refuses a file with a missing header before any call, and fills trailing zeros of a number
   (`12.5` becomes `12.50`) without ever rounding. Each chunk is first sent as a **dry run** (a figure that is
   an estimate), then for real with its own `Idempotency-Key`; a 10,000-row file is 40 calls of the 120 an hour.
+  The kinds go in the order accounts, categories, transactions, debts, salary months, and the rows of one day
+  (a transaction's `date`, a debt's `start_date`) always go in the same call: the server compares a row with the
+  records it has written, not with the other rows of its call, so a repeat split between two calls would be
+  written twice. A day with more than 500 rows cannot be kept whole: the import screen warns before the person
+  presses Import. The estimate before the import cannot know the accounts and categories the file itself
+  creates, so it leaves out `unknown_account` and `unknown_category` for a name the file creates (compared
+  trimmed and in lower case; the server also normalizes to Unicode NFC, which the app does not, so only the
+  estimate can differ), and the real calls of the transactions follow the real calls of accounts and
+  categories with no second dry run.
 - **Answer:** `imported`, `skipped` and `problems[]` of `{row, code, attr}`. A skipped row is always listed.
-  The app words the codes it knows (`required` on `date` is "the date is missing", `invalid_amount`,
-  `duplicate`, `unknown_category`, `unknown_account`, the limit codes) and shows any other as a generic reason
-  with the row number. An import never creates an account or a category, and a record equal to an existing
+  The app words the codes it knows (`required` on `date` is "the date is missing", `required` on `icon` is "the
+  icon is missing", `invalid_amount`, `duplicate`, `name_taken`, `unknown_category`, `unknown_account`, the
+  limit codes) and shows any other as a generic reason with the row number. A problem inside a nested cell
+  names its place counted from 0 (`repayments.0.date`); the app words it by its last field. A file of several
+  kinds says the kind of each row. An import never creates an account or a category, and a record equal to an existing
   one is skipped as `duplicate`, counted by multiplicity.
+- **How the app uses them.** Settings, Export CSV: the sheet chooses the kinds and the period, then a dialog
+  asks for the password (a wrong one under the field; `429` locks the field and the button with the
+  `Retry-After` countdown). Import CSV takes a `.csv` or a `.zip` from the system picker (at most 5 MB, 20 MB
+  unzipped and 20,000 rows, so the check and the import stay well inside the 120 calls an hour), refuses a file
+  it cannot import before any call, shows the estimate of the dry runs, then imports with the progress. An
+  import that stops goes on where it stopped when tried again, with the key of the call that had no answer.
+  Both calls are sent without the generated client: it reads the export as text (which breaks a `.zip`) and
+  its import row keeps only `row`. The import body is sent as JSON text, so no interceptor changes a cell.
 
 ## 8. For the privacy policy and the store forms
 

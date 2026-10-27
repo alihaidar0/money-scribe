@@ -79,26 +79,74 @@ void main() {
   });
 
   group('csv transfer', () {
-    test('the picker offers the sample files one after the other', () async {
-      final repository = FakeCsvTransferRepository(demo: demo);
+    test(
+      'the picker offers the sample files, then one it cannot read',
+      () async {
+        final repository = FakeCsvTransferRepository(demo: demo);
 
-      expect(await repository.chooseFile(), FakeCsvTransferRepository.files[0]);
-      expect(await repository.chooseFile(), FakeCsvTransferRepository.files[1]);
-      expect(await repository.chooseFile(), FakeCsvTransferRepository.files[0]);
-    });
+        expect(
+          await repository.chooseFile(),
+          FakeCsvTransferRepository.files[0],
+        );
+        expect(
+          await repository.chooseFile(),
+          FakeCsvTransferRepository.files[1],
+        );
+        expect(
+          await repository.chooseFile(),
+          FakeCsvTransferRepository.files[2],
+        );
+        await expectLater(
+          repository.chooseFile(),
+          throwsA(
+            isA<CsvFileException>().having(
+              (error) => error.issue,
+              'issue',
+              CsvFileIssue.unknownColumns,
+            ),
+          ),
+        );
+        expect(
+          await repository.chooseFile(),
+          FakeCsvTransferRepository.files[0],
+        );
+      },
+    );
 
-    test('the first file has two rows that are skipped', () async {
-      final repository = FakeCsvTransferRepository(demo: demo);
+    test(
+      'the check of the first file finds nothing, the import four',
+      () async {
+        final repository = FakeCsvTransferRepository(demo: demo);
+        final file = FakeCsvTransferRepository.files.first;
+        final progress = <int>[];
 
-      final result = await repository.import(
-        FakeCsvTransferRepository.files.first,
-      );
+        final estimate = await repository.check(file);
+        final result = await repository.import(file, onProgress: progress.add);
 
-      expect(result.imported, 40);
-      expect(result.skipped, 2);
-      expect(result.problems.first.kind, CsvProblemKind.invalidAmount);
-      expect(result.problems.last.kind, CsvProblemKind.missingDate);
-    });
+        expect(estimate, const CsvImportResult(imported: 42));
+        expect(result.imported, 38);
+        expect(result.problems, FakeCsvTransferRepository.problems);
+        expect(progress, [42]);
+      },
+    );
+
+    test(
+      'the export of several kinds skips an account and a category',
+      () async {
+        final repository = FakeCsvTransferRepository(demo: demo);
+        final file = FakeCsvTransferRepository.files[2];
+
+        final result = await repository.import(file);
+
+        expect(file.parts.map((part) => part.kind), [
+          CsvDataKind.accounts,
+          CsvDataKind.categories,
+          CsvDataKind.transactions,
+        ]);
+        expect(result.imported, 23);
+        expect(result.problems, FakeCsvTransferRepository.zipProblems);
+      },
+    );
 
     test('remembers what was exported last', () async {
       final repository = FakeCsvTransferRepository(demo: demo);
@@ -107,9 +155,31 @@ void main() {
         period: CsvPeriod.allTime,
       );
 
-      await repository.export(request);
+      await repository.export(request, password: 'secret');
 
       expect(repository.lastExport, request);
+    });
+
+    test('the demo refuses the password, or locks the export', () async {
+      final repository = FakeCsvTransferRepository(demo: demo);
+      const request = CsvExportRequest(
+        kinds: {CsvDataKind.debts},
+        period: CsvPeriod.allTime,
+      );
+
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await expectLater(
+        repository.export(request, password: 'x'),
+        throwsA(isA<CsvExportRefusedException>()),
+      );
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await expectLater(
+        repository.export(request, password: 'x'),
+        throwsA(isA<TooManyRequestsException>()),
+      );
+      expect(repository.lastExport, isNull);
     });
   });
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -148,7 +150,10 @@ final class ApiFailure {
     return const ServerException();
   }
 
-  static List<ApiErrorItem> _items(Object? data) {
+  static List<ApiErrorItem> _items(Object? body) {
+    // A call that downloads a file reads every answer as bytes, its error
+    // body too.
+    final data = body is List<int> ? _json(body) : body;
     if (data is! Map<String, dynamic>) return const [];
     final errors = data['errors'];
     if (errors is! List<Object?>) return const [];
@@ -169,6 +174,14 @@ final class ApiFailure {
                 : null,
           ),
     ];
+  }
+
+  static Object? _json(List<int> bytes) {
+    try {
+      return jsonDecode(utf8.decode(bytes));
+    } on FormatException {
+      return null;
+    }
   }
 
   static final _requestIdForm = RegExp(r'^[A-Za-z0-9-]{8,64}$');

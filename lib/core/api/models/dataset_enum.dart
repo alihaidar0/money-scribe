@@ -6,6 +6,10 @@ import 'package:json_annotation/json_annotation.dart';
 
 @JsonEnum()
 enum DatasetEnum {
+  @JsonValue('accounts')
+  accounts('accounts'),
+  @JsonValue('categories')
+  categories('categories'),
   @JsonValue('transactions')
   transactions('transactions'),
   @JsonValue('debts')

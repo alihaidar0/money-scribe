@@ -5,7 +5,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
-import '../models/import_request_request.dart';
+import '../models/import_request.dart';
 import '../models/import_result.dart';
 
 part 'imports_client.g.dart';
@@ -21,7 +21,7 @@ abstract class ImportsClient {
   /// [idempotencyKey] - Required unless `dry_run` is `true`: a random id, once per user action, as a quoted string of 16 to 64 letters, digits, hyphens or underscores. The same key with the same body returns the first answer with `Idempotent-Replayed: true`; another body under the same key is `422`.
   @POST('/api/v1/imports/')
   Future<ImportResult> importCreate({
-    @Body() required ImportRequestRequest body,
     @Header('Idempotency-Key') String? idempotencyKey,
+    @Body() ImportRequest? body,
   });
 }

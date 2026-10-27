@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -101,6 +103,26 @@ void main() {
         expect(failure.first?.attemptsLeft, isNull);
       },
     );
+
+    test('is read from bytes, as a call that downloads a file gets it', () {
+      final body = utf8.encode(
+        jsonEncode({
+          'type': 'validation_error',
+          'errors': [
+            {'code': 'invalid_password', 'attr': 'current_password'},
+          ],
+        }),
+      );
+
+      final failure = ApiFailure.from(failedCall(400, body));
+
+      expect(failure.code, 'invalid_password');
+      expect(failure.first?.attr, 'current_password');
+      expect(
+        ApiFailure.from(failedCall(400, utf8.encode('nope'))).items,
+        isEmpty,
+      );
+    });
 
     test('is empty when the body is not the documented one', () {
       expect(

@@ -44,9 +44,12 @@ import 'package:money_scribe/features/salary/data/remote/remote_fixed_items_repo
 import 'package:money_scribe/features/salary/data/remote/remote_salary_repository.dart';
 import 'package:money_scribe/features/sessions/data/fake/fake_sessions_repository.dart';
 import 'package:money_scribe/features/sessions/data/remote/remote_sessions_repository.dart';
+import 'package:money_scribe/features/settings/data/device/file_selector_csv_picker.dart';
+import 'package:money_scribe/features/settings/data/device/share_sheet_csv_sharer.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
+import 'package:money_scribe/features/settings/data/remote/remote_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/remote/remote_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/remote/remote_pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/data/remote/remote_settings.dart';
@@ -130,6 +133,10 @@ Future<void> main() async {
   if (apiConfig != null && !AppEnvironment.current.isProduction) {
     unawaited(warmUpServer(createPlainDio(apiConfig, monitor: monitor)));
   }
+  // An exported file stays in the private cache until the app it was shared
+  // with has read it: the next start deletes it.
+  const csvSharer = ShareSheetCsvSharer();
+  unawaited(csvSharer.deleteLeftovers().catchError((Object _) {}));
 
   runApp(
     MoneyScribeApp(
@@ -143,7 +150,13 @@ Future<void> main() async {
       payScheduleRepository: payScheduleRepository,
       defaultCurrencyRepository: defaultCurrencyRepository,
       accountLocaleRepository: settings,
-      csvTransferRepository: FakeCsvTransferRepository(demo: demo),
+      csvTransferRepository: apiDio == null
+          ? FakeCsvTransferRepository(demo: demo)
+          : RemoteCsvTransferRepository(
+              dio: apiDio,
+              picker: const FileSelectorCsvPicker(),
+              sharer: csvSharer,
+            ),
       overviewRepository: apiDio == null
           ? FakeOverviewRepository(demo: demo)
           : RemoteOverviewRepository.create(

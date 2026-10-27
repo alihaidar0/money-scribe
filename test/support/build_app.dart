@@ -30,6 +30,7 @@ import 'package:money_scribe/features/sessions/domain/sessions_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
+import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/theme_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
@@ -55,6 +56,7 @@ Widget buildApp({
   AuthRepository? authRepository,
   AppLockRepository? appLockRepository,
   DeviceKeyRepository? deviceKeyRepository,
+  CsvTransferRepository? csvTransferRepository,
   DemoController? demo,
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
@@ -102,7 +104,9 @@ Widget buildApp({
     defaultCurrencyRepository: FakeDefaultCurrencyRepository(
       demo: demoController,
     ),
-    csvTransferRepository: FakeCsvTransferRepository(demo: demoController),
+    csvTransferRepository:
+        csvTransferRepository ??
+        FakeCsvTransferRepository(demo: demoController),
     overviewRepository:
         overviewRepository ?? FakeOverviewRepository(demo: demoController),
     salaryRepository: salary,

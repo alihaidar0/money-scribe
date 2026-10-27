@@ -25,6 +25,8 @@ Map<String, dynamic> _$ImportRequestRequestToJson(
 };
 
 const _$DatasetEnumEnumMap = {
+  DatasetEnum.accounts: 'accounts',
+  DatasetEnum.categories: 'categories',
   DatasetEnum.transactions: 'transactions',
   DatasetEnum.debts: 'debts',
   DatasetEnum.salaryMonths: 'salary_months',
