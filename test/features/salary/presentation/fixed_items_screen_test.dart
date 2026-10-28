@@ -85,6 +85,28 @@ Future<void> fillSheet(
 
 Finder saveButton() => inSheet(find.widgetWithText(FilledButton, 'Save'));
 
+/// Opens the wheel of days from the day field of the sheet.
+Future<void> openDayWheel(WidgetTester tester) async {
+  await tester.tap(inSheet(find.text('Day of the month')));
+  await tester.pumpAndSettle();
+}
+
+/// Turns the wheel by [days] days (a negative number goes back) and lets it
+/// settle on a day.
+Future<void> turnWheel(WidgetTester tester, int days) async {
+  await tester.drag(find.byType(ListWheelScrollView), Offset(0, -48.0 * days));
+  await tester.pumpAndSettle();
+}
+
+/// Closes the wheel with Done.
+Future<void> closeWheel(WidgetTester tester) async {
+  await tester.tap(find.widgetWithText(FilledButton, 'Done'));
+  await tester.pumpAndSettle();
+}
+
+const paidFirst = 'Part 1 is paid on day 20';
+const paidSecond = 'Part 2 is paid on day 5 of the next month';
+
 /// The repository of a saved month whose items were all deleted.
 Future<FakeFixedItemsRepository> withoutItems() async {
   final demo = DemoController(latency: Duration.zero);
@@ -309,17 +331,112 @@ void main() {
       expect(find.text('Gym'), findsNothing);
     });
 
-    testWidgets('in two payments it asks the day, starting in the shown part', (
-      tester,
-    ) async {
+    testWidgets('in two payments it asks the day, starting on the pay day of '
+        'the shown part', (tester) async {
       await pumpFixedItems(tester, settings: twoPayments);
       await choosePart(tester, 'Part 2');
 
       await openAddSheet(tester);
 
       expect(find.text('Day of the month'), findsOneWidget);
-      expect(inSheet(find.text('16')), findsOneWidget);
+      expect(inSheet(find.text('5')), findsOneWidget);
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
+    });
+
+    testWidgets('a new item in Part 1 starts on the first pay day', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+
+      await openAddSheet(tester);
+
+      expect(inSheet(find.text('20')), findsOneWidget);
+      expect(inSheet(find.text(paidFirst)), findsOneWidget);
+    });
+
+    testWidgets('asks which part it is paid from, automatic at first', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+
+      await openAddSheet(tester);
+
+      expect(inSheet(find.text('Paid from')), findsOneWidget);
+      expect(inSheet(find.text('Automatic')), findsOneWidget);
+      expect(inSheet(find.text('Part 1')), findsOneWidget);
       expect(inSheet(find.text('Part 2')), findsOneWidget);
+    });
+
+    testWidgets('does not ask the day or the part in one payment', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester);
+
+      await openAddSheet(tester);
+
+      expect(find.text('Day of the month'), findsNothing);
+      expect(find.text('Paid from'), findsNothing);
+    });
+
+    testWidgets('the day is picked on a wheel and the part follows it', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+      await openAddSheet(tester);
+      expect(inSheet(find.text(paidFirst)), findsOneWidget);
+
+      // Day 20 turned back to the 13th: between the two pay days.
+      await openDayWheel(tester);
+      expect(find.byType(ListWheelScrollView), findsOneWidget);
+      await turnWheel(tester, -7);
+      expect(find.text(paidSecond), findsOneWidget);
+      await closeWheel(tester);
+
+      expect(find.byType(ListWheelScrollView), findsNothing);
+      expect(inSheet(find.text('13')), findsOneWidget);
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
+    });
+
+    testWidgets('Cancel on the wheel keeps the day', (tester) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+      await openAddSheet(tester);
+
+      await openDayWheel(tester);
+      await turnWheel(tester, -7);
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel').last);
+      await tester.pumpAndSettle();
+
+      expect(inSheet(find.text('20')), findsOneWidget);
+      expect(inSheet(find.text(paidFirst)), findsOneWidget);
+    });
+
+    testWidgets('a part chosen by hand is kept, and shown when it is edited', (
+      tester,
+    ) async {
+      await pumpFixedItems(tester, settings: twoPayments);
+      await openAddSheet(tester);
+      await fillSheet(tester, name: 'Gym', amount: '1000');
+
+      // Day 20 falls in Part 1; the person pays it from Part 2.
+      await tester.tap(inSheet(find.text('Part 2')));
+      await tester.pumpAndSettle();
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
+      await tester.tap(saveButton());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gym'), findsNothing);
+      await choosePart(tester, 'Part 2');
+      expect(find.text('Gym'), findsOneWidget);
+
+      await openEditSheet(tester, 'Gym');
+      expect(inSheet(find.text('20')), findsOneWidget);
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
+
+      // Turning the wheel does not take it back to the part of its day.
+      await openDayWheel(tester);
+      await turnWheel(tester, 3);
+      await closeWheel(tester);
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
     });
 
     testWidgets('an item added to Part 1 does not appear in Part 2', (
@@ -375,7 +492,7 @@ void main() {
 
       expect(find.text('Day of the month'), findsOneWidget);
       expect(inSheet(find.text('1')), findsOneWidget);
-      expect(inSheet(find.text('Part 1')), findsOneWidget);
+      expect(inSheet(find.text(paidFirst)), findsOneWidget);
       expect(
         tester
             .widget<PillSegmentedButton<FixedItemKind>>(
@@ -411,19 +528,19 @@ void main() {
       expect(figure('74,900.00 ₽'), findsOneWidget);
     });
 
-    testWidgets('dating an item in the 16th or later moves it to Part 2', (
+    testWidgets('dating an item between the pay days moves it to Part 2', (
       tester,
     ) async {
       await pumpFixedItems(tester, settings: twoPayments);
       await openEditSheet(tester, 'Services');
 
-      // Services falls on the 10th; the 16th is the first day of Part 2.
-      for (var day = 10; day < 16; day++) {
-        await tester.tap(inSheet(find.byTooltip('Increase')));
-        await tester.pump();
-      }
-      expect(inSheet(find.text('Part 2')), findsOneWidget);
-      await tester.pumpAndSettle();
+      // Services falls on the 21st, paid from Part 1; the 10th is paid from
+      // Part 2, which was received on the 5th.
+      expect(inSheet(find.text(paidFirst)), findsOneWidget);
+      await openDayWheel(tester);
+      await turnWheel(tester, -11);
+      await closeWheel(tester);
+      expect(inSheet(find.text(paidSecond)), findsOneWidget);
       await tester.tap(saveButton());
       await tester.pumpAndSettle();
 

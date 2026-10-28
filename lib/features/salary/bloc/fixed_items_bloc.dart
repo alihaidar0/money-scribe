@@ -236,12 +236,13 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       ]);
       final items = results[0]! as List<FixedItem>;
       final saved = results[1] as SalaryMonth?;
-      final defaultMode = saved == null
-          ? (await _salary.defaults(state.month)).paymentMode
+      // A month that is not saved starts with the account's schedule.
+      final defaults = saved == null
+          ? await _salary.defaults(state.month)
           : null;
 
       final entry = saved == null ? null : SalaryHistoryEntry.tryFrom(saved);
-      final mode = saved?.inputs.paymentMode ?? defaultMode;
+      final mode = saved?.inputs.paymentMode ?? defaults?.paymentMode;
       emit(
         state.copyWith(
           status: FixedItemsStatus.ready,
@@ -253,6 +254,8 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
           balances: saved?.figures?.balances,
           clearBalances: saved?.figures == null,
           twoPayments: mode == PaymentMode.twoPayments,
+          firstPayDay: saved?.firstPayDay ?? defaults?.firstPayDay,
+          secondPayDay: saved?.secondPayDay ?? defaults?.secondPayDay,
           currency: saved?.inputs.baseSalary.currency ?? Currency.rub,
         ),
       );

@@ -223,6 +223,8 @@ Future<void> _addItem(BuildContext context) async {
     month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
+    firstPayDay: state.firstPayDay,
+    secondPayDay: state.secondPayDay,
     part: state.part,
   );
   if (result is FixedItemSheetSaved) bloc.add(FixedItemAdded(result.draft));
@@ -247,6 +249,8 @@ Future<void> _editItem(BuildContext context, FixedItem item) async {
     month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
+    firstPayDay: state.firstPayDay,
+    secondPayDay: state.secondPayDay,
     part: state.part,
     item: item,
   );
