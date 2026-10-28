@@ -22,7 +22,7 @@ abstract class SettingsClient {
 
   /// Change the settings.
   ///
-  /// Changes the fields sent and answers all the settings. The language and the time zone are the ones the emails, the reminders and "today" use (sign-in still sets them from the device it happens on). `default_currency`, `payment_mode`, `first_pay_day` and `second_pay_day` can be sent as `null` to go back to "not set". Send `If-Match` with the `version` read: a stale one is `412` and changes nothing. Errors: `400` on the field that is wrong (`invalid_choice`, `invalid`, `min_value`, `max_value`, `null` for a field that cannot be cleared), `400` `read_only` for a field that is not a setting.
+  /// Changes the fields sent and answers all the settings. The language and the time zone are the ones the emails, the reminders and "today" use (sign-in still sets them from the device it happens on). `default_currency`, `payment_mode`, `first_pay_day` and `second_pay_day` can be sent as `null` to go back to "not set". Send `If-Match` with the `version` read: a stale one is `412` and changes nothing. Errors: `400` on the field that is wrong (`invalid_choice`, `invalid`, `min_value`, `max_value`, `null` for a field that cannot be cleared), `400` `invalid_pay_days` on `second_pay_day` when the pay days that would result leave the second on or after the first, `400` `read_only` for a field that is not a setting.
   ///
   /// [ifMatch] - The `version` of the record the edit was made from, as a quoted string: `"3"` (`*` matches any record). If the stored version is another one nothing changes and the answer is `412` `precondition_failed`. Without the header the last write wins.
   @PATCH('/api/v1/settings/')

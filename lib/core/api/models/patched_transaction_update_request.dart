@@ -6,6 +6,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'amount.dart';
 import 'kind_enum.dart';
+import 'part_enum.dart';
 
 part 'patched_transaction_update_request.g.dart';
 
@@ -13,6 +14,8 @@ part 'patched_transaction_update_request.g.dart';
 @JsonSerializable()
 class PatchedTransactionUpdateRequest {
   const PatchedTransactionUpdateRequest({
+    required this.partValue,
+    required this.partMonth,
     required this.kind,
     required this.amount,
     required this.date,
@@ -24,6 +27,15 @@ class PatchedTransactionUpdateRequest {
   factory PatchedTransactionUpdateRequest.fromJson(Map<String, Object?> json) =>
       _$PatchedTransactionUpdateRequestFromJson(json);
 
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  @JsonKey(name: 'part')
+  final PartEnum? partValue;
+
+  /// The month the `part` belongs to, `YYYY-MM` (2000-01 to 2099-12).
+  @JsonKey(name: 'part_month')
+  final String? partMonth;
   final KindEnum kind;
 
   /// A decimal string with exactly the number of digits of the currency, such as `12.50`.

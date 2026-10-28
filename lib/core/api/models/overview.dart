@@ -50,11 +50,11 @@ class Overview {
   /// The whole month.
   final OverviewBlock total;
 
-  /// Days 1 to 15; `null` for a month paid once.
+  /// From the first pay day to the day before the second pay day of the next month (the 20th to the 4th with 20 and 5); `null` for a month paid once.
   @JsonKey(name: 'first_part')
   final OverviewBlock? firstPart;
 
-  /// Day 16 to the end of the month; `null` for a month paid once.
+  /// From the second pay day of the next month to the day before the next first pay day (the 5th to the 19th with 20 and 5); `null` for a month paid once.
   @JsonKey(name: 'second_part')
   final OverviewBlock? secondPart;
 

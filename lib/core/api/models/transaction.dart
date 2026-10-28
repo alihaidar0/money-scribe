@@ -7,6 +7,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'amount.dart';
 import 'currency_enum.dart';
 import 'kind_enum.dart';
+import 'part_enum.dart';
 
 part 'transaction.g.dart';
 
@@ -21,6 +22,8 @@ class Transaction {
     required this.categoryId,
     required this.accountId,
     required this.note,
+    required this.partValue,
+    required this.partMonth,
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -54,6 +57,16 @@ class Transaction {
   @JsonKey(name: 'account_id')
   final String accountId;
   final String note;
+
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  @JsonKey(name: 'part')
+  final PartEnum? partValue;
+
+  /// Of an income: the month the `part` belongs to (`YYYY-MM`). `null` for an expense.
+  @JsonKey(name: 'part_month')
+  final String? partMonth;
   final int version;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;

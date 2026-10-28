@@ -169,6 +169,10 @@ class RemoteTransactionsRepository implements TransactionsRepository {
           categoryId: draft.categoryId,
           accountId: draft.accountId,
           note: ApiText.clean(draft.note),
+          // No choice of the part yet: an income joins the part with the
+          // nearest pay day, as the server works it out.
+          partValue: null,
+          partMonth: null,
         ),
       ),
       // A transaction that is gone was deleted on another device: the same

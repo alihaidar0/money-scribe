@@ -7,6 +7,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'amount.dart';
 import 'currency_enum.dart';
 import 'kind_enum.dart';
+import 'part_enum.dart';
 
 part 'transaction_create_request.g.dart';
 
@@ -21,11 +22,22 @@ class TransactionCreateRequest {
     required this.categoryId,
     required this.accountId,
     this.note = '',
+    this.partValue,
+    this.partMonth,
   });
 
   factory TransactionCreateRequest.fromJson(Map<String, Object?> json) =>
       _$TransactionCreateRequestFromJson(json);
 
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  /// The name has been replaced because it contains a keyword. Original name: `part`.
+  @JsonKey(name: 'part')
+  final PartEnum? partValue;
+
+  /// The month the `part` belongs to, `YYYY-MM` (2000-01 to 2099-12).
+  @JsonKey(name: 'part_month')
+  final String? partMonth;
   final KindEnum kind;
 
   /// A decimal string with exactly the number of digits of the currency, such as `12.50`.
