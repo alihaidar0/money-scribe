@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -127,7 +128,7 @@ class _DebtsView extends StatelessWidget {
           ? FloatingActionButton.extended(
               heroTag: null,
               onPressed: () => _addDebt(context),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: Text(l10n.addDebtAction),
             )
           : null,
@@ -143,7 +144,7 @@ class _DebtsView extends StatelessWidget {
           onRetry: () => bloc.add(const DebtsRetried()),
         ),
         DebtsStatus.ready when isEmpty => StateView(
-          icon: Icons.handshake_outlined,
+          icon: LucideIcons.handshake,
           title: l10n.debtsEmptyTitle,
           actionLabel: l10n.addADebtAction,
           filledAction: true,
@@ -278,12 +279,12 @@ class _DetailPane extends StatelessWidget {
                 if (!debt.isSettled)
                   FilledButton.icon(
                     onPressed: () => _addRepayment(context, debt.id),
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(LucideIcons.plus),
                     label: Text(l10n.addRepaymentAction),
                   ),
                 FilledButton.tonalIcon(
                   onPressed: () => _editDebt(context, debt.id),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(LucideIcons.pencil),
                   label: Text(l10n.editAction),
                 ),
                 OutlinedButton.icon(
@@ -291,7 +292,7 @@ class _DetailPane extends StatelessWidget {
                     foregroundColor: theme.colorScheme.error,
                   ),
                   onPressed: deleting ? null : () => _delete(context, debt),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   label: Text(l10n.deleteAction),
                 ),
               ],

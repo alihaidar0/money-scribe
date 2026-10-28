@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -184,21 +185,21 @@ class _SignInViewState extends State<_SignInView> {
             ],
             if (fingerprintMessage != null) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: fingerprintMessage,
               ),
               const SizedBox(height: 16),
             ],
             if (hasWrongCredentials) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.signInWrongCredentials,
               ),
               const SizedBox(height: 16),
             ],
             if (isLocked) ...[
               MessageBanner(
-                icon: Icons.lock_outline,
+                icon: LucideIcons.lock,
                 text: l10n.signInLocked(
                   time: formatCountdown(state.lockSecondsLeft),
                 ),
@@ -283,13 +284,13 @@ class _SignInViewState extends State<_SignInView> {
 }
 
 IconData _signOutIcon(SignOutReason reason) => switch (reason) {
-  SignOutReason.tooManyDevices => Icons.devices_outlined,
-  SignOutReason.endedElsewhere => Icons.logout,
-  SignOutReason.passwordChanged => Icons.password,
-  SignOutReason.emailChanged => Icons.alternate_email,
-  SignOutReason.security => Icons.shield_outlined,
-  SignOutReason.expired => Icons.schedule,
-  SignOutReason.other => Icons.logout,
+  SignOutReason.tooManyDevices => LucideIcons.monitorSmartphone,
+  SignOutReason.endedElsewhere => LucideIcons.logOutDir,
+  SignOutReason.passwordChanged => LucideIcons.lockKeyhole,
+  SignOutReason.emailChanged => LucideIcons.atSign,
+  SignOutReason.security => LucideIcons.shield,
+  SignOutReason.expired => LucideIcons.clock,
+  SignOutReason.other => LucideIcons.logOutDir,
 };
 
 String _signOutText(AppLocalizations l10n, SignOutReason reason) =>
@@ -337,7 +338,10 @@ class _FingerprintCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const IconCircle(icon: Icons.fingerprint, size: 56),
+                const IconCircle(
+                  icon: LucideIcons.fingerprintPattern,
+                  size: 56,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: MergeSemantics(
@@ -368,7 +372,9 @@ class _FingerprintCard extends StatelessWidget {
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: locked || busy ? null : onSignIn,
-          icon: busy ? const ButtonSpinner() : const Icon(Icons.fingerprint),
+          icon: busy
+              ? const ButtonSpinner()
+              : const Icon(LucideIcons.fingerprintPattern),
           label: Text(l10n.signInWithFingerprintAction),
         ),
         const SizedBox(height: 8),

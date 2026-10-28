@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -103,7 +104,7 @@ class _CategoriesView extends StatelessWidget {
             ? FloatingActionButton.extended(
                 heroTag: null,
                 onPressed: () => _add(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(LucideIcons.plus),
                 label: Text(l10n.addCategoryAction),
               )
             : null,
@@ -210,7 +211,7 @@ class _CategoryRow extends StatelessWidget {
                   ),
                   if (custom)
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(LucideIcons.pencil),
                       tooltip: l10n.editItemTooltip(
                         name: l10n.categoryName(category),
                       ),

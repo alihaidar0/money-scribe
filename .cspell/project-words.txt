@@ -27,6 +27,7 @@ keygen
 keysize
 keytool
 koalaman
+lucide
 moneyscribe
 ntfs
 passwordless

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/features/sessions/domain/device_session.dart';
@@ -80,7 +81,7 @@ class ActiveSessionRow extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    Icons.chevron_right,
+                    LucideIcons.chevronRightDir,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
@@ -146,7 +147,7 @@ class EndedSessionRow extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    Icons.chevron_right,
+                    LucideIcons.chevronRightDir,
                     size: 20,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

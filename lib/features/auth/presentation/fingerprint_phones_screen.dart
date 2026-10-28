@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/device/device_info.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -91,7 +92,7 @@ class _Body extends StatelessWidget {
         onRetry: () => bloc.add(const DeviceKeyListRetried()),
       ),
       DeviceKeyListStatus.ready when state.keys.isEmpty => StateView(
-        icon: Icons.fingerprint,
+        icon: LucideIcons.fingerprintPattern,
         title: l10n.fingerprintPhonesEmptyTitle,
         message: l10n.fingerprintPhonesEmptyMessage,
         actionLabel: l10n.fingerprintPhonesEmptyAction,
@@ -158,8 +159,8 @@ class _PhoneRow extends StatelessWidget {
             children: [
               IconCircle(
                 icon: entry.platform == DevicePlatform.ios
-                    ? Icons.phone_iphone
-                    : Icons.smartphone,
+                    ? LucideIcons.smartphone
+                    : LucideIcons.smartphone,
                 size: 40,
               ),
               const SizedBox(width: 12),
@@ -208,7 +209,7 @@ class _PhoneRow extends StatelessWidget {
                 )
               else
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   tooltip: l10n.fingerprintPhoneRemoveTooltip(
                     name: entry.deviceName,
                   ),

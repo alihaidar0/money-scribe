@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/money/currency.dart';
@@ -125,8 +126,8 @@ void main() {
         expect(find.byTooltip('Edit $name'), findsOneWidget);
       }
       // An arrow in for income and out for an expense: not colour alone.
-      expect(find.byIcon(Icons.south_west), findsOneWidget);
-      expect(find.byIcon(Icons.north_east), findsNWidgets(2));
+      expect(find.byIcon(LucideIcons.arrowDownLeft), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowUpRight), findsNWidgets(2));
     });
 
     testWidgets('shows the balance after the items and how it adds up', (

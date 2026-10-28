@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 
@@ -70,11 +71,11 @@ class DateField extends StatelessWidget {
             labelText: label,
             suffixIcon: value != null && onCleared != null
                 ? IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(LucideIcons.x),
                     tooltip: context.l10n.clearDateAction,
                     onPressed: onCleared,
                   )
-                : const Icon(Icons.calendar_today_outlined),
+                : const Icon(LucideIcons.calendar),
           ),
           child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
         ),

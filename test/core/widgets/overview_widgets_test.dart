@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -116,7 +117,7 @@ void main() {
   group('AmountRow', () {
     Widget row(Money amount, {VoidCallback? onTap}) {
       return AmountRow(
-        icon: Icons.payments_outlined,
+        icon: LucideIcons.banknote,
         title: 'Salary',
         subtitle: '20 days',
         amount: amount,
@@ -157,13 +158,13 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(_host(row(const Money(100, Currency.rub))));
-      expect(find.byIcon(Icons.chevron_right), findsNothing);
+      expect(find.byIcon(LucideIcons.chevronRightDir), findsNothing);
 
       var taps = 0;
       await tester.pumpWidget(
         _host(row(const Money(100, Currency.rub), onTap: () => taps++)),
       );
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(find.byIcon(LucideIcons.chevronRightDir), findsOneWidget);
 
       await tester.tap(find.text('Salary'));
       expect(taps, 1);
@@ -241,8 +242,8 @@ void main() {
 
       expect(find.text('Lent'), findsOneWidget);
       expect(find.text('Borrowed'), findsOneWidget);
-      expect(find.byIcon(Icons.call_made), findsOneWidget);
-      expect(find.byIcon(Icons.call_received), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowUpRight), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowDownLeft), findsOneWidget);
     });
 
     testWidgets('status badges have an icon and a label', (tester) async {
@@ -259,9 +260,9 @@ void main() {
       expect(find.text('Open'), findsOneWidget);
       expect(find.text('Overdue'), findsOneWidget);
       expect(find.text('Settled'), findsOneWidget);
-      expect(find.byIcon(Icons.schedule), findsOneWidget);
-      expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.clock), findsOneWidget);
+      expect(find.byIcon(LucideIcons.triangleAlert), findsOneWidget);
+      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
     });
 
     testWidgets('are translated into Arabic', (tester) async {

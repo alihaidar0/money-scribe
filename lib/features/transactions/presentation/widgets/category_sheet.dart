@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
@@ -238,7 +239,7 @@ class _IconChoice extends StatelessWidget {
                     end: 4,
                     top: 4,
                     child: Icon(
-                      Icons.check_circle,
+                      LucideIcons.circleCheck,
                       size: 16,
                       color: colors.primary,
                     ),

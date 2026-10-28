@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Four round dots that fill as the digits of a PIN are typed. Turns to the
 /// error colour when [hasError] is set.
@@ -81,7 +82,7 @@ class PinPad extends StatelessWidget {
             _Key(
               onPressed: enabled ? onBackspace : null,
               semanticLabel: backspaceLabel,
-              child: const Icon(Icons.backspace_outlined),
+              child: const Icon(LucideIcons.delete),
             ),
           ]),
         ],

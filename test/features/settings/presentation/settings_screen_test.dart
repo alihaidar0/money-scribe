@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
@@ -193,7 +194,7 @@ void main() {
       ]) {
         expect(inSheet(find.text(text)), findsOneWidget, reason: text);
       }
-      expect(inSheet(find.byIcon(Icons.radio_button_checked)), findsOneWidget);
+      expect(inSheet(find.byIcon(LucideIcons.circleDot)), findsOneWidget);
     });
 
     testWidgets('Done saves the chosen currency', (tester) async {

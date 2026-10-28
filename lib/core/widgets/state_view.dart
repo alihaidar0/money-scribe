@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -159,14 +160,14 @@ class FailureView extends StatelessWidget {
 
     return switch (kind) {
       FailureKind.noConnection => StateView(
-        icon: Icons.cloud_off_outlined,
+        icon: LucideIcons.cloudOff,
         title: l10n.noConnectionTitle,
         message: l10n.noConnectionMessage,
         actionLabel: l10n.tryAgain,
         onAction: onRetry,
       ),
       FailureKind.error => StateView(
-        icon: Icons.error_outline,
+        icon: LucideIcons.circleAlert,
         title: errorTitle ?? l10n.errorTitle,
         message: errorTitle == null ? l10n.errorMessage : null,
         actionLabel: l10n.tryAgain,
@@ -174,7 +175,7 @@ class FailureView extends StatelessWidget {
         footer: footer,
       ),
       FailureKind.unavailable => StateView(
-        icon: Icons.hourglass_empty,
+        icon: LucideIcons.hourglass,
         title: l10n.unavailableTitle,
         message: l10n.unavailableMessage,
         actionLabel: l10n.tryAgain,
@@ -182,7 +183,7 @@ class FailureView extends StatelessWidget {
         footer: footer,
       ),
       FailureKind.notAvailable => StateView(
-        icon: Icons.construction_outlined,
+        icon: LucideIcons.construction,
         title: l10n.notAvailableTitle,
         message: l10n.notAvailableMessage,
         actionLabel: l10n.goBackAction,
@@ -217,7 +218,7 @@ class _ReferenceLine extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.copy_outlined, size: 18),
+          icon: const Icon(LucideIcons.copy, size: 18),
           tooltip: l10n.copyReferenceTooltip,
           onPressed: () async {
             final messenger = ScaffoldMessenger.maybeOf(context);
@@ -272,7 +273,7 @@ class _WaitViewState extends State<_WaitView> {
     final waiting = _secondsLeft > 0;
 
     return StateView(
-      icon: Icons.hourglass_empty,
+      icon: LucideIcons.hourglass,
       title: l10n.tooManyRequestsTitle,
       message: l10n.tooManyRequestsMessage,
       actionLabel: waiting

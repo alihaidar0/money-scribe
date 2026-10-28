@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -45,7 +46,7 @@ bool _isEnabled(WidgetTester tester, Finder button) {
 }
 
 Future<void> _openMenu(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.more_vert));
+  await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
   await tester.pumpAndSettle();
 }
 
@@ -81,7 +82,7 @@ void main() {
       expect(find.byType(BackButton), findsOneWidget);
       expect(find.text('Fixed items'), findsNothing);
       expect(find.byType(MonthChip), findsOneWidget);
-      expect(find.byIcon(Icons.expand_more), findsNothing);
+      expect(find.byIcon(LucideIcons.chevronDown), findsNothing);
       expect(find.byTooltip('Salary history'), findsNothing);
     });
 
@@ -360,7 +361,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('January 2025'), findsOneWidget);
-      expect(find.byIcon(Icons.more_vert), findsNothing);
+      expect(find.byIcon(LucideIcons.ellipsisVertical), findsNothing);
       expect(find.text('Fill in the inputs to see the results.'), findsOne);
     });
 
@@ -371,7 +372,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text("Couldn't load this month"), findsOneWidget);
-      expect(find.byIcon(Icons.more_vert), findsNothing);
+      expect(find.byIcon(LucideIcons.ellipsisVertical), findsNothing);
 
       _demo.update(const DemoSettings());
       await tester.pumpAndSettle();
@@ -391,12 +392,12 @@ void main() {
         reason: 'the back arrow is on the right',
       );
       expect(
-        tester.getCenter(find.byIcon(Icons.more_vert)).dx,
+        tester.getCenter(find.byIcon(LucideIcons.ellipsisVertical)).dx,
         lessThan(width / 2),
         reason: 'the menu is on the left',
       );
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       expect(find.text('حذف الشهر'), findsOneWidget);
     });

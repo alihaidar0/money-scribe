@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
@@ -90,20 +91,20 @@ class _SignInChallengeSheetState extends State<_SignInChallengeSheet> {
             const SizedBox(height: 16),
             if (widget.rejected && !_failed && available) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.challengeRejected,
               ),
               const SizedBox(height: 16),
             ],
             if (!available)
               MessageBanner(
-                icon: Icons.info_outline,
+                icon: LucideIcons.info,
                 tone: BannerTone.info,
                 text: l10n.challengeUnavailable,
               )
             else if (_failed) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.challengeLoadFailed,
               ),
               const SizedBox(height: 16),

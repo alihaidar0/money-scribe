@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -88,7 +89,7 @@ void main() {
       expect(inSheet(find.text('Cancel')), findsOneWidget);
       expect(inSheet(find.text('Save')), findsOneWidget);
       // Eight pictures to choose from, the first of them chosen.
-      expect(inSheet(find.byIcon(Icons.check_circle)), findsOneWidget);
+      expect(inSheet(find.byIcon(LucideIcons.circleCheck)), findsOneWidget);
       expect(inSheet(find.byType(InkWell)), findsWidgets);
     });
 
@@ -348,8 +349,8 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Accounts'), findsOneWidget);
       expect(find.text('Card'), findsOneWidget);
       expect(find.text('Cash'), findsOneWidget);
-      expect(find.byIcon(Icons.credit_card), findsOneWidget);
-      expect(find.byIcon(Icons.edit_outlined), findsNWidgets(2));
+      expect(find.byIcon(LucideIcons.creditCard), findsOneWidget);
+      expect(find.byIcon(LucideIcons.pencil), findsNWidgets(2));
       expect(find.text('Add account'), findsOneWidget);
     });
 
@@ -383,7 +384,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Savings'), findsOneWidget);
-      expect(find.byIcon(Icons.account_balance_wallet_outlined), findsWidgets);
+      expect(find.byIcon(LucideIcons.wallet), findsWidgets);
     });
 
     testWidgets('an account with transactions cannot be deleted', (

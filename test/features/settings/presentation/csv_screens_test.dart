@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
@@ -450,7 +451,7 @@ void main() {
       expect(find.text('Row 19: the date is missing'), findsOneWidget);
       expect(find.text('Row 23: already exists'), findsOneWidget);
       expect(find.text('Row 31: the account does not exist'), findsOneWidget);
-      expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
+      expect(find.byIcon(LucideIcons.triangleAlert), findsOneWidget);
     });
 
     testWidgets('a file with no problem skips nothing', (tester) async {
@@ -465,7 +466,7 @@ void main() {
         find.text('Import finished: 12 imported, 0 skipped.'),
         findsOneWidget,
       );
-      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
     });
 
     testWidgets('Done goes back to the Settings', (tester) async {

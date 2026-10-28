@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/app/router/app_router.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -159,7 +160,7 @@ void main() {
           ),
         )
         .dx;
-    final settings = tester.getCenter(find.byIcon(Icons.settings_outlined)).dx;
+    final settings = tester.getCenter(find.byIcon(LucideIcons.settings)).dx;
 
     expect(title, greaterThan(width / 2), reason: 'title starts on the right');
     expect(settings, lessThan(width / 2), reason: 'action ends on the left');

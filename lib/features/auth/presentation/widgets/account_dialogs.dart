@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
@@ -94,14 +95,14 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                 const SizedBox(height: 16),
                 if (state.action == AccountAction.deleteFailed) ...[
                   MessageBanner(
-                    icon: Icons.error_outline,
+                    icon: LucideIcons.circleAlert,
                     text: l10n.deleteMyAccountFailed,
                   ),
                   const SizedBox(height: 16),
                 ],
                 if (state.action == AccountAction.deleteUnavailable) ...[
                   MessageBanner(
-                    icon: Icons.error_outline,
+                    icon: LucideIcons.circleAlert,
                     text: l10n.deleteMyAccountUnavailable,
                   ),
                   const SizedBox(height: 16),

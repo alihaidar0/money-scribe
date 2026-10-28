@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -177,7 +178,7 @@ class _Content extends StatelessWidget {
                 _ => SizedBox(
                   height: 360,
                   child: StateView(
-                    icon: Icons.bar_chart_outlined,
+                    icon: LucideIcons.chartColumn,
                     title: context.l10n.reportsEmptyTitle,
                     message: context.l10n.reportsEmptyMessage,
                     actionLabel: context.l10n.reportsEmptyAction,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
@@ -30,7 +31,7 @@ class ConfirmationPage extends StatelessWidget {
       content: [
         Align(
           child: IconCircle(
-            icon: Icons.check,
+            icon: LucideIcons.check,
             background: income.container,
             foreground: income.onContainer,
           ),

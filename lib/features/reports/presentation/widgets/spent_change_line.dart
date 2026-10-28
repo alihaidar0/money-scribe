@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
@@ -37,10 +38,10 @@ class SpentChangeLine extends StatelessWidget {
       PeriodScope.secondPart => '$monthName ${l10n.partSecond}',
     };
     final icon = change.isNegative
-        ? Icons.arrow_downward
+        ? LucideIcons.arrowDown
         : change.isPositive
-        ? Icons.arrow_upward
-        : Icons.remove;
+        ? LucideIcons.arrowUp
+        : LucideIcons.minus;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

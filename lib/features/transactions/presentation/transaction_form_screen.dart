@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -140,7 +141,7 @@ class _FormView extends StatelessWidget {
             actions: [
               if (isEditing && canDelete)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   tooltip: l10n.deleteTransactionTooltip,
                   onPressed: () => _delete(context),
                 ),
@@ -392,7 +393,7 @@ class _AccountRow extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.accountLabel,
             prefixIcon: Icon(icon),
-            suffixIcon: const Icon(Icons.expand_more),
+            suffixIcon: const Icon(LucideIcons.chevronDown),
           ),
           child: Text(name, style: theme.textTheme.bodyLarge),
         ),

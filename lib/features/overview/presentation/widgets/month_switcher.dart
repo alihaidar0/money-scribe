@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -37,7 +38,7 @@ class MonthSwitcher extends StatelessWidget {
           children: [
             IconButton(
               tooltip: l10n.previousMonth,
-              icon: const Icon(Icons.chevron_left),
+              icon: const Icon(LucideIcons.chevronLeftDir),
               onPressed: onPrevious,
             ),
             Flexible(
@@ -52,7 +53,7 @@ class MonthSwitcher extends StatelessWidget {
             ),
             IconButton(
               tooltip: l10n.nextMonth,
-              icon: const Icon(Icons.chevron_right),
+              icon: const Icon(LucideIcons.chevronRightDir),
               onPressed: canStepForward ? onNext : null,
             ),
           ],

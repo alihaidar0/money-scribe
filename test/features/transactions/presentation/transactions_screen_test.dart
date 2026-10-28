@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -36,12 +37,12 @@ Finder filtersButton(String label) {
 Finder removeChip(String label) {
   return find.descendant(
     of: find.widgetWithText(InputChip, label),
-    matching: find.byIcon(Icons.clear),
+    matching: find.byIcon(LucideIcons.x),
   );
 }
 
 Future<void> openFilters(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.tune).first);
+  await tester.tap(find.byIcon(LucideIcons.slidersHorizontal).first);
   await tester.pumpAndSettle();
 }
 
@@ -209,7 +210,7 @@ void main() {
       // The search and the Filters button stay.
       expect(find.byType(TextField), findsOneWidget);
       // The first is the button; the demo panel handle has the same icon.
-      expect(find.byIcon(Icons.tune), findsWidgets);
+      expect(find.byIcon(LucideIcons.slidersHorizontal), findsWidgets);
     });
 
     testWidgets('Clear filters brings the list back and empties the search', (
@@ -474,7 +475,7 @@ void main() {
 
       await tester.tap(find.text('Transport'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
@@ -691,7 +692,7 @@ void main() {
     testWidgets('the filters sheet is in Arabic', (tester) async {
       await openTransactions(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.tune).first);
+      await tester.tap(find.byIcon(LucideIcons.slidersHorizontal).first);
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('عوامل التصفية')), findsOneWidget);

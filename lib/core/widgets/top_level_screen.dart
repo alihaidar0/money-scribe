@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 
@@ -28,7 +29,7 @@ class TopLevelScreen extends StatelessWidget {
         actions: [
           ...actions,
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(LucideIcons.settings),
             tooltip: context.l10n.settingsTitle,
             onPressed: () => context.push(AppRoutes.settings),
           ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
@@ -280,7 +281,7 @@ class _NoPrevious extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const IconCircle(icon: Icons.history),
+              const IconCircle(icon: LucideIcons.history),
               const SizedBox(height: 24),
               Semantics(
                 header: true,

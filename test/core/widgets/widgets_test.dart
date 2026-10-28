@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/network/api_failure.dart';
@@ -192,7 +193,7 @@ void main() {
       for (var digit = 0; digit <= 9; digit++) {
         await tester.tap(find.text('$digit'));
       }
-      await tester.tap(find.byIcon(Icons.backspace_outlined));
+      await tester.tap(find.byIcon(LucideIcons.delete));
 
       expect(digits, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
       expect(backspaces, 1);
