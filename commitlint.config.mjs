@@ -1,5 +1,11 @@
 export default {
   extends: ["@commitlint/config-conventional"],
+  // Dependabot writes these titles itself, and they can be longer than the
+  // limit of a header. A release pull request lints every commit it carries,
+  // so one of them would fail the whole release.
+  ignores: [
+    (message) => /^(ci|chore|build)\((deps|deps-dev)\): bump /.test(message),
+  ],
   rules: {
     "type-enum": [
       2,
