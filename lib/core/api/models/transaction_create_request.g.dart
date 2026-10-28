@@ -16,11 +16,17 @@ TransactionCreateRequest _$TransactionCreateRequestFromJson(
   categoryId: json['category_id'] as String,
   accountId: json['account_id'] as String,
   note: json['note'] as String? ?? '',
+  partValue: json['part'] == null
+      ? null
+      : PartEnum.fromJson(json['part'] as String),
+  partMonth: json['part_month'] as String?,
 );
 
 Map<String, dynamic> _$TransactionCreateRequestToJson(
   TransactionCreateRequest instance,
 ) => <String, dynamic>{
+  'part': _$PartEnumEnumMap[instance.partValue],
+  'part_month': instance.partMonth,
   'kind': _$KindEnumEnumMap[instance.kind]!,
   'amount': instance.amount,
   'currency': _$CurrencyEnumEnumMap[instance.currency]!,
@@ -28,6 +34,12 @@ Map<String, dynamic> _$TransactionCreateRequestToJson(
   'category_id': instance.categoryId,
   'account_id': instance.accountId,
   'note': instance.note,
+};
+
+const _$PartEnumEnumMap = {
+  PartEnum.first: 'first',
+  PartEnum.second: 'second',
+  PartEnum.$unknown: r'$unknown',
 };
 
 const _$KindEnumEnumMap = {

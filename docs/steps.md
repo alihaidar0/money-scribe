@@ -367,6 +367,10 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports)
 - [x] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
 - [x] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
+- [x] Pay-cycle parts (#96): the contract that cuts a month paid twice by the pay days, pinned
+- [ ] Pay days: the second before the first, and one rule for the part of a date
+- [ ] Overview, Reports and Transactions: the parts show and use the dates of the pay cycle
+- [ ] Income: choose the part it counts toward, and show the part it joined
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 

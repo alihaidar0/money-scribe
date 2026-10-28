@@ -111,9 +111,10 @@ These come with the hardening issue and hold for every signed-in call.
   they stay level however sparse the data is. A list with words in the search box has no day totals and does
   not call the endpoint. A change to a record reloads the list and drops the map.
 - **The search** waits half a second after the last key and asks the server only when it has two letters or
-  more; a newer search drops the answer to an older one. The part of a two-payment month (1st-15th or
-  16th-end) is not a filter of the server: the app cuts it from the pages it has and loads more pages when a
-  part shows too little. A filter takes at most 20 categories, and the Filters sheet stops at 20.
+  more; a newer search drops the answer to an older one. The part of a two-payment month is not a filter
+  of the server: the app works out the dates of the part from the pay days (below), cuts it from the pages it
+  has and loads more pages when a part shows too little. A filter takes at most 20 categories, and the Filters
+  sheet stops at 20.
 
 ## 4. Debts and repayments
 
@@ -169,8 +170,13 @@ route.
   positive) and `balance`, signed: `salary + recurring_income + income_transactions - fixed_costs - purchases +
   debt_repayments_received - debt_repayments_made`. The server sends the balance and the app shows it.
   Income transactions have their own line. The salary and the fixed lines count only when the saved month is
-  in the report currency. Creating a debt is not a movement, only repayments are; they and the transactions
-  are placed by their date, in the halves 1st to 15th and 16th to the end.
+  in the report currency. Creating a debt is not a movement, only repayments are; they and the expenses are
+  placed by their date in the **pay cycle** of the pay days in Settings (`first_pay_day` F, 20 until set, and
+  `second_pay_day` S, 5 until set): the first part runs from F of the month to the day before S of the next
+  month, the second from S of the next month to the day before the next F, and the month is both together. A
+  month paid once is the calendar month. An income is placed by the part it joined: the one it was put on
+  (`part` and `part_month`), else the one whose pay day is nearest to its date. The cut is worked out on every
+  read, so a change of the pay days re-cuts the history. Settings keeps S before F (`400 invalid_pay_days`).
 - **Month report:** `income_transactions`, `purchases` and `categories[]` (the **spending** by category, from
   expense transactions only, biggest first: `category_id`, `category_key`, `name`, `icon`, `amount`), for the
   month and for `first_part` and `second_part`. `categories[]` adds up to `purchases`, which equal the
