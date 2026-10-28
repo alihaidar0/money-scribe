@@ -183,6 +183,20 @@ void main() {
     );
 
     blocTest<DebtFormBloc, DebtFormState>(
+      'can have its direction corrected, and then be saved',
+      build: () => build(id: 'sam'),
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const DebtDirectionSelected(DebtDirection.borrowed));
+      },
+      verify: (bloc) {
+        expect(bloc.state.values.direction, DebtDirection.borrowed);
+        expect(bloc.state.isEdited, isTrue);
+        expect(bloc.state.canSave, isTrue);
+      },
+    );
+
+    blocTest<DebtFormBloc, DebtFormState>(
       'cannot be saved until something changed',
       build: () => build(id: 'sam'),
       act: start,

@@ -223,6 +223,24 @@ void main() {
       expect(saveChangesButton(), findsOneWidget);
     });
 
+    testWidgets('changing lent to borrowed can be saved', (tester) async {
+      await openEditForm(tester);
+      expect(isEnabled(tester, saveChangesButton()), isFalse);
+
+      await tester.tap(find.text('I borrowed'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<PillSegmentedButton<DebtDirection>>(
+              find.byType(PillSegmentedButton<DebtDirection>),
+            )
+            .selected,
+        {DebtDirection.borrowed},
+      );
+      expect(isEnabled(tester, saveChangesButton()), isTrue);
+    });
+
     testWidgets('Save changes waits for a change', (tester) async {
       await openEditForm(tester);
       expect(isEnabled(tester, saveChangesButton()), isFalse);
