@@ -7,6 +7,7 @@ import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
@@ -169,7 +170,7 @@ class _SalaryContent extends StatelessWidget {
                 );
               }
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16).withBarClearance(context),
                 children: [...summary, const SizedBox(height: 24), ...inputs],
               );
             },

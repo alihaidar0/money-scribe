@@ -14,6 +14,7 @@ import 'package:money_scribe/core/text/api_text_formatter.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -702,7 +703,12 @@ class _Results extends StatelessWidget {
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         // Room under the last row for the button.
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          96,
+        ).withBarClearance(context),
         itemCount: entries.length,
         itemBuilder: (context, index) {
           // The end of the list is near: ask for the next page. The Bloc

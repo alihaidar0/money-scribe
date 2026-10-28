@@ -142,7 +142,7 @@ App icon: a fountain-pen nib (the scribe) in a light circle on a blue background
 
 ## 6. Components
 
-- Navigation: a floating bar on phones (a rounded `surfaceContainerHigh` bar, 64 dp high, at most 400 dp wide, inset from the screen edges) with five items (Overview, Salary, Transactions, Debts, Reports). The selected item grows into a `secondaryContainer` pill with its icon (a heavier stroke) and its label; the other items show their icon only and keep a semantic label and a tooltip, so no label ever wraps. A navigation rail on tablet and web, in a rounded card to match. Settings is an icon in the top app bar.
+- Navigation: a floating bar on phones (a rounded `surfaceContainerHigh` bar, 64 dp high, at most 400 dp wide, inset from the screen edges, floating over the bottom of the screen: the lists scroll behind it and end clear of it) with five items (Overview, Salary, Transactions, Debts, Reports). The selected item grows into a `secondaryContainer` pill with its icon (a heavier stroke) and its label; the other items show their icon only and keep a semantic label and a tooltip, so no label ever wraps. A navigation rail on tablet and web, in a rounded card to match. Settings is an icon in the top app bar.
 - Buttons: filled (`primary`), tonal (`secondaryContainer`), outlined (`outline`), text. All pill-shaped, minimum height 48 dp. "Inverted" buttons use `inverseSurface`.
 - Icon buttons: tonal `secondaryContainer` for edit and general actions; delete uses `errorContainer` with `onErrorContainer` icon. Never brown.
 - Search field: filled `surfaceContainerHigh`, 12 dp radius, leading search icon.

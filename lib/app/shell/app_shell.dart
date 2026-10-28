@@ -97,6 +97,9 @@ class AppShell extends StatelessWidget {
     }
 
     return Scaffold(
+      // The screens reach under the bar, which floats over them; their lists
+      // add the room for it (`BarClearance`).
+      extendBody: true,
       body: navigationShell,
       bottomNavigationBar: FloatingNavigationBar(
         selectedIndex: navigationShell.currentIndex,

@@ -9,6 +9,7 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
@@ -207,7 +208,12 @@ class _ListPane extends StatelessWidget {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         // Room under the last card for the button.
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          96,
+        ).withBarClearance(context),
         children: [
           DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
           if (state.hasOtherCurrencies)
