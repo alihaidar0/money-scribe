@@ -15,6 +15,7 @@ import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/day_picker_field.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
@@ -1033,6 +1034,32 @@ final _scenes = <_Scene>[
     setup: (tester, demo) async {
       await _useTwoPayments(tester, demo);
       await _openEditSheet(tester);
+    },
+  ),
+  _Scene(
+    'fix-3-add-fixed-item-two-payments',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-4-day-wheel',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _openEditSheet(tester);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(DayPickerField),
+        ),
+      );
+      await tester.pumpAndSettle();
     },
   ),
   _Scene(

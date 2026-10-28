@@ -292,7 +292,8 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [ ] Debts: the direction and the currency are fixed when editing; the repayment date cannot be before the start; totals by currency
 - [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
 - [ ] Something went wrong: the reference the person can copy
-- [x] Fixed items: a day of the month decides the part (1st to 15th, 16th to the end), in two payments
+- [x] Fixed items: a day of the month decides the part, in two payments
+- [ ] Fixed items: the day is picked on a scroll wheel, and the part follows the pay days (the payment received most recently) or is chosen by hand
 - [x] Pull down at the top of a list to refresh it (Overview, Reports, Fixed items, Transactions, Debts, Salary history)
 - [x] Overview and Reports follow what was saved on another screen, without going back to the loading state
 

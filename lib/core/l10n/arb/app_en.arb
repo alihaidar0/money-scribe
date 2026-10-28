@@ -1235,7 +1235,15 @@
   },
   "fixedItemDayLabel": "Day of the month",
   "@fixedItemDayLabel": {
-    "description": "Label of the stepper for the day of the month a fixed item falls on; under it is the part of the month that day belongs to."
+    "description": "Label of the field for the day of the month a fixed item falls on, and title of the wheel of days it opens."
+  },
+  "fixedItemPartLabel": "Paid from",
+  "@fixedItemPartLabel": {
+    "description": "Label of the choice of the part of the month (the first or the second payment) a fixed item is paid from."
+  },
+  "fixedItemPartAutomatic": "Automatic",
+  "@fixedItemPartAutomatic": {
+    "description": "Option of the choice of the part a fixed item is paid from: the part follows the day of the item."
   },
   "deleteFixedItemTitle": "Delete fixed item?",
   "@deleteFixedItemTitle": {

@@ -4,7 +4,7 @@ import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
-import 'package:money_scribe/core/widgets/day_stepper.dart';
+import 'package:money_scribe/core/widgets/day_picker_field.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/fixed_item_dialogs.dart';
@@ -28,14 +28,19 @@ final class FixedItemSheetDeleted extends FixedItemSheetResult {
 
 /// FIX-3 and FIX-4: the bottom sheet that adds a fixed item, or with [item]
 /// changes it, which also offers Delete. A month paid in [twoPayments] asks
-/// for the day of [month] the item falls on, which decides the part it
-/// belongs to; a new item starts on the first day of [part]. Closes with what
-/// was done, or with `null` when dismissed.
+/// for the day of [month] the item falls on, picked on a wheel, and which part
+/// the item is paid from: by default the part that was paid most recently
+/// before that day, going by the days the payments are received on
+/// ([firstPayDay] and [secondPayDay]), or the one the person chooses. A new
+/// item starts on the pay day of [part]. Closes with what was done, or with
+/// `null` when dismissed.
 Future<FixedItemSheetResult?> showFixedItemSheet(
   BuildContext context, {
   required YearMonth month,
   required Currency currency,
   required bool twoPayments,
+  required int firstPayDay,
+  required int secondPayDay,
   required FixedItemPart part,
   FixedItem? item,
 }) {
@@ -49,10 +54,20 @@ Future<FixedItemSheetResult?> showFixedItemSheet(
       month: month,
       currency: currency,
       twoPayments: twoPayments,
+      firstPayDay: firstPayDay,
+      secondPayDay: secondPayDay,
       part: item?.part ?? part,
       item: item,
     ),
   );
+}
+
+/// How the part an item is paid from is chosen.
+enum _PartChoice {
+  /// The part follows the day of the item.
+  automatic,
+  first,
+  second,
 }
 
 class _FixedItemSheet extends StatefulWidget {
@@ -60,6 +75,8 @@ class _FixedItemSheet extends StatefulWidget {
     required this.month,
     required this.currency,
     required this.twoPayments,
+    required this.firstPayDay,
+    required this.secondPayDay,
     required this.part,
     required this.item,
   });
@@ -67,6 +84,8 @@ class _FixedItemSheet extends StatefulWidget {
   final YearMonth month;
   final Currency currency;
   final bool twoPayments;
+  final int firstPayDay;
+  final int secondPayDay;
   final FixedItemPart part;
   final FixedItem? item;
 
@@ -91,9 +110,48 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
   late int _day =
       (widget.item?.day ??
               (widget.part == FixedItemPart.first
-                  ? 1
-                  : FixedItemPart.lastDayOfFirst + 1))
+                  ? widget.firstPayDay
+                  : widget.secondPayDay))
           .clamp(1, widget.month.daysInMonth);
+
+  /// An item whose part is the one its day gives is paid automatically; one
+  /// the person put in another part, or with no day, keeps that part.
+  late _PartChoice _choice = _initialChoice();
+
+  _PartChoice _initialChoice() {
+    final item = widget.item;
+    if (item == null || item.part == _partOfDay(_day)) {
+      return _PartChoice.automatic;
+    }
+    return item.part == FixedItemPart.first
+        ? _PartChoice.first
+        : _PartChoice.second;
+  }
+
+  FixedItemPart _partOfDay(int day) {
+    return FixedItemPart.ofDay(
+      day,
+      firstPayDay: widget.firstPayDay,
+      secondPayDay: widget.secondPayDay,
+    );
+  }
+
+  /// The part the item is paid from when it falls on [day].
+  FixedItemPart _partFor(int day) {
+    return switch (_choice) {
+      _PartChoice.automatic => _partOfDay(day),
+      _PartChoice.first => FixedItemPart.first,
+      _PartChoice.second => FixedItemPart.second,
+    };
+  }
+
+  /// When the payment of [part] is received.
+  String _paidOn(FixedItemPart part) {
+    final l10n = context.l10n;
+    return part == FixedItemPart.first
+        ? l10n.firstPaymentPaidOnDay(day: widget.firstPayDay)
+        : l10n.secondPaymentPaidOnDay(day: widget.secondPayDay);
+  }
 
   @override
   void dispose() {
@@ -108,7 +166,7 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
     currency: widget.currency,
     kind: _kind,
     day: widget.twoPayments ? _day : null,
-    part: widget.part,
+    part: widget.twoPayments ? _partFor(_day) : widget.part,
   );
 
   Future<void> _delete() async {
@@ -183,15 +241,42 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
             ),
             if (widget.twoPayments) ...[
               const SizedBox(height: 16),
-              DayStepper(
+              DayPickerField(
                 label: l10n.fixedItemDayLabel,
-                caption: FixedItemPart.ofDay(_day) == FixedItemPart.first
-                    ? l10n.partFirst
-                    : l10n.partSecond,
                 value: _day,
                 min: 1,
                 max: widget.month.daysInMonth,
                 onChanged: (day) => setState(() => _day = day),
+                captionFor: (day) => _paidOn(_partFor(day)),
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.fixedItemPartLabel, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              PillSegmentedButton<_PartChoice>(
+                segments: [
+                  ButtonSegment(
+                    value: _PartChoice.automatic,
+                    label: Text(l10n.fixedItemPartAutomatic),
+                  ),
+                  ButtonSegment(
+                    value: _PartChoice.first,
+                    label: Text(l10n.partFirst),
+                  ),
+                  ButtonSegment(
+                    value: _PartChoice.second,
+                    label: Text(l10n.partSecond),
+                  ),
+                ],
+                selected: {_choice},
+                onSelectionChanged: (selection) =>
+                    setState(() => _choice = selection.first),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _paidOn(_partFor(_day)),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
             const SizedBox(height: 24),

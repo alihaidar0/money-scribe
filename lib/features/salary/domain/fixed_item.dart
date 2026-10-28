@@ -11,13 +11,26 @@ enum FixedItemPart {
   first,
   second;
 
-  /// The last day of the month that belongs to the first part.
-  static const lastDayOfFirst = 15;
-
-  /// The part a fixed item dated [day] of the month belongs to: the 1st to the
-  /// 15th is the first part, the 16th to the end of the month the second.
-  static FixedItemPart ofDay(int day) {
-    return day <= lastDayOfFirst ? first : second;
+  /// The part a fixed item dated [day] of the month is paid from, going by the
+  /// days the two payments are received on ([firstPayDay] and [secondPayDay]):
+  /// what is spent on a day comes out of the payment received most recently,
+  /// counting back over the turn of the month. With the first payment on the
+  /// 20th and the second on the 5th, the 5th to the 19th is the second part and
+  /// the 20th to the 4th of the next month the first.
+  static FixedItemPart ofDay(
+    int day, {
+    required int firstPayDay,
+    required int secondPayDay,
+  }) {
+    final onOrBefore = [
+      if (firstPayDay <= day) first,
+      if (secondPayDay <= day) second,
+    ];
+    // Only one pay day is on or before [day]: that is the latest. With both
+    // (or none, when [day] is before both and the last pay day of the month
+    // was received in the month before) it is the later of the two.
+    if (onOrBefore.length == 1) return onOrBefore.single;
+    return firstPayDay >= secondPayDay ? first : second;
   }
 }
 
@@ -57,8 +70,7 @@ final class FixedItemDraft extends Equatable {
       name: trimmed,
       amount: money,
       kind: kind,
-      // A dated item belongs to the part its day falls in.
-      part: day == null ? part : FixedItemPart.ofDay(day),
+      part: part,
       day: day,
     );
   }
