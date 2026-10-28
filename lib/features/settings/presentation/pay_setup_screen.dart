@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -167,9 +168,7 @@ class _ModeCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 ExcludeSemantics(
                   child: Icon(
-                    selected
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
+                    selected ? LucideIcons.circleCheck : LucideIcons.circle,
                     color: selected ? colors.primary : colors.outline,
                   ),
                 ),

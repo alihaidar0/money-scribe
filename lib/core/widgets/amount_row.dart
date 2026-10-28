@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
@@ -90,7 +91,7 @@ class AmountRow extends StatelessWidget {
                     ),
                     if (onTap != null)
                       Icon(
-                        Icons.chevron_right,
+                        LucideIcons.chevronRightDir,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                   ],

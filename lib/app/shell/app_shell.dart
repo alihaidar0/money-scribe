@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 
 /// The frame around the five top-level screens: a navigation bar below 840 dp
@@ -27,20 +28,28 @@ class AppShell extends StatelessWidget {
     final l10n = context.l10n;
     final destinations = [
       _Destination(
-        Icons.dashboard_outlined,
-        Icons.dashboard,
+        LucideIcons.layoutDashboard,
+        LucideIcons.layoutDashboard,
         l10n.overviewTitle,
       ),
-      _Destination(Icons.payments_outlined, Icons.payments, l10n.salaryTitle),
       _Destination(
-        Icons.receipt_long_outlined,
-        Icons.receipt_long,
+        LucideIcons.banknote,
+        LucideIcons.banknote,
+        l10n.salaryTitle,
+      ),
+      _Destination(
+        LucideIcons.receiptText,
+        LucideIcons.receiptText,
         l10n.transactionsTitle,
       ),
-      _Destination(Icons.handshake_outlined, Icons.handshake, l10n.debtsTitle),
       _Destination(
-        Icons.bar_chart_outlined,
-        Icons.bar_chart,
+        LucideIcons.handshake,
+        LucideIcons.handshake,
+        l10n.debtsTitle,
+      ),
+      _Destination(
+        LucideIcons.chartColumn,
+        LucideIcons.chartColumn,
         l10n.reportsTitle,
       ),
     ];

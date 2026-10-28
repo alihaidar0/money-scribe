@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
@@ -136,7 +137,7 @@ void main() {
       final first = tester.getCenter(find.byType(MonthChip).first);
       final last = tester.getCenter(find.byType(MonthChip).last);
       expect(first.dy, lessThan(last.dy));
-      expect(find.byIcon(Icons.swap_vert), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowUpDown), findsOneWidget);
       // Each name stays on one line inside its chip.
       expect(tester.getSize(find.byType(MonthChip).first).height, 48);
     });
@@ -148,7 +149,7 @@ void main() {
       final last = tester.getCenter(find.byType(MonthChip).last);
       expect(first.dy, last.dy);
       expect(first.dx, lessThan(last.dx));
-      expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowLeftRight), findsOneWidget);
       // The width the layout counted on is the width the chip takes.
       final chip = find.byType(MonthChip).first;
       expect(

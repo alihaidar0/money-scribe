@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/features/auth/bloc/app_lock_setting_bloc.dart';
@@ -59,7 +60,7 @@ class _AppLockTile extends StatelessWidget {
         children: [
           SwitchListTile(
             title: Text(l10n.appLockTitle),
-            secondary: const Icon(Icons.lock_outline),
+            secondary: const Icon(LucideIcons.lock),
             value: state.isEnabled,
             onChanged: state.isBusy
                 ? null
@@ -78,7 +79,7 @@ class _AppLockTile extends StatelessWidget {
                   ? l10n.fingerprintSettingHint
                   : l10n.fingerprintSettingNeedsPin,
             ),
-            secondary: const Icon(Icons.fingerprint),
+            secondary: const Icon(LucideIcons.fingerprintPattern),
             value: state.biometricsEnabled,
             onChanged: state.isBusy || !state.biometricsAvailable
                 ? null
@@ -91,7 +92,7 @@ class _AppLockTile extends StatelessWidget {
           ),
           if (state.isEnabled)
             ListTile(
-              leading: const Icon(Icons.timer_outlined),
+              leading: const Icon(LucideIcons.timer),
               title: Text(l10n.lockTimeoutTitle),
               subtitle: Text(_label(l10n, state.timeout)),
               enabled: !state.isBusy,

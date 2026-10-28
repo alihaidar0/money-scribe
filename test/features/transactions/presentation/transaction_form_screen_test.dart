@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -65,7 +66,7 @@ void main() {
       expect(find.text('Add transaction'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
-      expect(find.byIcon(Icons.delete_outline), findsNothing);
+      expect(find.byIcon(LucideIcons.trash2), findsNothing);
     });
 
     testWidgets('puts the amount first, then the day, category and account', (
@@ -291,7 +292,7 @@ void main() {
     testWidgets('the row opens the sheet with the accounts', (tester) async {
       await openAddForm(tester);
 
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('Account')), findsOneWidget);
@@ -300,12 +301,12 @@ void main() {
       expect(inSheet(find.text('Add account')), findsOneWidget);
       expect(inSheet(find.text('Manage accounts')), findsOneWidget);
       // The chosen one is marked.
-      expect(inSheet(find.byIcon(Icons.radio_button_checked)), findsOne);
+      expect(inSheet(find.byIcon(LucideIcons.circleDot)), findsOne);
     });
 
     testWidgets('choosing one closes the sheet and shows it', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Cash')));
@@ -318,7 +319,7 @@ void main() {
 
     testWidgets('choosing the chosen one closes it too', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Card')));
@@ -329,7 +330,7 @@ void main() {
 
     testWidgets('the chosen account is the one saved', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
       await tester.tap(inSheet(find.text('Cash')));
       await tester.pumpAndSettle();
@@ -349,7 +350,7 @@ void main() {
       tester,
     ) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Manage accounts')));
@@ -368,7 +369,7 @@ void main() {
       tester,
     ) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
       await tester.tap(inSheet(find.text('Add account')));
       await tester.pumpAndSettle();
@@ -381,7 +382,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('Savings')), findsOneWidget);
@@ -410,7 +411,7 @@ void main() {
             .selected,
         isTrue,
       );
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.trash2), findsOneWidget);
       expect(find.text('Save'), findsNothing);
       expect(saveChangesButton(), findsOneWidget);
     });
@@ -464,7 +465,7 @@ void main() {
     testWidgets('the Delete icon asks first', (tester) async {
       await openEditForm(tester, 'Groceries');
 
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       expect(find.text('Delete transaction?'), findsOneWidget);
@@ -481,7 +482,7 @@ void main() {
       tester,
     ) async {
       await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
@@ -493,7 +494,7 @@ void main() {
 
     testWidgets('Delete removes it and goes back', (tester) async {
       await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
@@ -506,7 +507,7 @@ void main() {
 
     testWidgets('a failed delete keeps it and offers Retry', (tester) async {
       final demo = await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       demo.update(const DemoSettings(save: DemoSave.fails));
 
@@ -639,7 +640,7 @@ void main() {
     testWidgets('the date picker shows Western digits', (tester) async {
       await openAddForm(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.tap(find.byIcon(LucideIcons.calendar));
       await tester.pumpAndSettle();
 
       expect(find.byType(DatePickerDialog), findsOneWidget);
@@ -655,7 +656,7 @@ void main() {
     testWidgets('the account sheet is in Arabic', (tester) async {
       await openAddForm(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('إضافة حساب')), findsOneWidget);

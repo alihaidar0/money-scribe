@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/app/theme/app_color_schemes.dart';
 import 'package:money_scribe/app/theme/app_typography.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
@@ -58,6 +59,12 @@ abstract final class AppTheme {
       materialTapTargetSize: MaterialTapTargetSize.padded,
       extensions: [moneyColors],
       appBarTheme: const AppBarTheme(centerTitle: false),
+      // The back and close buttons the framework adds by itself.
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (context) =>
+            const Icon(LucideIcons.arrowLeftDir),
+        closeButtonIconBuilder: (context) => const Icon(LucideIcons.x),
+      ),
       cardTheme: CardThemeData(
         color: scheme.surfaceContainerLow,
         elevation: 0,

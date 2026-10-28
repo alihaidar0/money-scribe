@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
@@ -122,7 +123,7 @@ void main() {
     ) async {
       await _pumpOverview(tester);
       IconButton next() => tester.widget<IconButton>(
-        find.widgetWithIcon(IconButton, Icons.chevron_right),
+        find.widgetWithIcon(IconButton, LucideIcons.chevronRightDir),
       );
       expect(next().onPressed, isNull);
 

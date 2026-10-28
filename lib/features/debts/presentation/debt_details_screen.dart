@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -184,6 +185,7 @@ class _DebtDetailsViewState extends State<_DebtDetailsView> {
               selector: (state) => state.status == DebtDetailsStatus.ready,
               builder: (context, ready) => ready
                   ? PopupMenuButton<_MenuAction>(
+                      icon: const Icon(LucideIcons.ellipsisVertical),
                       tooltip: MaterialLocalizations.of(context)
                           .showMenuTooltip,
                       onSelected: (action) => switch (action) {

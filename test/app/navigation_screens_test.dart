@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/widgets/amount_row.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
@@ -280,7 +281,7 @@ void main() {
       await _open(tester);
       await _tab(tester, 'Transactions');
 
-      await _tap(tester, find.byIcon(Icons.tune));
+      await _tap(tester, find.byIcon(LucideIcons.slidersHorizontal));
 
       expect(find.byType(BottomSheet), findsOneWidget);
     });
@@ -306,7 +307,7 @@ void main() {
       await _tapText(tester, 'Sam');
       expect(find.byType(DebtDetailsScreen), findsOneWidget);
 
-      await _tap(tester, find.byIcon(Icons.more_vert));
+      await _tap(tester, find.byIcon(LucideIcons.ellipsisVertical));
       await _tapText(tester, 'Edit');
       expect(find.text('Edit debt'), findsOneWidget);
     });

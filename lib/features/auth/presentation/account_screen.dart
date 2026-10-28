@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/ticker.dart';
@@ -121,34 +122,34 @@ class _Content extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         ListTile(
-          leading: const Icon(Icons.badge_outlined),
+          leading: const Icon(LucideIcons.idCard),
           title: Text(l10n.editNameAction),
           trailing: const _Chevron(),
           enabled: !isBusy,
           onTap: () => _editName(context, profile.name),
         ),
         ListTile(
-          leading: const Icon(Icons.alternate_email),
+          leading: const Icon(LucideIcons.atSign),
           title: Text(l10n.changeEmail),
           trailing: const _Chevron(),
           enabled: !isBusy,
           onTap: () => _changeEmail(context),
         ),
         ListTile(
-          leading: const Icon(Icons.lock_outline),
+          leading: const Icon(LucideIcons.lock),
           title: Text(l10n.changePasswordTitle),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.changePassword),
         ),
         ListTile(
-          leading: const Icon(Icons.logout),
+          leading: const Icon(LucideIcons.logOutDir),
           title: Text(l10n.signOutAction),
           enabled: !isBusy,
           onTap: () => _signOut(context),
         ),
         const Divider(height: 32),
         ListTile(
-          leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+          leading: Icon(LucideIcons.trash2, color: theme.colorScheme.error),
           title: Text(
             l10n.deleteMyAccountAction,
             style: TextStyle(color: theme.colorScheme.error),
@@ -222,8 +223,8 @@ class _Chevron extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       Directionality.of(context) == TextDirection.rtl
-          ? Icons.chevron_left
-          : Icons.chevron_right,
+          ? LucideIcons.chevronLeft
+          : LucideIcons.chevronRight,
     );
   }
 }

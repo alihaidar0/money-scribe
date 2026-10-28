@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/ticker.dart';
@@ -87,7 +88,7 @@ class _CsvExportPasswordDialogState extends State<_CsvExportPasswordDialog> {
                 if (waiting) ...[
                   const SizedBox(height: 16),
                   MessageBanner(
-                    icon: Icons.lock_outline,
+                    icon: LucideIcons.lock,
                     text: l10n.csvExportLocked(time: countdown),
                   ),
                 ],

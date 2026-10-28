@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
@@ -110,7 +111,7 @@ class _AccountsView extends StatelessWidget {
             ? FloatingActionButton.extended(
                 heroTag: null,
                 onPressed: () => _add(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(LucideIcons.plus),
                 label: Text(l10n.addAccountAction),
               )
             : null,
@@ -161,7 +162,7 @@ class _List extends StatelessWidget {
 
     if (accounts.isEmpty) {
       return StateView(
-        icon: Icons.account_balance_wallet_outlined,
+        icon: LucideIcons.wallet,
         title: l10n.accountsEmptyTitle,
         actionLabel: l10n.addAccountAction,
         filledAction: true,
@@ -222,7 +223,7 @@ class _AccountRow extends StatelessWidget {
                   ),
                   ExcludeSemantics(
                     child: IconButton(
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(LucideIcons.pencil),
                       tooltip: l10n.editItemTooltip(name: account.name),
                       onPressed: () => _edit(context),
                     ),

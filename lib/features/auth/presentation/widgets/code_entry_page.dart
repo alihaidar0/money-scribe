@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/formatting/bidi_isolate.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -207,12 +208,7 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
           },
           onRetry: _retry,
           content: [
-            const Align(
-              child: IconCircle(
-                icon: Icons.mark_email_unread_outlined,
-                size: 80,
-              ),
-            ),
+            const Align(child: IconCircle(icon: LucideIcons.mail, size: 80)),
             const SizedBox(height: 24),
             Semantics(
               header: true,
@@ -231,7 +227,7 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
             const SizedBox(height: 24),
             if (isExpired) ...[
               MessageBanner(
-                icon: Icons.schedule,
+                icon: LucideIcons.clock,
                 text: l10n.codeExpired,
                 tone: BannerTone.info,
               ),
@@ -239,28 +235,28 @@ class _CodeEntryViewState extends State<_CodeEntryView> {
             ],
             if (isDead) ...[
               MessageBanner(
-                icon: Icons.lock_outline,
+                icon: LucideIcons.lock,
                 text: l10n.codeAttemptsExceeded,
               ),
               const SizedBox(height: 16),
             ],
             if (isTaken) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.changeEmailTakenMeanwhile,
               ),
               const SizedBox(height: 16),
             ],
             if (isWrongPassword) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.changePasswordWrongCurrent,
               ),
               const SizedBox(height: 16),
             ],
             if (isWaiting) ...[
               MessageBanner(
-                icon: Icons.lock_outline,
+                icon: LucideIcons.lock,
                 text: l10n.tooManyAttemptsTryAgain(
                   time: formatCountdown(state.waitSecondsLeft),
                 ),
@@ -379,7 +375,7 @@ class _CodeError extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 18, color: colors.error),
+          Icon(LucideIcons.circleAlert, size: 18, color: colors.error),
           const SizedBox(width: 8),
           Flexible(
             child: Text(

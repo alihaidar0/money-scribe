@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/navigation_extensions.dart';
@@ -63,7 +64,7 @@ class _CsvImportView extends StatelessWidget {
       body: switch (state.status) {
         CsvImportStatus.choosing => const _Skeleton(),
         CsvImportStatus.noFile => StateView(
-          icon: Icons.description_outlined,
+          icon: LucideIcons.fileText,
           title: l10n.csvNoFileTitle,
           message: l10n.csvNoFileMessage,
           actionLabel: l10n.csvChooseFile,
@@ -71,7 +72,7 @@ class _CsvImportView extends StatelessWidget {
           onAction: () => bloc.add(const CsvFileRequested()),
         ),
         CsvImportStatus.fileProblem => StateView(
-          icon: Icons.error_outline,
+          icon: LucideIcons.circleAlert,
           title: l10n.csvFileProblemTitle,
           message: _fileIssueText(l10n, state),
           actionLabel: l10n.csvChooseAnotherFile,
@@ -181,15 +182,15 @@ class _Chosen extends StatelessWidget {
     final busy = state.status != CsvImportStatus.ready;
 
     final (icon, status) = switch (state.status) {
-      CsvImportStatus.checking => (Icons.hourglass_empty, l10n.csvChecking),
+      CsvImportStatus.checking => (LucideIcons.hourglass, l10n.csvChecking),
       CsvImportStatus.importing => (
-        Icons.upload_outlined,
+        LucideIcons.upload,
         l10n.csvImportProgress(done: state.rowsDone, total: file.rows),
       ),
       _ => (
         estimate == null || estimate.skipped == 0
-            ? Icons.check_circle_outline
-            : Icons.warning_amber_outlined,
+            ? LucideIcons.circleCheck
+            : LucideIcons.triangleAlert,
         l10n.csvImportEstimate(
           imported: estimate?.imported ?? 0,
           problems: estimate?.skipped ?? 0,
@@ -200,7 +201,7 @@ class _Chosen extends StatelessWidget {
     return _Page(
       children: [
         _InfoCard(
-          icon: Icons.description_outlined,
+          icon: LucideIcons.fileText,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -238,7 +239,7 @@ class _Chosen extends StatelessWidget {
         if (state.status == CsvImportStatus.ready && file.crowdedDays > 0) ...[
           const SizedBox(height: 12),
           _InfoCard(
-            icon: Icons.info_outline,
+            icon: LucideIcons.info,
             child: Text(
               l10n.csvCrowdedDays(days: file.crowdedDays),
               style: theme.textTheme.bodyMedium,
@@ -283,9 +284,7 @@ class _Result extends StatelessWidget {
           liveRegion: true,
           container: true,
           child: _InfoCard(
-            icon: skipped
-                ? Icons.warning_amber_outlined
-                : Icons.check_circle_outline,
+            icon: skipped ? LucideIcons.triangleAlert : LucideIcons.circleCheck,
             background: colors.secondaryContainer,
             foreground: colors.onSecondaryContainer,
             child: Text(
@@ -328,7 +327,7 @@ class _ProblemList extends StatelessWidget {
               children: [
                 ExcludeSemantics(
                   child: Icon(
-                    Icons.error_outline,
+                    LucideIcons.circleAlert,
                     size: 20,
                     color: colors.error,
                   ),

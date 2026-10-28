@@ -280,6 +280,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
+- [ ] Lucide icons replace the Material icons on every screen (`lucide_icons_flutter`)
 
 ### L. Changes to finished screens after the backend agreements
 

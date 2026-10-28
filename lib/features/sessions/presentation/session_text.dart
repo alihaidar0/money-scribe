@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/features/sessions/domain/device_session.dart';
@@ -78,11 +79,11 @@ extension SessionTimes on BuildContext {
   /// The icon of the device a session came from.
   IconData sessionIcon(SessionPlatform? platform) {
     return switch (platform) {
-      SessionPlatform.web => Icons.computer_outlined,
+      SessionPlatform.web => LucideIcons.monitor,
       SessionPlatform.android ||
       SessionPlatform.ios ||
       SessionPlatform.unknown ||
-      null => Icons.smartphone,
+      null => LucideIcons.smartphone,
     };
   }
 }
@@ -133,19 +134,19 @@ extension SecurityEventTexts on AppLocalizations {
 
   IconData eventIcon(SecurityEventType type) {
     return switch (type) {
-      SecurityEventType.signedIn => Icons.login,
-      SecurityEventType.signedOut => Icons.logout,
-      SecurityEventType.sessionRevoked => Icons.phonelink_erase_outlined,
-      SecurityEventType.sessionLimitReached => Icons.devices_other_outlined,
+      SecurityEventType.signedIn => LucideIcons.logInDir,
+      SecurityEventType.signedOut => LucideIcons.logOutDir,
+      SecurityEventType.sessionRevoked => LucideIcons.smartphoneNfc,
+      SecurityEventType.sessionLimitReached => LucideIcons.monitorSmartphone,
       SecurityEventType.passwordChanged ||
-      SecurityEventType.passwordReset => Icons.lock_reset,
-      SecurityEventType.emailChanged => Icons.alternate_email,
+      SecurityEventType.passwordReset => LucideIcons.lockKeyholeOpen,
+      SecurityEventType.emailChanged => LucideIcons.atSign,
       SecurityEventType.deviceKeyAdded ||
-      SecurityEventType.deviceKeyRemoved => Icons.fingerprint,
-      SecurityEventType.tokenReuseDetected => Icons.warning_amber_outlined,
-      SecurityEventType.dataExported => Icons.file_download_outlined,
-      SecurityEventType.dataImported => Icons.file_upload_outlined,
-      SecurityEventType.unknown => Icons.info_outline,
+      SecurityEventType.deviceKeyRemoved => LucideIcons.fingerprintPattern,
+      SecurityEventType.tokenReuseDetected => LucideIcons.triangleAlert,
+      SecurityEventType.dataExported => LucideIcons.download,
+      SecurityEventType.dataImported => LucideIcons.upload,
+      SecurityEventType.unknown => LucideIcons.info,
     };
   }
 }

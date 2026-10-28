@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/message_banner.dart';
 import 'package:money_scribe/features/connection/bloc/server_wake_bloc.dart';
@@ -48,7 +49,7 @@ class _Note extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
           child: MessageBanner(
-            icon: Icons.hourglass_top,
+            icon: LucideIcons.hourglass,
             text: context.l10n.serverStartingMessage,
             tone: BannerTone.info,
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/environment/app_version.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
@@ -91,11 +92,11 @@ class _SettingsView extends StatelessWidget {
 
 /// The sections of the Settings, to name their headings.
 enum _Section {
-  account(Icons.person_outline),
-  payments(Icons.event_repeat_outlined),
-  preferences(Icons.tune),
-  data(Icons.folder_open_outlined),
-  security(Icons.lock_outline);
+  account(LucideIcons.user),
+  payments(LucideIcons.calendarSync),
+  preferences(LucideIcons.slidersHorizontal),
+  data(LucideIcons.folderOpen),
+  security(LucideIcons.lock);
 
   new(this.icon);
 
@@ -261,8 +262,8 @@ class _Chevron extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       Directionality.of(context) == TextDirection.rtl
-          ? Icons.chevron_left
-          : Icons.chevron_right,
+          ? LucideIcons.chevronLeft
+          : LucideIcons.chevronRight,
     );
   }
 }
@@ -288,7 +289,7 @@ class _LoadFailedBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           MessageBanner(
-            icon: Icons.error_outline,
+            icon: LucideIcons.circleAlert,
             text: l10n.settingsLoadFailed,
           ),
           Align(
@@ -315,7 +316,7 @@ class _PayScheduleRow extends StatelessWidget {
     final loaded = state.status == SettingsStatus.ready;
 
     return ListTile(
-      leading: const Icon(Icons.event_repeat_outlined),
+      leading: const Icon(LucideIcons.calendarSync),
       title: Text(l10n.payScheduleTitle),
       subtitle: Text(
         !loaded
@@ -345,7 +346,7 @@ class _CurrencyRow extends StatelessWidget {
     final loaded = state.status == SettingsStatus.ready;
 
     return ListTile(
-      leading: const Icon(Icons.currency_exchange),
+      leading: const Icon(LucideIcons.arrowRightLeft),
       title: Text(l10n.defaultCurrencyTitle),
       subtitle: Text(loaded ? currencyLabel(l10n, state.currency) : '—'),
       trailing: const _Chevron(),
@@ -491,19 +492,19 @@ class _DataRows extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.category_outlined),
+          leading: const Icon(LucideIcons.shapes),
           title: Text(l10n.categoriesTitle),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.categories),
         ),
         ListTile(
-          leading: const Icon(Icons.account_balance_wallet_outlined),
+          leading: const Icon(LucideIcons.wallet),
           title: Text(l10n.accountsTitle),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.accounts),
         ),
         ListTile(
-          leading: const Icon(Icons.file_upload_outlined),
+          leading: const Icon(LucideIcons.upload),
           title: Text(l10n.exportCsvTitle),
           onTap: () async {
             final request = await showCsvExportSheet(context);
@@ -518,7 +519,7 @@ class _DataRows extends StatelessWidget {
           },
         ),
         ListTile(
-          leading: const Icon(Icons.file_download_outlined),
+          leading: const Icon(LucideIcons.download),
           title: Text(l10n.importCsvTitle),
           onTap: () => context.push(AppRoutes.importCsv),
         ),
@@ -538,14 +539,14 @@ class _SecurityRows extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.devices_outlined),
+          leading: const Icon(LucideIcons.monitorSmartphone),
           title: Text(l10n.sessionsTitle),
           subtitle: Text(l10n.sessionsRowHint),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.sessions),
         ),
         ListTile(
-          leading: const Icon(Icons.history),
+          leading: const Icon(LucideIcons.history),
           title: Text(l10n.securityActivityTitle),
           subtitle: Text(l10n.securityActivityRowHint),
           trailing: const _Chevron(),

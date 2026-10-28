@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/environment/app_environment_scope.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -78,7 +79,7 @@ class _NotificationsView extends StatelessWidget {
                 ListTile(
                   title: Text(l10n.pushTokenCopy),
                   subtitle: Text(l10n.pushTokenCopyHint),
-                  leading: const Icon(Icons.content_copy_outlined),
+                  leading: const Icon(LucideIcons.copy),
                   onTap: () => context.read<NotificationsBloc>().add(
                     const PushTokenCopyRequested(),
                   ),

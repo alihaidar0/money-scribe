@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -102,7 +103,7 @@ void main() {
     testWidgets('has the overflow menu and Add repayment', (tester) async {
       await openDebt(tester, 'Sam');
 
-      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+      expect(find.byIcon(LucideIcons.ellipsisVertical), findsOneWidget);
       expect(
         find.widgetWithText(FilledButton, 'Add repayment'),
         findsOneWidget,
@@ -401,7 +402,7 @@ void main() {
     testWidgets('has Edit and Delete', (tester) async {
       await openDebt(tester, 'Sam');
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       expect(find.text('Edit'), findsOneWidget);
@@ -410,7 +411,7 @@ void main() {
 
     testWidgets('Edit opens the form for the debt (DB-8)', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Edit'));
@@ -424,7 +425,7 @@ void main() {
       tester,
     ) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Edit'));
       await tester.pumpAndSettle();
@@ -440,7 +441,7 @@ void main() {
 
     testWidgets('Delete asks first, with the person (DB-7)', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Delete'));
@@ -458,7 +459,7 @@ void main() {
 
     testWidgets('Cancel keeps the debt', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -473,7 +474,7 @@ void main() {
       tester,
     ) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -489,7 +490,7 @@ void main() {
       tester,
     ) async {
       final demo = await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/duration_seconds.dart';
@@ -40,7 +41,7 @@ void showFailureSnackBar(
         persist: false,
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: colors.onErrorContainer),
+            Icon(LucideIcons.circleAlert, color: colors.onErrorContainer),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

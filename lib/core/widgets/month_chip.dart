@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -84,7 +85,7 @@ class MonthChip extends StatelessWidget {
                   ),
                   if (onPressed != null) ...[
                     const SizedBox(width: _chevronGap),
-                    const Icon(Icons.expand_more, size: _chevronSize),
+                    const Icon(LucideIcons.chevronDown, size: _chevronSize),
                   ],
                 ],
               ),

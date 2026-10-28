@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 
 /// How long a success message stays on screen.
@@ -20,7 +21,7 @@ void showSuccessSnackBar(BuildContext context, String message) {
         duration: successSnackBarDuration,
         content: Row(
           children: [
-            Icon(Icons.check_circle_outline, color: green.onContainer),
+            Icon(LucideIcons.circleCheck, color: green.onContainer),
             const SizedBox(width: 12),
             Expanded(
               child: Text(message, style: TextStyle(color: green.onContainer)),

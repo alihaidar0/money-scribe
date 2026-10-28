@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/app/theme/app_theme.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -233,7 +234,7 @@ void main() {
       await show(tester, AppTheme.light);
 
       expect(find.text('Done it'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
       expect(find.byType(SnackBarAction), findsNothing);
       final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
       expect(snackBar.backgroundColor, MoneyColors.light.income.container);
@@ -310,7 +311,7 @@ void main() {
       );
 
       expect(find.text('October 2026'), findsOneWidget);
-      expect(find.byIcon(Icons.expand_more), findsOneWidget);
+      expect(find.byIcon(LucideIcons.chevronDown), findsOneWidget);
 
       await tester.tap(find.byType(MonthChip));
       expect(taps, 1);
@@ -348,7 +349,7 @@ void main() {
       );
 
       expect(find.text('September 2026'), findsOneWidget);
-      expect(find.byIcon(Icons.expand_more), findsNothing);
+      expect(find.byIcon(LucideIcons.chevronDown), findsNothing);
       expect(tester.widget<InkWell>(find.byType(InkWell)).onTap, isNull);
       // It is read as plain text, not as a button.
       expect(find.bySemanticsLabel('September 2026'), findsOneWidget);
@@ -508,7 +509,7 @@ void main() {
       await tester.pumpWidget(
         _host(
           StateView(
-            icon: Icons.history,
+            icon: LucideIcons.history,
             title: 'Nothing yet',
             actionLabel: 'Start',
             filledAction: true,

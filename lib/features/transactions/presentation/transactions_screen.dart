@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
@@ -183,7 +184,7 @@ class _TransactionsView extends StatelessWidget {
           ? FloatingActionButton.extended(
               heroTag: null,
               onPressed: () => _addTransaction(context),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: Text(l10n.addAction),
             )
           : null,
@@ -203,7 +204,7 @@ class _TransactionsView extends StatelessWidget {
             onRetry: () => bloc.add(const TransactionsRetried()),
           ),
           TransactionsStatus.ready when !state.hasTransactions => StateView(
-            icon: Icons.receipt_long_outlined,
+            icon: LucideIcons.receiptText,
             title: l10n.transactionsEmptyTitle,
             actionLabel: l10n.addFirstPurchaseAction,
             filledAction: true,
@@ -368,7 +369,7 @@ class _DetailPane extends StatelessWidget {
                       FilledButton.tonalIcon(
                         onPressed: () =>
                             _openTransaction(context, transaction.id),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(LucideIcons.pencil),
                         label: Text(l10n.editAction),
                       ),
                       OutlinedButton.icon(
@@ -378,7 +379,7 @@ class _DetailPane extends StatelessWidget {
                         onPressed: deleting
                             ? null
                             : () => _delete(context, transaction.id),
-                        icon: const Icon(Icons.delete_outline),
+                        icon: const Icon(LucideIcons.trash2),
                         label: Text(l10n.deleteAction),
                       ),
                     ],
@@ -482,7 +483,7 @@ class _SearchFieldState extends State<_SearchField> {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: l10n.transactionSearchHint,
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: const Icon(LucideIcons.search),
         ),
         onChanged: (text) =>
             context.read<TransactionsBloc>().add(TransactionsSearched(text)),
@@ -518,13 +519,13 @@ class _FilterBar extends StatelessWidget {
             if (count == 0)
               OutlinedButton.icon(
                 onPressed: () => _openFilters(context),
-                icon: const Icon(Icons.tune),
+                icon: const Icon(LucideIcons.slidersHorizontal),
                 label: Text(label),
               )
             else
               FilledButton.tonalIcon(
                 onPressed: () => _openFilters(context),
-                icon: const Icon(Icons.tune),
+                icon: const Icon(LucideIcons.slidersHorizontal),
                 label: Text(label),
               ),
             if (chips.isNotEmpty) ...[
@@ -550,6 +551,7 @@ class _FilterBar extends StatelessWidget {
     Widget chip(String label, VoidCallback onRemove) {
       return InputChip(
         label: Text(label),
+        deleteIcon: const Icon(LucideIcons.x),
         deleteButtonTooltipMessage: l10n.removeFilterTooltip(name: label),
         onDeleted: onRemove,
       );
@@ -655,7 +657,7 @@ class _Results extends StatelessWidget {
     final waitingForMore = state.nextCursor != null && !state.loadMoreFailed;
     if (visible.isEmpty && !waitingForMore && !state.loadMoreFailed) {
       return StateView(
-        icon: Icons.search_off,
+        icon: LucideIcons.searchX,
         title: l10n.noResultsTitle,
         message: l10n.noResultsMessage,
         actionLabel: l10n.clearFiltersAction,

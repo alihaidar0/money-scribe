@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -89,7 +90,7 @@ void main() {
       await openReports(tester);
 
       expect(find.text(amount('vs September −3,200.00 ₽')), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowDown), findsOneWidget);
     });
 
     testWidgets('a row opens the transactions of that category', (

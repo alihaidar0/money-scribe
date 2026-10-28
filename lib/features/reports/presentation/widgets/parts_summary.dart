@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -136,10 +137,10 @@ class _PartCard extends StatelessWidget {
                         ExcludeSemantics(
                           child: Icon(
                             change.isNegative
-                                ? Icons.arrow_downward
+                                ? LucideIcons.arrowDown
                                 : change.isPositive
-                                ? Icons.arrow_upward
-                                : Icons.remove,
+                                ? LucideIcons.arrowUp
+                                : LucideIcons.minus,
                             size: 16,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),

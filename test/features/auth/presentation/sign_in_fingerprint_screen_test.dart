@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
@@ -139,7 +140,7 @@ void main() {
 
       expect(_auth.isSignedIn, isFalse);
       expect(_fingerprintButton, findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsNothing);
+      expect(find.byIcon(LucideIcons.circleAlert), findsNothing);
     });
 
     testWidgets('says the phone cannot check it now, and keeps it', (

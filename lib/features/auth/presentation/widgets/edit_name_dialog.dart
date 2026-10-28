@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/text/api_text_formatter.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
@@ -84,7 +85,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (banner != null) ...[
-                  MessageBanner(icon: Icons.error_outline, text: banner),
+                  MessageBanner(icon: LucideIcons.circleAlert, text: banner),
                   const SizedBox(height: 16),
                 ],
                 TextField(

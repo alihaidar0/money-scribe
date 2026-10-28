@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -50,7 +51,7 @@ class _Tile extends StatelessWidget {
           SwitchListTile(
             title: Text(l10n.fingerprintSignInTitle),
             subtitle: Text(_hint(context, state)),
-            secondary: const Icon(Icons.vpn_key_outlined),
+            secondary: const Icon(LucideIcons.keyRound),
             value: state.isEnabled,
             onChanged: canSwitch
                 ? (turnedOn) => turnedOn ? _turnOn(context) : _turnOff(context)
@@ -61,11 +62,11 @@ class _Tile extends StatelessWidget {
             ListTile(
               title: Text(l10n.fingerprintPhonesTitle),
               subtitle: Text(l10n.fingerprintPhonesHint),
-              leading: const Icon(Icons.smartphone_outlined),
+              leading: const Icon(LucideIcons.smartphone),
               trailing: Icon(
                 Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left
-                    : Icons.chevron_right,
+                    ? LucideIcons.chevronLeft
+                    : LucideIcons.chevronRight,
               ),
               onTap: () => _openPhones(context),
             ),

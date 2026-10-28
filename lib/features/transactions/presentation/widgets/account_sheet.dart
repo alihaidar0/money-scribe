@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
@@ -63,8 +64,8 @@ Future<AccountSheetResult?> showAccountSheet(
                   title: Text(account.name),
                   trailing: Icon(
                     account.id == selectedId
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
+                        ? LucideIcons.circleDot
+                        : LucideIcons.circle,
                   ),
                   onTap: () =>
                       Navigator.of(sheetContext).pop(AccountChosen(account)),

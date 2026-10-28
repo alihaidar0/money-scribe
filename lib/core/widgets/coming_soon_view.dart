@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 
@@ -15,7 +16,7 @@ class ComingSoonView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const IconCircle(icon: Icons.construction_outlined),
+            const IconCircle(icon: LucideIcons.construction),
             const SizedBox(height: 24),
             Text(
               context.l10n.comingSoon,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
@@ -66,8 +67,8 @@ void main() {
       expect(find.text('Change password'), findsOneWidget);
       expect(find.text('Sign out'), findsOneWidget);
       expect(find.text('Delete account'), findsOneWidget);
-      expect(find.byIcon(Icons.logout), findsOneWidget);
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.logOutDir), findsOneWidget);
+      expect(find.byIcon(LucideIcons.trash2), findsOneWidget);
     });
 
     testWidgets('Delete account is in the error colour', (tester) async {
@@ -101,7 +102,7 @@ void main() {
       expect(find.text("Couldn't load your account"), findsOneWidget);
 
       demo.update(const DemoSettings());
-      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.tap(find.byIcon(LucideIcons.refreshCw));
       await tester.pumpAndSettle();
 
       expect(find.text('Alex'), findsOneWidget);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/app_icon_image.dart';
@@ -89,7 +90,7 @@ class _AppLockViewState extends State<_AppLockView> {
                   iconSize: 44,
                   padding: const EdgeInsets.all(22),
                   tooltip: l10n.unlockWithFingerprint,
-                  icon: const Icon(Icons.fingerprint),
+                  icon: const Icon(LucideIcons.fingerprintPattern),
                   onPressed: isChecking
                       ? null
                       : () => context.read<AppLockBloc>().add(

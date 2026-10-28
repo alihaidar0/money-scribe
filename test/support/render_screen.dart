@@ -10,13 +10,19 @@ import 'package:flutter_test/flutter_test.dart';
 /// ignored).
 const renderDirectory = 'build/screens';
 
-/// Loads Inter, IBM Plex Sans Arabic (from `assets/fonts/`) and the Material
-/// icons, so the pictures show the real letters and icons instead of the test
-/// font's boxes. Call it once, in `setUpAll`.
+/// Loads Inter, IBM Plex Sans Arabic (from `assets/fonts/`), the Lucide icons
+/// and the Material icons (the framework's own date picker still draws them),
+/// so the pictures show the real letters and icons instead of the test font's
+/// boxes. Call it once, in `setUpAll`.
 Future<void> loadAppFonts() async {
-  final icons = FontLoader('MaterialIcons')
+  final materialIcons = FontLoader('MaterialIcons')
     ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
-  await icons.load();
+  await materialIcons.load();
+  final lucideIcons = FontLoader('packages/lucide_icons_flutter/Lucide')
+    ..addFont(
+      rootBundle.load('packages/lucide_icons_flutter/assets/lucide.ttf'),
+    );
+  await lucideIcons.load();
 
   const families = {
     'Inter': ['Inter-Regular', 'Inter-Medium', 'Inter-SemiBold'],
