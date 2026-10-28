@@ -6,6 +6,8 @@
 @Tags(['render'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +28,7 @@ import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/language_flag.dart';
+import 'package:money_scribe/features/transactions/domain/transaction.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
@@ -1267,6 +1270,35 @@ final _scenes = <_Scene>[
     AppRoutes.addTransaction,
     signedIn: true,
     setup: _useTwoPayments,
+  ),
+  _Scene(
+    'tx-4d-add-income-counts-toward',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: (tester, demo) async {
+      // The form reads how the salary is paid when it opens, so it is opened
+      // again after the change.
+      demo.update(demo.settings.copyWith(paymentMode: PaymentMode.twoPayments));
+      final router = GoRouter.of(tester.element(find.byType(Scaffold).first))
+        ..go(AppRoutes.transactions);
+      await tester.pumpAndSettle();
+      unawaited(router.push(AppRoutes.addTransaction));
+      await tester.pumpAndSettle();
+      // The second option of Expense / Income.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(PillSegmentedButton<TransactionKind>),
+              matching: find.byType(InkWell),
+            )
+            .last,
+      );
+      await tester.pumpAndSettle();
+      // The payment after the day, not the automatic one: the choices come
+      // before the categories.
+      await tester.tap(find.byType(ChoiceChip).at(2));
+      await tester.pumpAndSettle();
+    },
   ),
   const _Scene(
     'tx-5-edit-transaction',

@@ -74,6 +74,8 @@ Map<String, Object?> transactionJson({
   String categoryId = '0198f2a0-0000-7000-8000-000000000001',
   String accountId = '0198f2a4-7c3e-7b1d-9a52-3e6f1d0c4b21',
   String note = 'Weekly shop',
+  String? part,
+  String? partMonth,
   int version = 1,
 }) {
   return {
@@ -85,6 +87,8 @@ Map<String, Object?> transactionJson({
     'category_id': categoryId,
     'account_id': accountId,
     'note': note,
+    'part': part,
+    'part_month': partMonth,
     'version': version,
     'created_at': '2026-10-25T18:02:11Z',
     'updated_at': '2026-10-25T18:02:11Z',

@@ -357,6 +357,17 @@ class _DetailPane extends StatelessWidget {
                       today: today,
                     ),
                   ),
+                  // The payment an income joined, in a month paid twice.
+                  if (state.twoPayments && transaction.part != null)
+                    _DetailLine(
+                      label: l10n.countsTowardLabel,
+                      value: partDatesLabel(
+                        context,
+                        part: transaction.part!.part,
+                        range: state.cycle.rangeOfPart(transaction.part!),
+                        today: today,
+                      ),
+                    ),
                   _DetailLine(
                     label: l10n.accountLabel,
                     value: account?.name ?? '',

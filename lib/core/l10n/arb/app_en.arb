@@ -80,6 +80,19 @@
       }
     }
   },
+  "countsTowardLabel": "Counts toward",
+  "@countsTowardLabel": {
+    "description": "Label of the choice of the payment an income counts toward, in the form of an income in a month paid twice."
+  },
+  "countsTowardAutomatic": "Automatic · {part}",
+  "@countsTowardAutomatic": {
+    "description": "Option of the Counts toward choice: the payment whose pay day is nearest to the day of the income, with its name, such as Automatic · Part 1.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      }
+    }
+  },
   "partFirst": "Part 1",
   "@partFirst": {
     "description": "Option of the part selector: the first of the two payments of a month."

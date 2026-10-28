@@ -129,7 +129,9 @@ class RemoteTransactionsRepository implements TransactionsRepository {
     final action =
         'transaction:add:${draft.kind.name}:${draft.amount.toDecimalString()}:'
         '${draft.amount.currency.code}:${_dayText(draft.date)}:'
-        '${draft.categoryId}:${draft.accountId}:$note';
+        '${draft.categoryId}:${draft.accountId}:$note:'
+        '${draft.part?.month.param}:${draft.part?.part.name}';
+    final (part, partMonth) = TransactionsWire.partToWire(draft.part);
     final wire = await callApi(
       () => _keys.run(
         action,
@@ -143,6 +145,8 @@ class RemoteTransactionsRepository implements TransactionsRepository {
             categoryId: draft.categoryId,
             accountId: draft.accountId,
             note: note,
+            partValue: part,
+            partMonth: partMonth,
           ),
         ),
       ),
@@ -157,6 +161,9 @@ class RemoteTransactionsRepository implements TransactionsRepository {
     TransactionDraft draft, {
     required int version,
   }) async {
+    // Both fields, or none: an income with no chosen part joins the one
+    // whose pay day is nearest to its day, as the server works it out.
+    final (part, partMonth) = TransactionsWire.partToWire(draft.part);
     final wire = await callApi(
       // The currency is not sent: it cannot be changed.
       () => _transactions.transactionUpdate(
@@ -169,10 +176,8 @@ class RemoteTransactionsRepository implements TransactionsRepository {
           categoryId: draft.categoryId,
           accountId: draft.accountId,
           note: ApiText.clean(draft.note),
-          // No choice of the part yet: an income joins the part with the
-          // nearest pay day, as the server works it out.
-          partValue: null,
-          partMonth: null,
+          partValue: part,
+          partMonth: partMonth,
         ),
       ),
       // A transaction that is gone was deleted on another device: the same

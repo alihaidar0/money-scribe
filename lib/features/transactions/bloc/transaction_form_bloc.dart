@@ -38,6 +38,7 @@ class TransactionFormBloc
     on<TransactionKindSelected>(_onKindSelected, transformer: sequential());
     on<TransactionAmountChanged>(_onAmountChanged, transformer: sequential());
     on<TransactionDateChosen>(_onDateChosen, transformer: sequential());
+    on<TransactionPartChosen>(_onPartChosen, transformer: sequential());
     on<TransactionCategoryChosen>(_onCategoryChosen, transformer: sequential());
     on<TransactionAccountChosen>(_onAccountChosen, transformer: sequential());
     on<TransactionNoteChanged>(_onNoteChanged, transformer: sequential());
@@ -98,6 +99,10 @@ class TransactionFormBloc
           categoryId: transaction.categoryId,
           accountId: transaction.accountId,
           note: transaction.note,
+          // The part is shown as chosen only when it is not the nearest one.
+          part: transaction.part == cycle.nearestPayEvent(transaction.date)
+              ? null
+              : transaction.part,
         );
       }
       final loaded = id == null ? null : results[3]! as Transaction;
@@ -197,7 +202,11 @@ class TransactionFormBloc
     Emitter<TransactionFormState> emit,
   ) {
     if (event.kind == state.values.kind) return;
-    final values = state.values.copyWith(kind: event.kind);
+    var values = state.values.copyWith(kind: event.kind);
+    // Only an income counts toward a part.
+    if (event.kind != TransactionKind.income) {
+      values = values.copyWith(clearPart: true);
+    }
 
     // A category that does not fit the new kind is dropped.
     final category = state.categories
@@ -222,7 +231,28 @@ class TransactionFormBloc
     TransactionDateChosen event,
     Emitter<TransactionFormState> emit,
   ) {
-    _edit(emit, state.values.copyWith(date: _day(event.date)));
+    final date = _day(event.date);
+    var values = state.values.copyWith(date: date);
+    // A chosen payment that is not around the new day is dropped: the income
+    // goes back to the nearest one.
+    final chosen = values.part;
+    if (chosen != null && !state.cycle.payEventsAround(date).contains(chosen)) {
+      values = values.copyWith(clearPart: true);
+    }
+    _edit(emit, values);
+  }
+
+  void _onPartChosen(
+    TransactionPartChosen event,
+    Emitter<TransactionFormState> emit,
+  ) {
+    final part = event.part;
+    _edit(
+      emit,
+      part == null
+          ? state.values.copyWith(clearPart: true)
+          : state.values.copyWith(part: part),
+    );
   }
 
   void _onCategoryChosen(

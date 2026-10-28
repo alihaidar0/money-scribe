@@ -117,7 +117,11 @@ class FakeTransactionsRepository implements TransactionsRepository {
       throw const TransactionRefusedException(TransactionRefusal.limitReached);
     }
     _checkDate(draft.date);
-    final transaction = Transaction.fromDraft('added-${_nextId++}', draft);
+    final transaction = Transaction.fromDraft(
+      'added-${_nextId++}',
+      draft,
+      joined: _nearestPart(draft),
+    );
     _edited = [...transactions, transaction];
     return transaction;
   }
@@ -136,13 +140,34 @@ class FakeTransactionsRepository implements TransactionsRepository {
     }
     _checkDate(draft.date);
 
-    final transaction = Transaction.fromDraft(
+    final joined = _nearestPart(draft);
+    final unchanged = Transaction.fromDraft(
       id,
       draft,
-      version: transactions[index].draft == draft ? version : version + 1,
+      version: version,
+      joined: joined,
     );
+    // Saving what is already there does not move the version.
+    final transaction = unchanged == transactions[index]
+        ? unchanged
+        : Transaction.fromDraft(
+            id,
+            draft,
+            version: version + 1,
+            joined: joined,
+          );
     _edited = [...transactions]..[index] = transaction;
     return transaction;
+  }
+
+  /// The payment an income joins when none is chosen: the one whose pay day is
+  /// nearest to its day, by the default pay days.
+  static PayPart? _nearestPart(TransactionDraft draft) {
+    if (draft.kind != TransactionKind.income) return null;
+    return PayCycle.twoPayments(
+      firstPayDay: PayCycle.defaultFirstPayDay,
+      secondPayDay: PayCycle.defaultSecondPayDay,
+    ).nearestPayEvent(draft.date);
   }
 
   @override

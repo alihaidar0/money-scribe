@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/network/idempotency_keys.dart';
 import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/data/remote/remote_transactions_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
@@ -21,6 +23,7 @@ TransactionDraft _draft({
   Money amount = const Money(1250, Currency.usd),
   TransactionKind kind = TransactionKind.expense,
   String note = 'Weekly shop',
+  PayPart? part,
 }) {
   return TransactionDraft(
     amount: amount,
@@ -29,6 +32,7 @@ TransactionDraft _draft({
     categoryId: _category,
     accountId: _account,
     note: note,
+    part: part,
   );
 }
 
@@ -62,6 +66,36 @@ void main() {
   });
 
   group('transactions', () {
+    test('reads the part an income joined, and none for an expense', () async {
+      answer = (_) => jsonBody(
+        200,
+        pageJson([
+          transactionJson(kind: 'income', part: 'second', partMonth: '2026-09'),
+          transactionJson(id: 'expense'),
+        ]),
+      );
+
+      final page = await build().transactions(const TransactionFilter());
+
+      expect(
+        page.items.first.part,
+        const PayPart(YearMonth(2026, 9), PeriodScope.secondPart),
+      );
+      expect(page.items.last.part, isNull);
+    });
+
+    test('a part without its month is a server failure', () {
+      answer = (_) => jsonBody(
+        200,
+        pageJson([transactionJson(kind: 'income', part: 'first')]),
+      );
+
+      expect(
+        build().transactions(const TransactionFilter()),
+        throwsA(isA<ServerException>()),
+      );
+    });
+
     test('reads a page, newest first as the server sends it', () async {
       answer = (_) => jsonBody(
         200,
@@ -319,6 +353,38 @@ void main() {
       expect(added.id, _id);
     });
 
+    test('sends no part for an income that joins the nearest one', () async {
+      answer = (_) => jsonBody(201, transactionJson(kind: 'income'));
+
+      await build().add(_draft(kind: TransactionKind.income));
+
+      final body = lastRequest().data as Map;
+      expect(body.containsKey('part'), isFalse);
+      expect(body.containsKey('part_month'), isFalse);
+    });
+
+    test('sends the part and its month of an income that chose one', () async {
+      answer = (_) => jsonBody(
+        201,
+        transactionJson(kind: 'income', part: 'first', partMonth: '2026-10'),
+      );
+
+      final added = await build().add(
+        _draft(
+          kind: TransactionKind.income,
+          part: const PayPart(YearMonth(2026, 10), PeriodScope.firstPart),
+        ),
+      );
+
+      final body = lastRequest().data as Map;
+      expect(body['part'], 'first');
+      expect(body['part_month'], '2026-10');
+      expect(
+        added.part,
+        const PayPart(YearMonth(2026, 10), PeriodScope.firstPart),
+      );
+    });
+
     test('removes what the server refuses from the note', () async {
       answer = (_) => jsonBody(201, transactionJson());
 
@@ -427,6 +493,36 @@ void main() {
       expect(body['amount'], '13.00');
       expect(body['date'], '2026-10-24');
       expect(updated.version, 2);
+    });
+
+    test('sends the chosen part, or both fields as null for none', () async {
+      answer = (_) => jsonBody(
+        200,
+        transactionJson(kind: 'income', part: 'second', partMonth: '2026-09'),
+      );
+
+      await build().update(
+        _id,
+        _draft(
+          kind: TransactionKind.income,
+          part: const PayPart(YearMonth(2026, 9), PeriodScope.secondPart),
+        ),
+        version: 1,
+      );
+
+      var body = lastRequest().data as Map;
+      expect(body['part'], 'second');
+      expect(body['part_month'], '2026-09');
+
+      // Both as null: the nearest one, which the server works out.
+      await build().update(
+        _id,
+        _draft(kind: TransactionKind.income),
+        version: 1,
+      );
+      body = lastRequest().data as Map;
+      expect(body.containsKey('part'), isFalse);
+      expect(body.containsKey('part_month'), isFalse);
     });
 
     test(
