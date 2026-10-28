@@ -15,6 +15,7 @@ ImportFixedItemRequest _$ImportFixedItemRequestFromJson(
   partValue: json['part'] == null
       ? null
       : PartEnum.fromJson(json['part'] as String),
+  day: (json['day'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$ImportFixedItemRequestToJson(
@@ -24,6 +25,7 @@ Map<String, dynamic> _$ImportFixedItemRequestToJson(
   'amount': instance.amount,
   'kind': _$KindEnumEnumMap[instance.kind]!,
   'part': _$PartEnumEnumMap[instance.partValue],
+  'day': instance.day,
 };
 
 const _$KindEnumEnumMap = {

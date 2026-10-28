@@ -12,6 +12,7 @@ FixedItemInputRequest _$FixedItemInputRequestFromJson(
   name: json['name'] as String,
   amount: json['amount'] as Amount,
   kind: KindEnum.fromJson(json['kind'] as String),
+  day: (json['day'] as num?)?.toInt(),
   currency: json['currency'] == null
       ? null
       : CurrencyEnum.fromJson(json['currency'] as String),
@@ -27,6 +28,7 @@ Map<String, dynamic> _$FixedItemInputRequestToJson(
   'amount': instance.amount,
   'kind': _$KindEnumEnumMap[instance.kind]!,
   'part': _$PartEnumEnumMap[instance.partValue]!,
+  'day': instance.day,
   'currency': _$CurrencyEnumEnumMap[instance.currency],
 };
 
