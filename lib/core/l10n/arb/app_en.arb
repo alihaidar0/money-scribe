@@ -606,6 +606,10 @@
   "@ofNextMonth": {
     "description": "Caption under the second pay day: the second payment is paid in the following month."
   },
+  "payDaysOrderNote": "The second pay day stays before the first one.",
+  "@payDaysOrderNote": {
+    "description": "Hint under the two pay-day steppers: the day of the second payment, in the next month, is always before the day of the first payment."
+  },
   "increase": "Increase",
   "@increase": {
     "description": "Tooltip of the plus button of a number stepper."
@@ -1357,14 +1361,6 @@
   "@dateLabel": {
     "description": "Label of the day of a transaction or a repayment."
   },
-  "datePartFirst": "Part 1 · 1st–15th",
-  "@datePartFirst": {
-    "description": "Caption under the day of a transaction in the first part of a month paid in two payments."
-  },
-  "datePartSecond": "Part 2 · 16th–end",
-  "@datePartSecond": {
-    "description": "Caption under the day of a transaction in the second part of a month paid in two payments."
-  },
   "debtAmountBelowRepaid": "The amount can''t be less than the {repaid} already repaid.",
   "@debtAmountBelowRepaid": {
     "description": "Error under the amount of a debt that is lower than what was repaid. The placeholder is what was repaid.",
@@ -1587,9 +1583,9 @@
   "@noteLabel": {
     "description": "Label of a note field."
   },
-  "partRangeLabel": "{part} · {from}–{to} {month}",
-  "@partRangeLabel": {
-    "description": "Header of a part of a month in the list of transactions, such as Part 2 · 16th–31st Oct.",
+  "partDatesLabel": "{part} · {from} – {to}",
+  "@partDatesLabel": {
+    "description": "Header of a part of a month in the list of transactions, with the days it covers, such as Part 2 · 5 Nov – 19 Nov.",
     "placeholders": {
       "part": {
         "type": "String"
@@ -1598,9 +1594,6 @@
         "type": "String"
       },
       "to": {
-        "type": "String"
-      },
-      "month": {
         "type": "String"
       }
     }

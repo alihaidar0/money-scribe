@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:money_scribe/core/dates/day_formatter.dart';
-import 'package:money_scribe/core/payments/period_scope.dart';
 
 void main() {
   setUpAll(() async {
@@ -87,15 +86,6 @@ void main() {
 
     test('is the plain number in other languages', () {
       expect(DayFormatter(arabic).ordinal(16), '16');
-    });
-  });
-
-  group('PeriodScope.partOfDay', () {
-    test('splits the month at the 15th', () {
-      expect(PeriodScope.partOfDay(1), PeriodScope.firstPart);
-      expect(PeriodScope.partOfDay(15), PeriodScope.firstPart);
-      expect(PeriodScope.partOfDay(16), PeriodScope.secondPart);
-      expect(PeriodScope.partOfDay(31), PeriodScope.secondPart);
     });
   });
 

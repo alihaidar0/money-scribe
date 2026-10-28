@@ -118,7 +118,7 @@ Future<void> main() async {
       fakeTransactions ??
       RemoteTransactionsRepository.create(
         dio: apiDio!,
-        paymentMode: () async => (await payScheduleRepository.load()).mode,
+        payCycle: () async => (await payScheduleRepository.load()).cycle,
       );
   // The fake fixed items ask the fake salary which months are saved.
   final salary = apiDio == null

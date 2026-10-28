@@ -275,9 +275,10 @@ void main() {
 
     testWidgets('two payments show the part the day is in', (tester) async {
       await openAddForm(tester, settings: twoPayments);
-      // Today is the 11th, in the first part.
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsNothing);
+      // Today is the 11th: after the second pay day (the 5th) and before the
+      // first (the 20th), so it is in the second part.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsNothing);
 
       await tester.tap(find.text('11 Oct'));
       await tester.pumpAndSettle();
@@ -285,7 +286,7 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
     });
   });
 

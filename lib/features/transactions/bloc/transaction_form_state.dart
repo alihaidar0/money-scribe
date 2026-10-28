@@ -116,7 +116,7 @@ final class TransactionFormState extends Equatable {
     this.status = TransactionFormStatus.loading,
     this.accounts = const [],
     this.categories = const [],
-    this.twoPayments = false,
+    this.cycle = const PayCycle.onePayment(),
     this.currency = Currency.rub,
     this.version,
     this.refusal,
@@ -137,8 +137,11 @@ final class TransactionFormState extends Equatable {
   final List<Account> accounts;
   final List<TransactionCategory> categories;
 
-  /// Whether the salary is paid in two payments, so the day shows its part.
-  final bool twoPayments;
+  /// How the salary is paid and on which days, so the day shows its part.
+  final PayCycle cycle;
+
+  /// Whether the salary is paid in two payments.
+  bool get twoPayments => cycle.hasParts;
 
   /// The currency of the amount: the one the transaction was made in when
   /// changing one, which cannot be changed.
@@ -204,7 +207,7 @@ final class TransactionFormState extends Equatable {
     TransactionFormValues? baseline,
     List<Account>? accounts,
     List<TransactionCategory>? categories,
-    bool? twoPayments,
+    PayCycle? cycle,
     Currency? currency,
     int? version,
     TransactionRefusal? refusal,
@@ -218,7 +221,7 @@ final class TransactionFormState extends Equatable {
       baseline: baseline ?? this.baseline,
       accounts: accounts ?? this.accounts,
       categories: categories ?? this.categories,
-      twoPayments: twoPayments ?? this.twoPayments,
+      cycle: cycle ?? this.cycle,
       currency: currency ?? this.currency,
       version: version ?? this.version,
       refusal: refusal ?? this.refusal,
@@ -235,7 +238,7 @@ final class TransactionFormState extends Equatable {
     baseline,
     accounts,
     categories,
-    twoPayments,
+    cycle,
     currency,
     version,
     refusal,

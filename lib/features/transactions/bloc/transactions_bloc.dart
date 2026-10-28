@@ -5,7 +5,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/money.dart';
-import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/accounts_repository.dart';
@@ -242,14 +242,14 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
       final results = await Future.wait<Object?>([
         _accounts.accounts(),
         _categories.categories(),
-        _transactions.paymentMode(),
+        _transactions.payCycle(),
       ]);
       if (emit.isDone) return;
       emit(
         state.copyWith(
           accounts: results[0]! as List<Account>,
           categories: results[1]! as List<TransactionCategory>,
-          twoPayments: results[2] == PaymentMode.twoPayments,
+          cycle: results[2]! as PayCycle,
         ),
       );
       _screenLoaded = true;

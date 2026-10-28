@@ -3,7 +3,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
-import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/accounts_repository.dart';
 import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
@@ -72,12 +72,12 @@ class TransactionFormBloc
       final results = await Future.wait<Object?>([
         _accounts.accounts(),
         _categories.categories(),
-        _transactions.paymentMode(),
+        _transactions.payCycle(),
         if (id != null) _transactions.transaction(id),
       ]);
       final accounts = results[0]! as List<Account>;
       final categories = results[1]! as List<TransactionCategory>;
-      final twoPayments = results[2] == PaymentMode.twoPayments;
+      final cycle = results[2]! as PayCycle;
 
       final TransactionFormValues values;
       if (id == null) {
@@ -106,7 +106,7 @@ class TransactionFormBloc
           status: TransactionFormStatus.ready,
           accounts: accounts,
           categories: categories,
-          twoPayments: twoPayments,
+          cycle: cycle,
           values: values,
           baseline: values,
           // The currency of a transaction cannot be changed.

@@ -4,6 +4,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/network/idempotency_keys.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/transactions/data/remote/remote_transactions_repository.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -40,7 +41,13 @@ void main() {
   RemoteTransactionsRepository build() {
     return RemoteTransactionsRepository.create(
       dio: transactionsTestDio(server),
-      paymentMode: () async => mode,
+      payCycle: () async => switch (mode) {
+        PaymentMode.onePayment => const PayCycle.onePayment(),
+        PaymentMode.twoPayments => PayCycle.twoPayments(
+          firstPayDay: 20,
+          secondPayDay: 5,
+        ),
+      },
       keys: IdempotencyKeys(newKey: () => 'key-${++keyCount}-aaaaaaaaaaaa'),
     );
   }
@@ -476,13 +483,16 @@ void main() {
     });
   });
 
-  group('paymentMode', () {
+  group('payCycle', () {
     test('is how the settings of the account say the salary is paid', () async {
-      expect(await build().paymentMode(), PaymentMode.onePayment);
+      expect(await build().payCycle(), const PayCycle.onePayment());
 
       mode = PaymentMode.twoPayments;
 
-      expect(await build().paymentMode(), PaymentMode.twoPayments);
+      expect(
+        await build().payCycle(),
+        PayCycle.twoPayments(firstPayDay: 20, secondPayDay: 5),
+      );
       // It asks the settings, not the transactions endpoint.
       expect(server.requests, isEmpty);
     });

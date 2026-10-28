@@ -75,14 +75,22 @@ class PayScheduleBloc extends Bloc<PayScheduleEvent, PayScheduleState> {
     FirstPayDayChanged event,
     Emitter<PayScheduleState> emit,
   ) {
-    emit(_edited(state.schedule.copyWith(firstPayDay: _inMonth(event.day))));
+    final schedule = state.schedule;
+    // Never on or before the second pay day.
+    final day = _inMonth(event.day)
+        .clamp(schedule.earliestFirstPayDay, PaySchedule.lastDayOfMonth);
+    emit(_edited(schedule.copyWith(firstPayDay: day)));
   }
 
   void _onSecondPayDayChanged(
     SecondPayDayChanged event,
     Emitter<PayScheduleState> emit,
   ) {
-    emit(_edited(state.schedule.copyWith(secondPayDay: _inMonth(event.day))));
+    final schedule = state.schedule;
+    // Always before the first pay day.
+    final day = _inMonth(event.day)
+        .clamp(PaySchedule.firstDayOfMonth, schedule.latestSecondPayDay);
+    emit(_edited(schedule.copyWith(secondPayDay: day)));
   }
 
   Future<void> _onConfirmed(

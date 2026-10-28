@@ -60,7 +60,7 @@ final class TransactionsState extends Equatable {
     this.hasTransactions = true,
     this.accounts = const [],
     this.categories = const [],
-    this.twoPayments = false,
+    this.cycle = const PayCycle.onePayment(),
     this.filter = const TransactionFilter(),
     this.scope = PeriodScope.month,
     this.selectedId,
@@ -102,9 +102,12 @@ final class TransactionsState extends Equatable {
   final List<Account> accounts;
   final List<TransactionCategory> categories;
 
-  /// Whether the salary is paid in two payments, so the list is split by part
-  /// of the month.
-  final bool twoPayments;
+  /// How the salary is paid and on which days: for two payments the list is
+  /// split by part of the month, cut at the pay days.
+  final PayCycle cycle;
+
+  /// Whether the salary is paid in two payments.
+  bool get twoPayments => cycle.hasParts;
 
   final TransactionFilter filter;
 
@@ -131,14 +134,13 @@ final class TransactionsState extends Equatable {
   bool get filtersByPart => effectiveScope != PeriodScope.month;
 
   /// The loaded transactions that are in the part shown. The server does the
-  /// search and the other filters; the part is a half of every month, which
-  /// it does not know, so it is cut here.
+  /// search and the other filters; the part is a stretch between two pay
+  /// days, which a list call does not know, so it is cut here.
   List<Transaction> get visible {
     if (effectiveScope == PeriodScope.month) return transactions;
     return [
       for (final transaction in transactions)
-        if (PeriodScope.partOfDay(transaction.date.day) == effectiveScope)
-          transaction,
+        if (cycle.partOf(transaction.date) == effectiveScope) transaction,
     ];
   }
 
@@ -170,7 +172,7 @@ final class TransactionsState extends Equatable {
     bool? hasTransactions,
     List<Account>? accounts,
     List<TransactionCategory>? categories,
-    bool? twoPayments,
+    PayCycle? cycle,
     TransactionFilter? filter,
     PeriodScope? scope,
     String? selectedId,
@@ -191,7 +193,7 @@ final class TransactionsState extends Equatable {
       hasTransactions: hasTransactions ?? this.hasTransactions,
       accounts: accounts ?? this.accounts,
       categories: categories ?? this.categories,
-      twoPayments: twoPayments ?? this.twoPayments,
+      cycle: cycle ?? this.cycle,
       filter: filter ?? this.filter,
       scope: scope ?? this.scope,
       selectedId: selectedId ?? this.selectedId,
@@ -213,7 +215,7 @@ final class TransactionsState extends Equatable {
     hasTransactions,
     accounts,
     categories,
-    twoPayments,
+    cycle,
     filter,
     scope,
     selectedId,

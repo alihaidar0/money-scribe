@@ -1,4 +1,4 @@
-import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_page.dart';
@@ -55,7 +55,8 @@ abstract interface class TransactionsRepository {
   /// nothing.
   Future<void> delete(String id, {required int version});
 
-  /// How the account's salary is paid, which decides whether the transactions
-  /// are shown by part of the month.
-  Future<PaymentMode> paymentMode();
+  /// How the account's salary is paid and on which days, which decides
+  /// whether the transactions are shown by part of the month, and where each
+  /// part starts and ends.
+  Future<PayCycle> payCycle();
 }

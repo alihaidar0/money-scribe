@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 
 /// Whether a fixed item adds to the month or takes from it.
 enum FixedItemKind { income, expense }
@@ -11,26 +13,21 @@ enum FixedItemPart {
   first,
   second;
 
-  /// The part a fixed item dated [day] of the month is paid from, going by the
-  /// days the two payments are received on ([firstPayDay] and [secondPayDay]):
-  /// what is spent on a day comes out of the payment received most recently,
-  /// counting back over the turn of the month. With the first payment on the
-  /// 20th and the second on the 5th, the 5th to the 19th is the second part and
-  /// the 20th to the 4th of the next month the first.
+  /// The part a fixed item dated [day] of the month is paid from, by the rule
+  /// of [PayCycle]: what is spent on a day comes out of the payment received
+  /// most recently, counting back over the turn of the month. With the first
+  /// payment on the 20th and the second on the 5th, the 5th to the 19th is the
+  /// second part and the 20th to the 4th of the next month the first.
   static FixedItemPart ofDay(
     int day, {
     required int firstPayDay,
     required int secondPayDay,
   }) {
-    final onOrBefore = [
-      if (firstPayDay <= day) first,
-      if (secondPayDay <= day) second,
-    ];
-    // Only one pay day is on or before [day]: that is the latest. With both
-    // (or none, when [day] is before both and the last pay day of the month
-    // was received in the month before) it is the later of the two.
-    if (onOrBefore.length == 1) return onOrBefore.single;
-    return firstPayDay >= secondPayDay ? first : second;
+    final cycle = PayCycle.twoPayments(
+      firstPayDay: firstPayDay,
+      secondPayDay: secondPayDay,
+    );
+    return cycle.partOfDay(day) == PeriodScope.secondPart ? second : first;
   }
 }
 

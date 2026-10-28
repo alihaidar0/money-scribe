@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
-import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/leave_screen.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -15,6 +14,7 @@ import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -308,10 +308,15 @@ class _FormState extends State<_Form> {
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 16, top: 4),
                   child: Text(
-                    PeriodScope.partOfDay(values.date.day) ==
-                            PeriodScope.firstPart
-                        ? l10n.datePartFirst
-                        : l10n.datePartSecond,
+                    partDatesLabel(
+                      context,
+                      part: state.cycle.partOf(values.date),
+                      range: state.cycle.rangeOf(
+                        state.cycle.monthOf(values.date),
+                        state.cycle.partOf(values.date),
+                      ),
+                      today: today,
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

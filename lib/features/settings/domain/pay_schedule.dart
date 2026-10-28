@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:equatable/equatable.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 
 /// When the salary is paid: one payment or two, and on which days.
@@ -17,14 +20,30 @@ final class PaySchedule extends Equatable {
 
   final PaymentMode mode;
 
-  /// The day of the month the first payment (the 1st-15th) is paid.
+  /// The day of the month the first payment is paid.
   final int firstPayDay;
 
-  /// The day of the next month the second payment (the 16th-end) is paid.
+  /// The day of the next month the second payment is paid. It is before
+  /// [firstPayDay].
   final int secondPayDay;
 
   /// Whether the person is reminded on the pay days.
   final bool remindOnPayDays;
+
+  /// The earliest the first pay day can be: the second one is before it.
+  int get earliestFirstPayDay => min(secondPayDay + 1, lastDayOfMonth);
+
+  /// The latest the second pay day can be: it is before the first one.
+  int get latestSecondPayDay => max(firstPayDay - 1, firstDayOfMonth);
+
+  /// How the schedule cuts a month into parts.
+  PayCycle get cycle => switch (mode) {
+    PaymentMode.onePayment => const PayCycle.onePayment(),
+    PaymentMode.twoPayments => PayCycle.twoPayments(
+      firstPayDay: firstPayDay,
+      secondPayDay: secondPayDay,
+    ),
+  };
 
   PaySchedule copyWith({
     PaymentMode? mode,

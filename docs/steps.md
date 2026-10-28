@@ -290,7 +290,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [ ] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
 - [ ] Overview and Reports: the notice "records in other currencies are not shown here"
 - [ ] Transactions: the search box searches the notes only
-- [ ] Debts: the direction and the currency are fixed when editing; the repayment date cannot be before the start; totals by currency
+- [ ] Debts: the direction can be corrected when editing and the currency is fixed; the repayment date cannot be before the start; totals by currency
 - [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
 - [ ] Something went wrong: the reference the person can copy
 - [x] Fixed items: a day of the month decides the part, in two payments
@@ -369,8 +369,10 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
 - [x] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
 - [x] Pay-cycle parts (#96): the contract that cuts a month paid twice by the pay days, pinned
-- [ ] Pay days: the second before the first, and one rule for the part of a date
-- [ ] Overview, Reports and Transactions: the parts show and use the dates of the pay cycle
+- [x] Debt direction: the contract that lets it be corrected pinned, and the edit form sends it
+- [x] Pay days: the second always before the first, and one helper that cuts a month into parts and dates
+- [x] Transactions: the parts follow the pay days, and each part shows the days it covers
+- [ ] Overview and Reports: the part cards and the Month tab show the days of the pay cycle
 - [ ] Income: choose the part it counts toward, and show the part it joined
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server

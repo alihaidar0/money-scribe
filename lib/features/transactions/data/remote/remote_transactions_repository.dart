@@ -6,7 +6,7 @@ import 'package:money_scribe/core/network/call_api.dart';
 import 'package:money_scribe/core/network/idempotency_keys.dart';
 import 'package:money_scribe/core/network/paged.dart';
 import 'package:money_scribe/core/network/write_safety_headers.dart';
-import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/text/api_text.dart';
 import 'package:money_scribe/features/transactions/data/remote/transactions_wire.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -28,16 +28,16 @@ class RemoteTransactionsRepository implements TransactionsRepository {
     required this._reports,
     required this._keys,
     required this._baseUrl,
-    required this._paymentMode,
+    required this._payCycle,
   });
 
   /// The transactions calls over [dio], which carries the token of the session
-  /// and renews it. [paymentMode] says how the salary is paid, which the
-  /// settings of the account hold. The keys of the adds that wait for an
-  /// answer live in [keys].
+  /// and renews it. [payCycle] says how the salary is paid and on which days,
+  /// which the settings of the account hold. The keys of the adds that wait
+  /// for an answer live in [keys].
   factory create({
     required Dio dio,
-    required Future<PaymentMode> Function() paymentMode,
+    required Future<PayCycle> Function() payCycle,
     IdempotencyKeys? keys,
   }) {
     return RemoteTransactionsRepository(
@@ -45,7 +45,7 @@ class RemoteTransactionsRepository implements TransactionsRepository {
       reports: api.ReportsClient(dio),
       keys: keys ?? IdempotencyKeys(),
       baseUrl: dio.options.baseUrl,
-      paymentMode: paymentMode,
+      payCycle: payCycle,
     );
   }
 
@@ -53,7 +53,7 @@ class RemoteTransactionsRepository implements TransactionsRepository {
   final api.ReportsClient _reports;
   final IdempotencyKeys _keys;
   final String _baseUrl;
-  final Future<PaymentMode> Function() _paymentMode;
+  final Future<PayCycle> Function() _payCycle;
 
   /// The server does not push changes, and the screens load again when they
   /// come back from the form that changed something.
@@ -200,7 +200,7 @@ class RemoteTransactionsRepository implements TransactionsRepository {
   }
 
   @override
-  Future<PaymentMode> paymentMode() => _paymentMode();
+  Future<PayCycle> payCycle() => _payCycle();
 
   /// The ids to send, or none (every record) when the filter has none. The
   /// server takes at most [TransactionFilter.maxIds]; the Filters sheet keeps

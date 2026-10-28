@@ -1,6 +1,7 @@
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/transactions/data/fake/transactions_seed.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -158,9 +159,15 @@ class FakeTransactionsRepository implements TransactionsRepository {
   }
 
   @override
-  Future<PaymentMode> paymentMode() async {
+  Future<PayCycle> payCycle() async {
     await _demo.simulateRequest();
-    return _demo.settings.paymentMode;
+    return switch (_demo.settings.paymentMode) {
+      PaymentMode.onePayment => const PayCycle.onePayment(),
+      PaymentMode.twoPayments => PayCycle.twoPayments(
+        firstPayDay: PayCycle.defaultFirstPayDay,
+        secondPayDay: PayCycle.defaultSecondPayDay,
+      ),
+    };
   }
 
   /// Whether any transaction is in the account [accountId]. The fake accounts

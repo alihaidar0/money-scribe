@@ -3,6 +3,7 @@ import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/data/fake/transactions_seed.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -315,37 +316,53 @@ void main() {
   });
 
   group('TransactionGroups.byPeriod', () {
-    test('splits a month at the 15th, the newest part first', () {
+    // The first payment on the 20th, the second on the 5th of the next month.
+    final cycle = PayCycle.twoPayments(firstPayDay: 20, secondPayDay: 5);
+
+    test('cuts at the pay days, the newest part first', () {
       final periods = TransactionGroups.byPeriod(
         TransactionsSeed.transactions().reversed.toList(),
+        cycle: cycle,
       );
 
+      // The 5th to the 19th of October is the second part of September, and
+      // the 1st of October the first part of September.
       expect(periods.map((period) => period.part), [
         PeriodScope.secondPart,
         PeriodScope.firstPart,
       ]);
-      expect(periods.first.days.map((day) => day.date.day), [19, 17]);
-      expect(periods.last.days.map((day) => day.date.day), [5, 1]);
-      expect(periods.first.month, const YearMonth(2026, 10));
+      expect(periods.first.days.map((day) => day.date.day), [19, 17, 5]);
+      expect(periods.last.days.map((day) => day.date.day), [1]);
+      expect(periods.first.month, const YearMonth(2026, 9));
+      expect(periods.last.month, const YearMonth(2026, 9));
+    });
+
+    test('gives each part the days it covers', () {
+      final periods = TransactionGroups.byPeriod([
+        transaction(date: DateTime(2026, 10, 25)),
+        transaction(date: DateTime(2026, 11, 13)),
+      ], cycle: cycle);
+
+      expect(periods.map((period) => period.range), [
+        PayPeriod(start: DateTime(2026, 11, 5), end: DateTime(2026, 11, 19)),
+        PayPeriod(start: DateTime(2026, 10, 20), end: DateTime(2026, 11, 4)),
+      ]);
+      expect(periods.map((period) => period.month), [
+        const YearMonth(2026, 10),
+        const YearMonth(2026, 10),
+      ]);
     });
 
     test('keeps the parts of different months apart', () {
       final periods = TransactionGroups.byPeriod([
         transaction(date: DateTime(2026, 9, 20)),
         transaction(date: DateTime(2026, 10, 20)),
-      ]);
+      ], cycle: cycle);
 
       expect(periods.map((period) => period.month), [
         const YearMonth(2026, 10),
         const YearMonth(2026, 9),
       ]);
     });
-  });
-
-  test('lastDayOf gives the last day of a month', () {
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 10)), 31);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 11)), 30);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2028, 2)), 29);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 2)), 28);
   });
 }
