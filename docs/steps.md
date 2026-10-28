@@ -108,7 +108,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-2 Sign in
 - [x] AUTH-2b Sign in, wrong password
 - [x] AUTH-2c Sign in, too many attempts
-- [ ] AUTH-2d Sign in, signed out because of too many devices
+- [x] AUTH-2d Sign in, signed out because of too many devices
 - [x] AUTH-3 Register
 - [x] AUTH-3b Register, errors
 - [x] AUTH-4 Verify email
@@ -217,15 +217,15 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-9 Default currency
 - [x] ST-10 Sign out
 - [x] ST-11 Delete account
-- [ ] ST-7b Export CSV, confirm the password
-- [ ] ST-7c Export CSV, too many attempts
+- [x] ST-7b Export CSV, confirm the password
+- [x] ST-7c Export CSV, too many attempts
 - [x] ST-12 Where you are signed in, Active
 - [x] ST-12b Where you are signed in, Previous
 - [x] ST-12c Session details
 - [x] ST-12d End this session
 - [x] ST-12e Sign out of all other devices
 - [x] ST-13 Security activity
-- [ ] Language: a row with the flag of the current language that opens a sheet with a card for each language
+- [x] Language: a row with the flag of the current language that opens a sheet with a card for each language
 
 ### H. Loading, empty, error and no connection
 
@@ -253,7 +253,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] NC-1 No connection, full screen
 - [x] ERR-1 Could not save
 - [x] ERR-2 Something went wrong
-- [ ] ERR-3 Too many requests
+- [x] ERR-3 Too many requests
 - [x] ST-14 Sessions and Security activity: loading, empty, error, no connection
 
 ### I. Arabic (right-to-left) screens
@@ -281,20 +281,20 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
-- [ ] Lucide icons replace the Material icons on every screen (`lucide_icons_flutter`)
-- [ ] Floating navigation bar on phones (the selected tab grows into a pill) and a rounded rail on tablets and web
+- [x] Lucide icons replace the Material icons on every screen (`lucide_icons_flutter`)
+- [x] Floating navigation bar on phones (the selected tab grows into a pill) and a rounded rail on tablets and web
 
 ### L. Changes to finished screens after the backend agreements
 
-- [ ] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
-- [ ] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
-- [ ] Overview and Reports: the notice "records in other currencies are not shown here"
-- [ ] Transactions: the search box searches the notes only
-- [ ] Debts: the direction can be corrected when editing and the currency is fixed; the repayment date cannot be before the start; totals by currency
-- [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
-- [ ] Something went wrong: the reference the person can copy
+- [x] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
+- [x] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
+- [x] Overview and Reports: the notice "records in other currencies are not shown here"
+- [x] Transactions: the search box searches the notes only
+- [x] Debts: the direction can be corrected when editing and the currency is fixed; the repayment date cannot be before the start; totals by currency
+- [x] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
+- [x] Something went wrong: the reference the person can copy
 - [x] Fixed items: a day of the month decides the part, in two payments
-- [ ] Fixed items: the day is picked on a scroll wheel, and the part follows the pay days (the payment received most recently) or is chosen by hand
+- [x] Fixed items: the day is picked on a scroll wheel, and the part follows the pay days (the payment received most recently) or is chosen by hand
 - [x] Pull down at the top of a list to refresh it (Overview, Reports, Fixed items, Transactions, Debts, Salary history)
 - [x] Overview and Reports follow what was saved on another screen, without going back to the loading state
 
