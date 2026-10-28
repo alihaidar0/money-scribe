@@ -235,7 +235,7 @@ void main() {
       expect(saveButton(), findsOneWidget);
       // Nothing to delete, and a month with one payment has no parts.
       expect(inSheet(find.text('Delete')), findsNothing);
-      expect(find.text('Applies to'), findsNothing);
+      expect(find.text('Day of the month'), findsNothing);
     });
 
     testWidgets('Save waits for a name and an amount above zero', (
@@ -307,7 +307,7 @@ void main() {
       expect(find.text('Gym'), findsNothing);
     });
 
-    testWidgets('in two payments it asks which part, starting with the shown', (
+    testWidgets('in two payments it asks the day, starting in the shown part', (
       tester,
     ) async {
       await pumpFixedItems(tester, settings: twoPayments);
@@ -315,12 +315,9 @@ void main() {
 
       await openAddSheet(tester);
 
-      expect(find.text('Applies to'), findsOneWidget);
-      final parts = inSheet(find.byType(PillSegmentedButton<FixedItemPart>));
-      expect(
-        tester.widget<PillSegmentedButton<FixedItemPart>>(parts).selected,
-        {FixedItemPart.second},
-      );
+      expect(find.text('Day of the month'), findsOneWidget);
+      expect(inSheet(find.text('16')), findsOneWidget);
+      expect(inSheet(find.text('Part 2')), findsOneWidget);
     });
 
     testWidgets('an item added to Part 1 does not appear in Part 2', (
@@ -367,22 +364,16 @@ void main() {
       expect(tester.widget<FilledButton>(saveButton()).onPressed, isNotNull);
     });
 
-    testWidgets('shows which part the item applies to in two payments', (
+    testWidgets('shows its day and the part it falls in, in two payments', (
       tester,
     ) async {
       await pumpFixedItems(tester, settings: twoPayments);
 
       await openEditSheet(tester, 'Rent');
 
-      expect(find.text('Applies to'), findsOneWidget);
-      expect(
-        tester
-            .widget<PillSegmentedButton<FixedItemPart>>(
-              inSheet(find.byType(PillSegmentedButton<FixedItemPart>)),
-            )
-            .selected,
-        {FixedItemPart.first},
-      );
+      expect(find.text('Day of the month'), findsOneWidget);
+      expect(inSheet(find.text('1')), findsOneWidget);
+      expect(inSheet(find.text('Part 1')), findsOneWidget);
       expect(
         tester
             .widget<PillSegmentedButton<FixedItemKind>>(
@@ -418,18 +409,18 @@ void main() {
       expect(figure('74,900.00 ₽'), findsOneWidget);
     });
 
-    testWidgets('moving an item to Part 2 takes it out of Part 1', (
+    testWidgets('dating an item in the 16th or later moves it to Part 2', (
       tester,
     ) async {
       await pumpFixedItems(tester, settings: twoPayments);
       await openEditSheet(tester, 'Services');
 
-      await tester.tap(
-        find.descendant(
-          of: inSheet(find.byType(PillSegmentedButton<FixedItemPart>)),
-          matching: find.text('Part 2'),
-        ),
-      );
+      // Services falls on the 10th; the 16th is the first day of Part 2.
+      for (var day = 10; day < 16; day++) {
+        await tester.tap(inSheet(find.byTooltip('Increase')));
+        await tester.pump();
+      }
+      expect(inSheet(find.text('Part 2')), findsOneWidget);
       await tester.pumpAndSettle();
       await tester.tap(saveButton());
       await tester.pumpAndSettle();

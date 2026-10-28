@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/widgets/amount_field.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
+import 'package:money_scribe/core/widgets/day_stepper.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/salary/presentation/widgets/fixed_item_dialogs.dart';
@@ -26,10 +28,12 @@ final class FixedItemSheetDeleted extends FixedItemSheetResult {
 
 /// FIX-3 and FIX-4: the bottom sheet that adds a fixed item, or with [item]
 /// changes it, which also offers Delete. A month paid in [twoPayments] asks
-/// which part the item applies to, starting with [part] for a new one. Closes
-/// with what was done, or with `null` when dismissed.
+/// for the day of [month] the item falls on, which decides the part it
+/// belongs to; a new item starts on the first day of [part]. Closes with what
+/// was done, or with `null` when dismissed.
 Future<FixedItemSheetResult?> showFixedItemSheet(
   BuildContext context, {
+  required YearMonth month,
   required Currency currency,
   required bool twoPayments,
   required FixedItemPart part,
@@ -42,6 +46,7 @@ Future<FixedItemSheetResult?> showFixedItemSheet(
     // Over the navigation bar too, which stays dimmed and inactive.
     useRootNavigator: true,
     builder: (sheetContext) => _FixedItemSheet(
+      month: month,
       currency: currency,
       twoPayments: twoPayments,
       part: item?.part ?? part,
@@ -52,12 +57,14 @@ Future<FixedItemSheetResult?> showFixedItemSheet(
 
 class _FixedItemSheet extends StatefulWidget {
   const new({
+    required this.month,
     required this.currency,
     required this.twoPayments,
     required this.part,
     required this.item,
   });
 
+  final YearMonth month;
   final Currency currency;
   final bool twoPayments;
   final FixedItemPart part;
@@ -79,7 +86,14 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
   /// edited, so the text of the controller is not what is parsed.
   late String _amountText = _amount.text;
   late FixedItemKind _kind = widget.item?.kind ?? FixedItemKind.expense;
-  late FixedItemPart _part = widget.part;
+  // A saved day past the end of the month (31 in September) counts as the last
+  // day, as the server says.
+  late int _day =
+      (widget.item?.day ??
+              (widget.part == FixedItemPart.first
+                  ? 1
+                  : FixedItemPart.lastDayOfFirst + 1))
+          .clamp(1, widget.month.daysInMonth);
 
   @override
   void dispose() {
@@ -93,7 +107,8 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
     amount: _amountText,
     currency: widget.currency,
     kind: _kind,
-    part: _part,
+    day: widget.twoPayments ? _day : null,
+    part: widget.part,
   );
 
   Future<void> _delete() async {
@@ -168,28 +183,15 @@ class _FixedItemSheetState extends State<_FixedItemSheet> {
             ),
             if (widget.twoPayments) ...[
               const SizedBox(height: 16),
-              Semantics(
-                header: true,
-                child: Text(
-                  l10n.fixedItemAppliesTo,
-                  style: theme.textTheme.labelLarge,
-                ),
-              ),
-              const SizedBox(height: 8),
-              PillSegmentedButton<FixedItemPart>(
-                segments: [
-                  ButtonSegment(
-                    value: FixedItemPart.first,
-                    label: Text(l10n.partFirst),
-                  ),
-                  ButtonSegment(
-                    value: FixedItemPart.second,
-                    label: Text(l10n.partSecond),
-                  ),
-                ],
-                selected: {_part},
-                onSelectionChanged: (selection) =>
-                    setState(() => _part = selection.first),
+              DayStepper(
+                label: l10n.fixedItemDayLabel,
+                caption: FixedItemPart.ofDay(_day) == FixedItemPart.first
+                    ? l10n.partFirst
+                    : l10n.partSecond,
+                value: _day,
+                min: 1,
+                max: widget.month.daysInMonth,
+                onChanged: (day) => setState(() => _day = day),
               ),
             ],
             const SizedBox(height: 24),

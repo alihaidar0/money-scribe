@@ -6,6 +6,7 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
@@ -104,12 +105,18 @@ class _HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      // Room under the last card for the button.
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-      itemCount: entries.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
+    return PullToRefresh(
+      onRefresh: (done) => context.read<SalaryHistoryBloc>().add(
+        SalaryHistoryRefreshed(done: done),
+      ),
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last card for the button.
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
+      ),
     );
   }
 }

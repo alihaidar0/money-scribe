@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -218,6 +219,7 @@ Future<void> _addItem(BuildContext context) async {
   final state = bloc.state;
   final result = await showFixedItemSheet(
     context,
+    month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
     part: state.part,
@@ -241,6 +243,7 @@ Future<void> _editItem(BuildContext context, FixedItem item) async {
   final state = bloc.state;
   final result = await showFixedItemSheet(
     context,
+    month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
     part: state.part,
@@ -313,15 +316,21 @@ class _Content extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
-                    ListView.separated(
-                      // Room under the last row for the button.
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) => _ItemRow(
-                        item: items[index],
-                        onEdit: () => _editItem(context, items[index]),
+                    PullToRefresh(
+                      onRefresh: (done) => context.read<FixedItemsBloc>().add(
+                        FixedItemsRefreshed(done: done),
+                      ),
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        // Room under the last row for the button.
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        itemCount: items.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) => _ItemRow(
+                          item: items[index],
+                          onEdit: () => _editItem(context, items[index]),
+                        ),
                       ),
                     ),
                     PositionedDirectional(

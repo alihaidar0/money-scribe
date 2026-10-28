@@ -1,5 +1,6 @@
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/features/overview/data/fake/overview_seed.dart';
 import 'package:money_scribe/features/overview/domain/debt_choice.dart';
 import 'package:money_scribe/features/overview/domain/month_overview.dart';
@@ -14,7 +15,8 @@ class FakeOverviewRepository implements OverviewRepository {
   final DemoController _demo;
 
   @override
-  Stream<void> get changes => _demo.dataChangesWithSchedules;
+  Stream<DataChange> get changes =>
+      _demo.dataChangesWithSchedules.map((_) => DataChange.replaced);
 
   @override
   Future<MonthOverview?> month(YearMonth month) async {

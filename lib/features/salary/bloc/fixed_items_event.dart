@@ -22,6 +22,14 @@ final class FixedItemsDataChanged extends FixedItemsEvent {
   const new();
 }
 
+/// The user pulled the list down: load the month again without the loading
+/// state, then complete [done] so the spinner ends.
+final class FixedItemsRefreshed extends FixedItemsEvent {
+  const new({this.done});
+
+  final Completer<void>? done;
+}
+
 /// The user chose which part to show, for a month paid in two payments.
 final class FixedItemsPartSelected extends FixedItemsEvent {
   const new(this.part);

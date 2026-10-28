@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -88,97 +89,106 @@ class _Content extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: FrameWidth.wide.value),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          children: [
-            // The controls keep the width of a phone, whatever the window.
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: FrameWidth.narrow.value),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _ViewSwitch(
-                      selected: view,
-                      onSelected: (view) => bloc.add(ReportsViewSelected(view)),
-                    ),
-                    if (view != ReportsView.debts) ...[
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: MonthChip(
-                          month: state.month,
-                          onPressed: () => _chooseMonth(context, state.month),
-                        ),
+        child: PullToRefresh(
+          onRefresh: (done) => bloc.add(ReportsRefreshed(done: done)),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              // The controls keep the width of a phone, whatever the window.
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: FrameWidth.narrow.value,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _ViewSwitch(
+                        selected: view,
+                        onSelected: (view) =>
+                            bloc.add(ReportsViewSelected(view)),
                       ),
-                      if (view == ReportsView.monthVsMonth) ...[
-                        const SizedBox(height: 12),
-                        _CompareChip(
-                          month: state.compareMonth,
-                          onPressed: () => _chooseCompareMonth(context, state),
+                      if (view != ReportsView.debts) ...[
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: MonthChip(
+                            month: state.month,
+                            onPressed: () => _chooseMonth(context, state.month),
+                          ),
                         ),
-                      ],
-                      if (state.twoPayments) ...[
-                        const SizedBox(height: 12),
-                        PartSelector(
-                          selected: state.effectiveScope,
-                          onSelected: (scope) =>
-                              bloc.add(ReportsScopeSelected(scope)),
-                        ),
+                        if (view == ReportsView.monthVsMonth) ...[
+                          const SizedBox(height: 12),
+                          _CompareChip(
+                            month: state.compareMonth,
+                            onPressed: () =>
+                                _chooseCompareMonth(context, state),
+                          ),
+                        ],
+                        if (state.twoPayments) ...[
+                          const SizedBox(height: 12),
+                          PartSelector(
+                            selected: state.effectiveScope,
+                            onSelected: (scope) =>
+                                bloc.add(ReportsScopeSelected(scope)),
+                          ),
+                        ],
                       ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            if (view != ReportsView.debts &&
-                (state.report?.hasOtherCurrencies ?? false)) ...[
-              const SizedBox(height: 12),
-              CurrencyNotice(context.l10n.recordsInOtherCurrenciesNotice),
-            ],
-            const SizedBox(height: 24),
-            switch (view) {
-              ReportsView.categories when period != null => CategoriesView(
-                period: period,
-                month: state.month,
-                scope: state.effectiveScope,
-                spentChange: state.spentChange,
-                comparedMonth: state.compareMonth,
-                parts: _partsOf(state),
-                onPartSelected: (scope) =>
-                    bloc.add(ReportsScopeSelected(scope)),
-              ),
-              ReportsView.monthVsMonth when period != null =>
-                MonthComparisonView(
+              if (view != ReportsView.debts &&
+                  (state.report?.hasOtherCurrencies ?? false)) ...[
+                const SizedBox(height: 12),
+                CurrencyNotice(context.l10n.recordsInOtherCurrenciesNotice),
+              ],
+              const SizedBox(height: 24),
+              switch (view) {
+                ReportsView.categories when period != null => CategoriesView(
+                  period: period,
                   month: state.month,
-                  comparedMonth: state.compareMonth,
                   scope: state.effectiveScope,
-                  current: period,
-                  previous: state.previousPeriod,
+                  spentChange: state.spentChange,
+                  comparedMonth: state.compareMonth,
                   parts: _partsOf(state),
                   onPartSelected: (scope) =>
                       bloc.add(ReportsScopeSelected(scope)),
                 ),
-              ReportsView.debts when state.debts != null => DebtsView(
-                report: state.debts!,
-                today: context.read<Clock>().now(),
-              ),
-              ReportsView.debts => const SizedBox.shrink(),
-              // The month has no report: say so under the controls.
-              _ => SizedBox(
-                height: 360,
-                child: StateView(
-                  icon: Icons.bar_chart_outlined,
-                  title: context.l10n.reportsEmptyTitle,
-                  message: context.l10n.reportsEmptyMessage,
-                  actionLabel: context.l10n.reportsEmptyAction,
-                  filledAction: true,
-                  onAction: () => context.push<void>(AppRoutes.addTransaction),
+                ReportsView.monthVsMonth when period != null =>
+                  MonthComparisonView(
+                    month: state.month,
+                    comparedMonth: state.compareMonth,
+                    scope: state.effectiveScope,
+                    current: period,
+                    previous: state.previousPeriod,
+                    parts: _partsOf(state),
+                    onPartSelected: (scope) =>
+                        bloc.add(ReportsScopeSelected(scope)),
+                  ),
+                ReportsView.debts when state.debts != null => DebtsView(
+                  report: state.debts!,
+                  today: context.read<Clock>().now(),
                 ),
-              ),
-            },
-          ],
+                ReportsView.debts => const SizedBox.shrink(),
+                // The month has no report: say so under the controls.
+                _ => SizedBox(
+                  height: 360,
+                  child: StateView(
+                    icon: Icons.bar_chart_outlined,
+                    title: context.l10n.reportsEmptyTitle,
+                    message: context.l10n.reportsEmptyMessage,
+                    actionLabel: context.l10n.reportsEmptyAction,
+                    filledAction: true,
+                    onAction: () =>
+                        context.push<void>(AppRoutes.addTransaction),
+                  ),
+                ),
+              },
+            ],
+          ),
         ),
       ),
     );

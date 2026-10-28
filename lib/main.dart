@@ -14,6 +14,7 @@ import 'package:money_scribe/core/device/time_zone_source.dart';
 import 'package:money_scribe/core/environment/api_config.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/environment/turnstile_config.dart';
+import 'package:money_scribe/core/network/data_changes.dart';
 import 'package:money_scribe/core/network/dio_factory.dart';
 import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/network/server_warm_up.dart';
@@ -89,6 +90,10 @@ Future<void> main() async {
     monitor: monitor,
     lastFailure: lastFailure,
   );
+  // What this device saves on the server is announced, so the Overview and
+  // the Reports load their figures again.
+  final dataChanges = DataChanges();
+  apiDio?.interceptors.add(DataChangesInterceptor(dataChanges));
   // The settings of the account are on the server when there is one.
   final settings = apiDio == null
       ? null
@@ -162,6 +167,7 @@ Future<void> main() async {
           : RemoteOverviewRepository.create(
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
+              changes: dataChanges.stream,
             ),
       salaryRepository: salary,
       fixedItemsRepository: apiDio == null
@@ -191,6 +197,7 @@ Future<void> main() async {
           : RemoteReportsRepository.create(
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
+              changes: dataChanges.stream,
             ),
       demo: demo,
       environment: AppEnvironment.current,

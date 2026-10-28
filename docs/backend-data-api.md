@@ -263,7 +263,8 @@ route.
   `amount`, `currency`, `category_key`, `category_name`, `account_name`, `note` (a built-in category has its
   key and no name, a custom one the reverse); `debts` has `direction`, `person`, `amount`, `currency`,
   `start_date`, `due_date`, `note` and `repayments` (a JSON cell); `salary_months` has the month's inputs,
-  `extra_hours` and `tax_rate` with two decimals, and `fixed_items` (a JSON cell).
+  `extra_hours` and `tax_rate` with two decimals, and `fixed_items` (a JSON cell; an item that has a `day`, 1 to
+  31, carries it, and one without a day has none).
 - **Formula injection.** A text cell that starts with `=`, `+`, `-`, `@`, a tab, a carriage return, a line
   feed, or with `'` followed by one of those, is written with one `'` in front. The import removes exactly one
   `'` in that case. Amounts, dates and the JSON cells are never changed.

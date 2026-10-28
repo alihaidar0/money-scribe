@@ -47,6 +47,24 @@ void main() {
       expect(draft?.part, FixedItemPart.second);
     });
 
+    test('a dated item belongs to the part its day falls in', () {
+      FixedItemDraft? dated(int day) => FixedItemDraft.tryCreate(
+        name: 'Gym',
+        amount: '10',
+        currency: Currency.rub,
+        kind: FixedItemKind.expense,
+        // The day wins over the part that was passed.
+        part: day <= 15 ? FixedItemPart.second : FixedItemPart.first,
+        day: day,
+      );
+
+      expect(dated(1)?.part, FixedItemPart.first);
+      expect(dated(15)?.part, FixedItemPart.first);
+      expect(dated(16)?.part, FixedItemPart.second);
+      expect(dated(31)?.part, FixedItemPart.second);
+      expect(dated(16)?.day, 16);
+    });
+
     test('trims the name', () {
       expect(create(name: '  Gym  ')?.name, 'Gym');
     });

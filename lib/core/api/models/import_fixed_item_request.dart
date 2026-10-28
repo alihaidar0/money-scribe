@@ -18,6 +18,7 @@ class ImportFixedItemRequest {
     required this.amount,
     required this.kind,
     this.partValue,
+    this.day,
   });
 
   factory ImportFixedItemRequest.fromJson(Map<String, Object?> json) =>
@@ -32,6 +33,9 @@ class ImportFixedItemRequest {
   /// The name has been replaced because it contains a keyword. Original name: `part`.
   @JsonKey(name: 'part')
   final PartEnum? partValue;
+
+  /// The day of the month, 1 to 31. Left out, or `null`, for none.
+  final int? day;
 
   Map<String, Object?> toJson() => _$ImportFixedItemRequestToJson(this);
 }

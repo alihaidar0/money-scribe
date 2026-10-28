@@ -12,6 +12,7 @@ PatchedFixedItemInputRequest _$PatchedFixedItemInputRequestFromJson(
   name: json['name'] as String,
   amount: json['amount'] as Amount,
   kind: KindEnum.fromJson(json['kind'] as String),
+  day: (json['day'] as num?)?.toInt(),
   currency: CurrencyEnum.fromJson(json['currency'] as String),
   partValue: json['part'] == null
       ? PartEnum.first
@@ -25,6 +26,7 @@ Map<String, dynamic> _$PatchedFixedItemInputRequestToJson(
   'amount': instance.amount,
   'kind': _$KindEnumEnumMap[instance.kind]!,
   'part': _$PartEnumEnumMap[instance.partValue]!,
+  'day': instance.day,
   'currency': _$CurrencyEnumEnumMap[instance.currency]!,
 };
 

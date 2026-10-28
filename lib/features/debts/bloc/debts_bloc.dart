@@ -52,8 +52,15 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
     return _load(emit, showLoading: true);
   }
 
-  Future<void> _onRefreshed(DebtsRefreshed event, Emitter<DebtsState> emit) {
-    return _load(emit, showLoading: false);
+  Future<void> _onRefreshed(
+    DebtsRefreshed event,
+    Emitter<DebtsState> emit,
+  ) async {
+    try {
+      await _load(emit, showLoading: false);
+    } finally {
+      event.done?.complete();
+    }
   }
 
   void _onFilterSelected(DebtsFilterSelected event, Emitter<DebtsState> emit) {

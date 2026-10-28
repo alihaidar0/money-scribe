@@ -60,7 +60,7 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
     final action =
         'fixed-item:add:${month.param}:${draft.name}:'
         '${draft.amount.toDecimalString()}:${draft.kind.name}:'
-        '${draft.part.name}';
+        '${draft.part.name}:${draft.day}';
     final wire = await callApi(
       () => _keys.run(
         action,
@@ -73,6 +73,7 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
             kind: SalaryWire.kindToWire(draft.kind),
             currency: SalaryWire.currencyToWire(draft.amount.currency),
             partValue: SalaryWire.partToWire(draft.part),
+            day: draft.day,
           ),
         ),
       ),
@@ -98,6 +99,9 @@ class RemoteFixedItemsRepository implements FixedItemsRepository {
           kind: SalaryWire.kindToWire(draft.kind),
           currency: SalaryWire.currencyToWire(draft.amount.currency),
           partValue: SalaryWire.partToWire(draft.part),
+          // No day (a month paid in one payment) is left out of the body, so
+          // the server keeps the day it holds.
+          day: draft.day,
         ),
       ),
       // An item that is gone was deleted on another device: the same answer

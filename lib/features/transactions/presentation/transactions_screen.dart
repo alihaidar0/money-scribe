@@ -18,6 +18,7 @@ import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -694,42 +695,47 @@ class _Results extends StatelessWidget {
       for (final account in state.accounts) account.id: account,
     };
 
-    return ListView.builder(
-      // Room under the last row for the button.
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        // The end of the list is near: ask for the next page. The Bloc takes
-        // one request at a time, so building this row again asks nothing more.
-        if (waitingForMore &&
-            !state.loadingMore &&
-            index >= entries.length - 3) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!bloc.isClosed) bloc.add(const TransactionsMoreRequested());
-          });
-        }
-        return switch (entries[index]) {
-          _PeriodEntry(:final period) => _PeriodHeader(period: period),
-          _DayEntry(:final day) => _DayHeader(day: day),
-          _FooterEntry(:final failed) => _ListFooter(failed: failed),
-          _TransactionEntry(:final transaction) => _TransactionRow(
-            transaction: transaction,
-            categoryName: categories[transaction.categoryId] == null
-                ? ''
-                : context.l10n.categoryName(
-                    categories[transaction.categoryId]!,
-                  ),
-            icon: categoryIcon(
-              categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
+    return PullToRefresh(
+      onRefresh: (done) => bloc.add(TransactionsRefreshed(done: done)),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last row for the button.
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          // The end of the list is near: ask for the next page. The Bloc
+          // takes one request at a time, so building this row again asks
+          // nothing more.
+          if (waitingForMore &&
+              !state.loadingMore &&
+              index >= entries.length - 3) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!bloc.isClosed) bloc.add(const TransactionsMoreRequested());
+            });
+          }
+          return switch (entries[index]) {
+            _PeriodEntry(:final period) => _PeriodHeader(period: period),
+            _DayEntry(:final day) => _DayHeader(day: day),
+            _FooterEntry(:final failed) => _ListFooter(failed: failed),
+            _TransactionEntry(:final transaction) => _TransactionRow(
+              transaction: transaction,
+              categoryName: categories[transaction.categoryId] == null
+                  ? ''
+                  : context.l10n.categoryName(
+                      categories[transaction.categoryId]!,
+                    ),
+              icon: categoryIcon(
+                categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
+              ),
+              accountName: accounts[transaction.accountId]?.name ?? '',
+              selected: wide && transaction.id == state.selected?.id,
+              onTap: wide
+                  ? () => bloc.add(TransactionSelected(transaction.id))
+                  : () => _openTransaction(context, transaction.id),
             ),
-            accountName: accounts[transaction.accountId]?.name ?? '',
-            selected: wide && transaction.id == state.selected?.id,
-            onTap: wide
-                ? () => bloc.add(TransactionSelected(transaction.id))
-                : () => _openTransaction(context, transaction.id),
-          ),
-        };
-      },
+          };
+        },
+      ),
     );
   }
 }

@@ -15,7 +15,10 @@ final class SalaryHistoryStarted extends SalaryHistoryEvent {
 /// The user came back from a month that may have been changed: load the saved
 /// months again, without showing the loading state.
 final class SalaryHistoryRefreshed extends SalaryHistoryEvent {
-  const new();
+  const new({this.done});
+
+  /// Completed when the load is done, to end a pull-to-refresh spinner.
+  final Completer<void>? done;
 }
 
 /// The user pressed Try again.

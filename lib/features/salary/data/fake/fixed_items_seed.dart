@@ -21,6 +21,7 @@ abstract final class FixedItemsSeed {
         amount: _rub(5000),
         kind: FixedItemKind.income,
         part: FixedItemPart.second,
+        day: 20,
       ),
       FixedItem(
         id: 'seed-${month.param}-rent',
@@ -28,6 +29,7 @@ abstract final class FixedItemsSeed {
         amount: _rub(30000),
         kind: FixedItemKind.expense,
         part: FixedItemPart.first,
+        day: 1,
       ),
       FixedItem(
         id: 'seed-${month.param}-services',
@@ -35,6 +37,7 @@ abstract final class FixedItemsSeed {
         amount: _rub(4500),
         kind: FixedItemKind.expense,
         part: FixedItemPart.first,
+        day: 10,
       ),
     ];
   }

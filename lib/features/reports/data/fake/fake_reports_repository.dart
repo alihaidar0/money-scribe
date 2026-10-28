@@ -2,6 +2,7 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/features/reports/data/fake/reports_seed.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
 import 'package:money_scribe/features/reports/domain/month_report.dart';
@@ -16,7 +17,8 @@ class FakeReportsRepository implements ReportsRepository {
   final DemoController _demo;
 
   @override
-  Stream<void> get changes => _demo.dataChangesWithSchedules;
+  Stream<DataChange> get changes =>
+      _demo.dataChangesWithSchedules.map((_) => DataChange.replaced);
 
   @override
   Future<MonthReport?> month(YearMonth month) async {

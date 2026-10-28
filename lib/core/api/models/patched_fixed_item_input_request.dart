@@ -18,6 +18,7 @@ class PatchedFixedItemInputRequest {
     required this.name,
     required this.amount,
     required this.kind,
+    required this.day,
     required this.currency,
     this.partValue = PartEnum.first,
   });
@@ -37,6 +38,9 @@ class PatchedFixedItemInputRequest {
   /// The name has been replaced because it contains a keyword. Original name: `part`.
   @JsonKey(name: 'part')
   final PartEnum partValue;
+
+  /// The day of the month the item falls on, 1 to 31, or `null` for none. A day past the end of the month (31 in September) counts as its last day; it is stored and returned as sent. It does not change `part`, which is still the one sent.
+  final int? day;
 
   /// May be left out. If it is sent it must be the currency of the month.
   ///

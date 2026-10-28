@@ -4,6 +4,7 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/call_api.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/features/overview/data/remote/overview_wire.dart';
 import 'package:money_scribe/features/overview/domain/debt_choice.dart';
 import 'package:money_scribe/features/overview/domain/month_overview.dart';
@@ -20,18 +21,21 @@ class RemoteOverviewRepository implements OverviewRepository {
     required this._overview,
     required this._reports,
     required this._defaultCurrency,
-  });
+    Stream<void> changes = const Stream<void>.empty(),
+  }) : _saved = changes;
 
   /// The calls over [dio], which carries the token of the session and renews
   /// it. [defaultCurrency] is the one the settings of the account hold.
   factory create({
     required Dio dio,
     required Future<Currency> Function() defaultCurrency,
+    Stream<void> changes = const Stream<void>.empty(),
   }) {
     return RemoteOverviewRepository(
       overview: api.OverviewClient(dio),
       reports: api.ReportsClient(dio),
       defaultCurrency: defaultCurrency,
+      changes: changes,
     );
   }
 
@@ -39,10 +43,12 @@ class RemoteOverviewRepository implements OverviewRepository {
   final api.ReportsClient _reports;
   final Future<Currency> Function() _defaultCurrency;
 
-  /// The server does not push changes, and the screens load again when they
-  /// come back from the form that changed something.
+  final Stream<void> _saved;
+
+  /// The server does not push changes. What this device saves is announced by
+  /// the stream it was given, so the screen loads the figures again, silently.
   @override
-  Stream<void> get changes => const Stream<void>.empty();
+  Stream<DataChange> get changes => _saved.map((_) => DataChange.saved);
 
   @override
   Future<MonthOverview?> month(YearMonth month) async {

@@ -12,6 +12,7 @@ import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -139,6 +140,18 @@ class _OverviewContent extends StatelessWidget {
     ];
     final rows = _rows(context, figures);
 
+    // Pulling a list down at the top loads the figures again.
+    Widget refreshable(List<Widget> children, {EdgeInsets? padding}) {
+      return PullToRefresh(
+        onRefresh: (done) => bloc.add(OverviewRefreshed(done: done)),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: padding,
+          children: children,
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= _twoColumnsFrom) {
@@ -147,17 +160,18 @@ class _OverviewContent extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: ListView(children: summary)),
+                Expanded(child: refreshable(summary)),
                 const SizedBox(width: 16),
-                Expanded(child: ListView(children: rows)),
+                Expanded(child: refreshable(rows)),
               ],
             ),
           );
         }
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [...summary, const SizedBox(height: 16), ...rows],
-        );
+        return refreshable([
+          ...summary,
+          const SizedBox(height: 16),
+          ...rows,
+        ], padding: const EdgeInsets.all(16));
       },
     );
   }

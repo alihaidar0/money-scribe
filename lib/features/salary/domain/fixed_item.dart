@@ -7,7 +7,19 @@ enum FixedItemKind { income, expense }
 
 /// Which payment of a month paid in two payments a fixed item belongs to. A
 /// month paid in one payment ignores it.
-enum FixedItemPart { first, second }
+enum FixedItemPart {
+  first,
+  second;
+
+  /// The last day of the month that belongs to the first part.
+  static const lastDayOfFirst = 15;
+
+  /// The part a fixed item dated [day] of the month belongs to: the 1st to the
+  /// 15th is the first part, the 16th to the end of the month the second.
+  static FixedItemPart ofDay(int day) {
+    return day <= lastDayOfFirst ? first : second;
+  }
+}
 
 /// A fixed item as it is typed, before the server gives it an id: a recurring
 /// income or cost of a month, such as a scholarship or the rent.
@@ -17,6 +29,7 @@ final class FixedItemDraft extends Equatable {
     required this.amount,
     required this.kind,
     this.part = FixedItemPart.first,
+    this.day,
   });
 
   /// The most characters a name has.
@@ -30,6 +43,7 @@ final class FixedItemDraft extends Equatable {
     required Currency currency,
     required FixedItemKind kind,
     FixedItemPart part = FixedItemPart.first,
+    int? day,
   }) {
     final trimmed = name.trim();
     final money = Money.tryParse(amount, currency);
@@ -39,7 +53,14 @@ final class FixedItemDraft extends Equatable {
         !money.isPositive) {
       return null;
     }
-    return FixedItemDraft(name: trimmed, amount: money, kind: kind, part: part);
+    return FixedItemDraft(
+      name: trimmed,
+      amount: money,
+      kind: kind,
+      // A dated item belongs to the part its day falls in.
+      part: day == null ? part : FixedItemPart.ofDay(day),
+      day: day,
+    );
   }
 
   final String name;
@@ -49,8 +70,11 @@ final class FixedItemDraft extends Equatable {
   final FixedItemKind kind;
   final FixedItemPart part;
 
+  /// The day of the month the item falls on, or `null` when it has none.
+  final int? day;
+
   @override
-  List<Object> get props => [name, amount, kind, part];
+  List<Object?> get props => [name, amount, kind, part, day];
 }
 
 /// A fixed item of a month, as the server holds it.
@@ -61,6 +85,7 @@ final class FixedItem extends Equatable {
     required this.amount,
     required this.kind,
     required this.part,
+    this.day,
     this.version = 1,
   });
 
@@ -68,7 +93,8 @@ final class FixedItem extends Equatable {
     : name = draft.name,
       amount = draft.amount,
       kind = draft.kind,
-      part = draft.part;
+      part = draft.part,
+      day = draft.day;
 
   final String id;
   final String name;
@@ -77,6 +103,9 @@ final class FixedItem extends Equatable {
   final Money amount;
   final FixedItemKind kind;
   final FixedItemPart part;
+
+  /// The day of the month the item falls on, or `null` when it has none.
+  final int? day;
 
   /// The server's version of the item, which a change or a delete sends back
   /// so an edit made on another device is never replaced unseen.
@@ -87,9 +116,15 @@ final class FixedItem extends Equatable {
 
   /// What the item is made of, to edit it.
   FixedItemDraft get draft {
-    return FixedItemDraft(name: name, amount: amount, kind: kind, part: part);
+    return FixedItemDraft(
+      name: name,
+      amount: amount,
+      kind: kind,
+      part: part,
+      day: day,
+    );
   }
 
   @override
-  List<Object> get props => [id, name, amount, kind, part, version];
+  List<Object?> get props => [id, name, amount, kind, part, day, version];
 }
