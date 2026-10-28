@@ -9,6 +9,7 @@ import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/amount_row.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
@@ -147,7 +148,7 @@ class _OverviewContent extends StatelessWidget {
         onRefresh: (done) => bloc.add(OverviewRefreshed(done: done)),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: padding,
+          padding: padding?.withBarClearance(context),
           children: children,
         ),
       );

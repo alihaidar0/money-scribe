@@ -50,6 +50,44 @@ void main() {
       }
     });
 
+    testWidgets('the screen reaches under the bar, which floats over it', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      final screen = tester.getRect(find.byType(OverviewScreen));
+      final bar = tester.getRect(find.byType(FloatingNavigationBar));
+
+      expect(screen.bottom, 915);
+      expect(bar.bottom, lessThanOrEqualTo(screen.bottom));
+      expect(bar.top, lessThan(screen.bottom));
+    });
+
+    testWidgets('the last row of a list can be scrolled clear of the bar', (
+      tester,
+    ) async {
+      await _pumpApp(tester, size: const Size(412, 500));
+      await tester.tap(navigationTab('Reports'));
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      final list = tester.getRect(find.byType(ListView).first);
+      final bar = tester.getRect(find.byType(FloatingNavigationBar));
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(ListView).first,
+          matching: find.byType(Scrollable),
+        ),
+      );
+
+      // The end of the list sits above the bar: the scroll stops with the
+      // bar's height as padding after the last row.
+      expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
+      expect(list.bottom, greaterThan(bar.top));
+    });
+
     testWidgets('only the selected destination shows its label', (
       tester,
     ) async {

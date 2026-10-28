@@ -8,6 +8,7 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
@@ -94,7 +95,12 @@ class _Content extends StatelessWidget {
           onRefresh: (done) => bloc.add(ReportsRefreshed(done: done)),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              0,
+              16,
+              24,
+            ).withBarClearance(context),
             children: [
               // The controls keep the width of a phone, whatever the window.
               Align(
