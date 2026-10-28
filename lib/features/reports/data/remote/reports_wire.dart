@@ -5,6 +5,7 @@ import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/reports/domain/category_spend.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
 import 'package:money_scribe/features/reports/domain/month_report.dart';
@@ -91,6 +92,7 @@ abstract final class ReportsWire {
     required api.Overview overview,
     required api.MonthReport report,
     required YearMonth month,
+    required PayCycle partsCycle,
   }) {
     if (!overview.hasData) return null;
     final currency = ReportsWire.currency(overview.currency);
@@ -124,6 +126,7 @@ abstract final class ReportsWire {
               currency: currency,
             )
           : null,
+      cycle: hasParts ? partsCycle : const PayCycle.onePayment(),
       hasOtherCurrencies: overview.currencies.any(
         (other) => other != overview.currency,
       ),

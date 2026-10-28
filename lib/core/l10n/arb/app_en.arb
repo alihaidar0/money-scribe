@@ -68,6 +68,18 @@
   "@partMonth": {
     "description": "Option of the part selector: the figures of the whole month."
   },
+  "periodRangeLabel": "{from} – {to}",
+  "@periodRangeLabel": {
+    "description": "The days a period covers, under the choice between the month and its parts, such as 20 Oct – 4 Nov.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "partFirst": "Part 1",
   "@partFirst": {
     "description": "Option of the part selector: the first of the two payments of a month."
@@ -75,14 +87,6 @@
   "partSecond": "Part 2",
   "@partSecond": {
     "description": "Option of the part selector: the second of the two payments of a month."
-  },
-  "periodFirstPart": "Part 1 · 1st–15th",
-  "@periodFirstPart": {
-    "description": "Title of the card of the first part of a month, the 1st to the 15th."
-  },
-  "periodSecondPart": "Part 2 · 16th–end",
-  "@periodSecondPart": {
-    "description": "Title of the card of the second part of a month, the 16th to the end."
   },
   "previousMonth": "Previous month",
   "@previousMonth": {

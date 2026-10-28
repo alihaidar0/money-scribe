@@ -4,6 +4,7 @@ import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/overview/domain/debt_choice.dart';
 import 'package:money_scribe/features/overview/domain/month_overview.dart';
 import 'package:money_scribe/features/overview/domain/overview_figures.dart';
@@ -49,7 +50,11 @@ abstract final class OverviewWire {
   /// The overview, or `null` for a month with nothing in it. A month paid in
   /// two payments has both parts, a month paid once has neither; one part
   /// alone breaks the contract.
-  static MonthOverview? overview(api.Overview wire, YearMonth month) {
+  static MonthOverview? overview(
+    api.Overview wire,
+    YearMonth month, {
+    required PayCycle partsCycle,
+  }) {
     if (!wire.hasData) return null;
     final currency = OverviewWire.currency(wire.currency);
     final first = wire.firstPart;
@@ -60,6 +65,7 @@ abstract final class OverviewWire {
       total: figures(wire.total, currency),
       firstPart: first == null ? null : figures(first, currency),
       secondPart: second == null ? null : figures(second, currency),
+      cycle: first == null ? const PayCycle.onePayment() : partsCycle,
       hasOtherCurrencies: wire.currencies.any(
         (other) => other != wire.currency,
       ),

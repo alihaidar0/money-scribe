@@ -3,6 +3,7 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/reports/domain/category_spend.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
@@ -122,6 +123,10 @@ abstract final class ReportsSeed {
         total: total,
         firstPart: first,
         secondPart: second,
+        cycle: PayCycle.twoPayments(
+          firstPayDay: PayCycle.defaultFirstPayDay,
+          secondPayDay: PayCycle.defaultSecondPayDay,
+        ),
       ),
     };
   }

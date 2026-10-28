@@ -13,6 +13,7 @@ import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/month_picker_sheet.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/period_range_caption.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -141,6 +142,15 @@ class _Content extends StatelessWidget {
                             onSelected: (scope) =>
                                 bloc.add(ReportsScopeSelected(scope)),
                           ),
+                          if (state.report != null) ...[
+                            const SizedBox(height: 8),
+                            PeriodRangeCaption(
+                              range: state.report!.rangeOf(
+                                state.effectiveScope,
+                              ),
+                              today: context.read<Clock>().now(),
+                            ),
+                          ],
                         ],
                       ],
                     ],
@@ -214,6 +224,8 @@ class _Content extends StatelessWidget {
     return PartsReports(
       first: report.firstPart!,
       second: report.secondPart!,
+      firstRange: report.rangeOf(PeriodScope.firstPart),
+      secondRange: report.rangeOf(PeriodScope.secondPart),
       previousFirst: previous?.firstPart,
       previousSecond: previous?.secondPart,
     );

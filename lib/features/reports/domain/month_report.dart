@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/reports/domain/period_report.dart';
 
@@ -11,6 +12,7 @@ final class MonthReport extends Equatable {
     required this.total,
     this.firstPart,
     this.secondPart,
+    this.cycle = const PayCycle.onePayment(),
     this.hasOtherCurrencies = false,
   }) : assert(
          (firstPart == null) == (secondPart == null),
@@ -22,11 +24,15 @@ final class MonthReport extends Equatable {
   /// The whole month.
   final PeriodReport total;
 
-  /// The 1st-15th, for a month paid in two payments.
+  /// The first part, for a month paid in two payments.
   final PeriodReport? firstPart;
 
-  /// The 16th-end, for a month paid in two payments.
+  /// The second part, for a month paid in two payments.
   final PeriodReport? secondPart;
+
+  /// The pay days that cut the month into its parts, which give the days each
+  /// part covers ([rangeOf]).
+  final PayCycle cycle;
 
   /// Whether the month has records in a currency other than the one reported.
   /// They are not in the figures.
@@ -34,6 +40,9 @@ final class MonthReport extends Equatable {
 
   /// Whether the month is paid in two payments.
   bool get hasParts => firstPart != null;
+
+  /// The days [scope] covers.
+  PayPeriod rangeOf(PeriodScope scope) => cycle.rangeOf(month, scope);
 
   /// The report of [scope]. A month without parts only has the whole month.
   PeriodReport reportOf(PeriodScope scope) {
@@ -50,6 +59,7 @@ final class MonthReport extends Equatable {
     total,
     firstPart,
     secondPart,
+    cycle,
     hasOtherCurrencies,
   ];
 }

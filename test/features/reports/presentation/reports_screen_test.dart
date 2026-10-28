@@ -286,17 +286,28 @@ void main() {
       await openReports(tester, settings: _twoPayments);
 
       expect(find.text('By part'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Nov – 19 Nov'), findsOneWidget);
       expect(amountText('43,500.00 ₽'), findsOneWidget);
       expect(amountText('42,750.00 ₽'), findsOneWidget);
       expect(amountText('10,000.00 ₽'), findsOneWidget);
     });
 
+    testWidgets('shows the days of the chosen period', (tester) async {
+      await openReports(tester, settings: _twoPayments);
+
+      expect(find.text('20 Oct – 19 Nov'), findsOneWidget);
+
+      await tester.tap(find.text('Part 2 · 5 Nov – 19 Nov'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('5 Nov – 19 Nov'), findsOneWidget);
+    });
+
     testWidgets('a card shows that part', (tester) async {
       await openReports(tester, settings: _twoPayments);
 
-      await tester.tap(find.text('Part 2 · 16th–end'));
+      await tester.tap(find.text('Part 2 · 5 Nov – 19 Nov'));
       await tester.pumpAndSettle();
 
       expect(find.text('By part'), findsNothing);
@@ -310,7 +321,7 @@ void main() {
       await tapView(tester, 'Month vs month');
 
       expect(find.text('By part'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
     });
 
     testWidgets('a single part has no cards, nor has one payment', (

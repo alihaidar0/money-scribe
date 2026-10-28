@@ -8,6 +8,7 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/network/data_change.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/reports/data/remote/remote_reports_repository.dart';
 
 import '../../../support/fake_http_adapter.dart';
@@ -26,6 +27,8 @@ void main() {
     return RemoteReportsRepository.create(
       dio: transactionsTestDio(server),
       defaultCurrency: () async => currency,
+      partsCycle: () async =>
+          PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
     );
   }
 
@@ -185,6 +188,11 @@ void main() {
       final month = (await build().month(const YearMonth(2026, 10)))!;
 
       expect(month.hasParts, isTrue);
+      // The parts are cut by the pay days of the settings.
+      expect(
+        month.cycle,
+        PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
+      );
       expect(month.firstPart!.spent, _usd(32000));
       expect(month.firstPart!.categories.first.isFixedCosts, isTrue);
       expect(month.secondPart!.spent, _usd(10050));
@@ -329,6 +337,8 @@ void main() {
     final repository = RemoteReportsRepository.create(
       dio: transactionsTestDio(server),
       defaultCurrency: () async => Currency.usd,
+      partsCycle: () async =>
+          PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
       changes: saves.stream,
     );
     final changes = <DataChange>[];
