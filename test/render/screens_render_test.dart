@@ -25,6 +25,7 @@ import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_flag.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
@@ -1753,6 +1754,16 @@ final _scenes = <_Scene>[
     size: _tallPhone,
     setup: (tester, demo) async {
       await tester.tap(find.byIcon(LucideIcons.arrowRightLeft));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-3b-language-sheet',
+    AppRoutes.settings,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(LanguageFlag));
       await tester.pumpAndSettle();
     },
   ),
