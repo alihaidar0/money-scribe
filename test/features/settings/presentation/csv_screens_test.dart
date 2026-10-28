@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
@@ -333,7 +334,7 @@ void main() {
 
       expect(find.byType(CsvImportScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Import CSV'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       expect(find.text('transactions.csv'), findsOneWidget);
       expect(find.text('42 rows'), findsOneWidget);
       expect(

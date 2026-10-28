@@ -281,6 +281,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
 - [ ] Lucide icons replace the Material icons on every screen (`lucide_icons_flutter`)
+- [ ] Floating navigation bar on phones (the selected tab grows into a pill) and a rounded rail on tablets and web
 
 ### L. Changes to finished screens after the backend agreements
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
@@ -18,6 +19,7 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
+import '../../../support/navigation_tab.dart';
 import '../../../support/other_currency_repositories.dart';
 
 const _nbsp = ' ';
@@ -98,10 +100,12 @@ void main() {
     testWidgets('shows the five tabs with Overview selected', (tester) async {
       await _pumpOverview(tester);
 
-      final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      final bar = tester.widget<FloatingNavigationBar>(
+        find.byType(FloatingNavigationBar),
+      );
 
       expect(bar.selectedIndex, 0);
-      expect(bar.destinations, hasLength(5));
+      expect(bar.items, hasLength(5));
     });
   });
 
@@ -244,7 +248,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AddTransactionScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('the rows open the salary, fixed items, transactions, debts', (
@@ -270,7 +274,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(screen), findsOneWidget, reason: row);
 
-        await tester.tap(find.text('Overview').last);
+        await tester.tap(navigationTab('Overview'));
         await tester.pumpAndSettle();
         expect(find.byType(OverviewScreen), findsOneWidget, reason: row);
       }

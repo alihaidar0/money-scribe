@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/widgets/amount_row.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
@@ -30,6 +31,7 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 
 import '../support/build_app.dart';
 import '../support/fake_push_messaging_repository.dart';
+import '../support/navigation_tab.dart';
 
 /// The link test of the signed-in app: every button of the main screens leads
 /// where the design says (the "goes to" tables of the screen prompts). The
@@ -55,17 +57,9 @@ Future<void> _open(WidgetTester tester, {Size size = _phone}) async {
   await tester.pumpAndSettle();
 }
 
-Finder _navigation() {
-  return find.byWidgetPredicate(
-    (widget) => widget is NavigationBar || widget is NavigationRail,
-  );
-}
-
 /// Goes to a tab by its label in the navigation bar or rail.
 Future<void> _tab(WidgetTester tester, String label) async {
-  await tester.tap(
-    find.descendant(of: _navigation(), matching: find.text(label)),
-  );
+  await tester.tap(navigationTab(label));
   await tester.pumpAndSettle();
 }
 
@@ -98,7 +92,10 @@ Future<void> _segment<T>(WidgetTester tester, String label) async {
 }
 
 void _expectBar(WidgetTester tester, {required bool shown}) {
-  expect(find.byType(NavigationBar), shown ? findsOneWidget : findsNothing);
+  expect(
+    find.byType(FloatingNavigationBar),
+    shown ? findsOneWidget : findsNothing,
+  );
 }
 
 void main() {
@@ -125,7 +122,7 @@ void main() {
       await _open(tester, size: _wide);
 
       expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       await _tab(tester, 'Transactions');
       expect(find.byType(TransactionsScreen), findsOneWidget);
       await _tab(tester, 'Debts');

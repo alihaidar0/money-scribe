@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons_600.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 
-/// The frame around the five top-level screens: a navigation bar below 840 dp
-/// (phones) and a navigation rail from 840 dp (tablets and the web), the
+/// The frame around the five top-level screens: a floating navigation bar below
+/// 840 dp (phones) and a navigation rail from 840 dp (tablets and the web), the
 /// expanded window size class of `docs/DESIGN.md`, section 7.
 class AppShell extends StatelessWidget {
   const new({required this.navigationShell, super.key});
@@ -26,31 +28,31 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final destinations = [
-      _Destination(
-        LucideIcons.layoutDashboard,
-        LucideIcons.layoutDashboard,
-        l10n.overviewTitle,
+    final items = [
+      NavigationItem(
+        icon: LucideIcons.layoutDashboard,
+        selectedIcon: LucideIcons600.layoutDashboard,
+        label: l10n.overviewTitle,
       ),
-      _Destination(
-        LucideIcons.banknote,
-        LucideIcons.banknote,
-        l10n.salaryTitle,
+      NavigationItem(
+        icon: LucideIcons.banknote,
+        selectedIcon: LucideIcons600.banknote,
+        label: l10n.salaryTitle,
       ),
-      _Destination(
-        LucideIcons.receiptText,
-        LucideIcons.receiptText,
-        l10n.transactionsTitle,
+      NavigationItem(
+        icon: LucideIcons.receiptText,
+        selectedIcon: LucideIcons600.receiptText,
+        label: l10n.transactionsTitle,
       ),
-      _Destination(
-        LucideIcons.handshake,
-        LucideIcons.handshake,
-        l10n.debtsTitle,
+      NavigationItem(
+        icon: LucideIcons.handshake,
+        selectedIcon: LucideIcons600.handshake,
+        label: l10n.debtsTitle,
       ),
-      _Destination(
-        LucideIcons.chartColumn,
-        LucideIcons.chartColumn,
-        l10n.reportsTitle,
+      NavigationItem(
+        icon: LucideIcons.chartColumn,
+        selectedIcon: LucideIcons600.chartColumn,
+        label: l10n.reportsTitle,
       ),
     ];
     final isExpanded = MediaQuery.sizeOf(context).width >= expandedWidth;
@@ -59,20 +61,35 @@ class AppShell extends StatelessWidget {
       return Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              selectedIndex: navigationShell.currentIndex,
-              onDestinationSelected: _select,
-              labelType: NavigationRailLabelType.all,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationRailDestination(
-                    icon: Icon(destination.icon),
-                    selectedIcon: Icon(destination.selectedIcon),
-                    label: Text(destination.label),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 0, 12),
+                // The rail is a rounded card, like the floating bar of phones.
+                child: Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-              ],
+                  clipBehavior: Clip.antiAlias,
+                  child: NavigationRail(
+                    backgroundColor: Colors.transparent,
+                    minWidth: 96,
+                    selectedIndex: navigationShell.currentIndex,
+                    onDestinationSelected: _select,
+                    labelType: NavigationRailLabelType.all,
+                    destinations: [
+                      for (final item in items)
+                        NavigationRailDestination(
+                          icon: Icon(item.icon),
+                          selectedIcon: Icon(item.selectedIcon),
+                          label: Text(item.label),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const VerticalDivider(width: 1),
             Expanded(child: navigationShell),
           ],
         ),
@@ -81,26 +98,11 @@ class AppShell extends StatelessWidget {
 
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: FloatingNavigationBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _select,
-        destinations: [
-          for (final destination in destinations)
-            NavigationDestination(
-              icon: Icon(destination.icon),
-              selectedIcon: Icon(destination.selectedIcon),
-              label: destination.label,
-            ),
-        ],
+        onSelected: _select,
+        items: items,
       ),
     );
   }
-}
-
-class _Destination {
-  const new(this.icon, this.selectedIcon, this.label);
-
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
 }

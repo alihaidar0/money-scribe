@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -34,7 +35,7 @@ void main() {
 
     expect(find.byType(PayScheduleScreen), findsOneWidget);
     expect(find.widgetWithText(AppBar, 'Pay schedule'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(FloatingNavigationBar), findsNothing);
     expect(find.text('Payments per month'), findsOneWidget);
     expect(find.text('One payment'), findsOneWidget);
     expect(find.text('Two payments'), findsOneWidget);

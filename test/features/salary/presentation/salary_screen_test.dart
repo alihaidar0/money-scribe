@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/money/currency.dart';
@@ -20,6 +21,7 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
 import '../../../support/fake_server_salary_repository.dart';
+import '../../../support/navigation_tab.dart';
 
 const _nbsp = '\u00a0';
 const _october = YearMonth(2026, 10);
@@ -51,12 +53,7 @@ Future<void> _pumpSalary(
   );
   await tester.pumpAndSettle();
   await tester.tap(
-    find.descendant(
-      of: find.byWidgetPredicate(
-        (widget) => widget is NavigationBar || widget is NavigationRail,
-      ),
-      matching: find.text(language == AppLanguage.arabic ? 'الراتب' : 'Salary'),
-    ),
+    navigationTab(language == AppLanguage.arabic ? 'الراتب' : 'Salary'),
   );
   await tester.pumpAndSettle();
 }
@@ -121,7 +118,9 @@ void main() {
     testWidgets('shows the five tabs with Salary selected', (tester) async {
       await _pumpSalary(tester);
 
-      final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      final bar = tester.widget<FloatingNavigationBar>(
+        find.byType(FloatingNavigationBar),
+      );
       expect(bar.selectedIndex, 1);
     });
   });
@@ -748,7 +747,7 @@ void main() {
 
       expect(find.byTooltip('Salary history'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('the demo panel switching to an error shows it at once', (
@@ -771,7 +770,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(SalaryHistoryScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('the Settings gear opens Settings', (tester) async {
@@ -792,7 +791,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(FixedItemsScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       expect(find.byTooltip('Salary history'), findsOneWidget);
 
       await tester.tap(find.text('Month'));

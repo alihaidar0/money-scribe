@@ -86,7 +86,6 @@ abstract final class AppTheme {
         shape: card,
       ),
       chipTheme: const ChipThemeData(shape: pill),
-      navigationBarTheme: const NavigationBarThemeData(indicatorShape: pill),
       navigationRailTheme: const NavigationRailThemeData(indicatorShape: pill),
       inputDecorationTheme: InputDecorationTheme(
         border: fieldBorder(scheme.outline),
