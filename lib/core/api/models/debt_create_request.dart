@@ -26,7 +26,7 @@ class DebtCreateRequest {
   factory DebtCreateRequest.fromJson(Map<String, Object?> json) =>
       _$DebtCreateRequestFromJson(json);
 
-  /// `lent` is money the person gave, `borrowed` money the person received. Fixed for good.
+  /// `lent` is money the person gave, `borrowed` money the person received. Can be corrected later.
   ///
   /// * `lent` - Lent.
   /// * `borrowed` - Borrowed.

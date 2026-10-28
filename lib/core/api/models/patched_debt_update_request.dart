@@ -5,13 +5,15 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'amount.dart';
+import 'debt_direction_enum.dart';
 
 part 'patched_debt_update_request.g.dart';
 
-/// A change to a debt: the fields of the create except `direction` and `currency`, which are `400 read_only`.
+/// A change to a debt: the fields of the create except the `currency`, which is `400 read_only`.
 @JsonSerializable()
 class PatchedDebtUpdateRequest {
   const PatchedDebtUpdateRequest({
+    required this.direction,
     required this.person,
     required this.amount,
     required this.startDate,
@@ -21,6 +23,12 @@ class PatchedDebtUpdateRequest {
 
   factory PatchedDebtUpdateRequest.fromJson(Map<String, Object?> json) =>
       _$PatchedDebtUpdateRequestFromJson(json);
+
+  /// `lent` is money the person gave, `borrowed` money the person received. Flipping it keeps the repayments, the amount and the dates, and the lists, totals and reports follow it on the next read.
+  ///
+  /// * `lent` - Lent.
+  /// * `borrowed` - Borrowed.
+  final DebtDirectionEnum direction;
 
   /// 1 to 50 characters, trimmed.
   final String person;
