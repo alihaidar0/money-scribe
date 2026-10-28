@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// A small tab on the end edge of the screen that opens the demo panel. Only
 /// staging builds show it. It is deleted together with the fake data.
@@ -27,7 +28,11 @@ class DemoHandle extends StatelessWidget {
             child: SizedBox(
               width: 28,
               height: 56,
-              child: Icon(Icons.tune, size: 18, color: colors.onInverseSurface),
+              child: Icon(
+                LucideIcons.slidersHorizontal,
+                size: 18,
+                color: colors.onInverseSurface,
+              ),
             ),
           ),
         ),

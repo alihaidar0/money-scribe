@@ -38,7 +38,21 @@ final class OverviewRetried extends OverviewEvent {
   const new();
 }
 
-/// What the overview is made of may have changed: load the month again.
+/// What the overview is made of may have changed: load the month again. A
+/// [silent] load keeps the figures that are shown until the new ones come.
 final class OverviewDataChanged extends OverviewEvent {
-  const new();
+  const new({required this.silent});
+
+  final bool silent;
+
+  @override
+  List<Object> get props => [silent];
+}
+
+/// The user pulled the screen down: load the month again without the loading
+/// state, then complete [done] so the spinner ends.
+final class OverviewRefreshed extends OverviewEvent {
+  const new({this.done});
+
+  final Completer<void>? done;
 }

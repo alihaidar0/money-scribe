@@ -31,6 +31,8 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
         status: AccountsStatus.loading,
         deleteBlocked: false,
         clearFailedAction: true,
+        clearStaleAction: true,
+        clearRefusal: true,
       ),
     );
     try {
@@ -53,7 +55,11 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
 
   Future<void> _onChanged(AccountChanged event, Emitter<AccountsState> emit) {
     return _run(event, emit, () async {
-      final account = await _repository.update(event.id, event.draft);
+      final account = await _repository.update(
+        event.id,
+        event.draft,
+        version: _accountOf(event.id).version,
+      );
       emit(
         state.copyWith(
           accounts: [
@@ -68,7 +74,10 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
   Future<void> _onDeleted(AccountDeleted event, Emitter<AccountsState> emit) {
     return _run(event, emit, () async {
       try {
-        await _repository.delete(event.id);
+        await _repository.delete(
+          event.id,
+          version: _accountOf(event.id).version,
+        );
       } on AccountInUseException {
         emit(state.copyWith(deleteBlocked: true));
         return;
@@ -84,22 +93,57 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     });
   }
 
+  /// The account [id] as the list shows it. An account that is not there was
+  /// deleted on another device, which is the same as a version that moved on.
+  Account _accountOf(String id) {
+    return state.accounts.firstWhere(
+      (account) => account.id == id,
+      orElse: () => throw const StaleRecordException(),
+    );
+  }
+
   /// Does [action], which saves [event] on the server. When the server does
   /// not accept it the list stays as it was and [AccountsState.failedAction]
-  /// holds [event], so the screen can offer to try again.
+  /// holds [event], so the screen can offer to try again. When the account was
+  /// changed on another device the list is loaded again and
+  /// [AccountsState.staleAction] holds [event], so the screen can offer to
+  /// apply it to what is there now. When the name is taken or there are too
+  /// many accounts, [AccountsState.refusal] says so.
   Future<void> _run(
     AccountsEvent event,
     Emitter<AccountsState> emit,
     Future<void> Function() action,
   ) async {
-    emit(state.copyWith(deleteBlocked: false, clearFailedAction: true));
+    emit(
+      state.copyWith(
+        deleteBlocked: false,
+        clearFailedAction: true,
+        clearStaleAction: true,
+        clearRefusal: true,
+      ),
+    );
     try {
       await action();
+    } on StaleRecordException {
+      await _reload(emit);
+      emit(state.copyWith(staleAction: event));
+    } on AccountRefusedException catch (refused) {
+      emit(state.copyWith(refusal: refused.refusal));
     } on NoConnectionException {
       emit(state.copyWith(failedAction: event));
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
       emit(state.copyWith(failedAction: event));
+    }
+  }
+
+  /// Reads the accounts again without the loading state. If the server cannot
+  /// be reached the list stays as it was.
+  Future<void> _reload(Emitter<AccountsState> emit) async {
+    try {
+      emit(state.copyWith(accounts: await _repository.accounts()));
+    } on Exception {
+      // The list stays; the next load asks again.
     }
   }
 }

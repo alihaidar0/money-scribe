@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
+import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 
 import 'build_app.dart';
 import 'fake_language_repository.dart';
 import 'fake_push_messaging_repository.dart';
 import 'fake_theme_repository.dart';
+import 'navigation_tab.dart';
 
 /// A tall phone, so a long list fits without scrolling.
 const tallPhone = Size(412, 1800);
@@ -31,6 +35,8 @@ Future<DemoController> openTab(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  DebtsRepository Function(DemoController demo)? debtsRepository,
+  ReportsRepository Function(DemoController demo)? reportsRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -42,16 +48,13 @@ Future<DemoController> openTab(
       demo: demo,
       languageRepository: FakeLanguageRepository(language),
       authRepository: FakeAuthRepository(demo: demo, signedIn: true),
+      debtsRepository: debtsRepository?.call(demo),
+      reportsRepository: reportsRepository?.call(demo),
     ),
   );
   await tester.pumpAndSettle();
   await tester.tap(
-    find.descendant(
-      of: find.byWidgetPredicate(
-        (widget) => widget is NavigationBar || widget is NavigationRail,
-      ),
-      matching: find.text(language == AppLanguage.arabic ? arabic : english),
-    ),
+    navigationTab(language == AppLanguage.arabic ? arabic : english),
   );
   await tester.pumpAndSettle();
   return demo;
@@ -80,6 +83,7 @@ Future<DemoController> openDebts(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  DebtsRepository Function(DemoController demo)? debtsRepository,
 }) {
   return openTab(
     tester,
@@ -88,6 +92,7 @@ Future<DemoController> openDebts(
     settings: settings,
     language: language,
     size: size,
+    debtsRepository: debtsRepository,
   );
 }
 
@@ -97,6 +102,7 @@ Future<DemoController> openReports(
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
   Size size = tallPhone,
+  ReportsRepository Function(DemoController demo)? reportsRepository,
 }) {
   return openTab(
     tester,
@@ -105,6 +111,7 @@ Future<DemoController> openReports(
     settings: settings,
     language: language,
     size: size,
+    reportsRepository: reportsRepository,
   );
 }
 
@@ -117,6 +124,7 @@ Future<DemoController> openSettings(
   Size size = tallPhone,
   FakeThemeRepository? themeRepository,
   FakeLanguageRepository? languageRepository,
+  CsvTransferRepository Function(DemoController demo)? csvTransferRepository,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -126,6 +134,7 @@ Future<DemoController> openSettings(
   await tester.pumpWidget(
     buildApp(
       demo: demo,
+      csvTransferRepository: csvTransferRepository?.call(demo),
       languageRepository:
           languageRepository ?? FakeLanguageRepository(language),
       themeRepository: themeRepository,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/environment/app_version.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
@@ -21,9 +22,12 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/settings/domain/default_currency_repository.dart';
 import 'package:money_scribe/features/settings/domain/pay_schedule_repository.dart';
 import 'package:money_scribe/features/settings/domain/theme_choice.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/csv_export_password_dialog.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/csv_export_sheet.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_names.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_sheet.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_flag.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_sheet.dart';
 
 /// ST-1: the Settings: the account, how the salary is paid, the currency, the
 /// theme and the language, the notifications, the data (categories, accounts,
@@ -90,11 +94,11 @@ class _SettingsView extends StatelessWidget {
 
 /// The sections of the Settings, to name their headings.
 enum _Section {
-  account(Icons.person_outline),
-  payments(Icons.event_repeat_outlined),
-  preferences(Icons.tune),
-  data(Icons.folder_open_outlined),
-  security(Icons.lock_outline);
+  account(LucideIcons.user),
+  payments(LucideIcons.calendarSync),
+  preferences(LucideIcons.slidersHorizontal),
+  data(LucideIcons.folderOpen),
+  security(LucideIcons.lock);
 
   new(this.icon);
 
@@ -111,7 +115,11 @@ enum _Section {
       _Notifications(),
     ],
     _Section.data => const [_DataRows()],
-    _Section.security => const [AppLockSettingsTile(), FingerprintSignInTile()],
+    _Section.security => const [
+      AppLockSettingsTile(),
+      FingerprintSignInTile(),
+      _SecurityRows(),
+    ],
   };
 
   String title(AppLocalizations l10n) => switch (this) {
@@ -256,8 +264,8 @@ class _Chevron extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       Directionality.of(context) == TextDirection.rtl
-          ? Icons.chevron_left
-          : Icons.chevron_right,
+          ? LucideIcons.chevronLeft
+          : LucideIcons.chevronRight,
     );
   }
 }
@@ -283,7 +291,7 @@ class _LoadFailedBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           MessageBanner(
-            icon: Icons.error_outline,
+            icon: LucideIcons.circleAlert,
             text: l10n.settingsLoadFailed,
           ),
           Align(
@@ -310,7 +318,7 @@ class _PayScheduleRow extends StatelessWidget {
     final loaded = state.status == SettingsStatus.ready;
 
     return ListTile(
-      leading: const Icon(Icons.event_repeat_outlined),
+      leading: const Icon(LucideIcons.calendarSync),
       title: Text(l10n.payScheduleTitle),
       subtitle: Text(
         !loaded
@@ -340,7 +348,7 @@ class _CurrencyRow extends StatelessWidget {
     final loaded = state.status == SettingsStatus.ready;
 
     return ListTile(
-      leading: const Icon(Icons.currency_exchange),
+      leading: const Icon(LucideIcons.arrowRightLeft),
       title: Text(l10n.defaultCurrencyTitle),
       subtitle: Text(loaded ? currencyLabel(l10n, state.currency) : '—'),
       trailing: const _Chevron(),
@@ -399,8 +407,8 @@ class _ThemeRow extends StatelessWidget {
   }
 }
 
-/// The language as a segmented control, like the theme; the choice applies at
-/// once.
+/// The language: the flag and the name of the current one, which open the
+/// sheet that lists them all. The choice applies at once.
 class _LanguageRow extends StatelessWidget {
   const new();
 
@@ -411,38 +419,16 @@ class _LanguageRow extends StatelessWidget {
       (bloc) => bloc.state.language,
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.languageSectionTitle,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 8),
-          PillSegmentedButton<AppLanguage>(
-            segments: [
-              ButtonSegment(
-                value: AppLanguage.system,
-                label: Text(l10n.languageSystemShort),
-              ),
-              ButtonSegment(
-                value: AppLanguage.english,
-                label: Text(l10n.languageEnglish),
-              ),
-              ButtonSegment(
-                value: AppLanguage.arabic,
-                label: Text(l10n.languageArabic),
-              ),
-            ],
-            selected: {selected},
-            onSelectionChanged: (selection) => context.read<LanguageBloc>().add(
-              LanguageSelected(selection.first),
-            ),
-          ),
-        ],
-      ),
+    return ListTile(
+      leading: LanguageFlag(language: selected),
+      title: Text(l10n.languageSectionTitle),
+      subtitle: Text(languageName(l10n, selected)),
+      trailing: const _Chevron(),
+      onTap: () async {
+        final bloc = context.read<LanguageBloc>();
+        final language = await showLanguageSheet(context, selected: selected);
+        if (language != null) bloc.add(LanguageSelected(language));
+      },
     );
   }
 }
@@ -486,33 +472,65 @@ class _DataRows extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.category_outlined),
+          leading: const Icon(LucideIcons.shapes),
           title: Text(l10n.categoriesTitle),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.categories),
         ),
         ListTile(
-          leading: const Icon(Icons.account_balance_wallet_outlined),
+          leading: const Icon(LucideIcons.wallet),
           title: Text(l10n.accountsTitle),
           trailing: const _Chevron(),
           onTap: () => context.push(AppRoutes.accounts),
         ),
         ListTile(
-          leading: const Icon(Icons.file_upload_outlined),
+          leading: const Icon(LucideIcons.upload),
           title: Text(l10n.exportCsvTitle),
           onTap: () async {
-            final exported = await showCsvExportSheet(context);
-            if (exported ?? false) {
-              if (context.mounted) {
-                showSuccessSnackBar(context, l10n.csvExportReady);
-              }
+            final request = await showCsvExportSheet(context);
+            if (request == null || !context.mounted) return;
+            final exported = await showCsvExportPasswordDialog(
+              context,
+              request: request,
+            );
+            if ((exported ?? false) && context.mounted) {
+              showSuccessSnackBar(context, l10n.csvExportReady);
             }
           },
         ),
         ListTile(
-          leading: const Icon(Icons.file_download_outlined),
+          leading: const Icon(LucideIcons.download),
           title: Text(l10n.importCsvTitle),
           onTap: () => context.push(AppRoutes.importCsv),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Where you are signed in" and "Security activity".
+class _SecurityRows extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(LucideIcons.monitorSmartphone),
+          title: Text(l10n.sessionsTitle),
+          subtitle: Text(l10n.sessionsRowHint),
+          trailing: const _Chevron(),
+          onTap: () => context.push(AppRoutes.sessions),
+        ),
+        ListTile(
+          leading: const Icon(LucideIcons.history),
+          title: Text(l10n.securityActivityTitle),
+          subtitle: Text(l10n.securityActivityRowHint),
+          trailing: const _Chevron(),
+          onTap: () => context.push(AppRoutes.securityActivity),
         ),
       ],
     );

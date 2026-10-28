@@ -19,6 +19,48 @@ SalaryResult salary(PaymentMode mode) {
 }
 
 void main() {
+  group('FixedItemPart.ofDay', () {
+    FixedItemPart ofDay(int day, {int first = 20, int second = 5}) {
+      return FixedItemPart.ofDay(day, firstPayDay: first, secondPayDay: second);
+    }
+
+    test('is paid from the payment received most recently', () {
+      // The first payment on the 20th, the second on the 5th.
+      expect(ofDay(13), FixedItemPart.second, reason: 'rent on the 13th');
+      expect(ofDay(21), FixedItemPart.first, reason: 'services on the 21st');
+    });
+
+    test('the pay days belong to the payment they bring', () {
+      expect(ofDay(5), FixedItemPart.second);
+      expect(ofDay(20), FixedItemPart.first);
+    });
+
+    test('the days before the second payment are still the first part', () {
+      expect(ofDay(1), FixedItemPart.first);
+      expect(ofDay(4), FixedItemPart.first);
+      expect(ofDay(31), FixedItemPart.first);
+    });
+
+    test('the days between the two pay days are the second part', () {
+      expect(ofDay(6), FixedItemPart.second);
+      expect(ofDay(19), FixedItemPart.second);
+    });
+
+    test('follows the pay days that were set', () {
+      // The first payment on the 25th, the second on the 10th.
+      expect(ofDay(10, first: 25, second: 10), FixedItemPart.second);
+      expect(ofDay(24, first: 25, second: 10), FixedItemPart.second);
+      expect(ofDay(25, first: 25, second: 10), FixedItemPart.first);
+      expect(ofDay(3, first: 25, second: 10), FixedItemPart.first);
+    });
+
+    test('a second pay day that is not before the first uses 20 and 5', () {
+      expect(ofDay(10, first: 10, second: 25), FixedItemPart.second);
+      expect(ofDay(21, first: 10, second: 10), FixedItemPart.first);
+      expect(ofDay(13, first: 10, second: 10), FixedItemPart.second);
+    });
+  });
+
   group('FixedItemDraft.tryCreate', () {
     FixedItemDraft? create({
       String name = 'Gym',
@@ -45,6 +87,20 @@ void main() {
       expect(draft?.amount, const Money(120050, Currency.rub));
       expect(draft?.kind, FixedItemKind.income);
       expect(draft?.part, FixedItemPart.second);
+    });
+
+    test('a dated item keeps the part it was given, whatever its day', () {
+      final draft = FixedItemDraft.tryCreate(
+        name: 'Gym',
+        amount: '10',
+        currency: Currency.rub,
+        kind: FixedItemKind.expense,
+        part: FixedItemPart.second,
+        day: 25,
+      );
+
+      expect(draft?.part, FixedItemPart.second);
+      expect(draft?.day, 25);
     });
 
     test('trims the name', () {

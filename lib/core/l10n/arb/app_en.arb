@@ -68,6 +68,31 @@
   "@partMonth": {
     "description": "Option of the part selector: the figures of the whole month."
   },
+  "periodRangeLabel": "{from} – {to}",
+  "@periodRangeLabel": {
+    "description": "The days a period covers, under the choice between the month and its parts, such as 20 Oct – 4 Nov.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "countsTowardLabel": "Counts toward",
+  "@countsTowardLabel": {
+    "description": "Label of the choice of the payment an income counts toward, in the form of an income in a month paid twice."
+  },
+  "countsTowardAutomatic": "Automatic · {part}",
+  "@countsTowardAutomatic": {
+    "description": "Option of the Counts toward choice: the payment whose pay day is nearest to the day of the income, with its name, such as Automatic · Part 1.",
+    "placeholders": {
+      "part": {
+        "type": "String"
+      }
+    }
+  },
   "partFirst": "Part 1",
   "@partFirst": {
     "description": "Option of the part selector: the first of the two payments of a month."
@@ -75,14 +100,6 @@
   "partSecond": "Part 2",
   "@partSecond": {
     "description": "Option of the part selector: the second of the two payments of a month."
-  },
-  "periodFirstPart": "Part 1 · 1st–15th",
-  "@periodFirstPart": {
-    "description": "Title of the card of the first part of a month, the 1st to the 15th."
-  },
-  "periodSecondPart": "Part 2 · 16th–end",
-  "@periodSecondPart": {
-    "description": "Title of the card of the second part of a month, the 16th to the end."
   },
   "previousMonth": "Previous month",
   "@previousMonth": {
@@ -182,6 +199,29 @@
   "unavailableMessage": "Please try again shortly.",
   "@unavailableMessage": {
     "description": "Sentence under the title of the busy state."
+  },
+  "tooManyRequestsTitle": "Too many requests",
+  "@tooManyRequestsTitle": {
+    "description": "Title shown when the server asks the app to slow down (the answer 429)."
+  },
+  "tooManyRequestsMessage": "Please wait a little before trying again.",
+  "@tooManyRequestsMessage": {
+    "description": "Explanation under the Too many requests title. The Try again button below it counts down."
+  },
+  "requestReference": "Reference: {reference}",
+  "@requestReference": {
+    "description": "Line under a Something went wrong message with the reference of the failed request, which support can look up. The placeholder is a code of letters, digits and hyphens, such as 7c1f0d52-3b8e-4a49-9d1e-5b6a2f0c8e11.",
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "copyReferenceTooltip": "Copy the reference",
+  "@copyReferenceTooltip": {
+    "description": "Tooltip and label of the button that copies the reference of a failed request."
+  },
+  "referenceCopied": "Reference copied",
+  "@referenceCopied": {
+    "description": "Message shown after the reference of a failed request was copied to the clipboard."
   },
   "notAvailableTitle": "Not available yet",
   "@notAvailableTitle": {
@@ -295,6 +335,34 @@
   "signInFingerprintKeyChanged": "A fingerprint was added or removed on this phone, so fingerprint sign-in was turned off. Sign in with your password, then turn it on again in Settings.",
   "@signInFingerprintKeyChanged": {
     "description": "Message of the Sign in screen when the fingerprints of the phone changed, which makes its sign-in key stop working."
+  },
+  "signedOutTooManyDevices": "You were signed out because your account is signed in on too many devices. Sign in again to continue.",
+  "@signedOutTooManyDevices": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the account reached its limit of devices."
+  },
+  "signedOutElsewhere": "You were signed out from another device. Sign in again to continue.",
+  "@signedOutElsewhere": {
+    "description": "Notice on the Sign in screen when the person ended this device's session from another device."
+  },
+  "signedOutPasswordChanged": "You were signed out because the password of your account was changed. Sign in with the new password.",
+  "@signedOutPasswordChanged": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the password was changed or reset."
+  },
+  "signedOutEmailChanged": "You were signed out because the email of your account was changed. Sign in with the new email.",
+  "@signedOutEmailChanged": {
+    "description": "Notice on the Sign in screen when the server ended this device's session because the email address of the account was changed."
+  },
+  "signedOutSecurity": "You were signed out to keep your account safe. Sign in again to continue.",
+  "@signedOutSecurity": {
+    "description": "Notice on the Sign in screen when the server ended this device's session to protect the account."
+  },
+  "signedOutExpired": "Your session has expired. Sign in again to continue.",
+  "@signedOutExpired": {
+    "description": "Notice on the Sign in screen when this device's session ran out."
+  },
+  "signedOutOther": "You were signed out. Sign in again to continue.",
+  "@signedOutOther": {
+    "description": "Notice on the Sign in screen when the server ended this device's session for any other reason."
   },
   "forgotPasswordLink": "Forgot password?",
   "@forgotPasswordLink": {
@@ -554,6 +622,10 @@
   "ofNextMonth": "of the next month",
   "@ofNextMonth": {
     "description": "Caption under the second pay day: the second payment is paid in the following month."
+  },
+  "payDaysOrderNote": "The second pay day stays before the first one.",
+  "@payDaysOrderNote": {
+    "description": "Hint under the two pay-day steppers: the day of the second payment, in the next month, is always before the day of the first payment."
   },
   "increase": "Increase",
   "@increase": {
@@ -1182,9 +1254,17 @@
   "@fixedItemExpense": {
     "description": "Segment of a fixed item that takes from the month, such as the rent."
   },
-  "fixedItemAppliesTo": "Applies to",
-  "@fixedItemAppliesTo": {
-    "description": "Label of the choice of the part of the month a fixed item belongs to."
+  "fixedItemDayLabel": "Day of the month",
+  "@fixedItemDayLabel": {
+    "description": "Label of the field for the day of the month a fixed item falls on, and title of the wheel of days it opens."
+  },
+  "fixedItemPartLabel": "Paid from",
+  "@fixedItemPartLabel": {
+    "description": "Label of the choice of the part of the month (the first or the second payment) a fixed item is paid from."
+  },
+  "fixedItemPartAutomatic": "Automatic",
+  "@fixedItemPartAutomatic": {
+    "description": "Option of the choice of the part a fixed item is paid from: the part follows the day of the item."
   },
   "deleteFixedItemTitle": "Delete fixed item?",
   "@deleteFixedItemTitle": {
@@ -1297,14 +1377,6 @@
   "dateLabel": "Date",
   "@dateLabel": {
     "description": "Label of the day of a transaction or a repayment."
-  },
-  "datePartFirst": "Part 1 · 1st–15th",
-  "@datePartFirst": {
-    "description": "Caption under the day of a transaction in the first part of a month paid in two payments."
-  },
-  "datePartSecond": "Part 2 · 16th–end",
-  "@datePartSecond": {
-    "description": "Caption under the day of a transaction in the second part of a month paid in two payments."
   },
   "debtAmountBelowRepaid": "The amount can''t be less than the {repaid} already repaid.",
   "@debtAmountBelowRepaid": {
@@ -1528,9 +1600,9 @@
   "@noteLabel": {
     "description": "Label of a note field."
   },
-  "partRangeLabel": "{part} · {from}–{to} {month}",
-  "@partRangeLabel": {
-    "description": "Header of a part of a month in the list of transactions, such as Part 2 · 16th–31st Oct.",
+  "partDatesLabel": "{part} · {from} – {to}",
+  "@partDatesLabel": {
+    "description": "Header of a part of a month in the list of transactions, with the days it covers, such as Part 2 · 5 Nov – 19 Nov.",
     "placeholders": {
       "part": {
         "type": "String"
@@ -1539,9 +1611,6 @@
         "type": "String"
       },
       "to": {
-        "type": "String"
-      },
-      "month": {
         "type": "String"
       }
     }
@@ -2136,6 +2205,70 @@
   "@accountInUse": {
     "description": "Message when an account that has transactions is deleted."
   },
+  "categoryNameGroceries": "Groceries",
+  "@categoryNameGroceries": {
+    "description": "Name of the built-in category Groceries."
+  },
+  "categoryNameDining": "Dining",
+  "@categoryNameDining": {
+    "description": "Name of the built-in category Dining."
+  },
+  "categoryNameTransport": "Transport",
+  "@categoryNameTransport": {
+    "description": "Name of the built-in category Transport."
+  },
+  "categoryNameHousing": "Housing",
+  "@categoryNameHousing": {
+    "description": "Name of the built-in category Housing."
+  },
+  "categoryNameUtilities": "Utilities",
+  "@categoryNameUtilities": {
+    "description": "Name of the built-in category Utilities."
+  },
+  "categoryNameScholarship": "Scholarship",
+  "@categoryNameScholarship": {
+    "description": "Name of the built-in category Scholarship."
+  },
+  "categoryNameOther": "Other",
+  "@categoryNameOther": {
+    "description": "Name of the built-in category Other."
+  },
+  "accountNameTaken": "You already have an account with this name.",
+  "@accountNameTaken": {
+    "description": "Error under the name field of the account sheet when another account has the name, and message when the server refused the name."
+  },
+  "categoryNameTaken": "A category with this name already exists.",
+  "@categoryNameTaken": {
+    "description": "Error under the name field of the category sheet when another category, a built-in one included, has the name, and message when the server refused the name."
+  },
+  "accountLimitReached": "You have the most accounts allowed. Delete one to add another.",
+  "@accountLimitReached": {
+    "description": "Message shown when an account could not be added because the person has as many accounts as the server allows."
+  },
+  "transactionLimitReached": "You have the most transactions allowed. Delete some to add more.",
+  "@transactionLimitReached": {
+    "description": "Message shown when a transaction could not be saved because the person has as many transactions as the server allows."
+  },
+  "transactionChoicesChanged": "The category or the account is no longer available. Choose them again.",
+  "@transactionChoicesChanged": {
+    "description": "Message shown when a transaction could not be saved because its category or account was deleted on another device, or its category does not take this kind of transaction. The lists have been loaded again."
+  },
+  "transactionDateOutOfRange": "Choose a date between 2000 and 2099.",
+  "@transactionDateOutOfRange": {
+    "description": "Message shown when a transaction could not be saved because its date is outside the years the server keeps."
+  },
+  "transactionChangedElsewhere": "This transaction was changed on another device. It has been loaded again.",
+  "@transactionChangedElsewhere": {
+    "description": "Message shown when saving or deleting a transaction was refused because another device changed it first. The form shows what is on the server now."
+  },
+  "transactionsLoadMoreFailed": "Couldn''t load more transactions.",
+  "@transactionsLoadMoreFailed": {
+    "description": "Message at the end of the transactions list when the next page did not load. A Try again button follows it."
+  },
+  "categoryLimitReached": "You have the most categories of your own allowed. Delete one to add another.",
+  "@categoryLimitReached": {
+    "description": "Message shown when a category could not be added because the person has as many categories of their own as the server allows."
+  },
   "accountsEmptyTitle": "No accounts yet",
   "@accountsEmptyTitle": {
     "description": "Title of the Accounts screen when there is none."
@@ -2191,13 +2324,6 @@
       "rows": {"type": "int"}
     }
   },
-  "csvReadyToImport": "Ready to import: {rows, plural, one{{rows} row} other{{rows} rows}}, 0 problems.",
-  "@csvReadyToImport": {
-    "description": "Status of a chosen CSV file that can be imported.",
-    "placeholders": {
-      "rows": {"type": "int"}
-    }
-  },
   "csvChooseAnotherFile": "Choose another file",
   "@csvChooseAnotherFile": {
     "description": "Text button that opens the file picker again."
@@ -2210,7 +2336,7 @@
   "@csvNoFileTitle": {
     "description": "Title of the import screen when no file is chosen."
   },
-  "csvNoFileMessage": "Choose a CSV file to import.",
+  "csvNoFileMessage": "Choose a .csv or .zip file to import.",
   "@csvNoFileMessage": {
     "description": "Sentence of the import screen when no file is chosen."
   },
@@ -2226,23 +2352,155 @@
       "skipped": {"type": "int"}
     }
   },
-  "csvProblemInvalidAmount": "Row {row}: the amount is not valid",
-  "@csvProblemInvalidAmount": {
-    "description": "A row of the file that was skipped because its amount cannot be read. The placeholder is the number of the row.",
-    "placeholders": {
-      "row": {"type": "int"}
-    }
-  },
-  "csvProblemMissingDate": "Row {row}: the date is missing",
-  "@csvProblemMissingDate": {
-    "description": "A row of the file that was skipped because it has no date. The placeholder is the number of the row.",
-    "placeholders": {
-      "row": {"type": "int"}
-    }
-  },
   "csvImportFailed": "Couldn''t import the file. Check your connection.",
   "@csvImportFailed": {
     "description": "Message when the import failed."
+  },
+  "csvSeveralKindsZip": "Several kinds are saved together in one .zip file.",
+  "@csvSeveralKindsZip": {
+    "description": "Caption under the choices of the Export CSV sheet."
+  },
+  "csvExportPasswordTitle": "Confirm your password",
+  "@csvExportPasswordTitle": {
+    "description": "Title of the dialog that asks for the password before an export."
+  },
+  "csvExportPasswordMessage": "We ask for your password before exporting your data. We will also send you an email to say an export was made.",
+  "@csvExportPasswordMessage": {
+    "description": "Sentence of the dialog that asks for the password before an export."
+  },
+  "csvExportWrongPassword": "The password is incorrect.",
+  "@csvExportWrongPassword": {
+    "description": "Error under the password field of the export dialog."
+  },
+  "csvExportLocked": "Too many attempts. Try again in {time}.",
+  "@csvExportLocked": {
+    "description": "Banner of the export dialog after too many wrong passwords or too many exports. The placeholder is the wait, such as 14:32.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "csvExportFailed": "Couldn''t export. Try again.",
+  "@csvExportFailed": {
+    "description": "Error of the export dialog when the server failed."
+  },
+  "csvExportBusy": "The service is busy. Please try again shortly.",
+  "@csvExportBusy": {
+    "description": "Error of the export dialog when the server is busy."
+  },
+  "csvChecking": "Checking the file…",
+  "@csvChecking": {
+    "description": "Status of a chosen file while the server checks what it would import."
+  },
+  "csvImportEstimate": "Estimate: {imported, plural, one{{imported} row can} other{{imported} rows can}} be imported, {problems, plural, one{{problems} problem} other{{problems} problems}} found.",
+  "@csvImportEstimate": {
+    "description": "Status of a chosen file after the check. It is only an estimate: the import itself can skip more rows. The placeholders are how many rows the check would import and how many it would skip.",
+    "placeholders": {
+      "imported": {"type": "int"},
+      "problems": {"type": "int"}
+    }
+  },
+  "csvImportProgress": "Importing… {done} of {total} rows",
+  "@csvImportProgress": {
+    "description": "Status while the rows of a file are sent. The placeholders are how many rows were sent and how many the file has.",
+    "placeholders": {
+      "done": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "csvFileProblemTitle": "This file can''t be imported",
+  "@csvFileProblemTitle": {
+    "description": "Title of the import screen when the chosen file cannot be imported at all."
+  },
+  "csvFileUnreadable": "It isn''t a .csv or .zip file that can be read.",
+  "@csvFileUnreadable": {
+    "description": "Why a chosen file cannot be imported: it cannot be read."
+  },
+  "csvFileUnknownColumns": "Its first row does not have the columns of a Money Scribe export.",
+  "@csvFileUnknownColumns": {
+    "description": "Why a chosen file cannot be imported: its header row is not one of the app's exports. Money Scribe is the app name and stays in Latin letters."
+  },
+  "csvFileNoRows": "It has no rows to import.",
+  "@csvFileNoRows": {
+    "description": "Why a chosen file cannot be imported: it has the header row only."
+  },
+  "csvFileTooManyRows": "It has more than {limit} rows. Split it into smaller files.",
+  "@csvFileTooManyRows": {
+    "description": "Why a chosen file cannot be imported: it has too many rows. The placeholder is the most rows a file may have.",
+    "placeholders": {
+      "limit": {"type": "int", "format": "decimalPattern"}
+    }
+  },
+  "csvFileTooLarge": "It is too large to import.",
+  "@csvFileTooLarge": {
+    "description": "Why a chosen file cannot be imported: it is too large."
+  },
+  "csvProblemRow": "Row {row}: {reason}",
+  "@csvProblemRow": {
+    "description": "A row of the file that was or would be skipped. The placeholders are the number of the row and the reason, such as \"the date is missing\".",
+    "placeholders": {
+      "row": {"type": "int"},
+      "reason": {"type": "String"}
+    }
+  },
+  "csvProblemPartRow": "{part}, row {row}: {reason}",
+  "@csvProblemPartRow": {
+    "description": "A row of a file of several kinds that was or would be skipped. The placeholders are the kind (Transactions, Debts or Salary months), the number of the row and the reason.",
+    "placeholders": {
+      "part": {"type": "String"},
+      "row": {"type": "int"},
+      "reason": {"type": "String"}
+    }
+  },
+  "csvReasonMissingDate": "the date is missing",
+  "@csvReasonMissingDate": {
+    "description": "Why a row was skipped: it has no date."
+  },
+  "csvReasonInvalidAmount": "the amount is not valid",
+  "@csvReasonInvalidAmount": {
+    "description": "Why a row was skipped: its amount cannot be read."
+  },
+  "csvReasonDuplicate": "already exists",
+  "@csvReasonDuplicate": {
+    "description": "Why a row was skipped: the same record already exists."
+  },
+  "csvReasonUnknownCategory": "the category does not exist",
+  "@csvReasonUnknownCategory": {
+    "description": "Why a row was skipped: no category has its name."
+  },
+  "csvReasonUnknownAccount": "the account does not exist",
+  "@csvReasonUnknownAccount": {
+    "description": "Why a row was skipped: no account has its name."
+  },
+  "csvReasonLimitReached": "the limit of records is reached",
+  "@csvReasonLimitReached": {
+    "description": "Why a row was skipped: the account holds as many records of this kind as it may."
+  },
+  "csvKindSetup": "Accounts and categories",
+  "@csvKindSetup": {
+    "description": "Chip of the Export CSV sheet that exports the accounts and the custom categories together. They are needed to restore transactions into a new account."
+  },
+  "csvPeriodNotForSetup": "The period does not apply to accounts and categories.",
+  "@csvPeriodNotForSetup": {
+    "description": "Caption under the period chips of the Export CSV sheet when accounts and categories are chosen."
+  },
+  "csvCrowdedDays": "{days, plural, one{{days} day has} other{{days} days have}} more than 500 rows. Rows that repeat inside such a day may be imported twice.",
+  "@csvCrowdedDays": {
+    "description": "Warning on the Import CSV screen when some days of the file have more rows than one import call takes, so repeats inside them cannot be recognised. The placeholder is how many days.",
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  "csvReasonNameTaken": "the name is used by a built-in category",
+  "@csvReasonNameTaken": {
+    "description": "Why a category row was skipped: its name is the name of a built-in category."
+  },
+  "csvReasonMissingIcon": "the icon is missing",
+  "@csvReasonMissingIcon": {
+    "description": "Why a category row was skipped: it has no icon."
+  },
+  "csvReasonOther": "it could not be imported",
+  "@csvReasonOther": {
+    "description": "Why a row was skipped, for any other reason."
   },
   "currencyNameRub": "Russian ruble",
   "@currencyNameRub": {
@@ -2517,5 +2775,423 @@
   "fingerprintPhonesEmptyAction": "Back to settings",
   "@fingerprintPhonesEmptyAction": {
     "description": "Button that leaves the empty list of phones for the Settings."
+  },
+  "debtLimitReached": "You have the most debts allowed. Delete one to add another.",
+  "@debtLimitReached": {
+    "description": "Message shown when a debt could not be added because the person has as many debts as the server allows."
+  },
+  "repaymentLimitReached": "This debt has the most repayments allowed.",
+  "@repaymentLimitReached": {
+    "description": "Message shown when a repayment could not be added because the debt has as many repayments as the server allows."
+  },
+  "debtAmountBelowRepaidChanged": "The amount can''t be less than what was already repaid.",
+  "@debtAmountBelowRepaidChanged": {
+    "description": "Message shown when a debt could not be saved because its amount is less than what was repaid, which another device may have changed."
+  },
+  "debtStartAfterRepayment": "The debt can''t start after one of its repayments.",
+  "@debtStartAfterRepayment": {
+    "description": "Message shown when a debt could not be saved because its start day is after one of its repayments."
+  },
+  "repaymentBeforeStart": "A repayment can''t be dated before the debt starts.",
+  "@repaymentBeforeStart": {
+    "description": "Message shown when a repayment could not be saved because its day is before the day the debt starts."
+  },
+  "debtDateOutOfRange": "Choose a date between 2000 and 2099.",
+  "@debtDateOutOfRange": {
+    "description": "Message shown when a debt or a repayment could not be saved because a day is outside the years the server keeps."
+  },
+  "debtChangedElsewhere": "This debt was changed on another device. It has been loaded again.",
+  "@debtChangedElsewhere": {
+    "description": "Message shown when saving or deleting a debt or a repayment was refused because another device changed the debt first. The screen shows what is on the server now."
+  },
+  "debtsOtherCurrenciesNotice": "Debts in other currencies are not included in these totals.",
+  "@debtsOtherCurrenciesNotice": {
+    "description": "Note under the totals of the Debts screen when some debts are in a currency other than the default one, because amounts of different currencies are never added."
+  },
+  "overviewOtherIncome": "Other income",
+  "@overviewOtherIncome": {
+    "description": "Row of the Overview: income that was recorded as transactions, such as a gift or a refund. The salary and the recurring income are not in it."
+  },
+  "recordsInOtherCurrenciesNotice": "Records in other currencies are not included in these figures.",
+  "@recordsInOtherCurrenciesNotice": {
+    "description": "Note on the Overview and the Reports when the month has records in a currency other than the default one, because amounts of different currencies are never added."
+  },
+  "sessionsTitle": "Where you are signed in",
+  "@sessionsTitle": {
+      "description": "Title of the screen that lists the devices the account is signed in on, and the label of its row in the Settings."
+  },
+  "sessionsRowHint": "The devices that can open your account",
+  "@sessionsRowHint": {
+      "description": "Line under the Where you are signed in row of the Settings."
+  },
+  "sessionsActiveTab": "Active",
+  "@sessionsActiveTab": {
+      "description": "Tab of the sessions that are still signed in."
+  },
+  "sessionsPreviousTab": "Previous",
+  "@sessionsPreviousTab": {
+      "description": "Tab of the sessions that have ended."
+  },
+  "sessionThisDevice": "This device",
+  "@sessionThisDevice": {
+      "description": "Badge on the session of the device the app runs on."
+  },
+  "sessionSystemAndApp": "{system} · Money Scribe {app}",
+  "@sessionSystemAndApp": {
+      "description": "Second line of a session: the system of the device and the version of the app. The brand name stays in Latin letters.",
+      "placeholders": {
+          "system": {
+              "type": "String"
+          },
+          "app": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionSignedInAt": "Signed in {when}",
+  "@sessionSignedInAt": {
+      "description": "A session: when it signed in. The placeholder is a day, such as 20 Oct 2026.",
+      "placeholders": {
+          "when": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionLastActiveAt": "Last active {when}",
+  "@sessionLastActiveAt": {
+      "description": "A session: when it was last used. The placeholder is such as today, 18:40.",
+      "placeholders": {
+          "when": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionTodayAt": "today, {time}",
+  "@sessionTodayAt": {
+      "description": "A day that is today with a time. The placeholder is a time such as 18:40.",
+      "placeholders": {
+          "time": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionDayAt": "{date}, {time}",
+  "@sessionDayAt": {
+      "description": "A day with a time. The placeholders are a day such as 24 Oct and a time such as 20:15.",
+      "placeholders": {
+          "date": {
+              "type": "String"
+          },
+          "time": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionsUnrecognised": "If you don''t recognise a device, end its session and change your password.",
+  "@sessionsUnrecognised": {
+      "description": "Advice under the active sessions."
+  },
+  "sessionsSignOutOthers": "Sign out of all other devices",
+  "@sessionsSignOutOthers": {
+      "description": "Button that signs every device but this one out."
+  },
+  "sessionsPreviousCaption": "Sessions of the last 90 days that have ended.",
+  "@sessionsPreviousCaption": {
+      "description": "Caption over the ended sessions."
+  },
+  "sessionsPreviousFooter": "Previous sessions are kept for 90 days.",
+  "@sessionsPreviousFooter": {
+      "description": "Caption under the ended sessions."
+  },
+  "sessionsPreviousEmpty": "No previous sessions",
+  "@sessionsPreviousEmpty": {
+      "description": "Title shown when no session ended in the last 90 days."
+  },
+  "sessionsPreviousEmptyMessage": "Sessions that end will show here for 90 days.",
+  "@sessionsPreviousEmptyMessage": {
+      "description": "Sentence under the title shown when no session ended."
+  },
+  "sessionsLoadFailed": "Couldn''t load your devices",
+  "@sessionsLoadFailed": {
+      "description": "Title shown when the sessions could not be loaded."
+  },
+  "sessionsShowMore": "Show more",
+  "@sessionsShowMore": {
+      "description": "Button that loads the next page of a list of sessions or activity."
+  },
+  "sessionsMoreFailed": "Couldn''t load more.",
+  "@sessionsMoreFailed": {
+      "description": "Message at the end of a list when the next page did not load. A Try again button follows it."
+  },
+  "sessionEndedOn": "Ended {when} · {reason}",
+  "@sessionEndedOn": {
+      "description": "An ended session: when and why it ended.",
+      "placeholders": {
+          "when": {
+              "type": "String"
+          },
+          "reason": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionEndedNote": "Ended {when} · {reason}.",
+  "@sessionEndedNote": {
+      "description": "The note of an ended session in its details, with a full stop.",
+      "placeholders": {
+          "when": {
+              "type": "String"
+          },
+          "reason": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionEndReasonSignedOut": "Signed out",
+  "@sessionEndReasonSignedOut": {
+      "description": "Why a session ended: the person signed out."
+  },
+  "sessionEndReasonRevoked": "Ended by you",
+  "@sessionEndReasonRevoked": {
+      "description": "Why a session ended: the person ended it from another device."
+  },
+  "sessionEndReasonExpired": "Expired",
+  "@sessionEndReasonExpired": {
+      "description": "Why a session ended: it ran out."
+  },
+  "sessionEndReasonLimit": "Too many devices",
+  "@sessionEndReasonLimit": {
+      "description": "Why a session ended: the account reached the most devices."
+  },
+  "sessionEndReasonPasswordChanged": "Password was changed",
+  "@sessionEndReasonPasswordChanged": {
+      "description": "Why a session ended: the password was changed."
+  },
+  "sessionEndReasonPasswordReset": "Password was reset",
+  "@sessionEndReasonPasswordReset": {
+      "description": "Why a session ended: the password was reset."
+  },
+  "sessionEndReasonEmailChanged": "Email was changed",
+  "@sessionEndReasonEmailChanged": {
+      "description": "Why a session ended: the email address was changed."
+  },
+  "sessionEndReasonTokenReuse": "Ended to protect your account",
+  "@sessionEndReasonTokenReuse": {
+      "description": "Why a session ended: an old sign-in was used again."
+  },
+  "sessionEndReasonReplaced": "Replaced by a newer sign-in",
+  "@sessionEndReasonReplaced": {
+      "description": "Why a session ended: the device signed in again."
+  },
+  "sessionEndReasonUnknown": "Ended",
+  "@sessionEndReasonUnknown": {
+      "description": "Why a session ended, for a reason this version does not know."
+  },
+  "sessionMethodLabel": "Signed in with",
+  "@sessionMethodLabel": {
+      "description": "Label of how a session signed in."
+  },
+  "sessionMethodPassword": "Password",
+  "@sessionMethodPassword": {
+      "description": "How a session signed in: with the password."
+  },
+  "sessionMethodEmailCode": "Email code",
+  "@sessionMethodEmailCode": {
+      "description": "How a session signed in: with a code sent by email."
+  },
+  "sessionMethodFingerprint": "Fingerprint",
+  "@sessionMethodFingerprint": {
+      "description": "How a session signed in: with the fingerprint."
+  },
+  "sessionDetailSignedIn": "Signed in",
+  "@sessionDetailSignedIn": {
+      "description": "Label of when a session signed in, in its details."
+  },
+  "sessionDetailLastActive": "Last active",
+  "@sessionDetailLastActive": {
+      "description": "Label of when a session was last used, in its details."
+  },
+  "sessionDetailEnds": "Session ends",
+  "@sessionDetailEnds": {
+      "description": "Label of the day a session reaches its limit, in its details."
+  },
+  "sessionDetailNetwork": "Network (approximate)",
+  "@sessionDetailNetwork": {
+      "description": "Label of the network a session was seen on, in its details."
+  },
+  "sessionEndsFingerprintNote": "Ending it also turns off fingerprint sign-in on that device.",
+  "@sessionEndsFingerprintNote": {
+      "description": "Note in the details of a session of another device."
+  },
+  "sessionEndAction": "End this session",
+  "@sessionEndAction": {
+      "description": "Button in the details of a session that ends it."
+  },
+  "sessionCurrentNote": "This is the device you are using.",
+  "@sessionCurrentNote": {
+      "description": "Note in the details of the session of this device, which cannot be ended there."
+  },
+  "sessionEndDialogTitle": "End this session?",
+  "@sessionEndDialogTitle": {
+      "description": "Title of the question that asks to confirm ending a session."
+  },
+  "sessionEndDialogMessage": "{device} will be signed out. Fingerprint sign-in on that device will be turned off.",
+  "@sessionEndDialogMessage": {
+      "description": "Text of the question that asks to confirm ending a session. The placeholder is the name of the device.",
+      "placeholders": {
+          "device": {
+              "type": "String"
+          }
+      }
+  },
+  "sessionEndConfirm": "End session",
+  "@sessionEndConfirm": {
+      "description": "Button that confirms ending a session."
+  },
+  "sessionEndedSnack": "Session ended",
+  "@sessionEndedSnack": {
+      "description": "Message shown after a session was ended."
+  },
+  "sessionEndFailed": "Couldn''t end the session. Check your connection.",
+  "@sessionEndFailed": {
+      "description": "Message shown when ending a session did not work."
+  },
+  "revokeOthersTitle": "Sign out of all other devices?",
+  "@revokeOthersTitle": {
+      "description": "Title of the question that asks for the password before every other device is signed out."
+  },
+  "revokeOthersMessage": "{count, plural, =1{{count} device will be signed out, and fingerprint sign-in will be turned off on every other phone. You stay signed in here.} other{{count} devices will be signed out, and fingerprint sign-in will be turned off on every other phone. You stay signed in here.}}",
+  "@revokeOthersMessage": {
+      "description": "Text of the question that asks for the password before the other devices are signed out. The placeholder is how many devices.",
+      "placeholders": {
+          "count": {
+              "type": "int"
+          }
+      }
+  },
+  "revokeOthersConfirm": "Sign out others",
+  "@revokeOthersConfirm": {
+      "description": "Button that signs the other devices out."
+  },
+  "revokeOthersWrongPassword": "That password is incorrect.",
+  "@revokeOthersWrongPassword": {
+      "description": "Error under the password of the question that signs the other devices out."
+  },
+  "revokedOthersSnack": "{count, plural, =1{{count} device signed out} other{{count} devices signed out}}",
+  "@revokedOthersSnack": {
+      "description": "Message shown after the other devices were signed out. The placeholder is how many.",
+      "placeholders": {
+          "count": {
+              "type": "int"
+          }
+      }
+  },
+  "revokeOthersFailed": "Couldn''t sign out the other devices. Check your connection.",
+  "@revokeOthersFailed": {
+      "description": "Message under the password when signing out the other devices did not work."
+  },
+  "securityActivityTitle": "Security activity",
+  "@securityActivityTitle": {
+      "description": "Title of the screen that lists what happened to the account, and the label of its row in the Settings."
+  },
+  "securityActivityRowHint": "Sign-ins, password changes and exports",
+  "@securityActivityRowHint": {
+      "description": "Line under the Security activity row of the Settings."
+  },
+  "securityActivityFooter": "Activity is kept for 90 days.",
+  "@securityActivityFooter": {
+      "description": "Caption at the end of the security activity."
+  },
+  "securityActivityEmpty": "No activity yet",
+  "@securityActivityEmpty": {
+      "description": "Title shown when the account has no security activity."
+  },
+  "securityActivityEmptyMessage": "Sign-ins, password changes and exports will show here for 90 days.",
+  "@securityActivityEmptyMessage": {
+      "description": "Sentence under the title shown when there is no security activity."
+  },
+  "securityActivityLoadFailed": "Couldn''t load your activity",
+  "@securityActivityLoadFailed": {
+      "description": "Title shown when the security activity could not be loaded."
+  },
+  "securityEventSignedIn": "Signed in",
+  "@securityEventSignedIn": {
+      "description": "Entry of the security activity: someone signed in."
+  },
+  "securityEventSignedOut": "Signed out",
+  "@securityEventSignedOut": {
+      "description": "Entry of the security activity: someone signed out."
+  },
+  "securityEventSessionRevoked": "Session ended",
+  "@securityEventSessionRevoked": {
+      "description": "Entry of the security activity: a session was ended."
+  },
+  "securityEventSessionLimit": "Signed out: too many devices",
+  "@securityEventSessionLimit": {
+      "description": "Entry of the security activity: a device was signed out because the account reached the most devices."
+  },
+  "securityEventPasswordChanged": "Password changed",
+  "@securityEventPasswordChanged": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventPasswordReset": "Password reset",
+  "@securityEventPasswordReset": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventEmailChanged": "Email changed",
+  "@securityEventEmailChanged": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventKeyAdded": "Fingerprint sign-in turned on",
+  "@securityEventKeyAdded": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventKeyRemoved": "Fingerprint sign-in turned off",
+  "@securityEventKeyRemoved": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventTokenReuse": "Possible reuse of an old sign-in",
+  "@securityEventTokenReuse": {
+      "description": "Warning entry of the security activity."
+  },
+  "securityEventTokenReuseMessage": "We ended that session to protect your account. If this was not you, change your password.",
+  "@securityEventTokenReuseMessage": {
+      "description": "Sentence under the warning entry about a possible reuse of an old sign-in."
+  },
+  "securityEventDataExported": "Data exported",
+  "@securityEventDataExported": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventDataImported": "Data imported",
+  "@securityEventDataImported": {
+      "description": "Entry of the security activity."
+  },
+  "securityEventUnknown": "Account activity",
+  "@securityEventUnknown": {
+      "description": "Entry of the security activity of a kind this version does not know."
+  },
+  "securityEventDetail": "{first} · {second}",
+  "@securityEventDetail": {
+      "description": "Second line of an entry of the security activity: two facts joined, such as a device and how it signed in.",
+      "placeholders": {
+          "first": {
+              "type": "String"
+          },
+          "second": {
+              "type": "String"
+          }
+      }
+  },
+  "securityDataKindTransactions": "Transactions",
+  "@securityDataKindTransactions": {
+      "description": "A kind of data in an export or an import."
+  },
+  "securityDataKindDebts": "Debts",
+  "@securityDataKindDebts": {
+      "description": "A kind of data in an export or an import."
+  },
+  "securityDataKindSalaryMonths": "Salary months",
+  "@securityDataKindSalaryMonths": {
+      "description": "A kind of data in an export or an import."
   }
 }

@@ -14,17 +14,23 @@ import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
 import 'package:money_scribe/features/auth/presentation/demo_challenge_view_factory.dart';
 import 'package:money_scribe/features/connection/domain/server_activity.dart';
 import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/notifications/data/unavailable_push_messaging_repository.dart';
 import 'package:money_scribe/features/notifications/domain/push_messaging_repository.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+import 'package:money_scribe/features/overview/domain/overview_repository.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
+import 'package:money_scribe/features/reports/domain/reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
 import 'package:money_scribe/features/salary/domain/fixed_items_repository.dart';
 import 'package:money_scribe/features/salary/domain/salary_repository.dart';
+import 'package:money_scribe/features/sessions/data/fake/fake_sessions_repository.dart';
+import 'package:money_scribe/features/sessions/domain/sessions_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_default_currency_repository.dart';
 import 'package:money_scribe/features/settings/data/fake/fake_pay_schedule_repository.dart';
+import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 import 'package:money_scribe/features/settings/domain/language_repository.dart';
 import 'package:money_scribe/features/settings/domain/theme_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
@@ -50,9 +56,14 @@ Widget buildApp({
   AuthRepository? authRepository,
   AppLockRepository? appLockRepository,
   DeviceKeyRepository? deviceKeyRepository,
+  CsvTransferRepository? csvTransferRepository,
   DemoController? demo,
   SalaryRepository? salaryRepository,
   FixedItemsRepository? fixedItemsRepository,
+  DebtsRepository? debtsRepository,
+  SessionsRepository? sessionsRepository,
+  OverviewRepository? overviewRepository,
+  ReportsRepository? reportsRepository,
   Ticker? ticker,
   Clock? clock,
   bool signedIn = false,
@@ -93,8 +104,11 @@ Widget buildApp({
     defaultCurrencyRepository: FakeDefaultCurrencyRepository(
       demo: demoController,
     ),
-    csvTransferRepository: FakeCsvTransferRepository(demo: demoController),
-    overviewRepository: FakeOverviewRepository(demo: demoController),
+    csvTransferRepository:
+        csvTransferRepository ??
+        FakeCsvTransferRepository(demo: demoController),
+    overviewRepository:
+        overviewRepository ?? FakeOverviewRepository(demo: demoController),
     salaryRepository: salary,
     fixedItemsRepository:
         fixedItemsRepository ??
@@ -108,8 +122,12 @@ Widget buildApp({
       demo: demoController,
       transactions: transactions,
     ),
-    debtsRepository: FakeDebtsRepository(demo: demoController),
-    reportsRepository: FakeReportsRepository(demo: demoController),
+    debtsRepository:
+        debtsRepository ?? FakeDebtsRepository(demo: demoController),
+    sessionsRepository:
+        sessionsRepository ?? FakeSessionsRepository(demo: demoController),
+    reportsRepository:
+        reportsRepository ?? FakeReportsRepository(demo: demoController),
     demo: demoController,
     textClipboard: clipboard ?? FakeTextClipboard(),
     ticker: ticker ?? FakeTicker(),

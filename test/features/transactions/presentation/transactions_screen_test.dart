@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -36,12 +38,12 @@ Finder filtersButton(String label) {
 Finder removeChip(String label) {
   return find.descendant(
     of: find.widgetWithText(InputChip, label),
-    matching: find.byIcon(Icons.clear),
+    matching: find.byIcon(LucideIcons.x),
   );
 }
 
 Future<void> openFilters(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.tune).first);
+  await tester.tap(find.byIcon(LucideIcons.slidersHorizontal).first);
   await tester.pumpAndSettle();
 }
 
@@ -55,7 +57,7 @@ void main() {
       expect(find.byType(TransactionsScreen), findsOneWidget);
       expect(find.text('Transactions'), findsWidgets);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('lists the days newest first, each with its total', (
@@ -128,18 +130,21 @@ void main() {
     testWidgets('splits the list into parts with headers', (tester) async {
       await openTransactions(tester, settings: twoPayments);
 
-      expect(find.text('Part 2 · 16th–31st Oct'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th Oct'), findsOneWidget);
-      final part2 = tester.getTopLeft(find.text('Part 2 · 16th–31st Oct')).dy;
-      final part1 = tester.getTopLeft(find.text('Part 1 · 1st–15th Oct')).dy;
+      // The pay days are the 20th and the 5th: the 5th to the 19th is a part
+      // of its own, and the 1st is the end of the part before it.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Sep – 4 Oct'), findsOneWidget);
+      final part2 = tester.getTopLeft(find.text('Part 2 · 5 Oct – 19 Oct')).dy;
+      final part1 = tester.getTopLeft(find.text('Part 1 · 20 Sep – 4 Oct')).dy;
       final taxi = tester.getTopLeft(find.text('Mon 19 Oct')).dy;
       final groceries = tester.getTopLeft(find.text('Mon 5 Oct')).dy;
+      final scholarship = tester.getTopLeft(find.text('Thu 1 Oct')).dy;
       expect(part2, lessThan(taxi));
-      expect(taxi, lessThan(part1));
-      expect(part1, lessThan(groceries));
+      expect(groceries, lessThan(part1));
+      expect(part1, lessThan(scholarship));
     });
 
-    testWidgets('Part 1 shows only the first half of the month', (
+    testWidgets('Part 1 shows only the days from the first pay day', (
       tester,
     ) async {
       await openTransactions(tester, settings: twoPayments);
@@ -147,13 +152,15 @@ void main() {
       await tester.tap(partSegment('Part 1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Mon 5 Oct'), findsOneWidget);
       expect(find.text('Thu 1 Oct'), findsOneWidget);
+      expect(find.text('Mon 5 Oct'), findsNothing);
       expect(find.text('Mon 19 Oct'), findsNothing);
-      expect(find.text('Part 2 · 16th–31st Oct'), findsNothing);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsNothing);
     });
 
-    testWidgets('Part 2 shows only the second half', (tester) async {
+    testWidgets('Part 2 shows only the days from the second pay day', (
+      tester,
+    ) async {
       await openTransactions(tester, settings: twoPayments);
 
       await tester.tap(partSegment('Part 2'));
@@ -161,7 +168,8 @@ void main() {
 
       expect(find.text('Mon 19 Oct'), findsOneWidget);
       expect(find.text('Sat 17 Oct'), findsOneWidget);
-      expect(find.text('Mon 5 Oct'), findsNothing);
+      expect(find.text('Mon 5 Oct'), findsOneWidget);
+      expect(find.text('Thu 1 Oct'), findsNothing);
     });
 
     testWidgets('Month shows everything again', (tester) async {
@@ -178,11 +186,18 @@ void main() {
   });
 
   group('the search', () {
+    /// Types [text] and waits for the search to ask: it waits half a second
+    /// after the last key.
+    Future<void> search(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(TextField), text);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('filters the list while typing', (tester) async {
       await openTransactions(tester);
 
-      await tester.enterText(find.byType(TextField), 'coffee');
-      await tester.pumpAndSettle();
+      await search(tester, 'coffee');
 
       expect(find.text('Dining'), findsOneWidget);
       expect(find.text('Transport'), findsNothing);
@@ -194,8 +209,7 @@ void main() {
     ) async {
       await openTransactions(tester);
 
-      await tester.enterText(find.byType(TextField), 'xyz');
-      await tester.pumpAndSettle();
+      await search(tester, 'xyz');
 
       expect(find.text('No results'), findsOneWidget);
       expect(find.text('Try another word or clear the filters.'), findsOne);
@@ -203,15 +217,14 @@ void main() {
       // The search and the Filters button stay.
       expect(find.byType(TextField), findsOneWidget);
       // The first is the button; the demo panel handle has the same icon.
-      expect(find.byIcon(Icons.tune), findsWidgets);
+      expect(find.byIcon(LucideIcons.slidersHorizontal), findsWidgets);
     });
 
     testWidgets('Clear filters brings the list back and empties the search', (
       tester,
     ) async {
       await openTransactions(tester);
-      await tester.enterText(find.byType(TextField), 'xyz');
-      await tester.pumpAndSettle();
+      await search(tester, 'xyz');
 
       await tester.tap(find.text('Clear filters'));
       await tester.pumpAndSettle();
@@ -430,7 +443,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Mon 19 Oct'), findsOneWidget);
-      expect(find.text('Mon 5 Oct'), findsNothing);
+      expect(find.text('Thu 1 Oct'), findsNothing);
       // The choice above the list follows.
       expect(
         tester
@@ -452,7 +465,7 @@ void main() {
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
       expect(find.text('Edit transaction'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('Add opens the form for a new one (TX-4)', (tester) async {
@@ -469,7 +482,7 @@ void main() {
 
       await tester.tap(find.text('Transport'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
@@ -516,6 +529,32 @@ void main() {
       expect(amountText('−640.00 ₽'), findsNWidgets(2));
       // The pane shows the note alone; the row joins it with the account.
       expect(find.text('Weekly shopping'), findsOneWidget);
+    });
+
+    testWidgets('the detail of an income shows the payment it joined', (
+      tester,
+    ) async {
+      await openTransactions(tester, size: wide, settings: twoPayments);
+
+      // The row is at the bottom of the list.
+      await tester.ensureVisible(find.text('Scholarship'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scholarship'));
+      await tester.pumpAndSettle();
+
+      // The 1st of October is nearest to the pay day of the 5th.
+      expect(find.text('Counts toward'), findsOneWidget);
+      // The detail has it, and so may the header of that part in the list.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsWidgets);
+    });
+
+    testWidgets('the detail of an expense shows no payment', (tester) async {
+      await openTransactions(tester, size: wide, settings: twoPayments);
+
+      await tester.tap(find.text('Groceries'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsNothing);
     });
 
     testWidgets('the detail has the date, the account and the note', (
@@ -680,13 +719,13 @@ void main() {
       expect(find.text('عوامل التصفية'), findsOneWidget);
       expect(find.text('إضافة'), findsOneWidget);
       expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
-      expect(find.textContaining('الجزء 2 · 16–31'), findsOneWidget);
+      expect(find.textContaining('الجزء 2 · 5 '), findsOneWidget);
     });
 
     testWidgets('the filters sheet is in Arabic', (tester) async {
       await openTransactions(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.tune).first);
+      await tester.tap(find.byIcon(LucideIcons.slidersHorizontal).first);
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('عوامل التصفية')), findsOneWidget);

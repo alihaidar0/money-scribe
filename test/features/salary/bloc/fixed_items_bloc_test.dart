@@ -95,6 +95,30 @@ void main() {
     );
 
     blocTest<FixedItemsBloc, FixedItemsState>(
+      'knows the days the payments of a saved month are received on',
+      setUp: () =>
+          demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),
+      build: build,
+      act: (bloc) => bloc.add(const FixedItemsStarted()),
+      verify: (bloc) {
+        expect(bloc.state.firstPayDay, 20);
+        expect(bloc.state.secondPayDay, 5);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
+      'a month that is not saved takes the pay days of the account',
+      setUp: () =>
+          demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),
+      build: () => build(month: march),
+      act: (bloc) => bloc.add(const FixedItemsStarted()),
+      verify: (bloc) {
+        expect(bloc.state.firstPayDay, 20);
+        expect(bloc.state.secondPayDay, 5);
+      },
+    );
+
+    blocTest<FixedItemsBloc, FixedItemsState>(
       'a month with no saved salary has no pay and follows the default mode',
       setUp: () =>
           demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),

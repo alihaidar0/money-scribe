@@ -3,7 +3,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
-import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/accounts_repository.dart';
 import 'package:money_scribe/features/transactions/domain/categories_repository.dart';
@@ -38,6 +38,7 @@ class TransactionFormBloc
     on<TransactionKindSelected>(_onKindSelected, transformer: sequential());
     on<TransactionAmountChanged>(_onAmountChanged, transformer: sequential());
     on<TransactionDateChosen>(_onDateChosen, transformer: sequential());
+    on<TransactionPartChosen>(_onPartChosen, transformer: sequential());
     on<TransactionCategoryChosen>(_onCategoryChosen, transformer: sequential());
     on<TransactionAccountChosen>(_onAccountChosen, transformer: sequential());
     on<TransactionNoteChanged>(_onNoteChanged, transformer: sequential());
@@ -72,12 +73,12 @@ class TransactionFormBloc
       final results = await Future.wait<Object?>([
         _accounts.accounts(),
         _categories.categories(),
-        _transactions.paymentMode(),
+        _transactions.payCycle(),
         if (id != null) _transactions.transaction(id),
       ]);
       final accounts = results[0]! as List<Account>;
       final categories = results[1]! as List<TransactionCategory>;
-      final twoPayments = results[2] == PaymentMode.twoPayments;
+      final cycle = results[2]! as PayCycle;
 
       final TransactionFormValues values;
       if (id == null) {
@@ -98,16 +99,24 @@ class TransactionFormBloc
           categoryId: transaction.categoryId,
           accountId: transaction.accountId,
           note: transaction.note,
+          // The part is shown as chosen only when it is not the nearest one.
+          part: transaction.part == cycle.nearestPayEvent(transaction.date)
+              ? null
+              : transaction.part,
         );
       }
+      final loaded = id == null ? null : results[3]! as Transaction;
       emit(
         state.copyWith(
           status: TransactionFormStatus.ready,
           accounts: accounts,
           categories: categories,
-          twoPayments: twoPayments,
+          cycle: cycle,
           values: values,
           baseline: values,
+          // The currency of a transaction cannot be changed.
+          currency: loaded?.amount.currency,
+          version: loaded?.version,
         ),
       );
     } on NoConnectionException {
@@ -142,6 +151,42 @@ class TransactionFormBloc
     }
   }
 
+  /// Reads the accounts and the categories again. A chosen account or category
+  /// that is gone, or does not fit the kind, is dropped (the first account
+  /// takes the place of a gone one), so the person chooses again.
+  Future<void> _refreshChoices(Emitter<TransactionFormState> emit) async {
+    try {
+      final results = await Future.wait<Object?>([
+        _accounts.accounts(),
+        _categories.categories(),
+      ]);
+      final accounts = results[0]! as List<Account>;
+      final categories = results[1]! as List<TransactionCategory>;
+      var values = state.values;
+      if (!accounts.any((account) => account.id == values.accountId)) {
+        values = accounts.isEmpty
+            ? values.copyWith(clearAccount: true)
+            : values.copyWith(accountId: accounts.first.id);
+      }
+      final category = categories
+          .where((category) => category.id == values.categoryId)
+          .firstOrNull;
+      if (category == null || !category.isFor(values.kind)) {
+        values = values.copyWith(clearCategory: true);
+      }
+      emit(
+        state.copyWith(
+          accounts: accounts,
+          categories: categories,
+          values: values,
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      // The lists on screen are still what the person can use: keep them.
+      addError(error, stackTrace);
+    }
+  }
+
   void _edit(Emitter<TransactionFormState> emit, TransactionFormValues values) {
     emit(
       state.copyWith(
@@ -157,7 +202,11 @@ class TransactionFormBloc
     Emitter<TransactionFormState> emit,
   ) {
     if (event.kind == state.values.kind) return;
-    final values = state.values.copyWith(kind: event.kind);
+    var values = state.values.copyWith(kind: event.kind);
+    // Only an income counts toward a part.
+    if (event.kind != TransactionKind.income) {
+      values = values.copyWith(clearPart: true);
+    }
 
     // A category that does not fit the new kind is dropped.
     final category = state.categories
@@ -182,7 +231,28 @@ class TransactionFormBloc
     TransactionDateChosen event,
     Emitter<TransactionFormState> emit,
   ) {
-    _edit(emit, state.values.copyWith(date: _day(event.date)));
+    final date = _day(event.date);
+    var values = state.values.copyWith(date: date);
+    // A chosen payment that is not around the new day is dropped: the income
+    // goes back to the nearest one.
+    final chosen = values.part;
+    if (chosen != null && !state.cycle.payEventsAround(date).contains(chosen)) {
+      values = values.copyWith(clearPart: true);
+    }
+    _edit(emit, values);
+  }
+
+  void _onPartChosen(
+    TransactionPartChosen event,
+    Emitter<TransactionFormState> emit,
+  ) {
+    final part = event.part;
+    _edit(
+      emit,
+      part == null
+          ? state.values.copyWith(clearPart: true)
+          : state.values.copyWith(part: part),
+    );
   }
 
   void _onCategoryChosen(
@@ -219,10 +289,11 @@ class TransactionFormBloc
     emit(state.copyWith(saveStatus: TransactionFormSaveStatus.saving));
     try {
       final id = state.transactionId;
-      if (id == null) {
+      final version = state.version;
+      if (id == null || version == null) {
         await _transactions.add(draft);
       } else {
-        await _transactions.update(id, draft);
+        await _transactions.update(id, draft, version: version);
       }
       emit(
         state.copyWith(
@@ -230,6 +301,22 @@ class TransactionFormBloc
           baseline: sent,
         ),
       );
+    } on StaleRecordException {
+      emit(state.copyWith(saveStatus: TransactionFormSaveStatus.stale));
+      add(const TransactionFormRetried());
+    } on TransactionRefusedException catch (refused) {
+      emit(
+        state.copyWith(
+          saveStatus: TransactionFormSaveStatus.refused,
+          refusal: refused.refusal,
+        ),
+      );
+      // The category or the account is not what the lists said: read them
+      // again, so the person chooses from what exists.
+      if (refused.refusal == TransactionRefusal.categoryOrAccountGone ||
+          refused.refusal == TransactionRefusal.categoryNotAllowed) {
+        await _refreshChoices(emit);
+      }
     } on NoConnectionException {
       emit(state.copyWith(saveStatus: TransactionFormSaveStatus.failed));
     } on Exception catch (error, stackTrace) {
@@ -243,12 +330,16 @@ class TransactionFormBloc
     Emitter<TransactionFormState> emit,
   ) async {
     final id = state.transactionId;
-    if (id == null) return;
+    final version = state.version;
+    if (id == null || version == null) return;
 
     emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.deleting));
     try {
-      await _transactions.delete(id);
+      await _transactions.delete(id, version: version);
       emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.deleted));
+    } on StaleRecordException {
+      emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.stale));
+      add(const TransactionFormRetried());
     } on NoConnectionException {
       emit(state.copyWith(deleteStatus: TransactionFormDeleteStatus.failed));
     } on Exception catch (error, stackTrace) {

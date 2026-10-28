@@ -29,6 +29,14 @@ enum TransactionFormSaveStatus {
 
   /// The transaction could not be saved; what was typed is kept.
   failed,
+
+  /// The server did not accept the transaction for a reason the person can act
+  /// on; [TransactionFormState.refusal] says which. What was typed is kept.
+  refused,
+
+  /// The transaction was changed on another device first. Nothing was saved,
+  /// and the form is loaded again with what is on the server.
+  stale,
 }
 
 enum TransactionFormDeleteStatus {
@@ -43,6 +51,10 @@ enum TransactionFormDeleteStatus {
 
   /// The transaction could not be deleted; it is still there.
   failed,
+
+  /// The transaction was changed on another device first. Nothing was
+  /// deleted, and the form is loaded again with what is on the server.
+  stale,
 }
 
 /// What can be typed into the form.
@@ -54,6 +66,7 @@ final class TransactionFormValues extends Equatable {
     this.categoryId,
     this.accountId,
     this.note = '',
+    this.part,
   });
 
   final TransactionKind kind;
@@ -65,6 +78,10 @@ final class TransactionFormValues extends Equatable {
   final String? accountId;
   final String note;
 
+  /// The payment of a month paid in two payments an income joins, when the
+  /// person chose it; `null` for the nearest one.
+  final PayPart? part;
+
   TransactionFormValues copyWith({
     TransactionKind? kind,
     String? amountText,
@@ -72,15 +89,19 @@ final class TransactionFormValues extends Equatable {
     String? categoryId,
     bool clearCategory = false,
     String? accountId,
+    bool clearAccount = false,
     String? note,
+    PayPart? part,
+    bool clearPart = false,
   }) {
     return TransactionFormValues(
       kind: kind ?? this.kind,
       amountText: amountText ?? this.amountText,
       date: date ?? this.date,
       categoryId: clearCategory ? null : categoryId ?? this.categoryId,
-      accountId: accountId ?? this.accountId,
+      accountId: clearAccount ? null : accountId ?? this.accountId,
       note: note ?? this.note,
+      part: clearPart ? null : part ?? this.part,
     );
   }
 
@@ -92,6 +113,7 @@ final class TransactionFormValues extends Equatable {
     categoryId,
     accountId,
     note,
+    part,
   ];
 }
 
@@ -103,8 +125,10 @@ final class TransactionFormState extends Equatable {
     this.status = TransactionFormStatus.loading,
     this.accounts = const [],
     this.categories = const [],
-    this.twoPayments = false,
+    this.cycle = const PayCycle.onePayment(),
     this.currency = Currency.rub,
+    this.version,
+    this.refusal,
     this.saveStatus = TransactionFormSaveStatus.idle,
     this.deleteStatus = TransactionFormDeleteStatus.idle,
   });
@@ -122,10 +146,23 @@ final class TransactionFormState extends Equatable {
   final List<Account> accounts;
   final List<TransactionCategory> categories;
 
-  /// Whether the salary is paid in two payments, so the day shows its part.
-  final bool twoPayments;
+  /// How the salary is paid and on which days, so the day shows its part.
+  final PayCycle cycle;
 
+  /// Whether the salary is paid in two payments.
+  bool get twoPayments => cycle.hasParts;
+
+  /// The currency of the amount: the one the transaction was made in when
+  /// changing one, which cannot be changed.
   final Currency currency;
+
+  /// The version of the transaction being changed, as the server holds it, or
+  /// `null` for a new one.
+  final int? version;
+
+  /// Why the server refused the last save, while [saveStatus] says so.
+  final TransactionRefusal? refusal;
+
   final TransactionFormSaveStatus saveStatus;
   final TransactionFormDeleteStatus deleteStatus;
 
@@ -161,8 +198,14 @@ final class TransactionFormState extends Equatable {
       categoryId: values.categoryId,
       accountId: values.accountId,
       note: values.note,
+      // A part is chosen only for a month paid in two payments.
+      part: twoPayments ? values.part : null,
     );
   }
+
+  /// Whether the Counts toward choice is shown: an income in a month paid in
+  /// two payments.
+  bool get choosesPart => twoPayments && values.kind == TransactionKind.income;
 
   /// Whether the transaction can be saved: it is complete and, when changing
   /// one, something was edited.
@@ -179,7 +222,10 @@ final class TransactionFormState extends Equatable {
     TransactionFormValues? baseline,
     List<Account>? accounts,
     List<TransactionCategory>? categories,
-    bool? twoPayments,
+    PayCycle? cycle,
+    Currency? currency,
+    int? version,
+    TransactionRefusal? refusal,
     TransactionFormSaveStatus? saveStatus,
     TransactionFormDeleteStatus? deleteStatus,
   }) {
@@ -190,8 +236,10 @@ final class TransactionFormState extends Equatable {
       baseline: baseline ?? this.baseline,
       accounts: accounts ?? this.accounts,
       categories: categories ?? this.categories,
-      twoPayments: twoPayments ?? this.twoPayments,
-      currency: currency,
+      cycle: cycle ?? this.cycle,
+      currency: currency ?? this.currency,
+      version: version ?? this.version,
+      refusal: refusal ?? this.refusal,
       saveStatus: saveStatus ?? this.saveStatus,
       deleteStatus: deleteStatus ?? this.deleteStatus,
     );
@@ -205,8 +253,10 @@ final class TransactionFormState extends Equatable {
     baseline,
     accounts,
     categories,
-    twoPayments,
+    cycle,
     currency,
+    version,
+    refusal,
     saveStatus,
     deleteStatus,
   ];

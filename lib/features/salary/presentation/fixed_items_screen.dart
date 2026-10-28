@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -8,10 +9,12 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -218,8 +221,11 @@ Future<void> _addItem(BuildContext context) async {
   final state = bloc.state;
   final result = await showFixedItemSheet(
     context,
+    month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
+    firstPayDay: state.firstPayDay,
+    secondPayDay: state.secondPayDay,
     part: state.part,
   );
   if (result is FixedItemSheetSaved) bloc.add(FixedItemAdded(result.draft));
@@ -241,8 +247,11 @@ Future<void> _editItem(BuildContext context, FixedItem item) async {
   final state = bloc.state;
   final result = await showFixedItemSheet(
     context,
+    month: state.month,
     currency: state.currency,
     twoPayments: state.twoPayments,
+    firstPayDay: state.firstPayDay,
+    secondPayDay: state.secondPayDay,
     part: state.part,
     item: item,
   );
@@ -268,7 +277,7 @@ class _Content extends StatelessWidget {
     // Fixed items belong to a saved month: the way to one is its salary.
     if (!state.monthSaved) {
       return StateView(
-        icon: Icons.event_note_outlined,
+        icon: LucideIcons.calendarDays,
         title: l10n.fixedItemsSaveFirstTitle,
         message: l10n.fixedItemsSaveFirstMessage,
         actionLabel: l10n.goToSalaryAction,
@@ -279,7 +288,7 @@ class _Content extends StatelessWidget {
 
     if (items.isEmpty) {
       return StateView(
-        icon: Icons.autorenew,
+        icon: LucideIcons.refreshCw,
         title: l10n.fixedItemsEmptyTitle,
         message: l10n.fixedItemsEmptyMessage,
         actionLabel: l10n.addItemAction,
@@ -305,7 +314,7 @@ class _Content extends StatelessWidget {
                     onPressed: state.copying ? null : () => _copyItems(context),
                     icon: state.copying
                         ? const ButtonSpinner()
-                        : const Icon(Icons.content_copy_outlined),
+                        : const Icon(LucideIcons.copy),
                     label: Text(l10n.copyFromLastMonthAction),
                   ),
                 ),
@@ -313,15 +322,21 @@ class _Content extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
-                    ListView.separated(
-                      // Room under the last row for the button.
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) => _ItemRow(
-                        item: items[index],
-                        onEdit: () => _editItem(context, items[index]),
+                    PullToRefresh(
+                      onRefresh: (done) => context.read<FixedItemsBloc>().add(
+                        FixedItemsRefreshed(done: done),
+                      ),
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        // Room under the last row for the button.
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        itemCount: items.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) => _ItemRow(
+                          item: items[index],
+                          onEdit: () => _editItem(context, items[index]),
+                        ),
                       ),
                     ),
                     PositionedDirectional(
@@ -330,7 +345,7 @@ class _Content extends StatelessWidget {
                       child: FloatingActionButton.extended(
                         heroTag: null,
                         onPressed: () => _addItem(context),
-                        icon: const Icon(Icons.add),
+                        icon: const Icon(LucideIcons.plus),
                         label: Text(l10n.addItemAction),
                       ),
                     ),
@@ -343,7 +358,7 @@ class _Content extends StatelessWidget {
                   maxHeight: constraints.maxHeight * 0.5,
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16).withBarClearance(context),
                   child: FixedItemsSummaryCard(
                     summary: state.summary,
                     items: items,
@@ -387,7 +402,9 @@ class _ItemRow extends StatelessWidget {
           child: Row(
             children: [
               IconCircle(
-                icon: income ? Icons.south_west : Icons.north_east,
+                icon: income
+                    ? LucideIcons.arrowDownLeft
+                    : LucideIcons.arrowUpRight,
                 size: 40,
                 background: money.container,
                 foreground: money.onContainer,
@@ -413,7 +430,7 @@ class _ItemRow extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(LucideIcons.pencil),
                 tooltip: context.l10n.editFixedItemTooltip(name: item.name),
                 onPressed: onEdit,
               ),

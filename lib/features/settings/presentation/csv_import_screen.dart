@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/navigation_extensions.dart';
@@ -10,10 +11,12 @@ import 'package:money_scribe/features/settings/bloc/csv_import_bloc.dart';
 import 'package:money_scribe/features/settings/domain/csv_transfer.dart';
 import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 
-/// ST-8 and ST-8b: import a CSV file. The system file picker opens first; the
-/// chosen file is shown with a status, and Import adds its rows. Afterwards
-/// the screen says how many rows were imported and lists those that were
-/// skipped.
+/// ST-8 and ST-8b: import a CSV file. The system file picker opens first and
+/// takes a `.csv` or a `.zip` file. The chosen file is read and checked: a
+/// file that cannot be imported says why, and one that can shows the server's
+/// estimate of what it would import. Import adds its rows, with the progress;
+/// afterwards the screen says how many rows were imported and why each skipped
+/// row was skipped.
 class CsvImportScreen extends StatelessWidget {
   const new({super.key});
 
@@ -37,54 +40,77 @@ class _CsvImportView extends StatelessWidget {
     final bloc = context.read<CsvImportBloc>();
     final state = context.watch<CsvImportBloc>().state;
 
-    Widget? bottomBar;
-    if (state.status == CsvImportStatus.ready ||
-        state.status == CsvImportStatus.importing) {
-      bottomBar = PinnedButtonBar(
+    final bottomBar = switch (state.status) {
+      CsvImportStatus.checking ||
+      CsvImportStatus.ready ||
+      CsvImportStatus.importing => PinnedButtonBar(
         label: l10n.csvImportAction,
         isBusy: state.status == CsvImportStatus.importing,
         onPressed: state.status == CsvImportStatus.ready
             ? () => bloc.add(const CsvImportConfirmed())
             : null,
-      );
-    } else if (state.status == CsvImportStatus.imported) {
-      bottomBar = PinnedButtonBar(
+      ),
+      CsvImportStatus.imported => PinnedButtonBar(
         label: l10n.doneAction,
         onPressed: () => context.popOrGo(AppRoutes.settings),
-      );
-    }
+      ),
+      _ => null,
+    };
+
+    void retry() => bloc.add(state.failedAction ?? const CsvImportStarted());
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.importCsvTitle)),
       body: switch (state.status) {
         CsvImportStatus.choosing => const _Skeleton(),
         CsvImportStatus.noFile => StateView(
-          icon: Icons.description_outlined,
+          icon: LucideIcons.fileText,
           title: l10n.csvNoFileTitle,
           message: l10n.csvNoFileMessage,
           actionLabel: l10n.csvChooseFile,
           filledAction: true,
           onAction: () => bloc.add(const CsvFileRequested()),
         ),
+        CsvImportStatus.fileProblem => StateView(
+          icon: LucideIcons.circleAlert,
+          title: l10n.csvFileProblemTitle,
+          message: _fileIssueText(l10n, state),
+          actionLabel: l10n.csvChooseAnotherFile,
+          filledAction: true,
+          onAction: () => bloc.add(const CsvFileRequested()),
+        ),
         CsvImportStatus.noConnection => FailureView(
           kind: FailureKind.noConnection,
-          onRetry: () =>
-              bloc.add(state.failedAction ?? const CsvImportStarted()),
+          onRetry: retry,
+        ),
+        CsvImportStatus.unavailable => FailureView(
+          kind: FailureKind.unavailable,
+          onRetry: retry,
         ),
         CsvImportStatus.failure => FailureView(
           kind: FailureKind.error,
           errorTitle: l10n.csvImportFailed,
-          onRetry: () =>
-              bloc.add(state.failedAction ?? const CsvImportStarted()),
+          onRetry: retry,
         ),
-        CsvImportStatus.ready || CsvImportStatus.importing => _Chosen(
-          file: state.file!,
-          isBusy: state.status == CsvImportStatus.importing,
-        ),
+        CsvImportStatus.checking ||
+        CsvImportStatus.ready ||
+        CsvImportStatus.importing => _Chosen(state: state),
         CsvImportStatus.imported => _Result(result: state.result!),
       },
       bottomNavigationBar: bottomBar,
     );
+  }
+
+  static String _fileIssueText(AppLocalizations l10n, CsvImportState state) {
+    return switch (state.fileIssue) {
+      CsvFileIssue.unknownColumns => l10n.csvFileUnknownColumns,
+      CsvFileIssue.noRows => l10n.csvFileNoRows,
+      CsvFileIssue.tooManyRows => l10n.csvFileTooManyRows(
+        limit: state.fileLimit ?? 0,
+      ),
+      CsvFileIssue.tooLarge => l10n.csvFileTooLarge,
+      CsvFileIssue.unreadable || null => l10n.csvFileUnreadable,
+    };
   }
 }
 
@@ -139,23 +165,43 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-/// ST-8: the chosen file and whether it can be imported.
+/// ST-8: the chosen file, and what the check found or how far the import
+/// is.
 class _Chosen extends StatelessWidget {
-  const new({required this.file, required this.isBusy});
+  const new({required this.state});
 
-  final CsvFile file;
-  final bool isBusy;
+  final CsvImportState state;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final file = state.file!;
+    final estimate = state.estimate;
+    final busy = state.status != CsvImportStatus.ready;
+
+    final (icon, status) = switch (state.status) {
+      CsvImportStatus.checking => (LucideIcons.hourglass, l10n.csvChecking),
+      CsvImportStatus.importing => (
+        LucideIcons.upload,
+        l10n.csvImportProgress(done: state.rowsDone, total: file.rows),
+      ),
+      _ => (
+        estimate == null || estimate.skipped == 0
+            ? LucideIcons.circleCheck
+            : LucideIcons.triangleAlert,
+        l10n.csvImportEstimate(
+          imported: estimate?.imported ?? 0,
+          problems: estimate?.skipped ?? 0,
+        ),
+      ),
+    };
 
     return _Page(
       children: [
         _InfoCard(
-          icon: Icons.description_outlined,
+          icon: LucideIcons.fileText,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -175,22 +221,38 @@ class _Chosen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _InfoCard(
-          icon: Icons.check_circle_outline,
-          background: colors.secondaryContainer,
-          foreground: colors.onSecondaryContainer,
-          child: Text(
-            l10n.csvReadyToImport(rows: file.rows),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colors.onSecondaryContainer,
+        Semantics(
+          liveRegion: true,
+          container: true,
+          child: _InfoCard(
+            icon: icon,
+            background: colors.secondaryContainer,
+            foreground: colors.onSecondaryContainer,
+            child: Text(
+              status,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colors.onSecondaryContainer,
+              ),
             ),
           ),
         ),
+        if (state.status == CsvImportStatus.ready && file.crowdedDays > 0) ...[
+          const SizedBox(height: 12),
+          _InfoCard(
+            icon: LucideIcons.info,
+            child: Text(
+              l10n.csvCrowdedDays(days: file.crowdedDays),
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+        if (state.status == CsvImportStatus.ready && estimate != null)
+          _ProblemList(result: estimate),
         const SizedBox(height: 8),
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: TextButton(
-            onPressed: isBusy
+            onPressed: busy
                 ? null
                 : () => context.read<CsvImportBloc>().add(
                     const CsvFileRequested(),
@@ -222,9 +284,7 @@ class _Result extends StatelessWidget {
           liveRegion: true,
           container: true,
           child: _InfoCard(
-            icon: skipped
-                ? Icons.warning_amber_outlined
-                : Icons.check_circle_outline,
+            icon: skipped ? LucideIcons.triangleAlert : LucideIcons.circleCheck,
             background: colors.secondaryContainer,
             foreground: colors.onSecondaryContainer,
             child: Text(
@@ -238,6 +298,28 @@ class _Result extends StatelessWidget {
             ),
           ),
         ),
+        _ProblemList(result: result),
+      ],
+    );
+  }
+}
+
+/// The rows that were (or would be) skipped, each with why. A file of several
+/// kinds says the kind of each row.
+class _ProblemList extends StatelessWidget {
+  const new({required this.result});
+
+  final CsvImportResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         for (final problem in result.problems)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -245,26 +327,48 @@ class _Result extends StatelessWidget {
               children: [
                 ExcludeSemantics(
                   child: Icon(
-                    Icons.error_outline,
+                    LucideIcons.circleAlert,
                     size: 20,
                     color: colors.error,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(switch (problem.kind) {
-                    CsvProblemKind.invalidAmount =>
-                      l10n.csvProblemInvalidAmount(row: problem.row),
-                    CsvProblemKind.missingDate => l10n.csvProblemMissingDate(
-                      row: problem.row,
-                    ),
-                  }, style: theme.textTheme.bodyMedium),
+                  child: Text(
+                    _text(l10n, problem),
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ),
               ],
             ),
           ),
       ],
     );
+  }
+
+  String _text(AppLocalizations l10n, CsvProblem problem) {
+    final reason = switch (problem.reason) {
+      CsvProblemReason.missingDate => l10n.csvReasonMissingDate,
+      CsvProblemReason.invalidAmount => l10n.csvReasonInvalidAmount,
+      CsvProblemReason.duplicate => l10n.csvReasonDuplicate,
+      CsvProblemReason.unknownCategory => l10n.csvReasonUnknownCategory,
+      CsvProblemReason.unknownAccount => l10n.csvReasonUnknownAccount,
+      CsvProblemReason.limitReached => l10n.csvReasonLimitReached,
+      CsvProblemReason.nameTaken => l10n.csvReasonNameTaken,
+      CsvProblemReason.missingIcon => l10n.csvReasonMissingIcon,
+      CsvProblemReason.other => l10n.csvReasonOther,
+    };
+    if (!result.spansParts) {
+      return l10n.csvProblemRow(row: problem.row, reason: reason);
+    }
+    final part = switch (problem.kind) {
+      CsvDataKind.accounts => l10n.accountsTitle,
+      CsvDataKind.categories => l10n.categoriesTitle,
+      CsvDataKind.transactions => l10n.transactionsTitle,
+      CsvDataKind.debts => l10n.debtsTitle,
+      CsvDataKind.salaryMonths => l10n.csvKindSalaryMonths,
+    };
+    return l10n.csvProblemPartRow(part: part, row: problem.row, reason: reason);
   }
 }
 

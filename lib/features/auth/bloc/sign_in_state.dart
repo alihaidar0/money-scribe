@@ -71,6 +71,7 @@ final class SignInState extends Equatable {
     this.fingerprintAccount,
     this.usePassword = false,
     this.viaFingerprint = false,
+    this.signOutReason,
   });
 
   final SignInStatus status;
@@ -90,6 +91,10 @@ final class SignInState extends Equatable {
   /// asks for the fingerprint and not the password.
   final bool viaFingerprint;
 
+  /// Why the server signed this device out, said above the form until the
+  /// person tries to sign in; `null` after their own sign-out.
+  final SignOutReason? signOutReason;
+
   /// Whether the fingerprint is what the screen offers, instead of the email
   /// and password form.
   bool get offersFingerprint => fingerprintAccount != null && !usePassword;
@@ -101,6 +106,7 @@ final class SignInState extends Equatable {
     bool clearFingerprintAccount = false,
     bool? usePassword,
     bool? viaFingerprint,
+    SignOutReason? signOutReason,
   }) {
     return SignInState(
       status: status ?? this.status,
@@ -110,6 +116,7 @@ final class SignInState extends Equatable {
           : fingerprintAccount ?? this.fingerprintAccount,
       usePassword: usePassword ?? this.usePassword,
       viaFingerprint: viaFingerprint ?? this.viaFingerprint,
+      signOutReason: signOutReason ?? this.signOutReason,
     );
   }
 
@@ -120,5 +127,6 @@ final class SignInState extends Equatable {
     fingerprintAccount,
     usePassword,
     viaFingerprint,
+    signOutReason,
   ];
 }

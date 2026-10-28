@@ -1,5 +1,8 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
@@ -41,12 +44,12 @@ void main() {
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
 
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
   });
 
@@ -70,7 +73,6 @@ void main() {
         'Dark',
         'Language',
         'English',
-        'العربية',
         'Notifications',
         'Show notifications',
         'Not allowed yet',
@@ -83,10 +85,14 @@ void main() {
         'Import CSV',
         'Security',
         'App lock',
-        'Money Scribe 0.1.0',
+        'Where you are signed in',
+        'Security activity',
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
+      // The version is at the very end of the list.
+      await tester.scrollUntilVisible(find.text('Money Scribe 0.1.0'), 200);
+      expect(find.text('Money Scribe 0.1.0'), findsOneWidget);
     });
 
     testWidgets('the switches start off', (tester) async {
@@ -150,19 +156,141 @@ void main() {
   });
 
   group('the language', () {
-    testWidgets('switches at once and is saved', (tester) async {
+    Finder inSheet(Finder finder) {
+      return find.descendant(of: find.byType(BottomSheet), matching: finder);
+    }
+
+    Future<void> openLanguageSheet(WidgetTester tester) async {
+      await tester.tap(find.text('Language'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the row shows the current language with its flag', (
+      tester,
+    ) async {
+      await openSettings(tester);
+
+      expect(find.text('Language'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+      expect(find.byType(CountryFlag), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNothing);
+    });
+
+    testWidgets('the row of the device language shows a globe', (tester) async {
+      await openSettings(tester, languageRepository: FakeLanguageRepository());
+
+      expect(find.byType(CountryFlag), findsNothing);
+      expect(find.byIcon(LucideIcons.globe), findsOneWidget);
+    });
+
+    testWidgets('opens a sheet with a card for each language', (tester) async {
+      await openSettings(tester);
+
+      await openLanguageSheet(tester);
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(inSheet(find.text('Language')), findsOneWidget);
+      for (final name in ['System default', 'English', 'العربية']) {
+        expect(inSheet(find.text(name)), findsOneWidget, reason: name);
+      }
+      // A flag for each language with a country, a globe for the device.
+      expect(inSheet(find.byType(CountryFlag)), findsNWidgets(2));
+      expect(inSheet(find.byIcon(LucideIcons.globe)), findsOneWidget);
+    });
+
+    testWidgets('marks the current language', (tester) async {
+      final handle = tester.ensureSemantics();
+      await openSettings(tester);
+      await openLanguageSheet(tester);
+
+      expect(inSheet(find.byIcon(LucideIcons.circleCheck)), findsOneWidget);
+      for (final name in ['System default', 'English', 'العربية']) {
+        expect(
+          tester.getSemantics(inSheet(find.bySemanticsLabel(name))),
+          isSemantics(
+            label: name,
+            isButton: true,
+            hasTapAction: true,
+            hasCheckedState: true,
+            isChecked: name == 'English',
+          ),
+          reason: name,
+        );
+      }
+      handle.dispose();
+    });
+
+    testWidgets('a tap on a language switches at once, saves it and closes '
+        'the sheet', (tester) async {
       final languages = FakeLanguageRepository();
       await openSettings(tester, languageRepository: languages);
+      await openLanguageSheet(tester);
 
-      await tester.tap(find.text('العربية'));
+      await tester.tap(inSheet(find.text('العربية')));
       await tester.pumpAndSettle();
 
       expect(languages.language, AppLanguage.arabic);
+      expect(find.byType(BottomSheet), findsNothing);
       expect(find.text('الإعدادات'), findsOneWidget);
       expect(
         Directionality.of(tester.element(find.byType(SettingsScreen))),
         TextDirection.rtl,
       );
+    });
+
+    testWidgets('can follow the device again', (tester) async {
+      final languages = FakeLanguageRepository(AppLanguage.english);
+      await openSettings(tester, languageRepository: languages);
+      await openLanguageSheet(tester);
+
+      await tester.tap(inSheet(find.text('System default')));
+      await tester.pumpAndSettle();
+
+      expect(languages.language, AppLanguage.system);
+    });
+
+    testWidgets('dismissing the sheet keeps the language', (tester) async {
+      final languages = FakeLanguageRepository(AppLanguage.english);
+      await openSettings(tester, languageRepository: languages);
+      await openLanguageSheet(tester);
+
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(languages.language, AppLanguage.english);
+    });
+
+    testWidgets('is in Arabic, with the names unchanged, when the screen is', (
+      tester,
+    ) async {
+      await openSettings(tester, language: AppLanguage.arabic);
+
+      await tester.tap(find.text('اللغة'));
+      await tester.pumpAndSettle();
+
+      expect(inSheet(find.text('اللغة')), findsOneWidget);
+      expect(inSheet(find.text('لغة النظام')), findsOneWidget);
+      // Every language keeps its own name, whatever the screen speaks.
+      expect(inSheet(find.text('English')), findsOneWidget);
+      expect(inSheet(find.text('العربية')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('fits large text on a small screen', (tester) async {
+      await openSettings(tester, size: const Size(320, 480));
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Language'), 200);
+      await tester.ensureVisible(find.text('Language'));
+      await tester.pumpAndSettle();
+      await openLanguageSheet(tester);
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(inSheet(find.text('System default')), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -189,7 +317,7 @@ void main() {
       ]) {
         expect(inSheet(find.text(text)), findsOneWidget, reason: text);
       }
-      expect(inSheet(find.byIcon(Icons.radio_button_checked)), findsOneWidget);
+      expect(inSheet(find.byIcon(LucideIcons.circleDot)), findsOneWidget);
     });
 
     testWidgets('Done saves the chosen currency', (tester) async {
@@ -275,7 +403,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AccountScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('Pay schedule opens its screen, and a change comes back', (

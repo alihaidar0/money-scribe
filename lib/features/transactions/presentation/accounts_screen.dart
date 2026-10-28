@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
@@ -58,6 +59,44 @@ class _AccountsView extends StatelessWidget {
         ),
         BlocListener<AccountsBloc, AccountsState>(
           listenWhen: (previous, current) =>
+              previous.staleAction != current.staleAction &&
+              current.staleAction != null,
+          listener: (context, state) {
+            final action = state.staleAction;
+            if (action == null) return;
+            // An account that is gone has nothing to apply the change to.
+            final id = switch (action) {
+              AccountChanged(:final id) || AccountDeleted(:final id) => id,
+              _ => null,
+            };
+            final gone = !state.accounts.any((account) => account.id == id);
+            showFailureSnackBar(
+              context,
+              l10n.itemChangedElsewhere,
+              actionLabel: l10n.applyAgainAction,
+              onRetry: gone ? null : () => bloc.add(action),
+            );
+          },
+        ),
+        BlocListener<AccountsBloc, AccountsState>(
+          listenWhen: (previous, current) =>
+              previous.refusal != current.refusal && current.refusal != null,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(switch (state.refusal) {
+                    AccountRefusal.nameTaken => l10n.accountNameTaken,
+                    AccountRefusal.limitReached => l10n.accountLimitReached,
+                    null => '',
+                  }),
+                ),
+              );
+          },
+        ),
+        BlocListener<AccountsBloc, AccountsState>(
+          listenWhen: (previous, current) =>
               !previous.deleteBlocked && current.deleteBlocked,
           listener: (context, state) {
             ScaffoldMessenger.of(context)
@@ -72,7 +111,7 @@ class _AccountsView extends StatelessWidget {
             ? FloatingActionButton.extended(
                 heroTag: null,
                 onPressed: () => _add(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(LucideIcons.plus),
                 label: Text(l10n.addAccountAction),
               )
             : null,
@@ -95,9 +134,20 @@ class _AccountsView extends StatelessWidget {
 
   Future<void> _add(BuildContext context) async {
     final bloc = context.read<AccountsBloc>();
-    final result = await showAccountFormSheet(context);
+    final result = await showAccountFormSheet(
+      context,
+      takenNames: _takenNames(bloc.state.accounts),
+    );
     if (result is AccountFormSaved) bloc.add(AccountAdded(result.draft));
   }
+}
+
+/// The names of [accounts] in lower case, except the one of [except].
+Set<String> _takenNames(List<Account> accounts, {String? except}) {
+  return {
+    for (final account in accounts)
+      if (account.id != except) account.name.toLowerCase(),
+  };
 }
 
 class _List extends StatelessWidget {
@@ -112,13 +162,16 @@ class _List extends StatelessWidget {
 
     if (accounts.isEmpty) {
       return StateView(
-        icon: Icons.account_balance_wallet_outlined,
+        icon: LucideIcons.wallet,
         title: l10n.accountsEmptyTitle,
         actionLabel: l10n.addAccountAction,
         filledAction: true,
         onAction: () async {
           final bloc = context.read<AccountsBloc>();
-          final result = await showAccountFormSheet(context);
+          final result = await showAccountFormSheet(
+            context,
+            takenNames: _takenNames(bloc.state.accounts),
+          );
           if (result is AccountFormSaved) bloc.add(AccountAdded(result.draft));
         },
       );
@@ -170,7 +223,7 @@ class _AccountRow extends StatelessWidget {
                   ),
                   ExcludeSemantics(
                     child: IconButton(
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(LucideIcons.pencil),
                       tooltip: l10n.editItemTooltip(name: account.name),
                       onPressed: () => _edit(context),
                     ),
@@ -186,7 +239,11 @@ class _AccountRow extends StatelessWidget {
 
   Future<void> _edit(BuildContext context) async {
     final bloc = context.read<AccountsBloc>();
-    final result = await showAccountFormSheet(context, account: account);
+    final result = await showAccountFormSheet(
+      context,
+      account: account,
+      takenNames: _takenNames(bloc.state.accounts, except: account.id),
+    );
     switch (result) {
       case AccountFormSaved(:final draft):
         bloc.add(AccountChanged(account.id, draft));

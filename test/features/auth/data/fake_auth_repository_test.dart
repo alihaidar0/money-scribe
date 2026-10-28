@@ -5,6 +5,7 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 void main() {
   late DemoController demo;
@@ -28,6 +29,30 @@ void main() {
         .having((error) => error.reason, 'reason', reason)
         .having((error) => error.retryAfter, 'retryAfter', retryAfter);
   }
+
+  group('a sign-out by the server', () {
+    test('signs out and keeps the reason until the next sign-in', () async {
+      await signIn();
+
+      auth.endSession(SignOutReason.tooManyDevices);
+
+      expect(auth.isSignedIn, isFalse);
+      expect(auth.signOutReason, SignOutReason.tooManyDevices);
+
+      await signIn();
+
+      expect(auth.signOutReason, isNull);
+    });
+
+    test('has no reason when the person signs out', () async {
+      await signIn();
+      auth.endSession(SignOutReason.expired);
+
+      await auth.signOut();
+
+      expect(auth.signOutReason, isNull);
+    });
+  });
 
   group('sign in', () {
     test('starts signed out', () => expect(auth.isSignedIn, isFalse));

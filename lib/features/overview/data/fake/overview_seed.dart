@@ -2,6 +2,7 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/overview/domain/debt_choice.dart';
 import 'package:money_scribe/features/overview/domain/month_overview.dart';
@@ -20,6 +21,7 @@ abstract final class OverviewSeed {
     final first = OverviewFigures(
       salary: _rub(43500),
       recurringIncome: _rub(0),
+      otherIncome: _rub(0),
       fixedCosts: _rub(-34500),
       purchases: _rub(-8250),
       debtMovements: _rub(const [0, 2500, 4000, 1500][pattern]),
@@ -27,6 +29,7 @@ abstract final class OverviewSeed {
     final second = OverviewFigures(
       salary: _rub(pattern == 1 ? 56550 : 60900),
       recurringIncome: _rub(5000),
+      otherIncome: _rub(pattern == 0 ? 2000 : 0),
       fixedCosts: _rub(0),
       purchases: _rub(-10000 - (pattern - 2) * 1500),
       debtMovements: _rub(0),
@@ -34,6 +37,7 @@ abstract final class OverviewSeed {
     final total = OverviewFigures(
       salary: first.salary + second.salary,
       recurringIncome: first.recurringIncome + second.recurringIncome,
+      otherIncome: first.otherIncome + second.otherIncome,
       fixedCosts: first.fixedCosts + second.fixedCosts,
       purchases: first.purchases + second.purchases,
       debtMovements: first.debtMovements + second.debtMovements,
@@ -46,6 +50,10 @@ abstract final class OverviewSeed {
         total: total,
         firstPart: first,
         secondPart: second,
+        cycle: PayCycle.twoPayments(
+          firstPayDay: PayCycle.defaultFirstPayDay,
+          secondPayDay: PayCycle.defaultSecondPayDay,
+        ),
       ),
     };
   }

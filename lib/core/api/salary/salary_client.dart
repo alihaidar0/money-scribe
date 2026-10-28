@@ -22,7 +22,7 @@ abstract class SalaryClient {
 
   /// Change a fixed item.
   ///
-  /// Changes any of `name`, `amount`, `kind`, `part`; the `currency`, if sent, must be the month's. Send `If-Match` with the item's `version`: a stale one is `412` and changes nothing. Answers the item and its new `ETag`; the month's `version` does not change, but its `fixed_totals` and `balances` do.
+  /// Changes any of `name`, `amount`, `kind`, `part`, `day` (`null` clears it); the `currency`, if sent, must be the month's. Send `If-Match` with the item's `version`: a stale one is `412` and changes nothing. Answers the item and its new `ETag`; the month's `version` does not change, but its `fixed_totals` and `balances` do.
   ///
   /// [ifMatch] - The `version` of the record the edit was made from, as a quoted string: `"3"` (`*` matches any record). If the stored version is another one nothing changes and the answer is `412` `precondition_failed`. Without the header the last write wins.
   @PATCH('/api/v1/salary/fixed-items/{id}/')
@@ -118,7 +118,7 @@ abstract class SalaryClient {
 
   /// Copy the fixed items of another month.
   ///
-  /// Adds the fixed items of another saved month to this one (`name`, `amount`, `kind`, `part`, with new ids) and answers this month. Needs an `Idempotency-Key`. `from` is the month to copy from; without it, the most recent saved month before this one. Errors: `404` for a month or a source that is not saved (also when there is no earlier month); `400` on `from` when it is the month itself or has another currency (`currency_mismatch`); `409` `fixed_item_limit_reached` with nothing copied when the total would pass 100. A source with no items copies nothing and is not an error.
+  /// Adds the fixed items of another saved month to this one (`name`, `amount`, `kind`, `part`, `day`, with new ids) and answers this month. Needs an `Idempotency-Key`. `from` is the month to copy from; without it, the most recent saved month before this one. Errors: `404` for a month or a source that is not saved (also when there is no earlier month); `400` on `from` when it is the month itself or has another currency (`currency_mismatch`); `409` `fixed_item_limit_reached` with nothing copied when the total would pass 100. A source with no items copies nothing and is not an error.
   ///
   /// [idempotencyKey] - A random id, once per user action, as a quoted string of 16 to 64 letters, digits, hyphens or underscores (a UUID fits): `"8e03978e-40d5-43e8-bc93-6894a57f9324"`. Repeat the same request with the same key after a lost answer and nothing is created twice; the answer is replayed with `Idempotent-Replayed: true`. The key is honoured for 24 hours. Without it: `400` `idempotency_key_required` (`attr` `idempotency_key`).
   ///

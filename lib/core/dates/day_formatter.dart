@@ -11,12 +11,14 @@ class DayFormatter {
     : _languageCode = locale.languageCode,
       _day = DateFormat.d(locale.toLanguageTag()),
       _month = DateFormat.MMM(locale.toLanguageTag()),
-      _weekday = DateFormat.E(locale.toLanguageTag());
+      _weekday = DateFormat.E(locale.toLanguageTag()),
+      _time = DateFormat.Hm(locale.toLanguageTag());
 
   final String _languageCode;
   final DateFormat _day;
   final DateFormat _month;
   final DateFormat _weekday;
+  final DateFormat _time;
 
   /// The day and the short month, such as `5 Oct`.
   String format(DateTime date) {
@@ -29,6 +31,22 @@ class DayFormatter {
   String formatDate(DateTime date, {required DateTime today}) {
     if (date.year == today.year) return format(date);
     return '${format(date)} ${WesternDigits.normalize('${date.year}')}';
+  }
+
+  /// [format] with the year, such as `5 Oct 2026`.
+  String formatWithYear(DateTime date) {
+    return '${format(date)} ${WesternDigits.normalize('${date.year}')}';
+  }
+
+  /// The time of day on a 24-hour clock, such as `18:40`.
+  String formatTime(DateTime date) =>
+      WesternDigits.normalize(_time.format(date));
+
+  /// Whether [date] and [other] are the same calendar day.
+  bool isSameDay(DateTime date, DateTime other) {
+    return date.year == other.year &&
+        date.month == other.month &&
+        date.day == other.day;
   }
 
   /// The weekday, the day and the short month, such as `Mon 5 Oct`. With

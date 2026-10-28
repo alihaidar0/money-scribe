@@ -2,28 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/clock.dart';
-import 'package:money_scribe/core/widgets/button_spinner.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
-import 'package:money_scribe/core/widgets/message_banner.dart';
 import 'package:money_scribe/features/settings/bloc/csv_export_bloc.dart';
 import 'package:money_scribe/features/settings/domain/csv_transfer.dart';
-import 'package:money_scribe/features/settings/domain/csv_transfer_repository.dart';
 
 /// ST-7: the bottom sheet that chooses what to export as CSV and for which
-/// days, and makes the file. Closes with `true` once the file is made, or with
-/// `null` when dismissed.
-Future<bool?> showCsvExportSheet(BuildContext context) {
-  final repository = context.read<CsvTransferRepository>();
+/// days. Closes with what to export when Export is pressed (the password
+/// dialog, ST-7b, makes the file), or with `null` when dismissed.
+Future<CsvExportRequest?> showCsvExportSheet(BuildContext context) {
   final clock = context.read<Clock>();
 
-  return showModalBottomSheet<bool>(
+  return showModalBottomSheet<CsvExportRequest>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
     // Over the navigation bar too, which stays dimmed and inactive.
     useRootNavigator: true,
     builder: (sheetContext) => BlocProvider(
-      create: (_) => CsvExportBloc(repository: repository, now: clock.now),
+      create: (_) => CsvExportBloc(now: clock.now),
       child: _CsvExportSheet(today: clock.now()),
     ),
   );
@@ -42,15 +38,20 @@ class _CsvExportSheet extends StatelessWidget {
     return BlocConsumer<CsvExportBloc, CsvExportState>(
       listenWhen: (previous, current) =>
           previous.status != current.status &&
-          current.status == CsvExportStatus.exported,
-      listener: (context, state) => Navigator.of(context).pop(true),
+          current.status == CsvExportStatus.chosen,
+      listener: (context, state) => Navigator.of(context).pop(state.request),
       builder: (context, state) {
         final bloc = context.read<CsvExportBloc>();
-        final isBusy = state.status == CsvExportStatus.exporting;
+        // A chip stands for one or more kinds: the accounts and the custom
+        // categories are one, because a restore needs both.
         final kinds = {
-          CsvDataKind.transactions: l10n.transactionsTitle,
-          CsvDataKind.debts: l10n.debtsTitle,
-          CsvDataKind.salaryMonths: l10n.csvKindSalaryMonths,
+          l10n.csvKindSetup: const {
+            CsvDataKind.accounts,
+            CsvDataKind.categories,
+          },
+          l10n.transactionsTitle: const {CsvDataKind.transactions},
+          l10n.debtsTitle: const {CsvDataKind.debts},
+          l10n.csvKindSalaryMonths: const {CsvDataKind.salaryMonths},
         };
         final periods = {
           CsvPeriod.allTime: l10n.csvPeriodAllTime,
@@ -73,14 +74,6 @@ class _CsvExportSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (state.status == CsvExportStatus.noConnection ||
-                    state.status == CsvExportStatus.failure) ...[
-                  MessageBanner(
-                    icon: Icons.error_outline,
-                    text: l10n.couldNotExport,
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 Semantics(
                   header: true,
                   child: Text(
@@ -93,14 +86,16 @@ class _CsvExportSheet extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    for (final MapEntry(key: kind, value: label)
+                    for (final MapEntry(key: label, value: chipKinds)
                         in kinds.entries)
                       FilterChip(
                         label: Text(label),
-                        selected: state.kinds.contains(kind),
-                        onSelected: isBusy
-                            ? null
-                            : (_) => bloc.add(CsvKindToggled(kind)),
+                        selected: state.kinds.containsAll(chipKinds),
+                        onSelected: (_) => bloc.add(
+                          chipKinds.length == 1
+                              ? CsvKindToggled(chipKinds.single)
+                              : CsvKindsToggled(chipKinds),
+                        ),
                       ),
                   ],
                 ),
@@ -132,12 +127,20 @@ class _CsvExportSheet extends StatelessWidget {
                         label: Text(label),
                         selected: state.period == period,
                         showCheckmark: false,
-                        onSelected: isBusy
-                            ? null
-                            : (_) => bloc.add(CsvPeriodSelected(period)),
+                        onSelected: (_) => bloc.add(CsvPeriodSelected(period)),
                       ),
                   ],
                 ),
+                if (state.kinds.contains(CsvDataKind.accounts) ||
+                    state.kinds.contains(CsvDataKind.categories)) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.csvPeriodNotForSetup,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 if (state.period == CsvPeriod.custom) ...[
                   const SizedBox(height: 16),
                   DateField(
@@ -165,24 +168,27 @@ class _CsvExportSheet extends StatelessWidget {
                     ),
                   ],
                 ],
+                const SizedBox(height: 16),
+                Text(
+                  l10n.csvSeveralKindsZip,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: isBusy
-                          ? null
-                          : () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).pop(),
                       child: Text(l10n.cancelAction),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: state.canExport && !isBusy
+                      onPressed: state.canExport
                           ? () => bloc.add(const CsvExportRequested())
                           : null,
-                      child: isBusy
-                          ? const ButtonSpinner()
-                          : Text(l10n.exportAction),
+                      child: Text(l10n.exportAction),
                     ),
                   ],
                 ),

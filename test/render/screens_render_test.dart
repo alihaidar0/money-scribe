@@ -6,22 +6,29 @@
 @Tags(['render'])
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/widgets/day_picker_field.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/debts/bloc/debts_bloc.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/salary/domain/fixed_item.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_flag.dart';
+import 'package:money_scribe/features/transactions/domain/transaction.dart';
 
 import '../support/build_app.dart';
 import '../support/fake_language_repository.dart';
@@ -48,6 +55,7 @@ class _Scene {
     this.lockOn = false,
     this.fingerprintKey = false,
     this.fingerprintOn = false,
+    this.signedOutBy,
   });
 
   final String name;
@@ -73,6 +81,9 @@ class _Scene {
 
   /// The fingerprint sign-in is on for the signed-in account on this phone.
   final bool fingerprintOn;
+
+  /// The server signed the device out for this reason: Sign in says why.
+  final SignOutReason? signedOutBy;
   final _Setup? setup;
   final Size size;
 }
@@ -93,6 +104,35 @@ Future<void> _useTwoPayments(WidgetTester tester, DemoController demo) async {
 
 Future<void> _typeCode(WidgetTester tester, String code) async {
   await tester.enterText(find.byType(TextField), code);
+  await tester.pumpAndSettle();
+}
+
+/// Opens Settings > Export CSV, presses Export and types a password.
+Future<void> _openExportPassword(WidgetTester tester) async {
+  final row = find.byIcon(LucideIcons.upload);
+  await tester.ensureVisible(row);
+  await tester.pumpAndSettle();
+  await tester.tap(row);
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byType(FilledButton),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextField), 'password');
+  await tester.pumpAndSettle();
+}
+
+/// Presses the filled button of the open dialog.
+Future<void> _tapDialogPrimary(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(FilledButton),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -151,7 +191,7 @@ Future<void> _tapFixedPart(WidgetTester tester, int index) async {
 }
 
 Future<void> _openEditSheet(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.edit_outlined).first);
+  await tester.tap(find.byIcon(LucideIcons.pencil).first);
   await tester.pumpAndSettle();
 }
 
@@ -231,6 +271,16 @@ final _scenes = <_Scene>[
     },
   ),
   const _Scene(
+    'auth-2d-sign-in-too-many-devices',
+    AppRoutes.signIn,
+    signedOutBy: SignOutReason.tooManyDevices,
+  ),
+  const _Scene(
+    'auth-2d-sign-in-ended-elsewhere',
+    AppRoutes.signIn,
+    signedOutBy: SignOutReason.endedElsewhere,
+  ),
+  const _Scene(
     'auth-2h-sign-in-fingerprint',
     AppRoutes.signIn,
     fingerprintKey: true,
@@ -276,7 +326,7 @@ final _scenes = <_Scene>[
     signedIn: true,
     fingerprintOn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.delete_outline).at(1));
+      await tester.tap(find.byIcon(LucideIcons.trash2).at(1));
       await tester.pumpAndSettle();
     },
   ),
@@ -287,7 +337,7 @@ final _scenes = <_Scene>[
     fingerprintOn: true,
     setup: (tester, demo) async {
       for (var i = 0; i < 3; i++) {
-        await tester.tap(find.byIcon(Icons.delete_outline).first);
+        await tester.tap(find.byIcon(LucideIcons.trash2).first);
         await tester.pumpAndSettle();
         await tester.tap(
           find.descendant(
@@ -468,7 +518,7 @@ final _scenes = <_Scene>[
     AppRoutes.paySetup,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.radio_button_unchecked));
+      await tester.tap(find.byIcon(LucideIcons.circle));
       await tester.pumpAndSettle();
     },
   ),
@@ -586,7 +636,7 @@ final _scenes = <_Scene>[
     AppRoutes.overview,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.chevron_left).first);
+      await tester.tap(find.byIcon(LucideIcons.chevronLeftDir).first);
       await tester.pumpAndSettle();
     },
   ),
@@ -932,7 +982,7 @@ final _scenes = <_Scene>[
     '/salary/history/2026-09',
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(
         find.byWidgetPredicate((widget) => widget is PopupMenuItem).first,
@@ -991,6 +1041,32 @@ final _scenes = <_Scene>[
     },
   ),
   _Scene(
+    'fix-3-add-fixed-item-two-payments',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'fix-4-day-wheel',
+    AppRoutes.fixedItems,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _useTwoPayments(tester, demo);
+      await _openEditSheet(tester);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(DayPickerField),
+        ),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
     'fix-5-delete-fixed-item',
     AppRoutes.fixedItems,
     signedIn: true,
@@ -1014,7 +1090,7 @@ final _scenes = <_Scene>[
     AppRoutes.fixedItems,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.content_copy_outlined));
+      await tester.tap(find.byIcon(LucideIcons.copy));
       await tester.pumpAndSettle();
     },
   ),
@@ -1129,7 +1205,7 @@ final _scenes = <_Scene>[
     AppRoutes.transactions,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.tune));
+      await tester.tap(find.byIcon(LucideIcons.slidersHorizontal));
       await tester.pumpAndSettle();
     },
   ),
@@ -1139,7 +1215,7 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: (tester, demo) async {
       await _useTwoPayments(tester, demo);
-      await tester.tap(find.byIcon(Icons.tune));
+      await tester.tap(find.byIcon(LucideIcons.slidersHorizontal));
       await tester.pumpAndSettle();
     },
   ),
@@ -1148,7 +1224,7 @@ final _scenes = <_Scene>[
     AppRoutes.transactions,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.tune));
+      await tester.tap(find.byIcon(LucideIcons.slidersHorizontal));
       await tester.pumpAndSettle();
       // The first category chip of the sheet, then Apply.
       await tester.tap(find.byType(FilterChip).at(3));
@@ -1195,6 +1271,35 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: _useTwoPayments,
   ),
+  _Scene(
+    'tx-4d-add-income-counts-toward',
+    AppRoutes.addTransaction,
+    signedIn: true,
+    setup: (tester, demo) async {
+      // The form reads how the salary is paid when it opens, so it is opened
+      // again after the change.
+      demo.update(demo.settings.copyWith(paymentMode: PaymentMode.twoPayments));
+      final router = GoRouter.of(tester.element(find.byType(Scaffold).first))
+        ..go(AppRoutes.transactions);
+      await tester.pumpAndSettle();
+      unawaited(router.push(AppRoutes.addTransaction));
+      await tester.pumpAndSettle();
+      // The second option of Expense / Income.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(PillSegmentedButton<TransactionKind>),
+              matching: find.byType(InkWell),
+            )
+            .last,
+      );
+      await tester.pumpAndSettle();
+      // The payment after the day, not the automatic one: the choices come
+      // before the categories.
+      await tester.tap(find.byType(ChoiceChip).at(2));
+      await tester.pumpAndSettle();
+    },
+  ),
   const _Scene(
     'tx-5-edit-transaction',
     '/transactions/edit/seed-groceries',
@@ -1205,7 +1310,7 @@ final _scenes = <_Scene>[
     AppRoutes.addTransaction,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
     },
   ),
@@ -1214,7 +1319,7 @@ final _scenes = <_Scene>[
     '/transactions/edit/seed-groceries',
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
     },
   ),
@@ -1300,7 +1405,7 @@ final _scenes = <_Scene>[
     '/debts/sam',
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.chevron_right).first);
+      await tester.tap(find.byIcon(LucideIcons.chevronRightDir).first);
       await tester.pumpAndSettle();
     },
   ),
@@ -1309,7 +1414,7 @@ final _scenes = <_Scene>[
     '/debts/sam',
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.chevron_right).first);
+      await tester.tap(find.byIcon(LucideIcons.chevronRightDir).first);
       await tester.pumpAndSettle();
       // The red button of the sheet is the first of its row: after the date.
       await tester.tap(
@@ -1328,7 +1433,7 @@ final _scenes = <_Scene>[
     '/debts/sam',
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(
         find.byWidgetPredicate((widget) => widget is PopupMenuItem).last,
@@ -1475,7 +1580,7 @@ final _scenes = <_Scene>[
     AppRoutes.categories,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.edit_outlined).first);
+      await tester.tap(find.byIcon(LucideIcons.pencil).first);
       await tester.pumpAndSettle();
     },
   ),
@@ -1494,7 +1599,7 @@ final _scenes = <_Scene>[
     AppRoutes.accounts,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.edit_outlined).first);
+      await tester.tap(find.byIcon(LucideIcons.pencil).first);
       await tester.pumpAndSettle();
     },
   ),
@@ -1567,7 +1672,7 @@ final _scenes = <_Scene>[
     AppRoutes.account,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.alternate_email));
+      await tester.tap(find.byIcon(LucideIcons.atSign));
       await tester.pumpAndSettle();
       final fields = find.byType(TextField);
       await tester.enterText(fields.at(0), 'dana.whitfield@example.com');
@@ -1582,23 +1687,89 @@ final _scenes = <_Scene>[
     signedIn: true,
     size: _tallPhone,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.file_upload_outlined));
+      await tester.tap(find.byIcon(LucideIcons.upload));
       await tester.pumpAndSettle();
     },
   ),
   _Scene(
-    'st-7b-export-csv-custom',
+    'st-7-export-csv-custom',
     AppRoutes.settings,
     signedIn: true,
     size: _tallPhone,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.file_upload_outlined));
+      await tester.tap(find.byIcon(LucideIcons.upload));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(ChoiceChip).last);
       await tester.pumpAndSettle();
     },
   ),
+  _Scene(
+    'st-7b-export-password',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await _openExportPassword(tester);
+    },
+  ),
+  _Scene(
+    'st-7b-export-wrong-password',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
+      await _openExportPassword(tester);
+      await _tapDialogPrimary(tester);
+    },
+  ),
+  _Scene(
+    'st-7c-export-locked',
+    AppRoutes.settings,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(
+        const DemoSettings(passwordChange: DemoPasswordChange.locked),
+      );
+      await _openExportPassword(tester);
+      await _tapDialogPrimary(tester);
+    },
+  ),
   const _Scene('st-8-import-csv', AppRoutes.importCsv, signedIn: true),
+  _Scene(
+    'st-8d-import-zip',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
+  _Scene(
+    'st-8d-import-zip-result',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-8c-import-file-problem',
+    AppRoutes.importCsv,
+    signedIn: true,
+    setup: (tester, demo) async {
+      // The fourth choice of the demo picker is not an export.
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byType(TextButton).last);
+        await tester.pumpAndSettle();
+      }
+    },
+  ),
   _Scene(
     'st-8b-import-result',
     AppRoutes.importCsv,
@@ -1614,7 +1785,17 @@ final _scenes = <_Scene>[
     signedIn: true,
     size: _tallPhone,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.currency_exchange));
+      await tester.tap(find.byIcon(LucideIcons.arrowRightLeft));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-3b-language-sheet',
+    AppRoutes.settings,
+    signedIn: true,
+    size: _tallPhone,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(LanguageFlag));
       await tester.pumpAndSettle();
     },
   ),
@@ -1623,7 +1804,7 @@ final _scenes = <_Scene>[
     AppRoutes.account,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.tap(find.byIcon(LucideIcons.idCard));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Dana Whitfield');
       await tester.pumpAndSettle();
@@ -1634,7 +1815,7 @@ final _scenes = <_Scene>[
     AppRoutes.account,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.badge_outlined));
+      await tester.tap(find.byIcon(LucideIcons.idCard));
       await tester.pumpAndSettle();
       demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
       await tester.enterText(find.byType(TextField), 'Dana Whitfield');
@@ -1648,7 +1829,78 @@ final _scenes = <_Scene>[
     AppRoutes.account,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.logout));
+      await tester.tap(find.byIcon(LucideIcons.logOutDir));
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene('st-12-sessions', AppRoutes.sessions, signedIn: true),
+  _Scene(
+    'st-12b-sessions-previous',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(Tab).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12c-session-details',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.text('Chrome on Windows'));
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12d-end-session',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.text('Chrome on Windows'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(OutlinedButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-12e-sign-out-others',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.pumpAndSettle();
+    },
+  ),
+  const _Scene(
+    'st-13-security-activity',
+    AppRoutes.securityActivity,
+    signedIn: true,
+  ),
+  _Scene(
+    'st-14-sessions-previous-empty',
+    AppRoutes.sessions,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Tab).last);
+      await tester.pumpAndSettle();
+    },
+  ),
+  _Scene(
+    'st-14b-security-activity-empty',
+    AppRoutes.securityActivity,
+    signedIn: true,
+    setup: (tester, demo) async {
+      demo.update(const DemoSettings(scenario: DemoScenario.empty));
       await tester.pumpAndSettle();
     },
   ),
@@ -1657,7 +1909,7 @@ final _scenes = <_Scene>[
     AppRoutes.account,
     signedIn: true,
     setup: (tester, demo) async {
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
     },
   ),
@@ -1669,7 +1921,7 @@ final _scenes = <_Scene>[
       demo.update(
         const DemoSettings(passwordChange: DemoPasswordChange.locked),
       );
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'secret');
       await tester.pumpAndSettle();
@@ -1685,7 +1937,7 @@ final _scenes = <_Scene>[
       demo.update(
         const DemoSettings(passwordChange: DemoPasswordChange.unavailable),
       );
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'secret');
       await tester.pumpAndSettle();
@@ -1699,7 +1951,7 @@ final _scenes = <_Scene>[
     signedIn: true,
     setup: (tester, demo) async {
       demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword));
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'secret');
       await tester.pumpAndSettle();
@@ -1799,6 +2051,9 @@ void main() {
         final name = '${scene.name}-${language.name}-${brightness.name}';
 
         testWidgets('draws $name', (tester) async {
+          // Tests draw an elevation as a hard outline; the pictures show the
+          // soft shadow of a real device (restored right after the picture).
+          debugDisableShadows = false;
           tester.view
             ..devicePixelRatio = 1
             ..physicalSize = scene.size;
@@ -1811,13 +2066,17 @@ void main() {
           final demo = DemoController(latency: Duration.zero);
           final auth = FakeAuthRepository(
             demo: demo,
-            signedIn: scene.signedIn || scene.fingerprintKey,
+            signedIn:
+                scene.signedIn ||
+                scene.fingerprintKey ||
+                scene.signedOutBy != null,
           );
           final deviceKeys = FakeDeviceKeyRepository(demo: demo, auth: auth);
           if (scene.fingerprintKey || scene.fingerprintOn) {
             await deviceKeys.enable(password: 'p', prompt: 'Confirm');
           }
           if (scene.fingerprintKey) await auth.signOut();
+          if (scene.signedOutBy case final reason?) auth.endSession(reason);
           final key = GlobalKey();
           await tester.pumpWidget(
             RenderTarget(
@@ -1862,6 +2121,7 @@ void main() {
           await tester.pump();
           expect(tester.takeException(), isNull);
           await saveScreenshot(tester, key, name);
+          debugDisableShadows = true;
           // Let any pending fake answer (the slow "loading" one takes eight
           // seconds, and a screen may ask twice in a row) finish before the
           // test ends.

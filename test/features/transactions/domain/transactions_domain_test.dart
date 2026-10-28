@@ -3,6 +3,7 @@ import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/data/fake/transactions_seed.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
@@ -137,17 +138,8 @@ void main() {
   });
 
   group('TransactionFilter', () {
-    bool matches(
-      TransactionFilter filter,
-      Transaction transaction, {
-      String category = 'Groceries',
-      String account = 'Card',
-    }) {
-      return filter.matches(
-        transaction,
-        categoryName: category,
-        accountName: account,
-      );
+    bool matches(TransactionFilter filter, Transaction transaction) {
+      return filter.matches(transaction);
     }
 
     test('an empty filter matches everything and is not active', () {
@@ -157,14 +149,35 @@ void main() {
       expect(matches(filter, transaction()), isTrue);
     });
 
-    test('searches the category, the account and the note, in any case', () {
+    test('searches the note only, in any case', () {
       final item = transaction(note: 'Weekly shopping');
 
-      expect(matches(const TransactionFilter(query: 'groc'), item), isTrue);
-      expect(matches(const TransactionFilter(query: 'CARD'), item), isTrue);
       expect(matches(const TransactionFilter(query: 'weekly'), item), isTrue);
+      expect(matches(const TransactionFilter(query: 'SHOP'), item), isTrue);
       expect(matches(const TransactionFilter(query: 'xyz'), item), isFalse);
       expect(matches(const TransactionFilter(query: '   '), item), isTrue);
+      // Neither the category nor the account is searched.
+      expect(
+        matches(const TransactionFilter(query: 'groceries'), item),
+        isFalse,
+      );
+      expect(matches(const TransactionFilter(query: 'card'), item), isFalse);
+    });
+
+    test('a search of one letter is no search, as for the server', () {
+      final item = transaction(note: 'Weekly shopping');
+      const one = TransactionFilter(query: ' w ');
+
+      expect(one.searchTerm, isNull);
+      expect(one.isSearching, isFalse);
+      expect(matches(one, transaction(note: 'xyz')), isTrue);
+      expect(matches(one, item), isTrue);
+    });
+
+    test('the words sent are trimmed and cut to what the server takes', () {
+      expect(const TransactionFilter(query: '  tax  ').searchTerm, 'tax');
+      expect(TransactionFilter(query: 'x' * 150).searchTerm, 'x' * 100);
+      expect(const TransactionFilter(query: 'tax').isSearching, isTrue);
     });
 
     test('filters by category and by account', () {
@@ -226,8 +239,19 @@ void main() {
   });
 
   group('TransactionGroups.byDay', () {
-    test('lists the newest day first, with its total', () {
-      final days = TransactionGroups.byDay(TransactionsSeed.transactions());
+    List<Transaction> newestFirst() =>
+        TransactionsSeed.transactions().reversed.toList();
+
+    test('lists the newest day first, with the totals it is given', () {
+      final days = TransactionGroups.byDay(
+        newestFirst(),
+        totals: {
+          DateTime(2026, 10, 19): [rub(-640)],
+          DateTime(2026, 10, 17): [rub(-220)],
+          DateTime(2026, 10, 5): [const Money(-128450, Currency.rub)],
+          DateTime(2026, 10): [rub(5000)],
+        },
+      );
 
       expect(days.map((day) => day.date), [
         DateTime(2026, 10, 19),
@@ -235,34 +259,55 @@ void main() {
         DateTime(2026, 10, 5),
         DateTime(2026, 10),
       ]);
-      expect(days.map((day) => day.total), [
-        rub(-640),
-        rub(-220),
-        const Money(-128450, Currency.rub),
-        rub(5000),
+      expect(days.map((day) => day.totals), [
+        [rub(-640)],
+        [rub(-220)],
+        [const Money(-128450, Currency.rub)],
+        [rub(5000)],
       ]);
     });
 
-    test('puts the transaction added last first within a day', () {
+    test('keeps the order of the server within a day', () {
       final days = TransactionGroups.byDay([
-        transaction(id: 'first', rubles: 10),
         transaction(id: 'second', rubles: 20),
+        transaction(id: 'first', rubles: 10),
       ]);
 
       expect(days.single.transactions.map((item) => item.id), [
         'second',
         'first',
       ]);
-      expect(days.single.total, rub(-30));
     });
 
-    test('adds income and expenses of a day', () {
-      final days = TransactionGroups.byDay([
-        transaction(),
-        transaction(rubles: 250, kind: TransactionKind.income),
-      ]);
+    test('has no total for a day it was not given one for', () {
+      final days = TransactionGroups.byDay(
+        [transaction(), transaction(date: DateTime(2026, 10, 6))],
+        totals: {
+          DateTime(2026, 10, 6): [rub(-100)],
+        },
+      );
 
-      expect(days.single.total, rub(150));
+      expect(days.map((day) => day.totals), [
+        [rub(-100)],
+        null,
+      ]);
+    });
+
+    test('has no totals at all while none are given (a search is on)', () {
+      final days = TransactionGroups.byDay([transaction()]);
+
+      expect(days.single.totals, isNull);
+    });
+
+    test('keeps a total for each currency', () {
+      final days = TransactionGroups.byDay(
+        [transaction()],
+        totals: {
+          DateTime(2026, 10, 5): [rub(-100), const Money(4250, Currency.usd)],
+        },
+      );
+
+      expect(days.single.totals, [rub(-100), const Money(4250, Currency.usd)]);
     });
 
     test('is empty for no transactions', () {
@@ -271,37 +316,53 @@ void main() {
   });
 
   group('TransactionGroups.byPeriod', () {
-    test('splits a month at the 15th, the newest part first', () {
+    // The first payment on the 20th, the second on the 5th of the next month.
+    final cycle = PayCycle.twoPayments(firstPayDay: 20, secondPayDay: 5);
+
+    test('cuts at the pay days, the newest part first', () {
       final periods = TransactionGroups.byPeriod(
-        TransactionsSeed.transactions(),
+        TransactionsSeed.transactions().reversed.toList(),
+        cycle: cycle,
       );
 
+      // The 5th to the 19th of October is the second part of September, and
+      // the 1st of October the first part of September.
       expect(periods.map((period) => period.part), [
         PeriodScope.secondPart,
         PeriodScope.firstPart,
       ]);
-      expect(periods.first.days.map((day) => day.date.day), [19, 17]);
-      expect(periods.last.days.map((day) => day.date.day), [5, 1]);
-      expect(periods.first.month, const YearMonth(2026, 10));
+      expect(periods.first.days.map((day) => day.date.day), [19, 17, 5]);
+      expect(periods.last.days.map((day) => day.date.day), [1]);
+      expect(periods.first.month, const YearMonth(2026, 9));
+      expect(periods.last.month, const YearMonth(2026, 9));
+    });
+
+    test('gives each part the days it covers', () {
+      final periods = TransactionGroups.byPeriod([
+        transaction(date: DateTime(2026, 10, 25)),
+        transaction(date: DateTime(2026, 11, 13)),
+      ], cycle: cycle);
+
+      expect(periods.map((period) => period.range), [
+        PayPeriod(start: DateTime(2026, 11, 5), end: DateTime(2026, 11, 19)),
+        PayPeriod(start: DateTime(2026, 10, 20), end: DateTime(2026, 11, 4)),
+      ]);
+      expect(periods.map((period) => period.month), [
+        const YearMonth(2026, 10),
+        const YearMonth(2026, 10),
+      ]);
     });
 
     test('keeps the parts of different months apart', () {
       final periods = TransactionGroups.byPeriod([
         transaction(date: DateTime(2026, 9, 20)),
         transaction(date: DateTime(2026, 10, 20)),
-      ]);
+      ], cycle: cycle);
 
       expect(periods.map((period) => period.month), [
         const YearMonth(2026, 10),
         const YearMonth(2026, 9),
       ]);
     });
-  });
-
-  test('lastDayOf gives the last day of a month', () {
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 10)), 31);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 11)), 30);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2028, 2)), 29);
-    expect(TransactionGroups.lastDayOf(const YearMonth(2026, 2)), 28);
   });
 }

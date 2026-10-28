@@ -174,6 +174,7 @@ abstract final class SalaryWire {
         api.PartEnum.second => FixedItemPart.second,
         api.PartEnum.$unknown => throw const ServerException(),
       },
+      day: wire.day,
       version: wire.version,
     );
   }

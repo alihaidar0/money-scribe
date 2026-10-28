@@ -108,7 +108,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AUTH-2 Sign in
 - [x] AUTH-2b Sign in, wrong password
 - [x] AUTH-2c Sign in, too many attempts
-- [ ] AUTH-2d Sign in, signed out because of too many devices
+- [x] AUTH-2d Sign in, signed out because of too many devices
 - [x] AUTH-3 Register
 - [x] AUTH-3b Register, errors
 - [x] AUTH-4 Verify email
@@ -217,14 +217,15 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-9 Default currency
 - [x] ST-10 Sign out
 - [x] ST-11 Delete account
-- [ ] ST-7b Export CSV, confirm the password
-- [ ] ST-7c Export CSV, too many attempts
-- [ ] ST-12 Where you are signed in, Active
-- [ ] ST-12b Where you are signed in, Previous
-- [ ] ST-12c Session details
-- [ ] ST-12d End this session
-- [ ] ST-12e Sign out of all other devices
-- [ ] ST-13 Security activity
+- [x] ST-7b Export CSV, confirm the password
+- [x] ST-7c Export CSV, too many attempts
+- [x] ST-12 Where you are signed in, Active
+- [x] ST-12b Where you are signed in, Previous
+- [x] ST-12c Session details
+- [x] ST-12d End this session
+- [x] ST-12e Sign out of all other devices
+- [x] ST-13 Security activity
+- [x] Language: a row with the flag of the current language that opens a sheet with a card for each language
 
 ### H. Loading, empty, error and no connection
 
@@ -252,8 +253,8 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] NC-1 No connection, full screen
 - [x] ERR-1 Could not save
 - [x] ERR-2 Something went wrong
-- [ ] ERR-3 Too many requests
-- [ ] ST-14 Sessions and Security activity: loading, empty, error, no connection
+- [x] ERR-3 Too many requests
+- [x] ST-14 Sessions and Security activity: loading, empty, error, no connection
 
 ### I. Arabic (right-to-left) screens
 
@@ -265,7 +266,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] AR-6 Settings (Arabic)
 - [x] AR-7 Sign in (Arabic)
 - [x] AR-8 Verify email (Arabic)
-- [ ] AR-9 Where you are signed in (Arabic)
+- [x] AR-9 Where you are signed in (Arabic)
 
 ### J. Tablet and web layouts
 
@@ -280,16 +281,22 @@ Every screen of the design is built with fake data, checked on the emulator, and
 
 - [x] DK-1 Dark mode: every screen checked in dark
 - [x] IC-1 App icon (already in the app)
+- [x] Lucide icons replace the Material icons on every screen (`lucide_icons_flutter`)
+- [x] Floating navigation bar on phones (the selected tab grows into a pill) and a rounded rail on tablets and web
 
 ### L. Changes to finished screens after the backend agreements
 
-- [ ] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
-- [ ] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
-- [ ] Overview and Reports: the notice "records in other currencies are not shown here"
-- [ ] Transactions: the search box searches the notes only
-- [ ] Debts: the direction and the currency are fixed when editing; the repayment date cannot be before the start; totals by currency
-- [ ] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
-- [ ] Something went wrong: the reference the person can copy
+- [x] Overview (one and two payments, wide, Arabic): the "Other income" line and the new balance
+- [x] Reports, Categories (one and two payments): the "Fixed costs" slice, so the chart adds up to the Overview
+- [x] Overview and Reports: the notice "records in other currencies are not shown here"
+- [x] Transactions: the search box searches the notes only
+- [x] Debts: the direction can be corrected when editing and the currency is fixed; the repayment date cannot be before the start; totals by currency
+- [x] Import CSV: a `.csv` or `.zip` file, the "estimate" wording, and a reason for every skipped row
+- [x] Something went wrong: the reference the person can copy
+- [x] Fixed items: a day of the month decides the part, in two payments
+- [x] Fixed items: the day is picked on a scroll wheel, and the part follows the pay days (the payment received most recently) or is chosen by hand
+- [x] Pull down at the top of a list to refresh it (Overview, Reports, Fixed items, Transactions, Debts, Salary history)
+- [x] Overview and Reports follow what was saved on another screen, without going back to the loading state
 
 ## 7. Backend connection
 
@@ -352,14 +359,21 @@ Salary step (agreed with the backend; the screens and the fake data follow the a
 
 Money data step (agreed with the backend, backend issues #63 to #69; summary in [`backend-data-api.md`](backend-data-api.md)). Each line waits for its endpoint to be merged and pinned; until then the screens and the fake data follow the agreement:
 
-- [ ] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
-- [ ] Follow a `next` link only when it points at the API address
-- [ ] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
-- [ ] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
-- [ ] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
-- [ ] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
-- [ ] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports), `session_limit_reached` as a sign-in reason
-- [ ] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
+- [x] Hardening (#63): the reference (`X-Request-ID`) on the error screen, a countdown for any `429`, `400 invalid_characters`, and the removal of control and direction-override characters from every text field
+- [x] Follow a `next` link only when it points at the API address
+- [x] Accounts and categories (#64): remote repositories, the Arabic-name check of a custom category, delete rules
+- [x] Transactions (#65): remote repository, lazy list pages, day totals read in step with the list, search by note
+- [x] Debts (#66): remote repositories, repayments answering with the whole debt, the checks before sending, totals by currency
+- [x] Reports and Overview (#67): Overview with "Other income", Categories with the "Fixed costs" slice, comparisons from the Overview, debts report, the other-currency notice
+- [x] Sessions (#68): Where you are signed in (Active, Previous), session details, end one, sign out of all others, Security activity (grouped imports)
+- [x] Sign-in reasons: `session_limit_reached` and the other ways a session ends, as a notice on the Sign in screen
+- [x] CSV (#69): export with the password dialog, import of `.csv` and `.zip` in chunks with a dry run first, the result with a reason per row
+- [x] Pay-cycle parts (#96): the contract that cuts a month paid twice by the pay days, pinned
+- [x] Debt direction: the contract that lets it be corrected pinned, and the edit form sends it
+- [x] Pay days: the second always before the first, and one helper that cuts a month into parts and dates
+- [x] Transactions: the parts follow the pay days, and each part shows the days it covers
+- [x] Overview and Reports: the part cards show their days, and the days of the chosen period show under the Month / Part choice
+- [x] Income: choose the part it counts toward, and show the part it joined
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 

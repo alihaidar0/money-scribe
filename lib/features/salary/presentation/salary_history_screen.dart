@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/success_snack_bar.dart';
@@ -58,7 +60,7 @@ class _SalaryHistoryView extends StatelessWidget {
         title: Text(l10n.salaryHistoryTitle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.compare_arrows),
+            icon: const Icon(LucideIcons.arrowLeftRight),
             tooltip: l10n.compareMonthsTitle,
             onPressed: () => context.push(AppRoutes.salaryCompare),
           ),
@@ -76,7 +78,7 @@ class _SalaryHistoryView extends StatelessWidget {
             onRetry: () => bloc.add(const SalaryHistoryRetried()),
           ),
           SalaryHistoryStatus.ready when state.isEmpty => StateView(
-            icon: Icons.history,
+            icon: LucideIcons.history,
             title: l10n.salaryHistoryEmptyTitle,
             actionLabel: l10n.enterMonthAction,
             filledAction: true,
@@ -89,7 +91,7 @@ class _SalaryHistoryView extends StatelessWidget {
           ? FloatingActionButton.extended(
               heroTag: null,
               onPressed: () => _startNewMonth(context),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: Text(l10n.newMonthAction),
             )
           : null,
@@ -104,12 +106,18 @@ class _HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      // Room under the last card for the button.
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-      itemCount: entries.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
+    return PullToRefresh(
+      onRefresh: (done) => context.read<SalaryHistoryBloc>().add(
+        SalaryHistoryRefreshed(done: done),
+      ),
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last card for the button.
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) => _MonthEntry(entry: entries[index]),
+      ),
     );
   }
 }
@@ -257,7 +265,7 @@ class _EntryRow extends StatelessWidget {
                       ),
                     ),
                     Icon(
-                      Icons.chevron_right,
+                      LucideIcons.chevronRightDir,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ],

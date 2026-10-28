@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/core/clipboard/text_clipboard.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
+import 'package:money_scribe/core/network/api_failure.dart';
+import 'package:money_scribe/core/network/last_failure.dart';
 import 'package:money_scribe/core/widgets/code_boxes.dart';
+import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/flow_page.dart';
+import 'package:money_scribe/core/widgets/last_failure_scope.dart';
 import 'package:money_scribe/core/widgets/linked_text.dart';
 import 'package:money_scribe/core/widgets/pin_pad.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
+
+import '../../support/fake_clock.dart';
+import '../../support/fake_text_clipboard.dart';
 
 Widget _host(Widget child, {Locale locale = const Locale('en')}) {
   return MaterialApp(
@@ -183,7 +193,7 @@ void main() {
       for (var digit = 0; digit <= 9; digit++) {
         await tester.tap(find.text('$digit'));
       }
-      await tester.tap(find.byIcon(Icons.backspace_outlined));
+      await tester.tap(find.byIcon(LucideIcons.delete));
 
       expect(digits, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
       expect(backspaces, 1);
@@ -334,6 +344,174 @@ void main() {
 
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('Please try again in a moment.'), findsOneWidget);
+    });
+
+    group('after a failed answer of the server', () {
+      const reference = '7c1f0d52-3b8e-4a49-9d1e-5b6a2f0c8e11';
+      late LastFailure note;
+      late FakeTextClipboard clipboard;
+      late FixedClock clock;
+
+      setUp(() {
+        clock = FixedClock(DateTime.utc(2026, 10, 26, 9));
+        note = LastFailure(clock: clock);
+        clipboard = FakeTextClipboard();
+      });
+
+      Widget view(FailureKind kind, {VoidCallback? onRetry}) {
+        return _host(
+          RepositoryProvider<TextClipboard>.value(
+            value: clipboard,
+            child: LastFailureScope(
+              failure: note,
+              child: Scaffold(
+                body: FailureView(kind: kind, onRetry: onRetry ?? () {}),
+              ),
+            ),
+          ),
+        );
+      }
+
+      testWidgets('an error shows the reference and copies it', (tester) async {
+        note.record(const ApiFailure(statusCode: 500, requestId: reference));
+        await tester.pumpWidget(view(FailureKind.error));
+
+        expect(find.textContaining(reference), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Copy the reference'));
+        await tester.pump();
+
+        expect(clipboard.copied, [reference]);
+        expect(find.text('Reference copied'), findsOneWidget);
+      });
+
+      testWidgets('a busy service shows it too', (tester) async {
+        note.record(const ApiFailure(statusCode: 503, requestId: reference));
+        await tester.pumpWidget(view(FailureKind.unavailable));
+
+        expect(find.textContaining(reference), findsOneWidget);
+      });
+
+      testWidgets('no connection shows no reference', (tester) async {
+        note.record(const ApiFailure(statusCode: 500, requestId: reference));
+        await tester.pumpWidget(view(FailureKind.noConnection));
+
+        expect(find.textContaining(reference), findsNothing);
+      });
+
+      testWidgets('an answer with no reference shows none', (tester) async {
+        note.record(const ApiFailure(statusCode: 500));
+        await tester.pumpWidget(view(FailureKind.error));
+
+        expect(find.text('Something went wrong'), findsOneWidget);
+        expect(find.textContaining('Reference'), findsNothing);
+      });
+
+      testWidgets('in Arabic the reference reads in Arabic', (tester) async {
+        note.record(const ApiFailure(statusCode: 500, requestId: reference));
+        await tester.pumpWidget(
+          _host(
+            RepositoryProvider<TextClipboard>.value(
+              value: clipboard,
+              child: LastFailureScope(
+                failure: note,
+                child: Scaffold(
+                  body: FailureView(kind: FailureKind.error, onRetry: () {}),
+                ),
+              ),
+            ),
+            locale: const Locale('ar'),
+          ),
+        );
+
+        expect(find.textContaining('المرجع'), findsOneWidget);
+      });
+
+      testWidgets('a 429 counts down on a disabled Try again', (tester) async {
+        var retried = 0;
+        note.record(
+          const ApiFailure(
+            statusCode: 429,
+            retryAfter: Duration(seconds: 3),
+            requestId: reference,
+          ),
+        );
+        await tester.pumpWidget(
+          view(FailureKind.error, onRetry: () => retried++),
+        );
+
+        expect(find.text('Too many requests'), findsOneWidget);
+        expect(find.text('Try again in 0:03'), findsOneWidget);
+        await tester.tap(find.text('Try again in 0:03'), warnIfMissed: false);
+        expect(retried, 0);
+
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.text('Try again in 0:02'), findsOneWidget);
+
+        await tester.pump(const Duration(seconds: 2));
+        expect(find.text('Try again'), findsOneWidget);
+
+        await tester.tap(find.text('Try again'));
+        expect(retried, 1);
+      });
+
+      testWidgets('a wait that is over shows the usual error', (tester) async {
+        note.record(
+          const ApiFailure(statusCode: 429, retryAfter: Duration(seconds: 3)),
+        );
+        clock.time = clock.time.add(const Duration(seconds: 4));
+        await tester.pumpWidget(view(FailureKind.error));
+
+        expect(find.text('Something went wrong'), findsOneWidget);
+      });
+    });
+  });
+
+  group('showFailureSnackBar', () {
+    Widget host(LastFailure note) {
+      return _host(
+        LastFailureScope(
+          failure: note,
+          child: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showFailureSnackBar(
+                  context,
+                  'The transaction was not saved.',
+                  onRetry: () {},
+                ),
+                child: const Text('Save'),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('says what failed, with a Retry button', (tester) async {
+      await tester.pumpWidget(host(LastFailure()));
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+
+      expect(find.text('The transaction was not saved.'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('after a 429 says how long to wait and offers no Retry', (
+      tester,
+    ) async {
+      final note = LastFailure(clock: FixedClock(DateTime.utc(2026, 10, 26)))
+        ..record(
+          const ApiFailure(statusCode: 429, retryAfter: Duration(seconds: 42)),
+        );
+      await tester.pumpWidget(host(note));
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+
+      expect(find.text('Too many requests. Try again in 0:42'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
     });
   });
 

@@ -25,6 +25,9 @@ final class YearMonth extends Equatable implements Comparable<YearMonth> {
   /// The first day of the month, at midnight.
   DateTime get firstDay => DateTime(year, month);
 
+  /// How many days the month has.
+  int get daysInMonth => DateTime(year, month + 1, 0).day;
+
   /// The month as text for an address, such as `2026-09`. [tryParse] reads it
   /// back.
   String get param {

@@ -110,9 +110,8 @@ void main() {
       );
     });
 
-    test('chips and navigation indicators are pills', () {
+    test('chips and the rail indicator are pills', () {
       expect(theme.chipTheme.shape, const StadiumBorder());
-      expect(theme.navigationBarTheme.indicatorShape, const StadiumBorder());
       expect(theme.navigationRailTheme.indicatorShape, const StadiumBorder());
     });
 

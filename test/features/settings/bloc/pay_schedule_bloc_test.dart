@@ -61,6 +61,28 @@ void main() {
   );
 
   blocTest<PayScheduleBloc, PayScheduleState>(
+    'keeps the second pay day before the first',
+    build: build,
+    act: (bloc) => bloc
+      ..add(const SecondPayDayChanged(25))
+      ..add(const FirstPayDayChanged(3)),
+    // The second stops one day before the first (20); the first then cannot go
+    // to 3, it stays one day after the second (19 + 1), which it already is.
+    expect: () => const [
+      PayScheduleState(schedule: PaySchedule(secondPayDay: 19)),
+    ],
+  );
+
+  blocTest<PayScheduleBloc, PayScheduleState>(
+    'moves the first pay day down only as far as the second allows',
+    build: build,
+    act: (bloc) => bloc.add(const FirstPayDayChanged(2)),
+    expect: () => const [
+      PayScheduleState(schedule: PaySchedule(firstPayDay: 6)),
+    ],
+  );
+
+  blocTest<PayScheduleBloc, PayScheduleState>(
     'saves the schedule when confirmed',
     build: build,
     act: (bloc) => bloc

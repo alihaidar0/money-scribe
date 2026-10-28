@@ -5,8 +5,9 @@ import 'package:money_scribe/core/widgets/state_view.dart';
 
 /// A full-screen page of a short flow, such as signing in or the first-start
 /// setup: no bottom bar, a back arrow at the start (unless [showBackButton] is
-/// off), and a single column with generous whitespace. The column scrolls when
-/// it does not fit, for example at a large text size.
+/// off; [onBack] replaces what it does), and a single column with generous
+/// whitespace. The column scrolls when it does not fit, for example at a large
+/// text size.
 ///
 /// [content] is at the top, or in the middle of the free room when [centered]
 /// is set. [bottomChildren] stay at the bottom of the screen while there is
@@ -25,6 +26,7 @@ class FlowPage extends StatelessWidget {
     required this.content,
     this.bottomChildren = const [],
     this.showBackButton = true,
+    this.onBack,
     this.centered = false,
     this.brandPanelWhenWide = true,
     this.failure,
@@ -46,6 +48,10 @@ class FlowPage extends StatelessWidget {
   final List<Widget> content;
   final List<Widget> bottomChildren;
   final bool showBackButton;
+
+  /// What the back arrow does instead of closing the page, for a page that can
+  /// be the only one, such as Sign in after the server signed the person out.
+  final VoidCallback? onBack;
 
   /// Whether [content] is centred vertically in the free room.
   final bool centered;
@@ -79,7 +85,7 @@ class FlowPage extends StatelessWidget {
 
     return Scaffold(
       appBar: failure == null && showBackButton
-          ? AppBar(leading: const BackButton())
+          ? AppBar(leading: BackButton(onPressed: onBack))
           : null,
       body: SafeArea(
         // The form keeps its size even while hidden, so the stack must not

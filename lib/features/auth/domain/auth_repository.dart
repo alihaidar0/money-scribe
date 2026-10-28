@@ -1,4 +1,5 @@
 import 'package:money_scribe/features/auth/domain/account_profile.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 /// What a 6-digit code sent by email is for.
 enum CodePurpose { verifyEmail, resetPassword, changeEmail }
@@ -23,6 +24,10 @@ abstract interface class AuthRepository {
   /// was restored until the profile has been read. The app lock uses it to know
   /// that another account signed in.
   String? get accountId;
+
+  /// Why the server signed this device out, until the person signs in again or
+  /// signs out themselves; `null` otherwise. Kept in memory only.
+  SignOutReason? get signOutReason;
 
   /// The address the last 6-digit code was sent to, if any.
   String? get pendingEmail;

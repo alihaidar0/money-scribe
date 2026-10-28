@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -8,9 +9,14 @@ import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/clock.dart';
 import 'package:money_scribe/core/widgets/amount_row.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/period_range_caption.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -50,7 +56,7 @@ class _OverviewView extends StatelessWidget {
       body: BlocBuilder<OverviewBloc, OverviewState>(
         builder: (context, state) => switch (state.status) {
           OverviewStatus.loading => const _OverviewSkeleton(),
-          OverviewStatus.firstLaunch => const _FirstLaunch(),
+          OverviewStatus.firstLaunch => _FirstLaunch(state: state),
           OverviewStatus.noConnection => FailureView(
             kind: FailureKind.noConnection,
             onRetry: () => bloc.add(const OverviewRetried()),
@@ -97,6 +103,11 @@ class _OverviewContent extends StatelessWidget {
           selected: state.scope,
           onSelected: (scope) => bloc.add(PeriodScopeSelected(scope)),
         ),
+        const SizedBox(height: 8),
+        PeriodRangeCaption(
+          range: overview.rangeOf(state.scope),
+          today: context.read<Clock>().now(),
+        ),
         const SizedBox(height: 16),
       ],
       HeroCard(
@@ -113,6 +124,10 @@ class _OverviewContent extends StatelessWidget {
           ),
         ],
       ),
+      if (overview.hasOtherCurrencies) ...[
+        const SizedBox(height: 8),
+        CurrencyNotice(l10n.recordsInOtherCurrenciesNotice),
+      ],
       const SizedBox(height: 16),
       const _Actions(),
       if (firstPart != null &&
@@ -120,19 +135,41 @@ class _OverviewContent extends StatelessWidget {
           state.scope == PeriodScope.month) ...[
         const SizedBox(height: 16),
         PeriodCard(
-          title: l10n.periodFirstPart,
+          title: partDatesLabel(
+            context,
+            part: PeriodScope.firstPart,
+            range: overview.rangeOf(PeriodScope.firstPart),
+            today: context.read<Clock>().now(),
+          ),
           figures: firstPart,
           onTap: () => context.go(AppRoutes.transactions),
         ),
         const SizedBox(height: 12),
         PeriodCard(
-          title: l10n.periodSecondPart,
+          title: partDatesLabel(
+            context,
+            part: PeriodScope.secondPart,
+            range: overview.rangeOf(PeriodScope.secondPart),
+            today: context.read<Clock>().now(),
+          ),
           figures: secondPart,
           onTap: () => context.go(AppRoutes.transactions),
         ),
       ],
     ];
     final rows = _rows(context, figures);
+
+    // Pulling a list down at the top loads the figures again.
+    Widget refreshable(List<Widget> children, {EdgeInsets? padding}) {
+      return PullToRefresh(
+        onRefresh: (done) => bloc.add(OverviewRefreshed(done: done)),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: padding?.withBarClearance(context),
+          children: children,
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -142,17 +179,18 @@ class _OverviewContent extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: ListView(children: summary)),
+                Expanded(child: refreshable(summary)),
                 const SizedBox(width: 16),
-                Expanded(child: ListView(children: rows)),
+                Expanded(child: refreshable(rows)),
               ],
             ),
           );
         }
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [...summary, const SizedBox(height: 16), ...rows],
-        );
+        return refreshable([
+          ...summary,
+          const SizedBox(height: 16),
+          ...rows,
+        ], padding: const EdgeInsets.all(16));
       },
     );
   }
@@ -173,35 +211,42 @@ class _OverviewContent extends StatelessWidget {
 
     return [
       AmountRow(
-        icon: Icons.payments_outlined,
+        icon: LucideIcons.banknote,
         title: l10n.salaryTitle,
         amount: figures.salary,
         onTap: () => context.go(AppRoutes.salary),
       ),
       const SizedBox(height: 8),
       AmountRow(
-        icon: Icons.autorenew,
+        icon: LucideIcons.refreshCw,
         title: l10n.overviewRecurringIncome,
         amount: figures.recurringIncome,
         onTap: () => context.go(AppRoutes.fixedItems),
       ),
       const SizedBox(height: 8),
       AmountRow(
-        icon: Icons.home_outlined,
+        icon: LucideIcons.piggyBank,
+        title: l10n.overviewOtherIncome,
+        amount: figures.otherIncome,
+        onTap: () => context.go(AppRoutes.transactions),
+      ),
+      const SizedBox(height: 8),
+      AmountRow(
+        icon: LucideIcons.house,
         title: l10n.overviewFixedCosts,
         amount: figures.fixedCosts,
         onTap: () => context.go(AppRoutes.fixedItems),
       ),
       const SizedBox(height: 8),
       AmountRow(
-        icon: Icons.shopping_bag_outlined,
+        icon: LucideIcons.shoppingBag,
         title: l10n.overviewPurchases,
         amount: figures.purchases,
         onTap: () => context.go(AppRoutes.transactions),
       ),
       const SizedBox(height: 8),
       AmountRow(
-        icon: Icons.handshake_outlined,
+        icon: LucideIcons.handshake,
         title: l10n.overviewDebtMovements,
         amount: figures.debtMovements,
         onTap: () => context.go(AppRoutes.debts),
@@ -258,13 +303,38 @@ class _Actions extends StatelessWidget {
 
 /// OV-3: the Overview of an account with no data yet.
 class _FirstLaunch extends StatelessWidget {
-  const new();
+  const new({required this.state});
+
+  final OverviewState state;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final bloc = context.read<OverviewBloc>();
 
+    return Column(
+      children: [
+        // A month with nothing in it can be left for another month.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: MonthSwitcher(
+            month: state.month,
+            canStepForward: state.canStepForward,
+            onPrevious: () => bloc.add(const MonthStepped(forward: false)),
+            onNext: () => bloc.add(const MonthStepped(forward: true)),
+          ),
+        ),
+        Expanded(child: _firstLaunchContent(context, l10n, theme)),
+      ],
+    );
+  }
+
+  Widget _firstLaunchContent(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -273,10 +343,7 @@ class _FirstLaunch extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const IconCircle(
-                icon: Icons.account_balance_wallet_outlined,
-                size: 112,
-              ),
+              const IconCircle(icon: LucideIcons.wallet, size: 112),
               const SizedBox(height: 24),
               Semantics(
                 header: true,

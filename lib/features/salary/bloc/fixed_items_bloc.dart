@@ -36,6 +36,7 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     on<FixedItemsStarted>(_onStarted, transformer: droppable());
     on<FixedItemsRetried>(_onRetried, transformer: droppable());
     on<FixedItemsDataChanged>(_onDataChanged, transformer: restartable());
+    on<FixedItemsRefreshed>(_onRefreshed, transformer: restartable());
     on<FixedItemsPartSelected>(_onPartSelected, transformer: sequential());
     on<FixedItemAdded>(_onAdded, transformer: sequential());
     on<FixedItemChanged>(_onChanged, transformer: sequential());
@@ -68,6 +69,17 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     Emitter<FixedItemsState> emit,
   ) {
     return _load(emit);
+  }
+
+  Future<void> _onRefreshed(
+    FixedItemsRefreshed event,
+    Emitter<FixedItemsState> emit,
+  ) async {
+    try {
+      await _load(emit, silent: true);
+    } finally {
+      event.done?.complete();
+    }
   }
 
   void _onPartSelected(
@@ -204,9 +216,18 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
     }
   }
 
-  Future<void> _load(Emitter<FixedItemsState> emit) async {
+  /// Loads the month. A [silent] load of a screen that already shows it keeps
+  /// showing it until the new items come, and keeps it when they do not.
+  Future<void> _load(
+    Emitter<FixedItemsState> emit, {
+    bool silent = false,
+  }) async {
+    final keepShown = silent && state.status == FixedItemsStatus.ready;
     emit(
-      state.copyWith(status: FixedItemsStatus.loading, clearFailedAction: true),
+      state.copyWith(
+        status: keepShown ? state.status : FixedItemsStatus.loading,
+        clearFailedAction: true,
+      ),
     );
     try {
       final results = await Future.wait<Object?>([
@@ -215,12 +236,13 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
       ]);
       final items = results[0]! as List<FixedItem>;
       final saved = results[1] as SalaryMonth?;
-      final defaultMode = saved == null
-          ? (await _salary.defaults(state.month)).paymentMode
+      // A month that is not saved starts with the account's schedule.
+      final defaults = saved == null
+          ? await _salary.defaults(state.month)
           : null;
 
       final entry = saved == null ? null : SalaryHistoryEntry.tryFrom(saved);
-      final mode = saved?.inputs.paymentMode ?? defaultMode;
+      final mode = saved?.inputs.paymentMode ?? defaults?.paymentMode;
       emit(
         state.copyWith(
           status: FixedItemsStatus.ready,
@@ -232,15 +254,19 @@ class FixedItemsBloc extends Bloc<FixedItemsEvent, FixedItemsState> {
           balances: saved?.figures?.balances,
           clearBalances: saved?.figures == null,
           twoPayments: mode == PaymentMode.twoPayments,
+          firstPayDay: saved?.firstPayDay ?? defaults?.firstPayDay,
+          secondPayDay: saved?.secondPayDay ?? defaults?.secondPayDay,
           currency: saved?.inputs.baseSalary.currency ?? Currency.rub,
         ),
       );
     } on NoConnectionException {
+      if (keepShown) return;
       emit(state.copyWith(status: FixedItemsStatus.noConnection));
     } on Exception catch (error, stackTrace) {
       // A load that was replaced by a newer one has nothing to report.
       if (emit.isDone) return;
       addError(error, stackTrace);
+      if (keepShown) return;
       emit(state.copyWith(status: FixedItemsStatus.failure));
     }
   }

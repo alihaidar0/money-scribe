@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
@@ -5,10 +7,13 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/overview/bloc/overview_bloc.dart';
 import 'package:money_scribe/features/overview/data/fake/fake_overview_repository.dart';
+
+import '../../../support/driven_changes_repositories.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
@@ -262,6 +267,103 @@ void main() {
       },
       wait: const Duration(milliseconds: 50),
       verify: (bloc) => expect(bloc.state.status, OverviewStatus.ready),
+    );
+  });
+
+  group('the kind of change', () {
+    Future<(OverviewBloc, DrivenChangesOverviewRepository)> openShown() async {
+      final driven = DrivenChangesOverviewRepository(repository);
+      final bloc = OverviewBloc(
+        repository: driven,
+        now: () => DateTime(2026, 10, 11),
+      );
+      addTearDown(bloc.close);
+      bloc.add(const OverviewStarted());
+      await bloc.stream.firstWhere((s) => s.status == OverviewStatus.ready);
+      return (bloc, driven);
+    }
+
+    test('a saved change reloads without the loading state', () async {
+      final (bloc, driven) = await openShown();
+      final statuses = <OverviewStatus>[];
+      final subscription = bloc.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+
+      driven.announce(DataChange.saved);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(statuses, isNot(contains(OverviewStatus.loading)));
+      expect(bloc.state.status, OverviewStatus.ready);
+    });
+
+    test('a saved change that fails keeps the figures shown', () async {
+      final (bloc, driven) = await openShown();
+      demo.update(const DemoSettings(scenario: DemoScenario.error));
+
+      driven.announce(DataChange.saved);
+      await pumpEventQueue();
+
+      expect(bloc.state.status, OverviewStatus.ready);
+      expect(bloc.state.overview, isNotNull);
+    });
+
+    test('a replaced source starts over with the loading state', () async {
+      final (bloc, driven) = await openShown();
+      demo.update(const DemoSettings(scenario: DemoScenario.error));
+      final statuses = <OverviewStatus>[];
+      final subscription = bloc.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+
+      driven.announce(DataChange.replaced);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(statuses.first, OverviewStatus.loading);
+      expect(bloc.state.status, OverviewStatus.failure);
+    });
+  });
+
+  group('refreshing', () {
+    test('a pull reloads without the loading state and completes', () async {
+      final bloc = build();
+      addTearDown(bloc.close);
+      bloc.add(const OverviewStarted());
+      await bloc.stream.firstWhere((s) => s.status == OverviewStatus.ready);
+
+      final statuses = <OverviewStatus>[];
+      final subscription = bloc.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+      final done = Completer<void>();
+      bloc.add(OverviewRefreshed(done: done));
+      await done.future;
+      await subscription.cancel();
+
+      expect(statuses, isNot(contains(OverviewStatus.loading)));
+      expect(bloc.state.status, OverviewStatus.ready);
+    });
+
+    blocTest<OverviewBloc, OverviewState>(
+      'a refresh that fails keeps the figures that are shown',
+      build: () => OverviewBloc(
+        repository: DrivenChangesOverviewRepository(repository),
+        now: () => DateTime(2026, 10, 11),
+      ),
+      act: (bloc) async {
+        bloc.add(const OverviewStarted());
+        await pumpEventQueue();
+        demo.update(const DemoSettings(scenario: DemoScenario.noConnection));
+        final done = Completer<void>();
+        bloc.add(OverviewRefreshed(done: done));
+        await done.future;
+      },
+      verify: (bloc) {
+        expect(bloc.state.status, OverviewStatus.ready);
+        expect(bloc.state.overview, isNotNull);
+      },
     );
   });
 }

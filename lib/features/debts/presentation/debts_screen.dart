@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
@@ -8,11 +9,14 @@ import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -89,8 +93,15 @@ class _DebtsView extends StatelessWidget {
     return BlocListener<DebtsBloc, DebtsState>(
       listenWhen: (previous, current) =>
           previous.deleteStatus != current.deleteStatus &&
-          current.deleteStatus == DebtsDeleteStatus.failed,
+          (current.deleteStatus == DebtsDeleteStatus.failed ||
+              current.deleteStatus == DebtsDeleteStatus.stale),
       listener: (context, state) {
+        if (state.deleteStatus == DebtsDeleteStatus.stale) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l10n.debtChangedElsewhere)));
+          return;
+        }
         final id = state.deletingId;
         if (id == null) return;
         showFailureSnackBar(
@@ -118,7 +129,7 @@ class _DebtsView extends StatelessWidget {
           ? FloatingActionButton.extended(
               heroTag: null,
               onPressed: () => _addDebt(context),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: Text(l10n.addDebtAction),
             )
           : null,
@@ -134,7 +145,7 @@ class _DebtsView extends StatelessWidget {
           onRetry: () => bloc.add(const DebtsRetried()),
         ),
         DebtsStatus.ready when isEmpty => StateView(
-          icon: Icons.handshake_outlined,
+          icon: LucideIcons.handshake,
           title: l10n.debtsEmptyTitle,
           actionLabel: l10n.addADebtAction,
           filledAction: true,
@@ -191,37 +202,53 @@ class _ListPane extends StatelessWidget {
     final shown = state.shown;
     final selectedId = wide ? state.selected?.id : null;
 
-    return ListView(
-      // Room under the last card for the button.
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      children: [
-        DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
-        const SizedBox(height: 16),
-        const _FilterSwitch(),
-        const SizedBox(height: 16),
-        if (shown.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Text(
-              context.l10n.noDebtsOfKind,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else
-          for (final debt in shown)
+    return PullToRefresh(
+      onRefresh: (done) =>
+          context.read<DebtsBloc>().add(DebtsRefreshed(done: done)),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last card for the button.
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          96,
+        ).withBarClearance(context),
+        children: [
+          DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+          if (state.hasOtherCurrencies)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _DebtCard(
-                debt: debt,
-                today: state.today,
-                selected: debt.id == selectedId,
-                onTap: wide
-                    ? () => context.read<DebtsBloc>().add(DebtSelected(debt.id))
-                    : () => _openDebt(context, debt.id),
-              ),
+              padding: const EdgeInsets.only(top: 8),
+              child: CurrencyNotice(context.l10n.debtsOtherCurrenciesNotice),
             ),
-      ],
+          const SizedBox(height: 16),
+          const _FilterSwitch(),
+          const SizedBox(height: 16),
+          if (shown.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text(
+                context.l10n.noDebtsOfKind,
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            for (final debt in shown)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _DebtCard(
+                  debt: debt,
+                  today: state.today,
+                  selected: debt.id == selectedId,
+                  onTap: wide
+                      ? () =>
+                            context.read<DebtsBloc>().add(DebtSelected(debt.id))
+                      : () => _openDebt(context, debt.id),
+                ),
+              ),
+        ],
+      ),
     );
   }
 }
@@ -258,12 +285,12 @@ class _DetailPane extends StatelessWidget {
                 if (!debt.isSettled)
                   FilledButton.icon(
                     onPressed: () => _addRepayment(context, debt.id),
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(LucideIcons.plus),
                     label: Text(l10n.addRepaymentAction),
                   ),
                 FilledButton.tonalIcon(
                   onPressed: () => _editDebt(context, debt.id),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(LucideIcons.pencil),
                   label: Text(l10n.editAction),
                 ),
                 OutlinedButton.icon(
@@ -271,7 +298,7 @@ class _DetailPane extends StatelessWidget {
                     foregroundColor: theme.colorScheme.error,
                   ),
                   onPressed: deleting ? null : () => _delete(context, debt),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   label: Text(l10n.deleteAction),
                 ),
               ],

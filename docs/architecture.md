@@ -154,7 +154,9 @@ contract, which only a feature's `data/` imports.
   runs at a time, and requests that expire together wait for it. The new pair is stored before it is
   used. A refresh whose answer is lost is sent again with the same token inside the server's 30
   seconds. Only a `401` from the refresh clears the tokens: a bad connection never signs anyone out.
-  Any other `401` on a signed-in request is final. The refresh call is injected, so `core/` never
+  Any other `401` on a signed-in request is final, and its code reaches the auth repository as the
+  reason the Sign in screen gives (too many devices, ended from another device, password or email
+  changed, security, expired). The refresh call is injected, so `core/` never
   imports `core/api/`: the feature that owns the paths builds it with its generated client.
 - **`SlowRequestMonitor`** notices a request that has waited more than 5 seconds, and `MonitoredHttpAdapter`
   tells it about every real request (below the interceptors, so a request sent again after a refresh counts
@@ -162,7 +164,14 @@ contract, which only a feature's `data/` imports.
   staging server sleeps after 15 minutes and its first request takes about a minute, while a production
   server does not sleep. `warmUpServer` sends one `GET /healthz` at start in staging, to wake it early.
 - **`OmitNullsInterceptor`** drops every `null` from a request body: the generated models write a missing
-  optional field as `null`, and the server wants it left out.
+  optional field as `null`, and the server wants it left out. The one request that needs a `null` is the change
+  of a debt, where `"due_date": null` takes the due day away: `RemoteDebtsRepository` sends it through a copy of
+  the client (`Dio.clone`) without this interceptor.
+- **`DateOnlyInterceptor`** sends a day as `YYYY-MM-DD`: the generated client has no type for a day, so a date
+  field is a `DateTime` written as `2026-10-24T00:00:00.000`, which the server refuses. The app only ever sends
+  the midnight of a day, so a text that is exactly midnight is cut to its day, in the query and the body.
+- **`LastFailure`** keeps the reference (`X-Request-ID`) and the `429` wait of the latest failed answer for the
+  failure screens, which read them through `LastFailureScope`.
 - **`ApiFailure`** reads a failed call once: the status, the error items (`code`, `detail`, `attr`,
   `attempts_left`, `min_length`, `max_length`), `Retry-After`, and whether the server answered at all.
   A repository maps it to its own exceptions; the generic ones are `NoConnectionException`,
@@ -205,7 +214,8 @@ contract, which only a feature's `data/` imports.
 `go_router` with a `StatefulShellRoute` around the five top-level screens: a navigation bar below
 840 dp and a rail from 840 dp (`app/shell/`). Secondary screens and the whole authentication flow
 sit above the shell, so they hide the bar. The exception is a screen that is a segment of a tab, such
-as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen
+as Fixed items in the Salary tab: it is a child route of the tab and keeps the bar. A signed-out person is redirected to the Welcome screen,
+or to Sign in when the server ended the session (Sign in says why and its back arrow leads to Welcome),
 and a signed-in one leaves the sign-in screens for the Overview (`app/router/`); the route paths
 and which of them need a sign-in are in `core/routing/app_routes.dart`.
 

@@ -785,7 +785,12 @@ endpoint.
 
 - **Missing optional fields.** The generated models write a field they do not have as `null`
   (`"time_zone": null`), but the server wants it left out. `OmitNullsInterceptor` drops every `null` from a
-  request body, so no generated file is edited.
+  request body, so no generated file is edited. The change of a debt is the exception: `"due_date": null` is
+  how the due day is removed, so it is sent by a copy of the client without that interceptor.
+- **Days.** A field of the contract that is a date (`format: date`) is generated as a `DateTime`, which is
+  written with a time of day (`2026-10-24T00:00:00.000`). The server wants `YYYY-MM-DD`, so
+  `DateOnlyInterceptor` cuts a text that is exactly midnight to its day, in the query and the body. The app
+  builds every `DateTime` it sends from a calendar day, never from a moment.
 - **`Retry-After`** is not returned by the generated methods: the data layer reads it from the failed
   call (`ApiFailure`). A `429` without it (the contract says it always has one) gets a wait of 30
   seconds, so the screen never counts down from zero.

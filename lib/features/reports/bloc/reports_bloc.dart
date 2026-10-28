@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
 import 'package:money_scribe/features/reports/domain/month_report.dart';
@@ -22,11 +23,12 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
   new({required this._repository, required DateTime Function() now})
     : super(ReportsState(month: YearMonth.fromDate(now()))) {
     _changes = _repository.changes.listen(
-      (_) => add(const ReportsDataChanged()),
+      (change) => add(ReportsDataChanged(silent: change == DataChange.saved)),
     );
     on<ReportsStarted>(_onStarted, transformer: droppable());
     on<ReportsRetried>(_onRetried, transformer: droppable());
     on<ReportsDataChanged>(_onDataChanged, transformer: restartable());
+    on<ReportsRefreshed>(_onRefreshed, transformer: restartable());
     // Choosing another month before the answer comes starts over from it.
     on<ReportsMonthSelected>(_onMonthSelected, transformer: restartable());
     on<ReportsCompareMonthSelected>(
@@ -39,7 +41,7 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
 
   final ReportsRepository _repository;
 
-  late final StreamSubscription<void> _changes;
+  late final StreamSubscription<DataChange> _changes;
 
   Future<void> _onStarted(ReportsStarted event, Emitter<ReportsState> emit) {
     return _load(state.month, emit, comparedWith: state.comparedWith);
@@ -53,7 +55,28 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     ReportsDataChanged event,
     Emitter<ReportsState> emit,
   ) {
-    return _load(state.month, emit, comparedWith: state.comparedWith);
+    return _load(
+      state.month,
+      emit,
+      comparedWith: state.comparedWith,
+      silent: event.silent,
+    );
+  }
+
+  Future<void> _onRefreshed(
+    ReportsRefreshed event,
+    Emitter<ReportsState> emit,
+  ) async {
+    try {
+      await _load(
+        state.month,
+        emit,
+        comparedWith: state.comparedWith,
+        silent: true,
+      );
+    } finally {
+      event.done?.complete();
+    }
   }
 
   Future<void> _onMonthSelected(
@@ -95,13 +118,25 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     await super.close();
   }
 
+  /// Loads [month]. A [silent] load of a screen that already shows a report
+  /// keeps showing it until the new one comes, and keeps it when it does not.
   Future<void> _load(
     YearMonth month,
     Emitter<ReportsState> emit, {
     YearMonth? comparedWith,
+    bool silent = false,
   }) async {
     final compareMonth = comparedWith ?? month.previous;
-    emit(state.copyWith(status: ReportsStatus.loading, month: month));
+    final keepShown =
+        silent &&
+        (state.status == ReportsStatus.ready ||
+            state.status == ReportsStatus.empty);
+    emit(
+      state.copyWith(
+        status: keepShown ? state.status : ReportsStatus.loading,
+        month: month,
+      ),
+    );
     try {
       final results = await Future.wait<Object?>([
         _repository.month(month),
@@ -110,7 +145,17 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
       ]);
       final report = results[0] as MonthReport?;
       if (report == null) {
-        emit(state.copyWith(status: ReportsStatus.empty, clearReports: true));
+        // Nothing to report for the month, but the debts do not depend on it.
+        emit(
+          ReportsState(
+            status: ReportsStatus.empty,
+            month: month,
+            view: state.view,
+            scope: state.scope,
+            comparedWith: comparedWith,
+            debts: results[2]! as DebtsReport,
+          ),
+        );
         return;
       }
       // Built whole, not copied: a month with nothing to compare with must not
@@ -128,9 +173,11 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
         ),
       );
     } on NoConnectionException {
+      if (keepShown) return;
       emit(state.copyWith(status: ReportsStatus.noConnection));
     } on Exception catch (error, stackTrace) {
       addError(error, stackTrace);
+      if (keepShown) return;
       emit(state.copyWith(status: ReportsStatus.failure));
     }
   }

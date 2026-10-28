@@ -33,7 +33,8 @@ These come with the hardening issue and hold for every signed-in call.
   newline and a tab included) and the bidirectional override, embedding and isolate characters (U+202A to
   U+202E, U+2066 to U+2069) with `400 invalid_characters` on the field. The direction marks and the joiners
   that Arabic needs stay allowed. The app removes the rejected characters from every text field before it
-  sends, on typing and on paste (a pasted line break becomes a space), because it wraps amounts in exactly
+  sends, on typing and on paste (a line break becomes a space; a single-line field drops it before the app
+  sees it), because it wraps amounts in exactly
   those isolates in Arabic and a copied amount must not become an error. Imported CSV cells are **not**
   stripped: the server reports the row.
 - **Limits per signed-in user,** shared by all the devices of one person. Each call belongs to exactly one
@@ -50,8 +51,9 @@ These come with the hardening issue and hold for every signed-in call.
   | Session actions | 30 an hour |
 
   A limited call is `429 throttled` with `Retry-After` (whole seconds, at least 1, always present). Any `429`
-  is handled with `Retry-After`: the control that caused it is disabled with a countdown. The search box waits
-  about half a second after the last key and cancels the call still in flight.
+  is handled with `Retry-After`: the control that caused it is disabled with a countdown. A full-screen failure
+  counts down on its Try again button, and the message of a failed action shows the time left with no Retry
+  button. The search box waits about half a second after the last key and cancels the call still in flight.
 - **Size.** A body over 256 KB is `400 request_too_large` (the CSV import has 1 MB); a person should never meet it.
 - **`503 service_unavailable`** (with `Retry-After`) only for export, import and "sign out of all other
   devices", when the limit store is down. Plain reads and writes keep working.
@@ -104,19 +106,26 @@ These come with the hardening issue and hold for every signed-in call.
   expenses). The same filters as the list, without `search`; `date_from` and `date_to` are optional;
   paginated by days (`limit` 50, at most 100), so a day always arrives complete.
 - **How the list and the totals are read together.** The list is read in cursor pages of about 50 as the person
-  scrolls. The app keeps a map from day to totals, and when it draws a day header that has none yet it reads
-  the next page of totals; both use the same filters and the same order, so they stay level however sparse
-  the data is. A list with words in the search box has no day totals and does not call the endpoint. A change
-  to a record reloads the list and drops the map.
+  scrolls. The app keeps a map from day to totals, and each time it loads a page of the list it reads pages of
+  totals until the map reaches the oldest day of the list; both use the same filters and the same order, so
+  they stay level however sparse the data is. A list with words in the search box has no day totals and does
+  not call the endpoint. A change to a record reloads the list and drops the map.
+- **The search** waits half a second after the last key and asks the server only when it has two letters or
+  more; a newer search drops the answer to an older one. The part of a two-payment month is not a filter
+  of the server: the app works out the dates of the part from the pay days (below), cuts it from the pages it
+  has and loads more pages when a part shows too little. A filter takes at most 20 categories, and the Filters
+  sheet stops at 20.
 
 ## 4. Debts and repayments
 
 - **Debts** (`/api/v1/debts/`): `id`, `direction` (`lent`, `borrowed`), `person` (1 to 50), `amount`,
   `currency`, `start_date`, `due_date` (or `null`), `note` (0 to 100), and the read-only `repaid`, `remaining`,
-  `status` (`open`, `overdue`, `settled`) and `repayments[]`, then `version`. `direction` and `currency` are
-  fixed after creation (`400 read_only`): the edit screen shows them as fixed. `PATCH {"due_date": null}`
+  `status` (`open`, `overdue`, `settled`) and `repayments[]`, then `version`. `currency` is
+  fixed after creation (`400 read_only`); `direction` can be corrected with a `PATCH` at the current `version`
+  (the repayments, the amount and the dates stay). `PATCH {"due_date": null}`
   clears the due date and `{"note": ""}` the note. At most 500 debts.
-- **Status** is counted in the person's day, from the time zone in the settings; the app does not send `today`.
+- **Status** is counted in the person's day, from the time zone in the settings; the app does not send `today`
+  and shows the status the server sent (a status it does not know is worked out on the device).
 - **List:** filters `direction`, `status` (repeatable), `search` (the person, 2 to 50). The repayments come
   with each debt (up to 200). The app reads every page (`limit=100`, at most 5 calls) and sorts the debts
   itself: those still to be repaid first, then the settled ones, each oldest first. The totals are added up
@@ -131,6 +140,16 @@ These come with the hardening issue and hold for every signed-in call.
   `debt_limit_reached`, `repayment_limit_reached`. The app checks the first rules on the form before it
   sends (a repayment cannot be dated before the debt starts, the amount cannot go below what was repaid, the
   start date cannot move after a repayment); the server's code is the last word.
+- **Two devices.** A change or a delete of a debt sends the debt's `version`, and one of a repayment sends
+  the repayment's own. A `412` (or a `404` on a change) means another device got there first: nothing is
+  changed, the debt is read again and the screen says so. A delete that finds the record already gone
+  (`404 not_found`) counts as done. An `exceeds_remaining` shows the `remaining` of the answer and reads the
+  debt again.
+- **A new debt** is in the default currency of the settings, which is also the currency of the totals; the
+  currency is fixed afterwards; the direction can be corrected. The start-day picker of a debt with repayments stops at its
+  last repayment, and the picker of a repayment starts at the day the debt starts.
+- **The due day** is taken away with `{"due_date": null}`, so that one request goes through a copy of the HTTP
+  client that keeps `null` fields (see `docs/architecture.md`).
 
 ## 5. Reports and the Overview
 
@@ -152,8 +171,13 @@ route.
   positive) and `balance`, signed: `salary + recurring_income + income_transactions - fixed_costs - purchases +
   debt_repayments_received - debt_repayments_made`. The server sends the balance and the app shows it.
   Income transactions have their own line. The salary and the fixed lines count only when the saved month is
-  in the report currency. Creating a debt is not a movement, only repayments are; they and the transactions
-  are placed by their date, in the halves 1st to 15th and 16th to the end.
+  in the report currency. Creating a debt is not a movement, only repayments are; they and the expenses are
+  placed by their date in the **pay cycle** of the pay days in Settings (`first_pay_day` F, 20 until set, and
+  `second_pay_day` S, 5 until set): the first part runs from F of the month to the day before S of the next
+  month, the second from S of the next month to the day before the next F, and the month is both together. A
+  month paid once is the calendar month. An income is placed by the part it joined: the one it was put on
+  (`part` and `part_month`), else the one whose pay day is nearest to its date. The cut is worked out on every
+  read, so a change of the pay days re-cuts the history. Settings keeps S before F (`400 invalid_pay_days`).
 - **Month report:** `income_transactions`, `purchases` and `categories[]` (the **spending** by category, from
   expense transactions only, biggest first: `category_id`, `category_key`, `name`, `icon`, `amount`), for the
   month and for `first_part` and `second_part`. `categories[]` adds up to `purchases`, which equal the
@@ -165,6 +189,15 @@ route.
 - **`has_data` and `currencies`.** An empty month is `200` with zeros and `has_data: false`. `currencies`
   lists every currency with data in the month; when it holds more than the report currency, the Overview and
   Reports say that records in other currencies are not shown.
+- **How the app uses them.** Every call sends the default currency of the settings, and the amounts are in
+  it. The Overview shows "Other income" (the income transactions) as its own row and counts it in the income;
+  the balance shown is the one the server sends. A month of the Reports is read from the Overview and the
+  month report together, so its income and spending are the Overview's, and its categories get one more slice,
+  "Fixed costs", which opens the fixed items instead of the transactions. A built-in category is named by the
+  app from its `key`, in the language of the app; a custom one shows its own name. The debts report is shown for
+  the default currency, and the "Add repayment" sheet of the Overview lists the unsettled debts of every
+  currency. A month outside 2000 to 2099 is not asked and has no data. A month with `has_data: false` keeps
+  the month controls, so another month can be chosen, and the debts do not depend on the month.
 - There is no year or custom-period report and no comparison endpoint.
 
 ## 6. Sessions and security activity
@@ -201,21 +234,44 @@ route.
   apart, as one (the counts added, the kinds joined), and reads the next page before it shows a group that
   touches the end of the page.
 - A sign-in from a device with no session in the last 90 days sends the account owner an email (no link).
+- **How the app uses them.** Settings, in the Security section, has "Where you are signed in" and "Security
+  activity" (`features/sessions`). Active shows one page of at most ten, this device first and marked; Previous
+  is read the first time its tab is opened, a page at a time, and grouped by `device_id` under the device's
+  name. A row opens a read-only sheet; "End this session" is offered only for another active session and asks
+  first, saying that fingerprint sign-in on that device is turned off too. Ending a session that is already
+  gone counts as done. "Sign out of all other devices" asks for the password in a dialog that stays open: a
+  wrong password is said under the field, and `429` locks the button with the `Retry-After` countdown. The
+  activity groups consecutive imports of one session less than 15 minutes apart, and reads the next page before
+  it shows a run that touches the end of a page. An unknown type, kind, platform, method or reason is shown with
+  generic wording.
+- **Signed out by the server.** A final `401` on any call or on the refresh opens Sign in with a notice that
+  says why: `session_limit_reached` (too many devices), `session_revoked_by_user` (ended from another
+  device), `session_password_changed`, `session_email_changed`, `session_token_reuse` (to keep the account
+  safe), `session_expired`; any other code gets a plain "You were signed out". The reason is kept in memory
+  only, until the person signs in or signs out themselves; the person's own sign-out shows Welcome.
 
 ## 7. CSV export and import
 
-- **Export:** `POST /api/v1/exports/` with `kinds` (`transactions`, `debts`, `salary_months`), a period
-  (`from` and `to`, both left out for all time; "this year" is sent as dates) and `current_password`. The
-  answer is a CSV file for one kind, or a zip with one file per kind. The app asks for the password in a
-  dialog first, saves the file in its private cache, shares it and deletes it afterwards. The server also
+- **Export:** `POST /api/v1/exports/` with `kinds` (1 to 5 of `accounts`, `categories`, `transactions`,
+  `debts`, `salary_months`), a period (`from` and `to`, both left out for all time; "this year" is sent as
+  dates; they do not apply to accounts and categories, which have no date) and `current_password`. The answer
+  is a CSV file for one kind, or a zip with one file per kind, always in that order. The sheet has one chip,
+  "Accounts and categories", for the first two: a restore needs both, because an import never creates an
+  account or a category. The app asks for the password in a
+  dialog first, saves the file in its private cache and shares it; the file stays there only until the next
+  export or the next start of the app, because the app it was shared with may still be reading it. The server also
   sends the owner an email that an export was made. A wrong password is `400 invalid_password`, then the
   shared countdown; five exports an hour.
 - **Files:** UTF-8 with a byte order mark, `,` as the separator, a fixed header, dates `YYYY-MM-DD`, amounts
-  as decimal strings, an empty cell means none, oldest first. Columns: `transactions` has `date`, `kind`,
+  as decimal strings, an empty cell means none, oldest first. Columns: `accounts` has `name` and `kind`
+  (`card`, `cash`, `other`) and holds every account, the two made at sign-up included; `categories` has `name`
+  and `icon` (one of `gifts`, `health`, `entertainment`, `shopping`, `education`, `travel`, `subscriptions`,
+  `other`) and holds the custom categories only; `transactions` has `date`, `kind`,
   `amount`, `currency`, `category_key`, `category_name`, `account_name`, `note` (a built-in category has its
   key and no name, a custom one the reverse); `debts` has `direction`, `person`, `amount`, `currency`,
   `start_date`, `due_date`, `note` and `repayments` (a JSON cell); `salary_months` has the month's inputs,
-  `extra_hours` and `tax_rate` with two decimals, and `fixed_items` (a JSON cell).
+  `extra_hours` and `tax_rate` with two decimals, and `fixed_items` (a JSON cell; an item that has a `day`, 1 to
+  31, carries it, and one without a day has none).
 - **Formula injection.** A text cell that starts with `=`, `+`, `-`, `@`, a tab, a carriage return, a line
   feed, or with `'` followed by one of those, is written with one `'` in front. The import removes exactly one
   `'` in that case. Amounts, dates and the JSON cells are never changed.
@@ -226,11 +282,30 @@ route.
   the dataset, refuses a file with a missing header before any call, and fills trailing zeros of a number
   (`12.5` becomes `12.50`) without ever rounding. Each chunk is first sent as a **dry run** (a figure that is
   an estimate), then for real with its own `Idempotency-Key`; a 10,000-row file is 40 calls of the 120 an hour.
+  The kinds go in the order accounts, categories, transactions, debts, salary months, and the rows of one day
+  (a transaction's `date`, a debt's `start_date`) always go in the same call: the server compares a row with the
+  records it has written, not with the other rows of its call, so a repeat split between two calls would be
+  written twice. A day with more than 500 rows cannot be kept whole: the import screen warns before the person
+  presses Import. The estimate before the import cannot know the accounts and categories the file itself
+  creates, so it leaves out `unknown_account` and `unknown_category` for a name the file creates (compared
+  trimmed and in lower case; the server also normalizes to Unicode NFC, which the app does not, so only the
+  estimate can differ), and the real calls of the transactions follow the real calls of accounts and
+  categories with no second dry run.
 - **Answer:** `imported`, `skipped` and `problems[]` of `{row, code, attr}`. A skipped row is always listed.
-  The app words the codes it knows (`required` on `date` is "the date is missing", `invalid_amount`,
-  `duplicate`, `unknown_category`, `unknown_account`, the limit codes) and shows any other as a generic reason
-  with the row number. An import never creates an account or a category, and a record equal to an existing
+  The app words the codes it knows (`required` on `date` is "the date is missing", `required` on `icon` is "the
+  icon is missing", `invalid_amount`, `duplicate`, `name_taken`, `unknown_category`, `unknown_account`, the
+  limit codes) and shows any other as a generic reason with the row number. A problem inside a nested cell
+  names its place counted from 0 (`repayments.0.date`); the app words it by its last field. A file of several
+  kinds says the kind of each row. An import never creates an account or a category, and a record equal to an existing
   one is skipped as `duplicate`, counted by multiplicity.
+- **How the app uses them.** Settings, Export CSV: the sheet chooses the kinds and the period, then a dialog
+  asks for the password (a wrong one under the field; `429` locks the field and the button with the
+  `Retry-After` countdown). Import CSV takes a `.csv` or a `.zip` from the system picker (at most 5 MB, 20 MB
+  unzipped and 20,000 rows, so the check and the import stay well inside the 120 calls an hour), refuses a file
+  it cannot import before any call, shows the estimate of the dry runs, then imports with the progress. An
+  import that stops goes on where it stopped when tried again, with the key of the call that had no answer.
+  Both calls are sent without the generated client: it reads the export as text (which breaks a `.zip`) and
+  its import row keeps only `row`. The import body is sent as JSON text, so no interceptor changes a cell.
 
 ## 8. For the privacy policy and the store forms
 

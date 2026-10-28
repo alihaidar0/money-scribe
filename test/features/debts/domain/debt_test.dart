@@ -193,4 +193,59 @@ void main() {
 
     expect(Repayment.fromDraft(repayment.id, repayment.draft), repayment);
   });
+
+  group('Debt versions and status', () {
+    test('a debt and a repayment start at version 1', () {
+      expect(sam.version, 1);
+      expect(sam.repayments.single.version, 1);
+    });
+
+    test('changing what a debt is made of keeps its version', () {
+      final changed = sam.withDraft(sam.draft);
+
+      expect(changed.version, sam.version);
+      expect(sam.withRepayments(const []).version, sam.version);
+    });
+
+    test('the version tells two debts apart', () {
+      final other = Debt(
+        id: sam.id,
+        direction: sam.direction,
+        person: sam.person,
+        amount: sam.amount,
+        startDate: sam.startDate,
+        dueDate: sam.dueDate,
+        note: sam.note,
+        repayments: sam.repayments,
+        version: 2,
+      );
+
+      expect(other, isNot(sam));
+    });
+
+    test('the status the server reported wins over the device day', () {
+      final reported = Debt(
+        id: 'x',
+        direction: DebtDirection.lent,
+        person: 'Kim',
+        amount: rub(100),
+        startDate: DateTime(2026, 10),
+        dueDate: DateTime(2026, 10, 5),
+        reportedStatus: DebtStatus.open,
+      );
+
+      // Past its due day by the device, but not yet in the person's day.
+      expect(reported.statusOn(DateTime(2026, 10, 6)), DebtStatus.open);
+    });
+
+    test('the latest repayment day is the latest, not the last listed', () {
+      final debt = sam.withRepayments([
+        Repayment(id: 'a', amount: rub(1), date: DateTime(2026, 10, 20)),
+        Repayment(id: 'b', amount: rub(1), date: DateTime(2026, 10, 12)),
+      ]);
+
+      expect(debt.lastRepaymentDate, DateTime(2026, 10, 20));
+      expect(maria.lastRepaymentDate, isNull);
+    });
+  });
 }

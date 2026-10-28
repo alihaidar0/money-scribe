@@ -14,6 +14,7 @@ import 'package:money_scribe/features/auth/data/remote/remote_auth_repository.da
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/password_problem.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 import '../../../support/fake_clock.dart';
 import '../../../support/fake_device_key_store.dart';
@@ -1434,6 +1435,78 @@ void main() {
       await auth.validateSession();
 
       expect(server.requests, isEmpty);
+    });
+  });
+
+  group('why the server signed this device out', () {
+    setUp(() async {
+      await tokens.write(
+        const SessionTokens(accessToken: 'access-1', refreshToken: 'refresh-1'),
+      );
+      await auth.restore();
+    });
+
+    for (final MapEntry(key: code, value: reason) in {
+      'session_limit_reached': SignOutReason.tooManyDevices,
+      'session_revoked_by_user': SignOutReason.endedElsewhere,
+      'session_password_changed': SignOutReason.passwordChanged,
+      'session_email_changed': SignOutReason.emailChanged,
+      'session_token_reuse': SignOutReason.security,
+      'session_expired': SignOutReason.expired,
+      'session_signed_out': SignOutReason.other,
+      'token_invalid': SignOutReason.other,
+      'a_code_of_a_newer_server': SignOutReason.other,
+    }.entries) {
+      test('$code is said as ${reason.name}', () async {
+        routes['/api/v1/auth/profile/'] = (_) => jsonBody(401, errorBody(code));
+
+        await auth.validateSession();
+
+        expect(auth.isSignedIn, isFalse);
+        expect(auth.signOutReason, reason);
+      });
+    }
+
+    test('a refresh the server refuses gives its reason', () async {
+      routes['/api/v1/auth/profile/'] = (_) =>
+          jsonBody(401, errorBody('token_expired'));
+      routes['/api/v1/auth/refresh/'] = (_) =>
+          jsonBody(401, errorBody('session_limit_reached'));
+
+      await auth.validateSession();
+
+      expect(auth.isSignedIn, isFalse);
+      expect(auth.signOutReason, SignOutReason.tooManyDevices);
+    });
+
+    test('is set before the sign-out is announced', () async {
+      final seen = <SignOutReason?>[];
+      auth.signedInChanges.listen((_) => seen.add(auth.signOutReason));
+      routes['/api/v1/auth/profile/'] = (_) =>
+          jsonBody(401, errorBody('session_revoked_by_user'));
+
+      await auth.validateSession();
+
+      expect(seen, [SignOutReason.endedElsewhere]);
+    });
+
+    test('is forgotten when the person signs in again', () async {
+      routes['/api/v1/auth/profile/'] = (_) =>
+          jsonBody(401, errorBody('session_expired'));
+      await auth.validateSession();
+      routes['/api/v1/auth/sign-in/'] = (_) => jsonBody(200, _signedIn());
+
+      await auth.signIn(email: 'alex@example.com', password: 'pw');
+
+      expect(auth.signOutReason, isNull);
+    });
+
+    test('is not given for the person signing out', () async {
+      routes['/api/v1/auth/sign-out/'] = (_) => jsonBody(204);
+
+      await auth.signOut();
+
+      expect(auth.signOutReason, isNull);
     });
   });
 

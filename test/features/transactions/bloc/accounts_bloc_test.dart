@@ -142,4 +142,134 @@ void main() {
       verify: (bloc) => expect(bloc.state.deleteBlocked, isFalse),
     );
   });
+
+  group('a change made on another device', () {
+    blocTest<AccountsBloc, AccountsState>(
+      'loads the list again and keeps the action to apply once more',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        // Another device renames the account first.
+        await repository.update(
+          'cash',
+          const AccountDraft(name: 'Wallet', kind: AccountKind.cash),
+          version: 1,
+        );
+        bloc.add(
+          const AccountChanged(
+            'cash',
+            AccountDraft(name: 'Pocket', kind: AccountKind.cash),
+          ),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isA<AccountChanged>());
+        expect(bloc.state.failedAction, isNull);
+        // The list is what is on the server now.
+        expect(bloc.state.accounts.map((a) => a.name), ['Card', 'Wallet']);
+        expect(bloc.state.accounts.last.version, 2);
+      },
+    );
+
+    blocTest<AccountsBloc, AccountsState>(
+      'applying the action again changes the account at its new version',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await repository.update(
+          'cash',
+          const AccountDraft(name: 'Wallet', kind: AccountKind.cash),
+          version: 1,
+        );
+        const change = AccountChanged(
+          'cash',
+          AccountDraft(name: 'Pocket', kind: AccountKind.cash),
+        );
+        bloc.add(change);
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(change);
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isNull);
+        expect(bloc.state.accounts.last.name, 'Pocket');
+      },
+    );
+
+    blocTest<AccountsBloc, AccountsState>(
+      'deleting an account that changed is not done',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        await repository.update(
+          'cash',
+          const AccountDraft(name: 'Wallet', kind: AccountKind.cash),
+          version: 1,
+        );
+        bloc.add(const AccountDeleted('cash'));
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isA<AccountDeleted>());
+        expect(bloc.state.accounts, hasLength(2));
+      },
+    );
+
+    blocTest<AccountsBloc, AccountsState>(
+      'an account deleted elsewhere is a stale change, not a failure',
+      build: build,
+      act: (bloc) async {
+        final added = await repository.add(draft);
+        await start(bloc);
+        await repository.delete(added.id, version: added.version);
+        bloc.add(
+          AccountChanged(
+            added.id,
+            const AccountDraft(name: 'Pocket', kind: AccountKind.cash),
+          ),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.staleAction, isA<AccountChanged>());
+        expect(bloc.state.accounts.map((a) => a.id), ['card', 'cash']);
+      },
+    );
+  });
+
+  group('a refusal the person can act on', () {
+    blocTest<AccountsBloc, AccountsState>(
+      'a name that is taken is reported, not retried',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(
+          const AccountAdded(
+            AccountDraft(name: 'cash', kind: AccountKind.cash),
+          ),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.refusal, AccountRefusal.nameTaken);
+        expect(bloc.state.failedAction, isNull);
+        expect(bloc.state.accounts, hasLength(2));
+      },
+    );
+
+    blocTest<AccountsBloc, AccountsState>(
+      'the next action clears the refusal',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(
+          const AccountAdded(
+            AccountDraft(name: 'cash', kind: AccountKind.cash),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const AccountAdded(draft));
+      },
+      verify: (bloc) {
+        expect(bloc.state.refusal, isNull);
+        expect(bloc.state.accounts.last.name, 'Savings');
+      },
+    );
+  });
 }

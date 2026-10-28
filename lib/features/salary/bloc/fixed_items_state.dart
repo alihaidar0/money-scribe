@@ -23,6 +23,8 @@ final class FixedItemsState extends Equatable {
     this.salary,
     this.balances,
     this.twoPayments = false,
+    this.firstPayDay = 20,
+    this.secondPayDay = 5,
     this.currency = Currency.rub,
     this.part = FixedItemPart.first,
     this.failedAction,
@@ -53,6 +55,11 @@ final class FixedItemsState extends Equatable {
 
   /// Whether the month is paid in two payments, so its items have parts.
   final bool twoPayments;
+
+  /// The days the two payments of the month are received on: the first in the
+  /// month, the second in the next. They decide which part an item falls in.
+  final int firstPayDay;
+  final int secondPayDay;
 
   /// The currency of the month's salary, which the items are in.
   final Currency currency;
@@ -102,6 +109,8 @@ final class FixedItemsState extends Equatable {
     SalaryBalances? balances,
     bool clearBalances = false,
     bool? twoPayments,
+    int? firstPayDay,
+    int? secondPayDay,
     Currency? currency,
     FixedItemPart? part,
     FixedItemsEvent? failedAction,
@@ -120,6 +129,8 @@ final class FixedItemsState extends Equatable {
       salary: clearSalary ? null : salary ?? this.salary,
       balances: clearBalances ? null : balances ?? this.balances,
       twoPayments: twoPayments ?? this.twoPayments,
+      firstPayDay: firstPayDay ?? this.firstPayDay,
+      secondPayDay: secondPayDay ?? this.secondPayDay,
       currency: currency ?? this.currency,
       part: part ?? this.part,
       failedAction: clearFailedAction
@@ -140,6 +151,8 @@ final class FixedItemsState extends Equatable {
     salary,
     balances,
     twoPayments,
+    firstPayDay,
+    secondPayDay,
     currency,
     part,
     failedAction,

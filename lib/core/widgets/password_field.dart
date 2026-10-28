@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
 
@@ -54,9 +55,7 @@ class _PasswordFieldState extends State<PasswordField> {
       onSubmitted: widget.onSubmitted,
       suffixIcon: IconButton(
         tooltip: _visible ? l10n.hidePassword : l10n.showPassword,
-        icon: Icon(
-          _visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        ),
+        icon: Icon(_visible ? LucideIcons.eyeOff : LucideIcons.eye),
         onPressed: widget.enabled
             ? () => setState(() => _visible = !_visible)
             : null,

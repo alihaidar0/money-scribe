@@ -35,6 +35,8 @@ import 'package:money_scribe/features/salary/presentation/salary_compare_screen.
 import 'package:money_scribe/features/salary/presentation/salary_edit_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_history_screen.dart';
 import 'package:money_scribe/features/salary/presentation/salary_screen.dart';
+import 'package:money_scribe/features/sessions/presentation/security_activity_screen.dart';
+import 'package:money_scribe/features/sessions/presentation/sessions_screen.dart';
 import 'package:money_scribe/features/settings/presentation/csv_import_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_schedule_screen.dart';
 import 'package:money_scribe/features/settings/presentation/pay_setup_screen.dart';
@@ -47,7 +49,8 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 
 /// The routes of the app. The caller owns the router and disposes it.
 ///
-/// A signed-out person is sent to the Welcome screen, and a signed-in one
+/// A signed-out person is sent to the Welcome screen, or to Sign in when the
+/// server signed them out (it says why), and a signed-in one
 /// leaves the sign-in screens for the Overview. While the app is locked
 /// ([lock]) every screen leads to the lock screen, which remembers where to go
 /// back to. [refreshListenable] tells the router to check again when the person
@@ -140,6 +143,18 @@ GoRouter createAppRouter({
         builder: (context, state) => const WideFrame(
           width: FrameWidth.narrow,
           child: FingerprintPhonesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.sessions,
+        builder: (context, state) =>
+            const WideFrame(width: FrameWidth.narrow, child: SessionsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.securityActivity,
+        builder: (context, state) => const WideFrame(
+          width: FrameWidth.narrow,
+          child: SecurityActivityScreen(),
         ),
       ),
       GoRoute(
@@ -317,7 +332,8 @@ String? _redirect(AuthRepository auth, AppLockSession? lock, Uri uri) {
   if (!auth.isSignedIn) {
     final open =
         AppRoutes.withoutSignIn.contains(path) || path == AppRoutes.demo;
-    return open ? null : AppRoutes.welcome;
+    if (open) return null;
+    return auth.signOutReason == null ? AppRoutes.welcome : AppRoutes.signIn;
   }
   if (lock != null && lock.isLocked && !AppRoutes.lockScreens.contains(path)) {
     return AppRoutes.lockedAt(uri.toString());

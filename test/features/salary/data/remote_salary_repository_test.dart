@@ -120,6 +120,15 @@ void main() {
     });
   });
 
+  group('a 404', () {
+    test('that is not the documented one is a failure, not "no month"', () {
+      // A page of the platform, or a server that does not know the path.
+      answer = (_) => jsonBody(404);
+
+      expect(build().month(_october), throwsA(isA<ServerException>()));
+    });
+  });
+
   group('savedMonths', () {
     test(
       'reads every page, the newest first as the server sends them',
@@ -151,6 +160,17 @@ void main() {
         expect(server.requests.first.queryParameters['limit'], 100);
       },
     );
+
+    test('a next page on another server is never followed', () async {
+      answer = (_) => jsonBody(200, {
+        'next': 'https://evil.example.test/api/v1/salary/months/?cursor=abc',
+        'previous': null,
+        'results': [salaryMonthJson()],
+      });
+
+      await expectLater(build().savedMonths(), throwsA(isA<ServerException>()));
+      expect(server.requests, hasLength(1));
+    });
 
     test('an empty history is an empty list', () async {
       answer = (_) => jsonBody(200, {

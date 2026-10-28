@@ -20,6 +20,7 @@ class FixedItem {
     required this.currency,
     required this.kind,
     required this.partValue,
+    required this.day,
     required this.version,
     required this.createdAt,
     required this.updatedAt,
@@ -54,6 +55,9 @@ class FixedItem {
   /// The name has been replaced because it contains a keyword. Original name: `part`.
   @JsonKey(name: 'part')
   final PartEnum partValue;
+
+  /// The day of the month, 1 to 31, or `null` when the item has none (an item saved without one).
+  final int? day;
   final int version;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;

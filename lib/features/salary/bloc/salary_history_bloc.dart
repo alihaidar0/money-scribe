@@ -43,8 +43,12 @@ class SalaryHistoryBloc extends Bloc<SalaryHistoryEvent, SalaryHistoryState> {
   Future<void> _onRefreshed(
     SalaryHistoryRefreshed event,
     Emitter<SalaryHistoryState> emit,
-  ) {
-    return _load(emit, showLoading: false);
+  ) async {
+    try {
+      await _load(emit, showLoading: false);
+    } finally {
+      event.done?.complete();
+    }
   }
 
   Future<void> _onRetried(

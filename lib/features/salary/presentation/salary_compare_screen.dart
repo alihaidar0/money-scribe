@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -128,7 +129,9 @@ class _MonthPair extends StatelessWidget {
         );
         final sideBySide = constraints.maxWidth >= 2 * widest + _swapButtonSize;
         final swap = IconButton(
-          icon: Icon(sideBySide ? Icons.swap_horiz : Icons.swap_vert),
+          icon: Icon(
+            sideBySide ? LucideIcons.arrowLeftRight : LucideIcons.arrowUpDown,
+          ),
           tooltip: context.l10n.swapMonthsTooltip,
           onPressed: () => bloc.add(const SalaryCompareSwapped()),
         );

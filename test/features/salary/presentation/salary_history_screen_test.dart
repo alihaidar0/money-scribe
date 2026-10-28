@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -44,7 +45,7 @@ void main() {
       expect(find.byType(BackButton), findsOneWidget);
       expect(find.byTooltip('Compare months'), findsOneWidget);
       expect(find.widgetWithText(FloatingActionButton, 'New month'), findsOne);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('the back arrow goes back to the Salary screen', (
@@ -56,7 +57,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(SalaryScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
   });
 
@@ -130,7 +131,7 @@ void main() {
 
       expect(find.byType(SalaryScreen), findsOneWidget);
       expect(find.byType(SalaryHistoryScreen), findsNothing);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       // August to October are saved, so the month is July.
       expect(find.text('July 2026'), findsOneWidget);
       expect(find.text('Fill in the inputs to see the results.'), findsOne);

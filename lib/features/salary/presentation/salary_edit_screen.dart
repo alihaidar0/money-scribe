@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -93,6 +94,7 @@ class _Menu extends StatelessWidget {
     if (!canDelete) return const SizedBox.shrink();
 
     return PopupMenuButton<_MenuAction>(
+      icon: const Icon(LucideIcons.ellipsisVertical),
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       onSelected: (action) => _delete(context),
       itemBuilder: (context) => [

@@ -1,13 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
+import 'package:money_scribe/core/errors/data_exception.dart';
+import 'package:money_scribe/core/money/currency.dart';
+import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/features/debts/data/fake/fake_debts_repository.dart';
+import 'package:money_scribe/features/debts/domain/debt.dart';
+import 'package:money_scribe/features/debts/domain/debts_repository.dart';
 import 'package:money_scribe/features/debts/presentation/debt_details_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debt_form_screen.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/open_screen.dart';
+import '../../../support/refusing_debts_repository.dart';
 
 Finder inSheet(Finder finder) {
   return find.descendant(of: find.byType(BottomSheet), matching: finder);
@@ -19,8 +30,14 @@ Future<DemoController> openDebt(
   String person, {
   DemoSettings settings = const DemoSettings(),
   AppLanguage language = AppLanguage.english,
+  DebtsRepository Function(DemoController demo)? debtsRepository,
 }) async {
-  final demo = await openDebts(tester, settings: settings, language: language);
+  final demo = await openDebts(
+    tester,
+    settings: settings,
+    language: language,
+    debtsRepository: debtsRepository,
+  );
   await tester.tap(find.text(person));
   await tester.pumpAndSettle();
   return demo;
@@ -86,7 +103,7 @@ void main() {
     testWidgets('has the overflow menu and Add repayment', (tester) async {
       await openDebt(tester, 'Sam');
 
-      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+      expect(find.byIcon(LucideIcons.ellipsisVertical), findsOneWidget);
       expect(
         find.widgetWithText(FilledButton, 'Add repayment'),
         findsOneWidget,
@@ -385,7 +402,7 @@ void main() {
     testWidgets('has Edit and Delete', (tester) async {
       await openDebt(tester, 'Sam');
 
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       expect(find.text('Edit'), findsOneWidget);
@@ -394,7 +411,7 @@ void main() {
 
     testWidgets('Edit opens the form for the debt (DB-8)', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Edit'));
@@ -408,7 +425,7 @@ void main() {
       tester,
     ) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Edit'));
       await tester.pumpAndSettle();
@@ -424,7 +441,7 @@ void main() {
 
     testWidgets('Delete asks first, with the person (DB-7)', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Delete'));
@@ -442,7 +459,7 @@ void main() {
 
     testWidgets('Cancel keeps the debt', (tester) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -457,7 +474,7 @@ void main() {
       tester,
     ) async {
       await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -473,7 +490,7 @@ void main() {
       tester,
     ) async {
       final demo = await openDebt(tester, 'Sam');
-      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
@@ -582,6 +599,115 @@ void main() {
       expect(find.text('إضافة سداد'), findsWidgets);
       expect(inSheet(find.text('المبلغ')), findsOneWidget);
       expect(inSheet(find.text('حفظ')), findsOneWidget);
+    });
+  });
+
+  group('what the server says to a repayment', () {
+    testWidgets('more than what is left says how much is left', (tester) async {
+      await openDebt(
+        tester,
+        'Sam',
+        debtsRepository: (demo) => RefusingDebtsRepository(
+          demo: demo,
+          failure: const DebtRefusedException(
+            DebtRefusal.exceedsRemaining,
+            remaining: Money(50000, Currency.rub),
+          ),
+        ),
+      );
+      await openAddRepaymentSheet(tester);
+
+      await tester.enterText(find.byType(TextField), '100');
+      await tester.pumpAndSettle();
+      await tester.tap(sheetSave());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(amount('More than the 500.00 ₽ still to be repaid.')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a debt that has all the repayments allowed says so', (
+      tester,
+    ) async {
+      await openDebt(
+        tester,
+        'Sam',
+        debtsRepository: (demo) => RefusingDebtsRepository(
+          demo: demo,
+          failure: const DebtRefusedException(
+            DebtRefusal.repaymentLimitReached,
+          ),
+        ),
+      );
+      await openAddRepaymentSheet(tester);
+
+      await tester.enterText(find.byType(TextField), '100');
+      await tester.pumpAndSettle();
+      await tester.tap(sheetSave());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('This debt has the most repayments allowed.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a debt changed on another device is loaded again', (
+      tester,
+    ) async {
+      await openDebt(
+        tester,
+        'Sam',
+        debtsRepository: (demo) => RefusingDebtsRepository(
+          demo: demo,
+          failure: const StaleRecordException(),
+        ),
+      );
+      await tester.tap(find.text(amount('4,000.00 ₽ · 12 Oct')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '1000');
+      await tester.pumpAndSettle();
+
+      await tester.tap(sheetSave());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This debt was changed on another device. It has been loaded again.',
+        ),
+        findsOneWidget,
+      );
+      // Nothing was changed.
+      expect(find.text(amount('4,000.00 ₽ · 12 Oct')), findsOneWidget);
+    });
+  });
+
+  group('a debt that has not started yet', () {
+    testWidgets('suggests its start day for a repayment', (tester) async {
+      await openDebt(
+        tester,
+        'Lee',
+        debtsRepository: (demo) {
+          final repository = FakeDebtsRepository(demo: demo);
+          unawaited(
+            repository.add(
+              DebtDraft(
+                direction: DebtDirection.lent,
+                person: 'Lee',
+                amount: const Money(100000, Currency.rub),
+                // The clock of the tests is the 11th of October 2026.
+                startDate: DateTime(2026, 12),
+              ),
+            ),
+          );
+          return repository;
+        },
+      );
+      await openAddRepaymentSheet(tester);
+
+      expect(inSheet(find.text('1 Dec')), findsOneWidget);
     });
   });
 }

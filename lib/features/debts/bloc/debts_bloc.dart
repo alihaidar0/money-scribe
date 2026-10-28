@@ -14,7 +14,7 @@ part 'debts_event.dart';
 part 'debts_state.dart';
 
 /// The Debts screen: every debt, filtered by lent or borrowed, with what is
-/// owed to the person and what they owe.
+/// owed to the person and what they owe in the default currency.
 class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
   new({required this._repository, required DateTime Function() now})
     : _now = now,
@@ -52,8 +52,15 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
     return _load(emit, showLoading: true);
   }
 
-  Future<void> _onRefreshed(DebtsRefreshed event, Emitter<DebtsState> emit) {
-    return _load(emit, showLoading: false);
+  Future<void> _onRefreshed(
+    DebtsRefreshed event,
+    Emitter<DebtsState> emit,
+  ) async {
+    try {
+      await _load(emit, showLoading: false);
+    } finally {
+      event.done?.complete();
+    }
   }
 
   void _onFilterSelected(DebtsFilterSelected event, Emitter<DebtsState> emit) {
@@ -75,7 +82,14 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
       ),
     );
     try {
-      await _repository.delete(event.id);
+      final debt = state.debts.where((debt) => debt.id == event.id).firstOrNull;
+      // A debt that is not in the list was deleted on another device.
+      if (debt == null) throw const StaleRecordException();
+      await _repository.delete(event.id, version: debt.version);
+    } on StaleRecordException {
+      emit(state.copyWith(deleteStatus: DebtsDeleteStatus.stale));
+      await _load(emit, showLoading: false);
+      return;
     } on Exception catch (error, stackTrace) {
       if (emit.isDone) return;
       if (error is! NoConnectionException) addError(error, stackTrace);
@@ -99,10 +113,12 @@ class DebtsBloc extends Bloc<DebtsEvent, DebtsState> {
     if (showLoading) emit(state.copyWith(status: DebtsStatus.loading));
     try {
       final debts = await _repository.debts();
+      final currency = await _repository.defaultCurrency();
       emit(
         state.copyWith(
           status: DebtsStatus.ready,
           debts: debts,
+          defaultCurrency: currency,
           today: _day(_now()),
         ),
       );

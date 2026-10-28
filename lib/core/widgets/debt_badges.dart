@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
@@ -59,13 +60,13 @@ class DirectionBadge extends StatelessWidget {
 
     return switch (direction) {
       DebtDirection.lent => _Badge(
-        icon: Icons.call_made,
+        icon: LucideIcons.arrowUpRight,
         label: l10n.debtLent,
         background: colors.lent.container,
         foreground: colors.lent.onContainer,
       ),
       DebtDirection.borrowed => _Badge(
-        icon: Icons.call_received,
+        icon: LucideIcons.arrowDownLeft,
         label: l10n.debtBorrowed,
         background: colors.borrowed.container,
         foreground: colors.borrowed.onContainer,
@@ -88,19 +89,19 @@ class StatusBadge extends StatelessWidget {
 
     return switch (status) {
       DebtStatus.open => _Badge(
-        icon: Icons.schedule,
+        icon: LucideIcons.clock,
         label: l10n.debtOpen,
         background: scheme.secondaryContainer,
         foreground: scheme.onSecondaryContainer,
       ),
       DebtStatus.overdue => _Badge(
-        icon: Icons.warning_amber_outlined,
+        icon: LucideIcons.triangleAlert,
         label: l10n.debtOverdue,
         background: overdue.container,
         foreground: overdue.onContainer,
       ),
       DebtStatus.settled => _Badge(
-        icon: Icons.check_circle_outline,
+        icon: LucideIcons.circleCheck,
         label: l10n.debtSettled,
         background: scheme.surfaceContainerHighest,
         foreground: scheme.onSurfaceVariant,

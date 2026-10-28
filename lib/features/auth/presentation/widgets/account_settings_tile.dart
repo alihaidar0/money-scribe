@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/time/ticker.dart';
@@ -60,9 +61,9 @@ class _AccountTile extends StatelessWidget {
     if (profile == null) {
       // The row still opens the Account screen, which can try again.
       return ListTile(
-        leading: const Icon(Icons.error_outline),
+        leading: const Icon(LucideIcons.circleAlert),
         title: Text(l10n.accountLoadFailed),
-        trailing: const Icon(Icons.refresh),
+        trailing: const Icon(LucideIcons.refreshCw),
         onTap: () => context.read<AccountBloc>().add(const AccountRetried()),
       );
     }
@@ -84,8 +85,8 @@ class _AccountTile extends StatelessWidget {
       ),
       trailing: Icon(
         Directionality.of(context) == TextDirection.rtl
-            ? Icons.chevron_left
-            : Icons.chevron_right,
+            ? LucideIcons.chevronLeft
+            : LucideIcons.chevronRight,
       ),
       onTap: () => _open(context),
     );

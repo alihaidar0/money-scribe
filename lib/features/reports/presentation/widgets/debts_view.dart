@@ -6,6 +6,7 @@ import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
+import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
 import 'package:money_scribe/core/widgets/two_columns.dart';
@@ -28,6 +29,10 @@ class DebtsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DebtSummaryRow(owedToYou: report.owedToYou, youOwe: report.youOwe),
+        if (report.hasOtherCurrencies) ...[
+          const SizedBox(height: 8),
+          CurrencyNotice(l10n.debtsOtherCurrenciesNotice),
+        ],
         const SizedBox(height: 16),
         if (report.isEmpty)
           Padding(

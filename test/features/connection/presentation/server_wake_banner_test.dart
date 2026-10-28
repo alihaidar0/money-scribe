@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/environment/app_environment.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_screen.dart';
 import 'package:money_scribe/features/connection/presentation/server_wake_banner.dart';
@@ -53,7 +54,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(_english), findsOneWidget);
-      expect(find.byIcon(Icons.hourglass_top), findsOneWidget);
+      expect(find.byIcon(LucideIcons.hourglass), findsOneWidget);
     });
 
     testWidgets('goes away when the server answers', (tester) async {

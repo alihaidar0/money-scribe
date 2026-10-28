@@ -8,6 +8,7 @@ import 'package:money_scribe/features/settings/domain/app_language.dart';
 
 import '../../../support/build_app.dart';
 import '../../../support/fake_language_repository.dart';
+import '../../../support/navigation_tab.dart';
 
 /// Amounts have a no-break space before the currency symbol.
 const nbsp = ' ';
@@ -63,12 +64,7 @@ Future<DemoController> pumpHistory(
     size: size,
   );
   await tester.tap(
-    find.descendant(
-      of: find.byWidgetPredicate(
-        (widget) => widget is NavigationBar || widget is NavigationRail,
-      ),
-      matching: find.text(language == AppLanguage.arabic ? 'الراتب' : 'Salary'),
-    ),
+    navigationTab(language == AppLanguage.arabic ? 'الراتب' : 'Salary'),
   );
   await tester.pumpAndSettle();
   await tester.tap(
@@ -120,14 +116,7 @@ Future<DemoController> pumpFixedItems(
     fixedItemsRepository: fixedItemsRepository,
   );
   final arabic = language == AppLanguage.arabic;
-  await tester.tap(
-    find.descendant(
-      of: find.byWidgetPredicate(
-        (widget) => widget is NavigationBar || widget is NavigationRail,
-      ),
-      matching: find.text(arabic ? 'الراتب' : 'Salary'),
-    ),
-  );
+  await tester.tap(navigationTab(arabic ? 'الراتب' : 'Salary'));
   await tester.pumpAndSettle();
   await tester.tap(find.text(arabic ? 'البنود الثابتة' : 'Fixed items'));
   await tester.pumpAndSettle();

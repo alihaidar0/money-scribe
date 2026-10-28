@@ -8,6 +8,24 @@ Future<bool> confirmDelete(
   BuildContext context, {
   required String title,
   required String message,
+}) {
+  return confirmDestructive(
+    context,
+    title: title,
+    message: message,
+    confirmLabel: context.l10n.deleteAction,
+  );
+}
+
+/// Asks whether to do something that cannot be undone, such as ending a
+/// session: a dialog with a [title] and a [message] that says what happens.
+/// Answers `true` for the [confirmLabel] button, `false` for Cancel or a tap
+/// outside. The button is in the error colours.
+Future<bool> confirmDestructive(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
 }) async {
   final l10n = context.l10n;
 
@@ -30,7 +48,7 @@ Future<bool> confirmDelete(
               foregroundColor: colors.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.deleteAction),
+            child: Text(confirmLabel),
           ),
         ],
       );

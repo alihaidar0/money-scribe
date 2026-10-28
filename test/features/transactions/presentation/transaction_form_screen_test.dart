@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -64,8 +66,8 @@ void main() {
       expect(find.byType(TransactionFormScreen), findsOneWidget);
       expect(find.text('Add transaction'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
-      expect(find.byIcon(Icons.delete_outline), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
+      expect(find.byIcon(LucideIcons.trash2), findsNothing);
     });
 
     testWidgets('puts the amount first, then the day, category and account', (
@@ -273,9 +275,10 @@ void main() {
 
     testWidgets('two payments show the part the day is in', (tester) async {
       await openAddForm(tester, settings: twoPayments);
-      // Today is the 11th, in the first part.
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsNothing);
+      // Today is the 11th: after the second pay day (the 5th) and before the
+      // first (the 20th), so it is in the second part.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsNothing);
 
       await tester.tap(find.text('11 Oct'));
       await tester.pumpAndSettle();
@@ -283,7 +286,70 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+    });
+  });
+
+  group('the payment an income counts toward', () {
+    testWidgets('an income in two payments chooses between three', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      expect(find.text('Counts toward'), findsNothing, reason: 'an expense');
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsOneWidget);
+      // Today, the 11th, is nearest to the pay day of the 5th.
+      expect(find.text('Automatic · Part 2'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+    });
+
+    testWidgets('an income shows the payment instead of the part of the day', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      // One chip, not the caption under the day as well.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+    });
+
+    testWidgets('one payment has no choice', (tester) async {
+      await openAddForm(tester);
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsNothing);
+    });
+
+    testWidgets('choosing a payment selects it, and Automatic goes back', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      ChoiceChip chip(String label) =>
+          tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label));
+      expect(chip('Automatic · Part 2').selected, isTrue);
+
+      await tester.tap(find.text('Part 1 · 20 Oct – 4 Nov'));
+      await tester.pumpAndSettle();
+
+      expect(chip('Part 1 · 20 Oct – 4 Nov').selected, isTrue);
+      expect(chip('Automatic · Part 2').selected, isFalse);
+
+      await tester.tap(find.text('Automatic · Part 2'));
+      await tester.pumpAndSettle();
+
+      expect(chip('Automatic · Part 2').selected, isTrue);
     });
   });
 
@@ -291,7 +357,7 @@ void main() {
     testWidgets('the row opens the sheet with the accounts', (tester) async {
       await openAddForm(tester);
 
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('Account')), findsOneWidget);
@@ -300,12 +366,12 @@ void main() {
       expect(inSheet(find.text('Add account')), findsOneWidget);
       expect(inSheet(find.text('Manage accounts')), findsOneWidget);
       // The chosen one is marked.
-      expect(inSheet(find.byIcon(Icons.radio_button_checked)), findsOne);
+      expect(inSheet(find.byIcon(LucideIcons.circleDot)), findsOne);
     });
 
     testWidgets('choosing one closes the sheet and shows it', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Cash')));
@@ -318,7 +384,7 @@ void main() {
 
     testWidgets('choosing the chosen one closes it too', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Card')));
@@ -329,7 +395,7 @@ void main() {
 
     testWidgets('the chosen account is the one saved', (tester) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
       await tester.tap(inSheet(find.text('Cash')));
       await tester.pumpAndSettle();
@@ -349,7 +415,7 @@ void main() {
       tester,
     ) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       await tester.tap(inSheet(find.text('Manage accounts')));
@@ -368,7 +434,7 @@ void main() {
       tester,
     ) async {
       await openAddForm(tester);
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
       await tester.tap(inSheet(find.text('Add account')));
       await tester.pumpAndSettle();
@@ -381,7 +447,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('Savings')), findsOneWidget);
@@ -410,7 +476,7 @@ void main() {
             .selected,
         isTrue,
       );
-      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      expect(find.byIcon(LucideIcons.trash2), findsOneWidget);
       expect(find.text('Save'), findsNothing);
       expect(saveChangesButton(), findsOneWidget);
     });
@@ -464,7 +530,7 @@ void main() {
     testWidgets('the Delete icon asks first', (tester) async {
       await openEditForm(tester, 'Groceries');
 
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       expect(find.text('Delete transaction?'), findsOneWidget);
@@ -481,7 +547,7 @@ void main() {
       tester,
     ) async {
       await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
@@ -493,7 +559,7 @@ void main() {
 
     testWidgets('Delete removes it and goes back', (tester) async {
       await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
@@ -506,7 +572,7 @@ void main() {
 
     testWidgets('a failed delete keeps it and offers Retry', (tester) async {
       final demo = await openEditForm(tester, 'Groceries');
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byIcon(LucideIcons.trash2));
       await tester.pumpAndSettle();
       demo.update(const DemoSettings(save: DemoSave.fails));
 
@@ -639,7 +705,7 @@ void main() {
     testWidgets('the date picker shows Western digits', (tester) async {
       await openAddForm(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.tap(find.byIcon(LucideIcons.calendar));
       await tester.pumpAndSettle();
 
       expect(find.byType(DatePickerDialog), findsOneWidget);
@@ -655,7 +721,7 @@ void main() {
     testWidgets('the account sheet is in Arabic', (tester) async {
       await openAddForm(tester, language: AppLanguage.arabic);
 
-      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('إضافة حساب')), findsOneWidget);

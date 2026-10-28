@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/formatting/countdown_format.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/routing/navigation_extensions.dart';
 import 'package:money_scribe/core/time/ticker.dart';
 import 'package:money_scribe/core/widgets/app_text_field.dart';
 import 'package:money_scribe/core/widgets/button_spinner.dart';
@@ -19,13 +21,16 @@ import 'package:money_scribe/features/auth/bloc/sign_in_bloc.dart';
 import 'package:money_scribe/features/auth/domain/auth_repository.dart';
 import 'package:money_scribe/features/auth/domain/device_key.dart';
 import 'package:money_scribe/features/auth/domain/device_key_repository.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 import 'package:money_scribe/features/auth/presentation/sign_in_challenge_sheet.dart';
 import 'package:money_scribe/features/auth/presentation/verify_email_screen.dart';
 
-/// AUTH-2, AUTH-2b and AUTH-2c: sign in with an email and a password. The
-/// password is sent as typed and never checked against a policy: only the
+/// AUTH-2, AUTH-2b, AUTH-2c and AUTH-2d: sign in with an email and a password.
+/// The password is sent as typed and never checked against a policy: only the
 /// server knows whether it is right. A phone that has a fingerprint key offers
-/// to sign in with it first, with a way to use another account.
+/// to sign in with it first, with a way to use another account. When the
+/// server signed the device out (too many devices, for example), a notice says
+/// why.
 class SignInScreen extends StatelessWidget {
   const new({super.key});
 
@@ -142,6 +147,7 @@ class _SignInViewState extends State<_SignInView> {
             state.status == SignInStatus.emailNotRegistered;
         final wrongPassword = state.status == SignInStatus.wrongPassword;
         final account = state.fingerprintAccount;
+        final signOutReason = state.signOutReason;
         final fingerprintMessage = switch (state.status) {
           SignInStatus.fingerprintUnavailable =>
             l10n.signInFingerprintUnavailable,
@@ -159,6 +165,8 @@ class _SignInViewState extends State<_SignInView> {
             _ => null,
           },
           onRetry: state.viaFingerprint ? _signInWithFingerprint : _submit,
+          // The server's sign-out opens this page on its own: back is Welcome.
+          onBack: () => context.popOrGo(AppRoutes.welcome),
           content: [
             Semantics(
               header: true,
@@ -167,23 +175,31 @@ class _SignInViewState extends State<_SignInView> {
             const SizedBox(height: 8),
             Text(l10n.signInWelcomeBack, style: theme.textTheme.bodyLarge),
             const SizedBox(height: 24),
+            if (signOutReason != null) ...[
+              MessageBanner(
+                icon: _signOutIcon(signOutReason),
+                text: _signOutText(l10n, signOutReason),
+                tone: BannerTone.info,
+              ),
+              const SizedBox(height: 16),
+            ],
             if (fingerprintMessage != null) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: fingerprintMessage,
               ),
               const SizedBox(height: 16),
             ],
             if (hasWrongCredentials) ...[
               MessageBanner(
-                icon: Icons.error_outline,
+                icon: LucideIcons.circleAlert,
                 text: l10n.signInWrongCredentials,
               ),
               const SizedBox(height: 16),
             ],
             if (isLocked) ...[
               MessageBanner(
-                icon: Icons.lock_outline,
+                icon: LucideIcons.lock,
                 text: l10n.signInLocked(
                   time: formatCountdown(state.lockSecondsLeft),
                 ),
@@ -267,6 +283,27 @@ class _SignInViewState extends State<_SignInView> {
   }
 }
 
+IconData _signOutIcon(SignOutReason reason) => switch (reason) {
+  SignOutReason.tooManyDevices => LucideIcons.monitorSmartphone,
+  SignOutReason.endedElsewhere => LucideIcons.logOutDir,
+  SignOutReason.passwordChanged => LucideIcons.lockKeyhole,
+  SignOutReason.emailChanged => LucideIcons.atSign,
+  SignOutReason.security => LucideIcons.shield,
+  SignOutReason.expired => LucideIcons.clock,
+  SignOutReason.other => LucideIcons.logOutDir,
+};
+
+String _signOutText(AppLocalizations l10n, SignOutReason reason) =>
+    switch (reason) {
+      SignOutReason.tooManyDevices => l10n.signedOutTooManyDevices,
+      SignOutReason.endedElsewhere => l10n.signedOutElsewhere,
+      SignOutReason.passwordChanged => l10n.signedOutPasswordChanged,
+      SignOutReason.emailChanged => l10n.signedOutEmailChanged,
+      SignOutReason.security => l10n.signedOutSecurity,
+      SignOutReason.expired => l10n.signedOutExpired,
+      SignOutReason.other => l10n.signedOutOther,
+    };
+
 /// The fingerprint of this phone as a way in: the account it signs in, a button
 /// that asks for the fingerprint, and the way to the email and password form.
 class _FingerprintCard extends StatelessWidget {
@@ -301,7 +338,10 @@ class _FingerprintCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const IconCircle(icon: Icons.fingerprint, size: 56),
+                const IconCircle(
+                  icon: LucideIcons.fingerprintPattern,
+                  size: 56,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: MergeSemantics(
@@ -332,7 +372,9 @@ class _FingerprintCard extends StatelessWidget {
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: locked || busy ? null : onSignIn,
-          icon: busy ? const ButtonSpinner() : const Icon(Icons.fingerprint),
+          icon: busy
+              ? const ButtonSpinner()
+              : const Icon(LucideIcons.fingerprintPattern),
           label: Text(l10n.signInWithFingerprintAction),
         ),
         const SizedBox(height: 8),

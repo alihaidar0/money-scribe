@@ -18,13 +18,13 @@ Android, iOS and web.
 
 | Component | Version |
 | --- | --- |
-| Flutter | 3.47.7 (stable) |
-| Dart | 3.13.5 |
-| Dev container image | `alihaidar199527/flutter-devcontainer:flutter-3.47.7.1` |
+| Flutter | 3.47.8 (stable) |
+| Dart | 3.13.7 |
+| Dev container image | `alihaidar199527/flutter-devcontainer:flutter-3.47.8.1` |
 | Node.js (git tooling) | 24 |
 | pnpm | 12.9.1 |
 | Husky | 9.1.7 |
-| commitlint | 21.2.3 |
+| commitlint | 21.2.4 |
 
 Application libraries and their exact versions are pinned in `pubspec.yaml` and
 `pubspec.lock`.

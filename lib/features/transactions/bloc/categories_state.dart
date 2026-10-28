@@ -19,6 +19,8 @@ final class CategoriesState extends Equatable {
     this.status = CategoriesStatus.loading,
     this.categories = const [],
     this.failedAction,
+    this.staleAction,
+    this.refusal,
   });
 
   final CategoriesStatus status;
@@ -30,11 +32,24 @@ final class CategoriesState extends Equatable {
   /// screen can offer to try it again. `null` once something else was done.
   final CategoriesEvent? failedAction;
 
+  /// The last change or delete that was refused because the category was
+  /// changed on another device; the list was loaded again. `null` once
+  /// something else was done.
+  final CategoriesEvent? staleAction;
+
+  /// Why the last add or change was refused, if the person can act on it. It
+  /// stays until something else is done.
+  final CategoryRefusal? refusal;
+
   CategoriesState copyWith({
     CategoriesStatus? status,
     List<TransactionCategory>? categories,
     CategoriesEvent? failedAction,
+    CategoriesEvent? staleAction,
+    CategoryRefusal? refusal,
     bool clearFailedAction = false,
+    bool clearStaleAction = false,
+    bool clearRefusal = false,
   }) {
     return CategoriesState(
       status: status ?? this.status,
@@ -42,9 +57,17 @@ final class CategoriesState extends Equatable {
       failedAction: clearFailedAction
           ? null
           : failedAction ?? this.failedAction,
+      staleAction: clearStaleAction ? null : staleAction ?? this.staleAction,
+      refusal: clearRefusal ? null : refusal ?? this.refusal,
     );
   }
 
   @override
-  List<Object?> get props => [status, categories, failedAction];
+  List<Object?> get props => [
+    status,
+    categories,
+    failedAction,
+    staleAction,
+    refusal,
+  ];
 }

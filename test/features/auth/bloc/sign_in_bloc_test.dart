@@ -7,6 +7,7 @@ import 'package:money_scribe/features/auth/data/fake/fake_auth_repository.dart';
 import 'package:money_scribe/features/auth/data/fake/fake_device_key_repository.dart';
 import 'package:money_scribe/features/auth/domain/auth_exception.dart';
 import 'package:money_scribe/features/auth/domain/device_key.dart';
+import 'package:money_scribe/features/auth/domain/sign_out_reason.dart';
 
 import '../../../support/fake_ticker.dart';
 
@@ -367,6 +368,82 @@ void main() {
         SignInState(status: SignInStatus.success),
       ],
     );
+  });
+
+  group('a sign-out by the server', () {
+    /// An account the server has just signed out for [reason].
+    FakeAuthRepository signedOutBy(SignOutReason reason) {
+      return FakeAuthRepository(demo: demo, signedIn: true)..endSession(reason);
+    }
+
+    test('is said when the screen opens', () {
+      final bloc = blocFor(signedOutBy(SignOutReason.tooManyDevices));
+      addTearDown(bloc.close);
+
+      expect(
+        bloc.state,
+        const SignInState(signOutReason: SignOutReason.tooManyDevices),
+      );
+    });
+
+    test('is said next to a sign-in that is still locked', () async {
+      final account = signedOutBy(SignOutReason.expired);
+      demo.update(const DemoSettings(signIn: DemoSignIn.locked));
+      await expectLater(
+        account.signIn(email: 'a@b.c', password: 'x'),
+        throwsA(isA<RateLimitedException>()),
+      );
+
+      final bloc = blocFor(account);
+      addTearDown(bloc.close);
+
+      expect(bloc.state.status, SignInStatus.locked);
+      expect(bloc.state.signOutReason, SignOutReason.expired);
+    });
+
+    test('is not said after the person signed out themselves', () async {
+      final account = signedOutBy(SignOutReason.endedElsewhere);
+      await account.signIn(email: 'a@b.c', password: 'x');
+      await account.signOut();
+
+      final bloc = blocFor(account);
+      addTearDown(bloc.close);
+
+      expect(bloc.state.signOutReason, isNull);
+    });
+
+    blocTest<SignInBloc, SignInState>(
+      'stays while the person chooses another account',
+      build: () => blocFor(signedOutBy(SignOutReason.security)),
+      act: (bloc) => bloc.add(const SignInOtherAccountChosen()),
+      expect: () => const [
+        SignInState(usePassword: true, signOutReason: SignOutReason.security),
+      ],
+    );
+
+    blocTest<SignInBloc, SignInState>(
+      'gives way to the answer of the next attempt',
+      setUp: () =>
+          demo.update(const DemoSettings(signIn: DemoSignIn.wrongPassword)),
+      build: () => blocFor(signedOutBy(SignOutReason.passwordChanged)),
+      act: (bloc) => bloc.add(submit),
+      expect: () => const [
+        SignInState(status: SignInStatus.submitting),
+        SignInState(status: SignInStatus.wrongPassword),
+      ],
+    );
+
+    test('is forgotten by the account once it signs in', () async {
+      final account = signedOutBy(SignOutReason.emailChanged);
+      final bloc = blocFor(account);
+      addTearDown(bloc.close);
+
+      bloc.add(submit);
+      await bloc.stream.firstWhere((s) => s.status == SignInStatus.success);
+
+      expect(bloc.state.signOutReason, isNull);
+      expect(account.signOutReason, isNull);
+    });
   });
 
   group('editing a field', () {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -55,6 +57,36 @@ void main() {
       expect(failure.first?.maxLength, isNull);
     });
 
+    test('carries what is left of a debt when the server says', () {
+      final failure = ApiFailure.from(
+        failedCall(
+          400,
+          errorBody(
+            'exceeds_remaining',
+            type: 'validation_error',
+            extra: {'remaining': '60.00'},
+          ),
+        ),
+      );
+
+      expect(failure.first?.remaining, '60.00');
+    });
+
+    test('ignores a remaining amount that is not text', () {
+      final failure = ApiFailure.from(
+        failedCall(
+          400,
+          errorBody(
+            'exceeds_remaining',
+            type: 'validation_error',
+            extra: {'remaining': 60},
+          ),
+        ),
+      );
+
+      expect(failure.first?.remaining, isNull);
+    });
+
     test(
       'ignores an item without a code and a number that is not a number',
       () {
@@ -71,6 +103,26 @@ void main() {
         expect(failure.first?.attemptsLeft, isNull);
       },
     );
+
+    test('is read from bytes, as a call that downloads a file gets it', () {
+      final body = utf8.encode(
+        jsonEncode({
+          'type': 'validation_error',
+          'errors': [
+            {'code': 'invalid_password', 'attr': 'current_password'},
+          ],
+        }),
+      );
+
+      final failure = ApiFailure.from(failedCall(400, body));
+
+      expect(failure.code, 'invalid_password');
+      expect(failure.first?.attr, 'current_password');
+      expect(
+        ApiFailure.from(failedCall(400, utf8.encode('nope'))).items,
+        isEmpty,
+      );
+    });
 
     test('is empty when the body is not the documented one', () {
       expect(
@@ -180,13 +232,83 @@ void main() {
     );
 
     test('any other failed answer is a server failure', () {
-      for (final status in [400, 401, 404, 429, 500, 502]) {
+      for (final status in [400, 401, 404, 500, 502]) {
         expect(
           ApiFailure.from(failedCall(status)).toDataException(),
           isA<ServerException>(),
           reason: '$status',
         );
       }
+    });
+
+    test('a 429 is a wait of the length the server asked for', () {
+      final exception = ApiFailure.from(
+        failedCall(429, errorBody('throttled'), {'retry-after': '42'}),
+      ).toDataException();
+
+      expect(exception, isA<TooManyRequestsException>());
+      expect(
+        (exception as TooManyRequestsException).retryAfter,
+        const Duration(seconds: 42),
+      );
+    });
+
+    test('a 429 without Retry-After still waits, for a safe default', () {
+      final exception = ApiFailure.from(failedCall(429)).toDataException();
+
+      expect(
+        (exception as TooManyRequestsException).retryAfter,
+        ApiFailure.missingRetryAfter,
+      );
+    });
+  });
+
+  group('the reference of the request', () {
+    test('is read from X-Request-ID', () {
+      final failure = ApiFailure.from(
+        failedCall(500, errorBody('server_error'), {
+          'x-request-id': '7c1f0d52-3b8e-4a49-9d1e-5b6a2f0c8e11',
+        }),
+      );
+
+      expect(failure.requestId, '7c1f0d52-3b8e-4a49-9d1e-5b6a2f0c8e11');
+    });
+
+    test('is left out when it is missing or not of the documented form', () {
+      for (final value in ['', 'short', 'has spaces in it 123', 'a' * 65]) {
+        expect(
+          ApiFailure.from(failedCall(500, {}, {'x-request-id': value}))
+              .requestId,
+          isNull,
+          reason: value,
+        );
+      }
+      expect(ApiFailure.from(failedCall(500)).requestId, isNull);
+    });
+
+    test('is none when the server was not reached', () {
+      final failure = ApiFailure.from(connectionLost(_options));
+
+      expect(failure.requestId, isNull);
+    });
+  });
+
+  group('a 404', () {
+    test('is "gone" only with the documented not_found body', () {
+      expect(
+        ApiFailure.from(failedCall(404, errorBody('not_found'))).isNotFound,
+        isTrue,
+      );
+      // A page of the platform, or a path the server does not route.
+      expect(ApiFailure.from(failedCall(404)).isNotFound, isFalse);
+      expect(
+        ApiFailure.from(failedCall(404, '<html>Not Found</html>')).isNotFound,
+        isFalse,
+      );
+      expect(
+        ApiFailure.from(failedCall(400, errorBody('not_found'))).isNotFound,
+        isFalse,
+      );
     });
   });
 }

@@ -24,10 +24,12 @@ final class AccountFormDeleted extends AccountFormResult {
 
 /// ST-5b: the bottom sheet that adds an account, or with [account] changes
 /// it, which also offers Delete. Closes with what was done, or with `null`
-/// when dismissed.
+/// when dismissed. [takenNames] are the names, in lower case, that the other
+/// accounts have: the server accepts a name once.
 Future<AccountFormResult?> showAccountFormSheet(
   BuildContext context, {
   Account? account,
+  Set<String> takenNames = const {},
 }) {
   return showModalBottomSheet<AccountFormResult>(
     context: context,
@@ -35,14 +37,16 @@ Future<AccountFormResult?> showAccountFormSheet(
     isScrollControlled: true,
     // Over the navigation bar too, which stays dimmed and inactive.
     useRootNavigator: true,
-    builder: (sheetContext) => _AccountFormSheet(account: account),
+    builder: (sheetContext) =>
+        _AccountFormSheet(account: account, takenNames: takenNames),
   );
 }
 
 class _AccountFormSheet extends StatefulWidget {
-  const new({required this.account});
+  const new({required this.account, required this.takenNames});
 
   final Account? account;
+  final Set<String> takenNames;
 
   @override
   State<_AccountFormSheet> createState() => _AccountFormSheetState();
@@ -63,6 +67,9 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
   AccountDraft? get _draft =>
       AccountDraft.tryCreate(name: _name.text, kind: _kind);
 
+  bool get _nameTaken =>
+      widget.takenNames.contains(_name.text.trim().toLowerCase());
+
   Future<void> _delete() async {
     final account = widget.account;
     if (account == null) return;
@@ -82,6 +89,7 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final draft = _draft;
+    final nameTaken = _nameTaken;
     final editing = widget.account != null;
 
     return SafeArea(
@@ -108,6 +116,7 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
             AppTextField(
               controller: _name,
               label: l10n.nameLabel,
+              errorText: nameTaken ? l10n.accountNameTaken : null,
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
             ),
@@ -156,7 +165,7 @@ class _AccountFormSheetState extends State<_AccountFormSheet> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: draft == null
+                      onPressed: draft == null || nameTaken
                           ? null
                           : () =>
                                 Navigator.of(context)

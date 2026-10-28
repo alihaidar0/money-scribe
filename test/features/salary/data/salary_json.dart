@@ -24,6 +24,7 @@ Map<String, Object?> fixedItemJson({
   String currency = 'RUB',
   String kind = 'income',
   String part = 'first',
+  int? day,
   int version = 1,
 }) {
   return {
@@ -33,6 +34,7 @@ Map<String, Object?> fixedItemJson({
     'currency': currency,
     'kind': kind,
     'part': part,
+    'day': day,
     'version': version,
     'created_at': '2026-10-24T08:00:00Z',
     'updated_at': '2026-10-24T08:00:00Z',

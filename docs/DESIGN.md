@@ -64,13 +64,13 @@ Flutter has deprecated `surfaceVariant`, so the theme leaves it out and uses the
 
 Used only for money meaning. Icon circles use the soft container colour with the on-container icon colour (never a saturated fill). Amount text uses the strong colour on `surface` or on a card surface, never on a container fill. Meaning is never carried by colour alone.
 
-- Income: sign "+", icon `south_west` (arrow down-left)
-- Expense: sign "−", icon `north_east` (arrow up-right)
-- Borrowed: label "Borrowed", icon `call_received`
-- Lent: label "Lent", icon `call_made`
-- Overdue: label "Overdue", icon `warning`
-- Open: label "Open", icon `schedule`, `secondaryContainer` with `onSecondaryContainer`
-- Settled: label "Settled", icon `check_circle`, neutral `onSurfaceVariant` colour
+- Income: sign "+", icon `arrow-down-left`
+- Expense: sign "−", icon `arrow-up-right`
+- Borrowed: label "Borrowed", icon `arrow-down-left`
+- Lent: label "Lent", icon `arrow-up-right`
+- Overdue: label "Overdue", icon `triangle-alert`
+- Open: label "Open", icon `clock`, `secondaryContainer` with `onSecondaryContainer`
+- Settled: label "Settled", icon `circle-check`, neutral `onSurfaceVariant` colour
 
 Open and Settled are debt states, not money meanings, so they have no token of their own.
 
@@ -136,18 +136,18 @@ Flat by default. Cards use `surfaceContainerLow` on `surface`, no shadow. Hierar
 
 ## 5. Icons
 
-Material Symbols Outlined, weight 400, size 24; filled for the selected navigation item. Touch targets at least 48 × 48 dp. Navigation: Overview `dashboard`, Salary `payments`, Transactions `receipt_long`, Debts `handshake`, Reports `bar_chart`, Settings `settings`. Categories: Groceries `shopping_basket`, Dining `restaurant`, Transport `directions_bus`, Housing `home`, Utilities `bolt`, Health `health_and_safety`, Entertainment `movie`, Shopping `shopping_bag`, Education `school`, Travel `flight`, Gifts `redeem`, Subscriptions `autorenew`, Salary `payments`, Scholarship `workspace_premium`, Other `category`.
+Lucide (the `lucide_icons_flutter` package, names below in Lucide's kebab-case), regular stroke, size 24; the selected navigation item is marked by its pill, since Lucide has no filled style. Icons that show direction (chevrons, sign in and out) use the package's `Dir` variants, which mirror in right-to-left. Touch targets at least 48 × 48 dp. Navigation: Overview `layout-dashboard`, Salary `banknote`, Transactions `receipt-text`, Debts `handshake`, Reports `chart-column`, Settings `settings`. Categories: Groceries `shopping-basket`, Dining `utensils`, Transport `bus`, Housing `house`, Utilities `zap`, Health `heart-pulse`, Entertainment `clapperboard`, Shopping `shopping-bag`, Education `graduation-cap`, Travel `plane`, Gifts `gift`, Subscriptions `refresh-cw`, Salary `banknote`, Scholarship `award`, Other `shapes`.
 
 App icon: a fountain-pen nib (the scribe) in a light circle on a blue background cut by two diagonal facets. Colours: background `#0F3D73` with facets `#0B3264` and `#154983`; circle `#D6E3FF`; nib `#0F3D73` and `#1D477D`. The Android adaptive icon keeps the mark inside the 66 dp safe zone and has a one-colour version for themed icons. The staging app uses the same icon with an amber badge (`#FFB300`): a dot at the lower right of the Android adaptive icon and a diagonal band across the top-right corner of the square icon; the badge is for the icon only and does not change the colours of the app. The SVG sources are in `assets/icon/`.
 
 ## 6. Components
 
-- Navigation: bottom navigation bar on phones with five items (Overview, Salary, Transactions, Debts, Reports); navigation rail on tablet and web; selected item has a filled icon in a `secondaryContainer` pill. Settings is an icon in the top app bar.
+- Navigation: a floating bar on phones (a rounded `surfaceContainerHigh` bar, 64 dp high, at most 400 dp wide, inset from the screen edges, floating over the bottom of the screen: the lists scroll behind it and end clear of it) with five items (Overview, Salary, Transactions, Debts, Reports). The selected item grows into a `secondaryContainer` pill with its icon (a heavier stroke) and its label; the other items show their icon only and keep a semantic label and a tooltip, so no label ever wraps. A navigation rail on tablet and web, in a rounded card to match. Settings is an icon in the top app bar.
 - Buttons: filled (`primary`), tonal (`secondaryContainer`), outlined (`outline`), text. All pill-shaped, minimum height 48 dp. "Inverted" buttons use `inverseSurface`.
 - Icon buttons: tonal `secondaryContainer` for edit and general actions; delete uses `errorContainer` with `onErrorContainer` icon. Never brown.
 - Search field: filled `surfaceContainerHigh`, 12 dp radius, leading search icon.
 - Amount row: 40 dp tonal circle with the soft container colour and on-container icon, title and note on the left, signed amount right-aligned in tabular figures, date or account as secondary text. Row sits on `surfaceContainerLow`.
-- Settings: the language is a list of radio options on the Settings screen: System default (the default), English and العربية. Each language is written in its own language, so it can be found whatever language the app shows. A choice applies at once and is remembered. Below the language, a Notifications section (shown only where push is available) has one row, "Show notifications", with its state as the subtitle (Allowed, Not allowed yet, or Blocked with a pointer to the system settings) and a tonal "Allow" button while the app can still ask. Staging builds add a "Copy push token" row for test messages; production builds never show it.
+- Settings: the language is a row with the flag of the current language and its name, which opens a bottom sheet with a card for each language: System default (a globe, the default), English (United Kingdom flag) and العربية (Saudi Arabia flag). Each language is written in its own language, so it can be found whatever language the app shows, and the selected card has a primary outline and a check. A tap applies the choice at once and closes the sheet; it is remembered. A new language is added to the list by giving it a name and a flag. Below the language, a Notifications section (shown only where push is available) has one row, "Show notifications", with its state as the subtitle (Allowed, Not allowed yet, or Blocked with a pointer to the system settings) and a tonal "Allow" button while the app can still ask. Staging builds add a "Copy push token" row for test messages; production builds never show it.
 - Forms: amount field first, large, numeric keypad, currency shown per locale; primary action pinned at the bottom for one-handed use.
 - Debt status badge: label and icon on a soft container colour (Open, Overdue, Settled; see 2.1), text in the on-container colour.
 - Progress bar: 4 dp tall, `primary` on `surfaceContainerHighest`.

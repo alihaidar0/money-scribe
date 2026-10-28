@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 
 /// A label with a minus button, the day of the month and a plus button.
@@ -46,7 +47,7 @@ class DayStepper extends StatelessWidget {
         ),
         IconButton.filledTonal(
           tooltip: l10n.decrease,
-          icon: const Icon(Icons.remove),
+          icon: const Icon(LucideIcons.minus),
           onPressed: value > min ? () => onChanged(value - 1) : null,
         ),
         SizedBox(
@@ -59,7 +60,7 @@ class DayStepper extends StatelessWidget {
         ),
         IconButton.filledTonal(
           tooltip: l10n.increase,
-          icon: const Icon(Icons.add),
+          icon: const Icon(LucideIcons.plus),
           onPressed: value < max ? () => onChanged(value + 1) : null,
         ),
       ],

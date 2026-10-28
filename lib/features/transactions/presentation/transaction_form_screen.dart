@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/leave_screen.dart';
@@ -14,6 +16,7 @@ import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/date_field.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/pinned_button_bar.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -25,6 +28,7 @@ import 'package:money_scribe/features/transactions/domain/categories_repository.
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
 import 'package:money_scribe/features/transactions/presentation/account_icons.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/account_sheet.dart';
 
 /// TX-4, TX-5, TX-6 and TX-7: the form that adds a transaction, or with [id]
@@ -88,6 +92,32 @@ class _FormView extends StatelessWidget {
             onRetry: () => bloc.add(const TransactionSaveRequested()),
           );
         }
+        if (state.saveStatus == TransactionFormSaveStatus.refused) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(switch (state.refusal) {
+                  TransactionRefusal.limitReached =>
+                    l10n.transactionLimitReached,
+                  TransactionRefusal.dateOutOfRange =>
+                    l10n.transactionDateOutOfRange,
+                  TransactionRefusal.categoryNotAllowed ||
+                  TransactionRefusal.categoryOrAccountGone =>
+                    l10n.transactionChoicesChanged,
+                  null => l10n.couldNotSave,
+                }),
+              ),
+            );
+        }
+        if (state.saveStatus == TransactionFormSaveStatus.stale ||
+            state.deleteStatus == TransactionFormDeleteStatus.stale) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(l10n.transactionChangedElsewhere)),
+            );
+        }
         if (state.deleteStatus == TransactionFormDeleteStatus.failed) {
           showFailureSnackBar(
             context,
@@ -113,7 +143,7 @@ class _FormView extends StatelessWidget {
             actions: [
               if (isEditing && canDelete)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   tooltip: l10n.deleteTransactionTooltip,
                   onPressed: () => _delete(context),
                 ),
@@ -272,21 +302,40 @@ class _FormState extends State<_Form> {
                 label: l10n.dateLabel,
                 value: values.date,
                 today: today,
+                // The years the server keeps.
+                lastDate: DateTime(2099, 12, 31),
                 onChanged: (date) => bloc.add(TransactionDateChosen(date)),
               ),
-              if (state.twoPayments)
+              // The part the money is spent from. An income joins a payment
+              // instead, which it can choose below.
+              if (state.twoPayments && values.kind == TransactionKind.expense)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 16, top: 4),
                   child: Text(
-                    PeriodScope.partOfDay(values.date.day) ==
-                            PeriodScope.firstPart
-                        ? l10n.datePartFirst
-                        : l10n.datePartSecond,
+                    partDatesLabel(
+                      context,
+                      part: state.cycle.partOf(values.date),
+                      range: state.cycle.rangeOf(
+                        state.cycle.monthOf(values.date),
+                        state.cycle.partOf(values.date),
+                      ),
+                      today: today,
+                    ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
+              if (state.choosesPart) ...[
+                const SizedBox(height: 16),
+                _CountsToward(
+                  cycle: state.cycle,
+                  date: values.date,
+                  selected: values.part,
+                  today: today,
+                  onChosen: (part) => bloc.add(TransactionPartChosen(part)),
+                ),
+              ],
               const SizedBox(height: 16),
               Semantics(
                 header: true,
@@ -303,7 +352,7 @@ class _FormState extends State<_Form> {
                   for (final category in state.availableCategories)
                     ChoiceChip(
                       avatar: Icon(categoryIcon(category.icon), size: 18),
-                      label: Text(category.name),
+                      label: Text(context.l10n.categoryName(category)),
                       selected: values.categoryId == category.id,
                       showCheckmark: false,
                       onSelected: (_) =>
@@ -338,6 +387,74 @@ class _FormState extends State<_Form> {
 }
 
 /// The row "Card ⌄" that opens the account sheet.
+/// The payment an income counts toward: the nearest one, or one of the two
+/// around its day.
+class _CountsToward extends StatelessWidget {
+  const new({
+    required this.cycle,
+    required this.date,
+    required this.selected,
+    required this.today,
+    required this.onChosen,
+  });
+
+  final PayCycle cycle;
+  final DateTime date;
+  final PayPart? selected;
+  final DateTime today;
+  final ValueChanged<PayPart?> onChosen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.countsTowardLabel,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: Text(
+                l10n.countsTowardAutomatic(
+                  part: switch (cycle.nearestPayEvent(date)?.part) {
+                    PeriodScope.secondPart => l10n.partSecond,
+                    _ => l10n.partFirst,
+                  },
+                ),
+              ),
+              selected: selected == null,
+              onSelected: (_) => onChosen(null),
+            ),
+            for (final part in cycle.payEventsAround(date))
+              ChoiceChip(
+                label: Text(
+                  partDatesLabel(
+                    context,
+                    part: part.part,
+                    range: cycle.rangeOfPart(part),
+                    today: today,
+                  ),
+                ),
+                selected: selected == part,
+                onSelected: (_) => onChosen(part),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _AccountRow extends StatelessWidget {
   const new({required this.name, required this.icon, required this.onTap});
 
@@ -363,7 +480,7 @@ class _AccountRow extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.accountLabel,
             prefixIcon: Icon(icon),
-            suffixIcon: const Icon(Icons.expand_more),
+            suffixIcon: const Icon(LucideIcons.chevronDown),
           ),
           child: Text(name, style: theme.textTheme.bodyLarge),
         ),

@@ -4,10 +4,13 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
+
+import '../../../support/driven_changes_repositories.dart';
 
 Money rub(int rubles) => Money(rubles * 100, Currency.rub);
 
@@ -65,7 +68,8 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.status, ReportsStatus.empty);
         expect(bloc.state.report, isNull);
-        expect(bloc.state.debts, isNull);
+        // The debts do not depend on the month, so they are still there.
+        expect(bloc.state.debts?.isEmpty, isTrue);
       },
     );
 
@@ -267,5 +271,60 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(bloc.state.twoPayments, isTrue);
+  });
+
+  group('the kind of change', () {
+    Future<(ReportsBloc, DrivenChangesReportsRepository)> openShown() async {
+      final driven = DrivenChangesReportsRepository(repository);
+      final bloc = ReportsBloc(
+        repository: driven,
+        now: () => DateTime(2026, 10, 11),
+      )..add(const ReportsStarted());
+      addTearDown(bloc.close);
+      await bloc.stream.firstWhere((s) => s.status == ReportsStatus.ready);
+      return (bloc, driven);
+    }
+
+    test('a saved change reloads without the loading state', () async {
+      final (bloc, driven) = await openShown();
+      final statuses = <ReportsStatus>[];
+      final subscription = bloc.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+
+      driven.announce(DataChange.saved);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(statuses, isNot(contains(ReportsStatus.loading)));
+      expect(bloc.state.status, ReportsStatus.ready);
+    });
+
+    test('a saved change that fails keeps the report shown', () async {
+      final (bloc, driven) = await openShown();
+      demo.update(const DemoSettings(scenario: DemoScenario.error));
+
+      driven.announce(DataChange.saved);
+      await pumpEventQueue();
+
+      expect(bloc.state.status, ReportsStatus.ready);
+      expect(bloc.state.report, isNotNull);
+    });
+
+    test('a replaced source starts over with the loading state', () async {
+      final (bloc, driven) = await openShown();
+      demo.update(const DemoSettings(scenario: DemoScenario.error));
+      final statuses = <ReportsStatus>[];
+      final subscription = bloc.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+
+      driven.announce(DataChange.replaced);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(statuses.first, ReportsStatus.loading);
+      expect(bloc.state.status, ReportsStatus.failure);
+    });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/features/debts/presentation/debts_screen.dart';
 import 'package:money_scribe/features/overview/presentation/overview_screen.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
@@ -9,6 +10,7 @@ import 'package:money_scribe/features/transactions/presentation/transactions_scr
 
 import '../../support/build_app.dart';
 import '../../support/fake_language_repository.dart';
+import '../../support/navigation_tab.dart';
 
 Future<void> _pumpApp(
   WidgetTester tester, {
@@ -30,12 +32,12 @@ Future<void> _pumpApp(
 
 void main() {
   group('on a phone', () {
-    testWidgets('shows the navigation bar with five labelled destinations', (
+    testWidgets('shows the floating bar with five labelled destinations', (
       tester,
     ) async {
       await _pumpApp(tester);
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       expect(find.byType(NavigationRail), findsNothing);
       for (final label in [
         'Overview',
@@ -44,15 +46,67 @@ void main() {
         'Debts',
         'Reports',
       ]) {
-        expect(
-          find.descendant(
-            of: find.byType(NavigationBar),
-            matching: find.text(label),
-          ),
-          findsOneWidget,
-          reason: label,
-        );
+        expect(navigationTab(label), findsOneWidget, reason: label);
       }
+    });
+
+    testWidgets('the screen reaches under the bar, which floats over it', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      final screen = tester.getRect(find.byType(OverviewScreen));
+      final bar = tester.getRect(find.byType(FloatingNavigationBar));
+
+      expect(screen.bottom, 915);
+      expect(bar.bottom, lessThanOrEqualTo(screen.bottom));
+      expect(bar.top, lessThan(screen.bottom));
+    });
+
+    testWidgets('the last row of a list can be scrolled clear of the bar', (
+      tester,
+    ) async {
+      await _pumpApp(tester, size: const Size(412, 500));
+      await tester.tap(navigationTab('Reports'));
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      final list = tester.getRect(find.byType(ListView).first);
+      final bar = tester.getRect(find.byType(FloatingNavigationBar));
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(ListView).first,
+          matching: find.byType(Scrollable),
+        ),
+      );
+
+      // The end of the list sits above the bar: the scroll stops with the
+      // bar's height as padding after the last row.
+      expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
+      expect(list.bottom, greaterThan(bar.top));
+    });
+
+    testWidgets('only the selected destination shows its label', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      Finder labelInBar(String label) => find.descendant(
+        of: find.byType(FloatingNavigationBar),
+        matching: find.text(label),
+      );
+
+      expect(labelInBar('Overview'), findsOneWidget);
+      expect(labelInBar('Salary'), findsNothing);
+      expect(labelInBar('Transactions'), findsNothing);
+
+      await tester.tap(navigationTab('Transactions'));
+      await tester.pumpAndSettle();
+
+      expect(labelInBar('Transactions'), findsOneWidget);
+      expect(labelInBar('Overview'), findsNothing);
     });
 
     testWidgets('opens every top-level screen from the bar', (tester) async {
@@ -66,12 +120,7 @@ void main() {
       };
 
       for (final MapEntry(key: label, value: type) in screens.entries) {
-        await tester.tap(
-          find.descendant(
-            of: find.byType(NavigationBar),
-            matching: find.text(label),
-          ),
-        );
+        await tester.tap(navigationTab(label));
         await tester.pumpAndSettle();
 
         expect(find.byType(type), findsOneWidget, reason: label);
@@ -84,7 +133,7 @@ void main() {
 
       expect(find.byTooltip('Settings'), findsOneWidget);
 
-      await tester.tap(find.text('Debts'));
+      await tester.tap(navigationTab('Debts'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Settings'), findsOneWidget);
     });
@@ -95,13 +144,13 @@ void main() {
       await _pumpApp(tester, size: const Size(840, 800));
 
       expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('keeps the bar just below 840 dp', (tester) async {
       await _pumpApp(tester, size: const Size(839, 800));
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       expect(find.byType(NavigationRail), findsNothing);
     });
 
@@ -124,8 +173,8 @@ void main() {
 
   testWidgets('the bar and the rail mirror in Arabic', (tester) async {
     await _pumpApp(tester, language: AppLanguage.arabic);
-    final overview = tester.getCenter(find.text('نظرة عامة').last).dx;
-    final reports = tester.getCenter(find.text('التقارير')).dx;
+    final overview = tester.getCenter(navigationTab('نظرة عامة')).dx;
+    final reports = tester.getCenter(navigationTab('التقارير')).dx;
 
     expect(overview, greaterThan(reports));
   });

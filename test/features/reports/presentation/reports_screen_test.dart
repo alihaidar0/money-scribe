@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -9,10 +11,12 @@ import 'package:money_scribe/features/debts/presentation/debt_details_screen.dar
 import 'package:money_scribe/features/reports/bloc/reports_bloc.dart';
 import 'package:money_scribe/features/reports/presentation/reports_screen.dart';
 import 'package:money_scribe/features/reports/presentation/widgets/donut_chart.dart';
+import 'package:money_scribe/features/salary/presentation/fixed_items_screen.dart';
 import 'package:money_scribe/features/settings/domain/app_language.dart';
 import 'package:money_scribe/features/transactions/presentation/transactions_screen.dart';
 
 import '../../../support/open_screen.dart';
+import '../../../support/other_currency_repositories.dart';
 
 const _twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
 
@@ -38,7 +42,7 @@ void main() {
       expect(find.byType(ReportsScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Reports'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       for (final label in ['Categories', 'Month vs month', 'Debts']) {
         expect(view(label), findsOneWidget, reason: label);
       }
@@ -87,7 +91,7 @@ void main() {
       await openReports(tester);
 
       expect(find.text(amount('vs September −3,200.00 ₽')), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
+      expect(find.byIcon(LucideIcons.arrowDown), findsOneWidget);
     });
 
     testWidgets('a row opens the transactions of that category', (
@@ -282,17 +286,28 @@ void main() {
       await openReports(tester, settings: _twoPayments);
 
       expect(find.text('By part'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Nov – 19 Nov'), findsOneWidget);
       expect(amountText('43,500.00 ₽'), findsOneWidget);
       expect(amountText('42,750.00 ₽'), findsOneWidget);
       expect(amountText('10,000.00 ₽'), findsOneWidget);
     });
 
+    testWidgets('shows the days of the chosen period', (tester) async {
+      await openReports(tester, settings: _twoPayments);
+
+      expect(find.text('20 Oct – 19 Nov'), findsOneWidget);
+
+      await tester.tap(find.text('Part 2 · 5 Nov – 19 Nov'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('5 Nov – 19 Nov'), findsOneWidget);
+    });
+
     testWidgets('a card shows that part', (tester) async {
       await openReports(tester, settings: _twoPayments);
 
-      await tester.tap(find.text('Part 2 · 16th–end'));
+      await tester.tap(find.text('Part 2 · 5 Nov – 19 Nov'));
       await tester.pumpAndSettle();
 
       expect(find.text('By part'), findsNothing);
@@ -306,7 +321,7 @@ void main() {
       await tapView(tester, 'Month vs month');
 
       expect(find.text('By part'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
     });
 
     testWidgets('a single part has no cards, nor has one payment', (
@@ -350,7 +365,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DebtDetailsScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
   });
 
@@ -387,7 +402,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Add transaction'), findsWidgets);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('offers Try again after an error', (tester) async {
@@ -433,5 +448,100 @@ void main() {
     expect(find.text('التقارير'), findsWidgets);
     expect(find.text('الفئات'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  group('the fixed costs and other currencies', () {
+    testWidgets('the fixed costs are a slice of the spending', (tester) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      expect(find.text('Fixed costs'), findsOneWidget);
+      expect(amountText('8,000.00 ₽'), findsOneWidget);
+      // 8,000 of 12,000.
+      expect(find.textContaining('66.7'), findsOneWidget);
+    });
+
+    testWidgets('the fixed costs slice opens the fixed items, not purchases', (
+      tester,
+    ) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      await tester.tap(find.text('Fixed costs'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FixedItemsScreen), findsOneWidget);
+    });
+
+    testWidgets('records in other currencies are noted on the spending', (
+      tester,
+    ) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      expect(
+        find.text(
+          'Records in other currencies are not included in these figures.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('and on the comparison, but not on the debts', (tester) async {
+      await openReports(
+        tester,
+        reportsRepository: (demo) => OtherCurrencyReportsRepository(demo: demo),
+      );
+
+      await tapView(tester, 'Month vs month');
+      expect(
+        find.textContaining('Records in other currencies'),
+        findsOneWidget,
+      );
+
+      await tapView(tester, 'Debts');
+      expect(find.textContaining('Records in other currencies'), findsNothing);
+      expect(
+        find.text(
+          'Debts in other currencies are not included in these totals.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an ordinary month has no note', (tester) async {
+      await openReports(tester);
+
+      expect(find.textContaining('other currencies'), findsNothing);
+    });
+  });
+
+  group('a month with nothing in it', () {
+    const empty = DemoSettings(scenario: DemoScenario.empty);
+
+    testWidgets('keeps the controls, so another month can be chosen', (
+      tester,
+    ) async {
+      await openReports(tester, settings: empty);
+
+      expect(find.text('Not enough data yet'), findsOneWidget);
+      expect(find.byType(MonthChip), findsOneWidget);
+      expect(view('Debts'), findsOneWidget);
+    });
+
+    testWidgets('does not hide the debts', (tester) async {
+      await openReports(tester, settings: empty);
+
+      await tapView(tester, 'Debts');
+
+      expect(find.text('Not enough data yet'), findsNothing);
+      expect(find.text('No open debts.'), findsOneWidget);
+    });
   });
 }

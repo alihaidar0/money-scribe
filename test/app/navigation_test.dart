@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -118,7 +119,7 @@ void main() {
       await _pumpApp(tester);
 
       expect(find.byType(BackButton), findsNothing);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       expect(find.textContaining('Terms', findRichText: true), findsOneWidget);
       expect(
         find.textContaining('Privacy Policy', findRichText: true),
@@ -137,7 +138,7 @@ void main() {
       await _tapButton(tester, FilledButton);
 
       expect(find.byType(OverviewScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       // An existing account has data.
       expect(find.text('Balance'), findsOneWidget);
     });
@@ -482,7 +483,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Part 1'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Nov – 19 Nov'), findsOneWidget);
     });
 
     testWidgets('the setup offers two payments with pay days', (tester) async {

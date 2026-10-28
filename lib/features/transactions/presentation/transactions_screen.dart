@@ -3,20 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/categories/category_icon.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
+import 'package:money_scribe/core/text/api_text_formatter.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
 import 'package:money_scribe/core/theme/money_colors.dart';
 import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -27,6 +32,7 @@ import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_filter.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_groups.dart';
 import 'package:money_scribe/features/transactions/domain/transactions_repository.dart';
+import 'package:money_scribe/features/transactions/presentation/category_names.dart';
 import 'package:money_scribe/features/transactions/presentation/widgets/transaction_filters_sheet.dart';
 
 /// TX-1, TX-2, TX-8 to TX-12: every transaction, newest first, grouped by day
@@ -137,19 +143,35 @@ class _TransactionsView extends StatelessWidget {
           bloc.state.hasTransactions,
     );
 
-    return BlocListener<TransactionsBloc, TransactionsState>(
-      listenWhen: (previous, current) =>
-          previous.deleteStatus != current.deleteStatus &&
-          current.deleteStatus == TransactionsDeleteStatus.failed,
-      listener: (context, state) {
-        final id = state.deletingId;
-        if (id == null) return;
-        showFailureSnackBar(
-          context,
-          l10n.couldNotDelete,
-          onRetry: () => bloc.add(TransactionDeleteConfirmed(id)),
-        );
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<TransactionsBloc, TransactionsState>(
+          listenWhen: (previous, current) =>
+              previous.deleteStatus != current.deleteStatus &&
+              current.deleteStatus == TransactionsDeleteStatus.failed,
+          listener: (context, state) {
+            final id = state.deletingId;
+            if (id == null) return;
+            showFailureSnackBar(
+              context,
+              l10n.couldNotDelete,
+              onRetry: () => bloc.add(TransactionDeleteConfirmed(id)),
+            );
+          },
+        ),
+        BlocListener<TransactionsBloc, TransactionsState>(
+          listenWhen: (previous, current) =>
+              previous.deleteStatus != current.deleteStatus &&
+              current.deleteStatus == TransactionsDeleteStatus.stale,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(l10n.transactionChangedElsewhere)),
+              );
+          },
+        ),
+      ],
       child: _screen(context, showAdd),
     );
   }
@@ -164,7 +186,7 @@ class _TransactionsView extends StatelessWidget {
           ? FloatingActionButton.extended(
               heroTag: null,
               onPressed: () => _addTransaction(context),
-              icon: const Icon(Icons.add),
+              icon: const Icon(LucideIcons.plus),
               label: Text(l10n.addAction),
             )
           : null,
@@ -184,7 +206,7 @@ class _TransactionsView extends StatelessWidget {
             onRetry: () => bloc.add(const TransactionsRetried()),
           ),
           TransactionsStatus.ready when !state.hasTransactions => StateView(
-            icon: Icons.receipt_long_outlined,
+            icon: LucideIcons.receiptText,
             title: l10n.transactionsEmptyTitle,
             actionLabel: l10n.addFirstPurchaseAction,
             filledAction: true,
@@ -325,7 +347,7 @@ class _DetailPane extends StatelessWidget {
                   const SizedBox(height: 24),
                   _DetailLine(
                     label: l10n.categoryLabel,
-                    value: category?.name ?? '',
+                    value: category == null ? '' : l10n.categoryName(category),
                     icon: categoryIcon(category?.icon ?? CategoryIcon.other),
                   ),
                   _DetailLine(
@@ -335,6 +357,17 @@ class _DetailPane extends StatelessWidget {
                       today: today,
                     ),
                   ),
+                  // The payment an income joined, in a month paid twice.
+                  if (state.twoPayments && transaction.part != null)
+                    _DetailLine(
+                      label: l10n.countsTowardLabel,
+                      value: partDatesLabel(
+                        context,
+                        part: transaction.part!.part,
+                        range: state.cycle.rangeOfPart(transaction.part!),
+                        today: today,
+                      ),
+                    ),
                   _DetailLine(
                     label: l10n.accountLabel,
                     value: account?.name ?? '',
@@ -349,7 +382,7 @@ class _DetailPane extends StatelessWidget {
                       FilledButton.tonalIcon(
                         onPressed: () =>
                             _openTransaction(context, transaction.id),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(LucideIcons.pencil),
                         label: Text(l10n.editAction),
                       ),
                       OutlinedButton.icon(
@@ -359,7 +392,7 @@ class _DetailPane extends StatelessWidget {
                         onPressed: deleting
                             ? null
                             : () => _delete(context, transaction.id),
-                        icon: const Icon(Icons.delete_outline),
+                        icon: const Icon(LucideIcons.trash2),
                         label: Text(l10n.deleteAction),
                       ),
                     ],
@@ -459,10 +492,11 @@ class _SearchFieldState extends State<_SearchField> {
       },
       child: TextField(
         controller: _controller,
+        inputFormatters: const [ApiTextFormatter()],
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: l10n.transactionSearchHint,
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: const Icon(LucideIcons.search),
         ),
         onChanged: (text) =>
             context.read<TransactionsBloc>().add(TransactionsSearched(text)),
@@ -498,13 +532,13 @@ class _FilterBar extends StatelessWidget {
             if (count == 0)
               OutlinedButton.icon(
                 onPressed: () => _openFilters(context),
-                icon: const Icon(Icons.tune),
+                icon: const Icon(LucideIcons.slidersHorizontal),
                 label: Text(label),
               )
             else
               FilledButton.tonalIcon(
                 onPressed: () => _openFilters(context),
-                icon: const Icon(Icons.tune),
+                icon: const Icon(LucideIcons.slidersHorizontal),
                 label: Text(label),
               ),
             if (chips.isNotEmpty) ...[
@@ -530,6 +564,7 @@ class _FilterBar extends StatelessWidget {
     Widget chip(String label, VoidCallback onRemove) {
       return InputChip(
         label: Text(label),
+        deleteIcon: const Icon(LucideIcons.x),
         deleteButtonTooltipMessage: l10n.removeFilterTooltip(name: label),
         onDeleted: onRemove,
       );
@@ -600,6 +635,7 @@ class _FilterBar extends StatelessWidget {
 }
 
 /// The transactions that pass the search and filters, or TX-8 when none do.
+/// The list grows by a page each time its end comes into view.
 class _Results extends StatelessWidget {
   const new({required this.wide});
 
@@ -609,24 +645,47 @@ class _Results extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final bloc = context.read<TransactionsBloc>();
     final state = context.watch<TransactionsBloc>().state;
-    final visible = state.visible;
 
-    if (visible.isEmpty) {
+    switch (state.resultsStatus) {
+      case TransactionsResultsStatus.loading:
+        return const _Skeleton();
+      case TransactionsResultsStatus.noConnection:
+        return FailureView(
+          kind: FailureKind.noConnection,
+          onRetry: () => bloc.add(const TransactionsRetried()),
+        );
+      case TransactionsResultsStatus.failure:
+        return FailureView(
+          kind: FailureKind.error,
+          errorTitle: l10n.transactionsLoadFailed,
+          onRetry: () => bloc.add(const TransactionsRetried()),
+        );
+      case TransactionsResultsStatus.ready:
+        break;
+    }
+
+    final visible = state.visible;
+    final waitingForMore = state.nextCursor != null && !state.loadMoreFailed;
+    if (visible.isEmpty && !waitingForMore && !state.loadMoreFailed) {
       return StateView(
-        icon: Icons.search_off,
+        icon: LucideIcons.searchX,
         title: l10n.noResultsTitle,
         message: l10n.noResultsMessage,
         actionLabel: l10n.clearFiltersAction,
-        onAction: () => context.read<TransactionsBloc>().add(
-          const TransactionFiltersCleared(),
-        ),
+        onAction: () => bloc.add(const TransactionFiltersCleared()),
       );
     }
 
+    final totals = state.shownDayTotals;
     final entries = <_Entry>[];
     if (state.twoPayments) {
-      for (final period in TransactionGroups.byPeriod(visible)) {
+      for (final period in TransactionGroups.byPeriod(
+        visible,
+        cycle: state.cycle,
+        totals: totals,
+      )) {
         entries.add(_PeriodEntry(period));
         for (final day in period.days) {
           entries
@@ -635,11 +694,14 @@ class _Results extends StatelessWidget {
         }
       }
     } else {
-      for (final day in TransactionGroups.byDay(visible)) {
+      for (final day in TransactionGroups.byDay(visible, totals: totals)) {
         entries
           ..add(_DayEntry(day))
           ..addAll(day.transactions.map(_TransactionEntry.new));
       }
+    }
+    if (state.loadingMore || waitingForMore || state.loadMoreFailed) {
+      entries.add(_FooterEntry(failed: state.loadMoreFailed));
     }
 
     final categories = {
@@ -649,28 +711,52 @@ class _Results extends StatelessWidget {
       for (final account in state.accounts) account.id: account,
     };
 
-    return ListView.builder(
-      // Room under the last row for the button.
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-      itemCount: entries.length,
-      itemBuilder: (context, index) => switch (entries[index]) {
-        _PeriodEntry(:final period) => _PeriodHeader(period: period),
-        _DayEntry(:final day) => _DayHeader(day: day),
-        _TransactionEntry(:final transaction) => _TransactionRow(
-          transaction: transaction,
-          categoryName: categories[transaction.categoryId]?.name ?? '',
-          icon: categoryIcon(
-            categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
-          ),
-          accountName: accounts[transaction.accountId]?.name ?? '',
-          selected: wide && transaction.id == state.selected?.id,
-          onTap: wide
-              ? () => context.read<TransactionsBloc>().add(
-                  TransactionSelected(transaction.id),
-                )
-              : () => _openTransaction(context, transaction.id),
-        ),
-      },
+    return PullToRefresh(
+      onRefresh: (done) => bloc.add(TransactionsRefreshed(done: done)),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last row for the button.
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          96,
+        ).withBarClearance(context),
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          // The end of the list is near: ask for the next page. The Bloc
+          // takes one request at a time, so building this row again asks
+          // nothing more.
+          if (waitingForMore &&
+              !state.loadingMore &&
+              index >= entries.length - 3) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!bloc.isClosed) bloc.add(const TransactionsMoreRequested());
+            });
+          }
+          return switch (entries[index]) {
+            _PeriodEntry(:final period) => _PeriodHeader(period: period),
+            _DayEntry(:final day) => _DayHeader(day: day),
+            _FooterEntry(:final failed) => _ListFooter(failed: failed),
+            _TransactionEntry(:final transaction) => _TransactionRow(
+              transaction: transaction,
+              categoryName: categories[transaction.categoryId] == null
+                  ? ''
+                  : context.l10n.categoryName(
+                      categories[transaction.categoryId]!,
+                    ),
+              icon: categoryIcon(
+                categories[transaction.categoryId]?.icon ?? CategoryIcon.other,
+              ),
+              accountName: accounts[transaction.accountId]?.name ?? '',
+              selected: wide && transaction.id == state.selected?.id,
+              onTap: wide
+                  ? () => bloc.add(TransactionSelected(transaction.id))
+                  : () => _openTransaction(context, transaction.id),
+            ),
+          };
+        },
+      ),
     );
   }
 }
@@ -691,13 +777,22 @@ final class _DayEntry extends _Entry {
   final DayGroup day;
 }
 
+/// The end of the list: a spinner while the next page loads, or a message and
+/// Try again when it did not.
+final class _FooterEntry extends _Entry {
+  const new({required this.failed});
+
+  final bool failed;
+}
+
 final class _TransactionEntry extends _Entry {
   const new(this.transaction);
 
   final Transaction transaction;
 }
 
-/// "Part 2 · 16th–31st Oct": a tonal bar that starts a part of a month.
+/// "Part 2 · 5 Nov – 19 Nov": a tonal bar that starts a part of a month, with
+/// the days it covers.
 class _PeriodHeader extends StatelessWidget {
   const new({required this.period});
 
@@ -705,19 +800,8 @@ class _PeriodHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
-    final days = context.dayFormatter;
-    final months = context.monthFormatter;
     final today = context.read<Clock>().now();
-
-    final first = period.part == PeriodScope.firstPart;
-    final lastDay = first
-        ? PeriodScope.lastDayOfFirstPart
-        : TransactionGroups.lastDayOf(period.month);
-    final monthName = period.month.year == today.year
-        ? months.shortName(period.month.month)
-        : months.format(period.month);
 
     return Padding(
       padding: const EdgeInsets.only(top: 16),
@@ -731,13 +815,11 @@ class _PeriodHeader extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
-              l10n.partRangeLabel(
-                part: first ? l10n.partFirst : l10n.partSecond,
-                from: days.ordinal(
-                  first ? 1 : PeriodScope.lastDayOfFirstPart + 1,
-                ),
-                to: days.ordinal(lastDay),
-                month: monthName,
+              partDatesLabel(
+                context,
+                part: period.part,
+                range: period.range,
+                today: today,
               ),
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSecondaryContainer,
@@ -745,6 +827,39 @@ class _PeriodHeader extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The end of the list while more is coming, or when it did not come.
+class _ListFooter extends StatelessWidget {
+  const new({required this.failed});
+
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    if (!failed) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(l10n.transactionsLoadMoreFailed),
+          TextButton(
+            onPressed: () => context.read<TransactionsBloc>().add(
+              const TransactionsMoreRetried(),
+            ),
+            child: Text(l10n.tryAgain),
+          ),
+        ],
       ),
     );
   }
@@ -772,7 +887,8 @@ class _DayHeader extends StatelessWidget {
     } else {
       name = context.dayFormatter.formatWithWeekday(day.date, today: today);
     }
-    final total = day.total;
+    final totals = day.totals;
+    final formatter = context.moneyFormatter;
 
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -785,15 +901,24 @@ class _DayHeader extends StatelessWidget {
             spacing: 12,
             children: [
               Text(name, style: theme.textTheme.titleSmall),
-              Text(
-                context.moneyFormatter.formatSigned(total),
-                style: theme.textTheme.titleSmall?.amount.copyWith(
-                  color: total.isNegative
-                      ? colors.expense.color
-                      : colors.income.color,
+              // One line for each currency the day has transactions in. A
+              // day whose total is not known (a search is on) shows none.
+              if (totals != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final total in totals)
+                      Text(
+                        formatter.formatSigned(total),
+                        style: theme.textTheme.titleSmall?.amount.copyWith(
+                          color: total.isNegative
+                              ? colors.expense.color
+                              : colors.income.color,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                  ],
                 ),
-                textAlign: TextAlign.end,
-              ),
             ],
           ),
         ),

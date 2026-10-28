@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_names.dart';
@@ -65,8 +66,8 @@ class _CurrencySheetState extends State<_CurrencySheet> {
                       trailing: ExcludeSemantics(
                         child: Icon(
                           currency == _selected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
+                              ? LucideIcons.circleDot
+                              : LucideIcons.circle,
                           color: currency == _selected
                               ? theme.colorScheme.primary
                               : theme.colorScheme.outline,

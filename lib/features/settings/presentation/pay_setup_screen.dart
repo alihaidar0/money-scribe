@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -81,7 +82,7 @@ class _PaySetupView extends StatelessWidget {
               DayStepper(
                 label: l10n.firstPayDay,
                 value: schedule.firstPayDay,
-                min: PaySchedule.firstDayOfMonth,
+                min: schedule.earliestFirstPayDay,
                 max: PaySchedule.lastDayOfMonth,
                 onChanged: (day) => bloc.add(FirstPayDayChanged(day)),
               ),
@@ -91,8 +92,15 @@ class _PaySetupView extends StatelessWidget {
                 caption: l10n.ofNextMonth,
                 value: schedule.secondPayDay,
                 min: PaySchedule.firstDayOfMonth,
-                max: PaySchedule.lastDayOfMonth,
+                max: schedule.latestSecondPayDay,
                 onChanged: (day) => bloc.add(SecondPayDayChanged(day)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.payDaysOrderNote,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
             const SizedBox(height: 32),
@@ -167,9 +175,7 @@ class _ModeCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 ExcludeSemantics(
                   child: Icon(
-                    selected
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
+                    selected ? LucideIcons.circleCheck : LucideIcons.circle,
                     color: selected ? colors.primary : colors.outline,
                   ),
                 ),

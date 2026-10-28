@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
@@ -145,7 +146,7 @@ class _Form extends StatelessWidget {
           DayStepper(
             label: l10n.firstPayDay,
             value: schedule.firstPayDay,
-            min: PaySchedule.firstDayOfMonth,
+            min: schedule.earliestFirstPayDay,
             max: PaySchedule.lastDayOfMonth,
             onChanged: (day) => bloc.add(FirstPayDayChanged(day)),
           ),
@@ -155,8 +156,15 @@ class _Form extends StatelessWidget {
             caption: l10n.ofNextMonth,
             value: schedule.secondPayDay,
             min: PaySchedule.firstDayOfMonth,
-            max: PaySchedule.lastDayOfMonth,
+            max: schedule.latestSecondPayDay,
             onChanged: (day) => bloc.add(SecondPayDayChanged(day)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.payDaysOrderNote,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
         const SizedBox(height: 16),
@@ -181,7 +189,7 @@ class _Form extends StatelessWidget {
               children: [
                 ExcludeSemantics(
                   child: Icon(
-                    Icons.info_outline,
+                    LucideIcons.info,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),

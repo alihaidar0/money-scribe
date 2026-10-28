@@ -25,6 +25,19 @@ final class TransactionsDataChanged extends TransactionsEvent {
 /// The user came back from a form that may have changed a transaction: load
 /// them again without showing the loading state.
 final class TransactionsRefreshed extends TransactionsEvent {
+  const new({this.done});
+
+  /// Completed when the load is done, to end a pull-to-refresh spinner.
+  final Completer<void>? done;
+}
+
+/// The end of the loaded list came into view: load the next page.
+final class TransactionsMoreRequested extends TransactionsEvent {
+  const new();
+}
+
+/// The user pressed Try again under a page that did not load.
+final class TransactionsMoreRetried extends TransactionsEvent {
   const new();
 }
 
