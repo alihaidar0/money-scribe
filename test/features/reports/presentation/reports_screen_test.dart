@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -41,7 +42,7 @@ void main() {
       expect(find.byType(ReportsScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Reports'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       for (final label in ['Categories', 'Month vs month', 'Debts']) {
         expect(view(label), findsOneWidget, reason: label);
       }
@@ -353,7 +354,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DebtDetailsScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
   });
 
@@ -390,7 +391,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Add transaction'), findsWidgets);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('offers Try again after an error', (tester) async {

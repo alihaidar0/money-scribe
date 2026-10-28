@@ -1981,6 +1981,9 @@ void main() {
         final name = '${scene.name}-${language.name}-${brightness.name}';
 
         testWidgets('draws $name', (tester) async {
+          // Tests draw an elevation as a hard outline; the pictures show the
+          // soft shadow of a real device (restored right after the picture).
+          debugDisableShadows = false;
           tester.view
             ..devicePixelRatio = 1
             ..physicalSize = scene.size;
@@ -2048,6 +2051,7 @@ void main() {
           await tester.pump();
           expect(tester.takeException(), isNull);
           await saveScreenshot(tester, key, name);
+          debugDisableShadows = true;
           // Let any pending fake answer (the slow "loading" one takes eight
           // seconds, and a screen may ask twice in a row) finish before the
           // test ends.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -42,7 +43,7 @@ void main() {
 
       expect(find.byType(CategoriesScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Categories'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       for (final name in [
         'Groceries',
         'Dining',

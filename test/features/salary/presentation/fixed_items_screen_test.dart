@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/money/currency.dart';
@@ -106,7 +107,7 @@ void main() {
       expect(find.text('Salary'), findsWidgets);
       expect(find.byTooltip('Salary history'), findsOneWidget);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
       final segments = find.byType(PillSegmentedButton<Object?>);
       expect(segments, findsNothing);
     });
@@ -508,7 +509,7 @@ void main() {
       expect(find.text('Balance after fixed items'), findsNothing);
       // The segments and the navigation bar stay.
       expect(find.text('Month'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('Add item adds the first one', (tester) async {
@@ -929,7 +930,7 @@ void main() {
       expect(find.text('Part 1'), findsNothing);
       // The segments and the navigation bar stay.
       expect(find.text('Month'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('Go to salary opens the salary of that month', (tester) async {

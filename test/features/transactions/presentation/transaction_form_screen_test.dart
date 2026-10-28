@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
@@ -65,7 +66,7 @@ void main() {
       expect(find.byType(TransactionFormScreen), findsOneWidget);
       expect(find.text('Add transaction'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       expect(find.byIcon(LucideIcons.trash2), findsNothing);
     });
 

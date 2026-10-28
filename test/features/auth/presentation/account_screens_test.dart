@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
 import 'package:money_scribe/features/auth/presentation/change_password_screen.dart';
@@ -60,7 +61,7 @@ void main() {
 
       expect(find.byType(AccountScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Account'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       expect(find.text('A'), findsOneWidget);
       expect(find.text('Alex'), findsOneWidget);
       expect(find.text('alex@example.com'), findsOneWidget);

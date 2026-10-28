@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
@@ -56,7 +57,7 @@ void main() {
       expect(find.byType(TransactionsScreen), findsOneWidget);
       expect(find.text('Transactions'), findsWidgets);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('lists the days newest first, each with its total', (
@@ -458,7 +459,7 @@ void main() {
 
       expect(find.byType(TransactionFormScreen), findsOneWidget);
       expect(find.text('Edit transaction'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('Add opens the form for a new one (TX-4)', (tester) async {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -38,7 +39,7 @@ void main() {
       expect(find.byType(DebtsScreen), findsOneWidget);
       expect(find.text('Debts'), findsWidgets);
       expect(find.byTooltip('Settings'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
 
     testWidgets('shows what is owed to the person and what they owe', (
@@ -172,7 +173,7 @@ void main() {
 
       expect(find.byType(DebtDetailsScreen), findsOneWidget);
       expect(find.text('Debt details'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('Add debt opens the form (DB-2)', (tester) async {

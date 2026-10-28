@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
@@ -58,7 +59,7 @@ void main() {
       expect(find.byType(DebtFormScreen), findsOneWidget);
       expect(find.text('Add debt'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('has the fields in order, starting today as money lent', (

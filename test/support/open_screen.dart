@@ -11,6 +11,7 @@ import 'build_app.dart';
 import 'fake_language_repository.dart';
 import 'fake_push_messaging_repository.dart';
 import 'fake_theme_repository.dart';
+import 'navigation_tab.dart';
 
 /// A tall phone, so a long list fits without scrolling.
 const tallPhone = Size(412, 1800);
@@ -53,12 +54,7 @@ Future<DemoController> openTab(
   );
   await tester.pumpAndSettle();
   await tester.tap(
-    find.descendant(
-      of: find.byWidgetPredicate(
-        (widget) => widget is NavigationBar || widget is NavigationRail,
-      ),
-      matching: find.text(language == AppLanguage.arabic ? arabic : english),
-    ),
+    navigationTab(language == AppLanguage.arabic ? arabic : english),
   );
   await tester.pumpAndSettle();
   return demo;

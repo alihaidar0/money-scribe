@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
@@ -40,7 +41,7 @@ void main() {
       expect(find.byType(SalaryCompareScreen), findsOneWidget);
       expect(find.text('Compare months'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('compares the two newest months, the earlier first', (

@@ -23,6 +23,14 @@ Future<void> loadAppFonts() async {
       rootBundle.load('packages/lucide_icons_flutter/assets/lucide.ttf'),
     );
   await lucideIcons.load();
+  // The heavier stroke of the selected destination of the navigation bar.
+  final lucideBold = FontLoader('packages/lucide_icons_flutter/Lucide600')
+    ..addFont(
+      rootBundle.load(
+        'packages/lucide_icons_flutter/assets/build_font/LucideVariable-w600.ttf',
+      ),
+    );
+  await lucideBold.load();
 
   const families = {
     'Inter': ['Inter-Regular', 'Inter-Medium', 'Inter-SemiBold'],

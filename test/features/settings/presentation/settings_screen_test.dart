@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/auth/presentation/account_screen.dart';
@@ -42,12 +43,12 @@ void main() {
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
 
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(FloatingNavigationBar), findsOneWidget);
     });
   });
 
@@ -280,7 +281,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AccountScreen), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
     });
 
     testWidgets('Pay schedule opens its screen, and a change comes back', (

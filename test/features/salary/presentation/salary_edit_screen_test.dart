@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:money_scribe/app/shell/floating_navigation_bar.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/core/widgets/month_chip.dart';
@@ -78,7 +79,7 @@ void main() {
     ) async {
       await _openSeptember(tester);
 
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(FloatingNavigationBar), findsNothing);
       expect(find.byType(BackButton), findsOneWidget);
       expect(find.text('Fixed items'), findsNothing);
       expect(find.byType(MonthChip), findsOneWidget);
