@@ -19,6 +19,7 @@ import 'package:money_scribe/core/widgets/category_icons.dart';
 import 'package:money_scribe/core/widgets/confirm_dialogs.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
 import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
@@ -671,6 +672,7 @@ class _Results extends StatelessWidget {
     if (state.twoPayments) {
       for (final period in TransactionGroups.byPeriod(
         visible,
+        cycle: state.cycle,
         totals: totals,
       )) {
         entries.add(_PeriodEntry(period));
@@ -778,7 +780,8 @@ final class _TransactionEntry extends _Entry {
   final Transaction transaction;
 }
 
-/// "Part 2 · 16th–31st Oct": a tonal bar that starts a part of a month.
+/// "Part 2 · 5 Nov – 19 Nov": a tonal bar that starts a part of a month, with
+/// the days it covers.
 class _PeriodHeader extends StatelessWidget {
   const new({required this.period});
 
@@ -786,19 +789,8 @@ class _PeriodHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
-    final days = context.dayFormatter;
-    final months = context.monthFormatter;
     final today = context.read<Clock>().now();
-
-    final first = period.part == PeriodScope.firstPart;
-    final lastDay = first
-        ? PeriodScope.lastDayOfFirstPart
-        : TransactionGroups.lastDayOf(period.month);
-    final monthName = period.month.year == today.year
-        ? months.shortName(period.month.month)
-        : months.format(period.month);
 
     return Padding(
       padding: const EdgeInsets.only(top: 16),
@@ -812,13 +804,11 @@ class _PeriodHeader extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
-              l10n.partRangeLabel(
-                part: first ? l10n.partFirst : l10n.partSecond,
-                from: days.ordinal(
-                  first ? 1 : PeriodScope.lastDayOfFirstPart + 1,
-                ),
-                to: days.ordinal(lastDay),
-                month: monthName,
+              partDatesLabel(
+                context,
+                part: period.part,
+                range: period.range,
+                today: today,
               ),
               style: theme.textTheme.labelLarge?.copyWith(
                 color: theme.colorScheme.onSecondaryContainer,

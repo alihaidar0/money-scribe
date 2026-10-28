@@ -130,18 +130,21 @@ void main() {
     testWidgets('splits the list into parts with headers', (tester) async {
       await openTransactions(tester, settings: twoPayments);
 
-      expect(find.text('Part 2 · 16th–31st Oct'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th Oct'), findsOneWidget);
-      final part2 = tester.getTopLeft(find.text('Part 2 · 16th–31st Oct')).dy;
-      final part1 = tester.getTopLeft(find.text('Part 1 · 1st–15th Oct')).dy;
+      // The pay days are the 20th and the 5th: the 5th to the 19th is a part
+      // of its own, and the 1st is the end of the part before it.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Sep – 4 Oct'), findsOneWidget);
+      final part2 = tester.getTopLeft(find.text('Part 2 · 5 Oct – 19 Oct')).dy;
+      final part1 = tester.getTopLeft(find.text('Part 1 · 20 Sep – 4 Oct')).dy;
       final taxi = tester.getTopLeft(find.text('Mon 19 Oct')).dy;
       final groceries = tester.getTopLeft(find.text('Mon 5 Oct')).dy;
+      final scholarship = tester.getTopLeft(find.text('Thu 1 Oct')).dy;
       expect(part2, lessThan(taxi));
-      expect(taxi, lessThan(part1));
-      expect(part1, lessThan(groceries));
+      expect(groceries, lessThan(part1));
+      expect(part1, lessThan(scholarship));
     });
 
-    testWidgets('Part 1 shows only the first half of the month', (
+    testWidgets('Part 1 shows only the days from the first pay day', (
       tester,
     ) async {
       await openTransactions(tester, settings: twoPayments);
@@ -149,13 +152,15 @@ void main() {
       await tester.tap(partSegment('Part 1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Mon 5 Oct'), findsOneWidget);
       expect(find.text('Thu 1 Oct'), findsOneWidget);
+      expect(find.text('Mon 5 Oct'), findsNothing);
       expect(find.text('Mon 19 Oct'), findsNothing);
-      expect(find.text('Part 2 · 16th–31st Oct'), findsNothing);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsNothing);
     });
 
-    testWidgets('Part 2 shows only the second half', (tester) async {
+    testWidgets('Part 2 shows only the days from the second pay day', (
+      tester,
+    ) async {
       await openTransactions(tester, settings: twoPayments);
 
       await tester.tap(partSegment('Part 2'));
@@ -163,7 +168,8 @@ void main() {
 
       expect(find.text('Mon 19 Oct'), findsOneWidget);
       expect(find.text('Sat 17 Oct'), findsOneWidget);
-      expect(find.text('Mon 5 Oct'), findsNothing);
+      expect(find.text('Mon 5 Oct'), findsOneWidget);
+      expect(find.text('Thu 1 Oct'), findsNothing);
     });
 
     testWidgets('Month shows everything again', (tester) async {
@@ -437,7 +443,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Mon 19 Oct'), findsOneWidget);
-      expect(find.text('Mon 5 Oct'), findsNothing);
+      expect(find.text('Thu 1 Oct'), findsNothing);
       // The choice above the list follows.
       expect(
         tester
@@ -687,7 +693,7 @@ void main() {
       expect(find.text('عوامل التصفية'), findsOneWidget);
       expect(find.text('إضافة'), findsOneWidget);
       expect(find.textContaining(RegExp('[٠-٩]')), findsNothing);
-      expect(find.textContaining('الجزء 2 · 16–31'), findsOneWidget);
+      expect(find.textContaining('الجزء 2 · 5 '), findsOneWidget);
     });
 
     testWidgets('the filters sheet is in Arabic', (tester) async {

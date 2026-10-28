@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 
@@ -22,17 +23,23 @@ final class DayGroup extends Equatable {
 }
 
 /// The days of one part of one month, for a month paid in two payments. [part]
-/// is [PeriodScope.firstPart] (the 1st-15th) or [PeriodScope.secondPart] (the
-/// 16th-end).
+/// is [PeriodScope.firstPart] or [PeriodScope.secondPart]; [range] is the days
+/// the part covers, cut at the pay days.
 final class PeriodGroup extends Equatable {
-  const new({required this.month, required this.part, required this.days});
+  const new({
+    required this.month,
+    required this.part,
+    required this.range,
+    required this.days,
+  });
 
   final YearMonth month;
   final PeriodScope part;
+  final PayPeriod range;
   final List<DayGroup> days;
 
   @override
-  List<Object> get props => [month, part, days];
+  List<Object> get props => [month, part, range, days];
 }
 
 /// Puts transactions in days, and the days in the parts of their month.
@@ -60,29 +67,32 @@ abstract final class TransactionGroups {
     ];
   }
 
-  /// The days of [transactions] in the part of the month each belongs to, the
-  /// newest part first.
+  /// The days of [transactions] in the part of the month each belongs to by
+  /// the pay days of [cycle], the newest part first.
   static List<PeriodGroup> byPeriod(
     List<Transaction> transactions, {
+    required PayCycle cycle,
     Map<DateTime, List<Money>>? totals,
   }) {
     final periods = <PeriodGroup>[];
     for (final day in byDay(transactions, totals: totals)) {
-      final month = YearMonth.fromDate(day.date);
-      final part = PeriodScope.partOfDay(day.date.day);
+      final month = cycle.monthOf(day.date);
+      final part = cycle.partOf(day.date);
       if (periods.isNotEmpty &&
           periods.last.month == month &&
           periods.last.part == part) {
         periods.last.days.add(day);
       } else {
-        periods.add(PeriodGroup(month: month, part: part, days: [day]));
+        periods.add(
+          PeriodGroup(
+            month: month,
+            part: part,
+            range: cycle.rangeOf(month, part),
+            days: [day],
+          ),
+        );
       }
     }
     return periods;
-  }
-
-  /// The last day of [month]: 28 to 31.
-  static int lastDayOf(YearMonth month) {
-    return DateTime(month.year, month.month + 1, 0).day;
   }
 }

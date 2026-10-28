@@ -503,7 +503,7 @@ void main() {
     );
 
     blocTest<TransactionsBloc, TransactionsState>(
-      'a part shows the days of that part of the month, for two payments',
+      'a part shows the days between two pay days, for two payments',
       setUp: () =>
           demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),
       build: build,
@@ -518,7 +518,9 @@ void main() {
         await Future<void>.delayed(Duration.zero);
       },
       verify: (bloc) {
-        expect(ids(bloc), ['seed-taxi', 'seed-coffee']);
+        // The pay days are the 20th and the 5th: the 5th to the 19th is the
+        // second part.
+        expect(ids(bloc), ['seed-taxi', 'seed-coffee', 'seed-groceries']);
         expect(bloc.state.isNarrowed, isTrue);
       },
     );
@@ -608,25 +610,24 @@ void main() {
           isFalse,
         );
       },
-      verify: (bloc) =>
-          expect(ids(bloc), ['seed-groceries', 'seed-scholarship']),
+      verify: (bloc) => expect(ids(bloc), ['seed-scholarship']),
     );
 
     blocTest<TransactionsBloc, TransactionsState>(
       'loads more pages when the part shows too little of the first one',
       setUp: () =>
           demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments)),
-      // Two a page: the first page holds the two days of the second part.
-      build: () => build(pageSize: 2),
+      // Three a page: the first page holds the three days of the second part.
+      build: () => build(pageSize: 3),
       act: (bloc) async {
         await start(bloc);
-        expect(bloc.state.transactions, hasLength(2));
+        expect(bloc.state.transactions, hasLength(3));
 
         bloc.add(const TransactionsScopeSelected(PeriodScope.firstPart));
-        await waitFor(bloc, (s) => resultsReady(s) && s.visible.length == 2);
+        await waitFor(bloc, (s) => resultsReady(s) && s.visible.length == 1);
       },
       verify: (bloc) {
-        expect(ids(bloc), ['seed-groceries', 'seed-scholarship']);
+        expect(ids(bloc), ['seed-scholarship']);
         expect(bloc.state.transactions, hasLength(4));
       },
     );

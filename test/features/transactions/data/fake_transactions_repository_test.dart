@@ -3,6 +3,7 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
@@ -341,11 +342,14 @@ void main() {
   });
 
   test('says how the salary is paid, following the demo panel', () async {
-    expect(await repository.paymentMode(), PaymentMode.onePayment);
+    expect(await repository.payCycle(), const PayCycle.onePayment());
 
     demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments));
 
-    expect(await repository.paymentMode(), PaymentMode.twoPayments);
+    expect(
+      await repository.payCycle(),
+      PayCycle.twoPayments(firstPayDay: 20, secondPayDay: 5),
+    );
   });
 
   test('accounts and categories are the seeded ones', () async {

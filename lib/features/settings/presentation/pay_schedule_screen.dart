@@ -146,7 +146,7 @@ class _Form extends StatelessWidget {
           DayStepper(
             label: l10n.firstPayDay,
             value: schedule.firstPayDay,
-            min: PaySchedule.firstDayOfMonth,
+            min: schedule.earliestFirstPayDay,
             max: PaySchedule.lastDayOfMonth,
             onChanged: (day) => bloc.add(FirstPayDayChanged(day)),
           ),
@@ -156,8 +156,15 @@ class _Form extends StatelessWidget {
             caption: l10n.ofNextMonth,
             value: schedule.secondPayDay,
             min: PaySchedule.firstDayOfMonth,
-            max: PaySchedule.lastDayOfMonth,
+            max: schedule.latestSecondPayDay,
             onChanged: (day) => bloc.add(SecondPayDayChanged(day)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.payDaysOrderNote,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
         const SizedBox(height: 16),

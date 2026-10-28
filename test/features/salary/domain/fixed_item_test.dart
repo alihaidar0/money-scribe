@@ -47,16 +47,17 @@ void main() {
     });
 
     test('follows the pay days that were set', () {
-      expect(ofDay(10, first: 10, second: 25), FixedItemPart.first);
-      expect(ofDay(24, first: 10, second: 25), FixedItemPart.first);
-      expect(ofDay(25, first: 10, second: 25), FixedItemPart.second);
-      expect(ofDay(3, first: 10, second: 25), FixedItemPart.second);
+      // The first payment on the 25th, the second on the 10th.
+      expect(ofDay(10, first: 25, second: 10), FixedItemPart.second);
+      expect(ofDay(24, first: 25, second: 10), FixedItemPart.second);
+      expect(ofDay(25, first: 25, second: 10), FixedItemPart.first);
+      expect(ofDay(3, first: 25, second: 10), FixedItemPart.first);
     });
 
-    test('equal pay days give the first part', () {
-      expect(ofDay(1, first: 10, second: 10), FixedItemPart.first);
-      expect(ofDay(10, first: 10, second: 10), FixedItemPart.first);
-      expect(ofDay(28, first: 10, second: 10), FixedItemPart.first);
+    test('a second pay day that is not before the first uses 20 and 5', () {
+      expect(ofDay(10, first: 10, second: 25), FixedItemPart.second);
+      expect(ofDay(21, first: 10, second: 10), FixedItemPart.first);
+      expect(ofDay(13, first: 10, second: 10), FixedItemPart.second);
     });
   });
 
