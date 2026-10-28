@@ -39,11 +39,16 @@ final class PaySchedule extends Equatable {
   /// How the schedule cuts a month into parts.
   PayCycle get cycle => switch (mode) {
     PaymentMode.onePayment => const PayCycle.onePayment(),
-    PaymentMode.twoPayments => PayCycle.twoPayments(
-      firstPayDay: firstPayDay,
-      secondPayDay: secondPayDay,
-    ),
+    PaymentMode.twoPayments => partsCycle,
   };
+
+  /// How a month paid in two payments is cut by these pay days, whatever the
+  /// schedule says for new months: a month saved in two payments is cut by the
+  /// pay days of the settings.
+  PayCycle get partsCycle => PayCycle.twoPayments(
+    firstPayDay: firstPayDay,
+    secondPayDay: secondPayDay,
+  );
 
   PaySchedule copyWith({
     PaymentMode? mode,

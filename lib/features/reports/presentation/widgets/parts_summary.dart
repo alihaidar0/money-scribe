@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money_formatter_context.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/theme/amount_text_style.dart';
+import 'package:money_scribe/core/time/clock.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/features/reports/domain/period_report.dart';
 
 /// The two parts of a month paid in two payments, each with the same part of
@@ -12,12 +16,18 @@ final class PartsReports {
   const new({
     required this.first,
     required this.second,
+    required this.firstRange,
+    required this.secondRange,
     this.previousFirst,
     this.previousSecond,
   });
 
   final PeriodReport first;
   final PeriodReport second;
+
+  /// The days each part covers.
+  final PayPeriod firstRange;
+  final PayPeriod secondRange;
   final PeriodReport? previousFirst;
   final PeriodReport? previousSecond;
 }
@@ -35,10 +45,16 @@ class PartsSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final today = context.read<Clock>().now();
     final cards = [
       _PartCard(
         scope: PeriodScope.firstPart,
-        title: l10n.periodFirstPart,
+        title: partDatesLabel(
+          context,
+          part: PeriodScope.firstPart,
+          range: parts.firstRange,
+          today: today,
+        ),
         part: l10n.partFirst,
         report: parts.first,
         previous: parts.previousFirst,
@@ -46,7 +62,12 @@ class PartsSummary extends StatelessWidget {
       ),
       _PartCard(
         scope: PeriodScope.secondPart,
-        title: l10n.periodSecondPart,
+        title: partDatesLabel(
+          context,
+          part: PeriodScope.secondPart,
+          range: parts.secondRange,
+          today: today,
+        ),
         part: l10n.partSecond,
         report: parts.second,
         previous: parts.previousSecond,

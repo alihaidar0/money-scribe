@@ -161,8 +161,8 @@ void main() {
       expect(find.text('Month'), findsOneWidget);
       expect(find.text('Part 1'), findsOneWidget);
       expect(find.text('Part 2'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Nov – 19 Nov'), findsOneWidget);
       expect(_text('4,750.00 ₽'), findsOneWidget);
       expect(_text('55,900.00 ₽'), findsOneWidget);
       expect(_text('+43,500.00 ₽'), findsOneWidget);
@@ -180,7 +180,7 @@ void main() {
       await tester.tap(find.text('Part 1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Part 1 · 1st–15th'), findsNothing);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsNothing);
       expect(_text('4,750.00 ₽'), findsOneWidget);
       expect(_inRow('Salary', '+43,500.00 ₽'), findsOneWidget);
       expect(_inRow('Fixed costs', '−34,500.00 ₽'), findsOneWidget);
@@ -193,13 +193,35 @@ void main() {
       await tester.tap(find.text('Month'));
       await tester.pumpAndSettle();
       expect(_text('60,650.00 ₽'), findsOneWidget);
-      expect(find.text('Part 1 · 1st–15th'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+    });
+
+    testWidgets('shows the days the chosen period covers', (tester) async {
+      await _pumpOverview(tester, settings: two);
+
+      // The pay days are the 20th and the 5th: the month runs from the first
+      // pay day to the day before the next one.
+      expect(find.text('20 Oct – 19 Nov'), findsOneWidget);
+
+      await tester.tap(find.text('Part 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('20 Oct – 4 Nov'), findsOneWidget);
+
+      await tester.tap(find.text('Part 2'));
+      await tester.pumpAndSettle();
+      expect(find.text('5 Nov – 19 Nov'), findsOneWidget);
+    });
+
+    testWidgets('one payment shows no days under the month', (tester) async {
+      await _pumpOverview(tester);
+
+      expect(find.text('1 Oct – 31 Oct'), findsNothing);
     });
 
     testWidgets('a period card opens the transactions', (tester) async {
       await _pumpOverview(tester, settings: two);
 
-      await tester.tap(find.text('Part 2 · 16th–end'));
+      await tester.tap(find.text('Part 2 · 5 Nov – 19 Nov'));
       await tester.pumpAndSettle();
 
       expect(find.byType(TransactionsScreen), findsOneWidget);
@@ -446,7 +468,7 @@ void main() {
       );
 
       expect(find.text('الجزء 1'), findsOneWidget);
-      expect(find.text('الجزء 1 · من 1 إلى 15'), findsOneWidget);
+      expect(find.text('الجزء 1 · 20 أكتوبر – 4 نوفمبر'), findsOneWidget);
     });
   });
 

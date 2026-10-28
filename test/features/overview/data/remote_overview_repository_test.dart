@@ -8,6 +8,8 @@ import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
 import 'package:money_scribe/core/network/data_change.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/overview/data/remote/remote_overview_repository.dart';
 
 import '../../../support/fake_http_adapter.dart';
@@ -24,6 +26,8 @@ void main() {
     return RemoteOverviewRepository.create(
       dio: transactionsTestDio(server),
       defaultCurrency: () async => currency,
+      partsCycle: () async =>
+          PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
     );
   }
 
@@ -97,6 +101,42 @@ void main() {
 
       expect(overview!.firstPart!.salary, _usd(40000));
       expect(overview.secondPart!.salary, _usd(60000));
+    });
+
+    test('a month paid twice is cut by the pay days of the settings', () async {
+      answer = (_) => jsonBody(
+        200,
+        overviewJson(
+          firstPart: overviewBlockJson(),
+          secondPart: overviewBlockJson(),
+        ),
+      );
+
+      final overview = await build().month(const YearMonth(2026, 10));
+
+      expect(
+        overview!.cycle,
+        PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
+      );
+      expect(
+        overview.rangeOf(PeriodScope.firstPart).start,
+        DateTime(2026, 10, 18),
+      );
+      expect(
+        overview.rangeOf(PeriodScope.firstPart).end,
+        DateTime(2026, 11, 2),
+      );
+      expect(
+        overview.rangeOf(PeriodScope.secondPart).start,
+        DateTime(2026, 11, 3),
+      );
+    });
+
+    test('a month paid once is the calendar month', () async {
+      final overview = await build().month(const YearMonth(2026, 10));
+
+      expect(overview!.cycle, const PayCycle.onePayment());
+      expect(overview.rangeOf(PeriodScope.month).end, DateTime(2026, 10, 31));
     });
 
     test('one part without the other is a server failure', () {
@@ -225,6 +265,8 @@ void main() {
     final repository = RemoteOverviewRepository.create(
       dio: transactionsTestDio(server),
       defaultCurrency: () async => Currency.usd,
+      partsCycle: () async =>
+          PayCycle.twoPayments(firstPayDay: 18, secondPayDay: 3),
       changes: saves.stream,
     );
     final changes = <DataChange>[];

@@ -483,7 +483,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Part 1'), findsOneWidget);
-      expect(find.text('Part 2 · 16th–end'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Nov – 19 Nov'), findsOneWidget);
     });
 
     testWidgets('the setup offers two payments with pay days', (tester) async {

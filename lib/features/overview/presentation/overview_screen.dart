@@ -13,7 +13,9 @@ import 'package:money_scribe/core/widgets/bar_clearance.dart';
 import 'package:money_scribe/core/widgets/currency_notice.dart';
 import 'package:money_scribe/core/widgets/hero_card.dart';
 import 'package:money_scribe/core/widgets/icon_circle.dart';
+import 'package:money_scribe/core/widgets/part_dates_label.dart';
 import 'package:money_scribe/core/widgets/part_selector.dart';
+import 'package:money_scribe/core/widgets/period_range_caption.dart';
 import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
@@ -101,6 +103,11 @@ class _OverviewContent extends StatelessWidget {
           selected: state.scope,
           onSelected: (scope) => bloc.add(PeriodScopeSelected(scope)),
         ),
+        const SizedBox(height: 8),
+        PeriodRangeCaption(
+          range: overview.rangeOf(state.scope),
+          today: context.read<Clock>().now(),
+        ),
         const SizedBox(height: 16),
       ],
       HeroCard(
@@ -128,13 +135,23 @@ class _OverviewContent extends StatelessWidget {
           state.scope == PeriodScope.month) ...[
         const SizedBox(height: 16),
         PeriodCard(
-          title: l10n.periodFirstPart,
+          title: partDatesLabel(
+            context,
+            part: PeriodScope.firstPart,
+            range: overview.rangeOf(PeriodScope.firstPart),
+            today: context.read<Clock>().now(),
+          ),
           figures: firstPart,
           onTap: () => context.go(AppRoutes.transactions),
         ),
         const SizedBox(height: 12),
         PeriodCard(
-          title: l10n.periodSecondPart,
+          title: partDatesLabel(
+            context,
+            part: PeriodScope.secondPart,
+            range: overview.rangeOf(PeriodScope.secondPart),
+            today: context.read<Clock>().now(),
+          ),
           figures: secondPart,
           onTap: () => context.go(AppRoutes.transactions),
         ),

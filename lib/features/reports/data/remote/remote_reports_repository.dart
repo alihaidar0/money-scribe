@@ -5,6 +5,7 @@ import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/network/api_failure.dart';
 import 'package:money_scribe/core/network/call_api.dart';
 import 'package:money_scribe/core/network/data_change.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/features/reports/data/remote/reports_wire.dart';
 import 'package:money_scribe/features/reports/domain/debts_report.dart';
 import 'package:money_scribe/features/reports/domain/month_report.dart';
@@ -23,20 +24,25 @@ class RemoteReportsRepository implements ReportsRepository {
     required this._overview,
     required this._reports,
     required this._defaultCurrency,
+    required this._partsCycle,
     Stream<void> changes = const Stream<void>.empty(),
   }) : _saved = changes;
 
   /// The calls over [dio], which carries the token of the session and renews
-  /// it. [defaultCurrency] is the one the settings of the account hold.
+  /// it. [defaultCurrency] is the one the settings of the account hold, and
+  /// [partsCycle] the pay days of its settings, which cut a month paid twice
+  /// into parts.
   factory create({
     required Dio dio,
     required Future<Currency> Function() defaultCurrency,
+    required Future<PayCycle> Function() partsCycle,
     Stream<void> changes = const Stream<void>.empty(),
   }) {
     return RemoteReportsRepository(
       overview: api.OverviewClient(dio),
       reports: api.ReportsClient(dio),
       defaultCurrency: defaultCurrency,
+      partsCycle: partsCycle,
       changes: changes,
     );
   }
@@ -44,6 +50,7 @@ class RemoteReportsRepository implements ReportsRepository {
   final api.OverviewClient _overview;
   final api.ReportsClient _reports;
   final Future<Currency> Function() _defaultCurrency;
+  final Future<PayCycle> Function() _partsCycle;
 
   final Stream<void> _saved;
 
@@ -70,6 +77,7 @@ class RemoteReportsRepository implements ReportsRepository {
       overview: answers[0] as api.Overview,
       report: answers[1] as api.MonthReport,
       month: month,
+      partsCycle: await _partsCycle(),
     );
   }
 

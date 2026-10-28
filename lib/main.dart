@@ -167,6 +167,8 @@ Future<void> main() async {
           : RemoteOverviewRepository.create(
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
+              partsCycle: () async =>
+                  (await payScheduleRepository.load()).partsCycle,
               changes: dataChanges.stream,
             ),
       salaryRepository: salary,
@@ -197,6 +199,8 @@ Future<void> main() async {
           : RemoteReportsRepository.create(
               dio: apiDio,
               defaultCurrency: defaultCurrencyRepository.load,
+              partsCycle: () async =>
+                  (await payScheduleRepository.load()).partsCycle,
               changes: dataChanges.stream,
             ),
       demo: demo,

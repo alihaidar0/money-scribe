@@ -2,6 +2,7 @@ import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/overview/domain/debt_choice.dart';
 import 'package:money_scribe/features/overview/domain/month_overview.dart';
@@ -49,6 +50,10 @@ abstract final class OverviewSeed {
         total: total,
         firstPart: first,
         secondPart: second,
+        cycle: PayCycle.twoPayments(
+          firstPayDay: PayCycle.defaultFirstPayDay,
+          secondPayDay: PayCycle.defaultSecondPayDay,
+        ),
       ),
     };
   }
