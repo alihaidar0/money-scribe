@@ -317,7 +317,7 @@ void main() {
 
   group('update', () {
     test(
-      'sends the changes at its version, never direction or currency',
+      'sends the changes and the direction at its version, never the currency',
       () async {
         answer = (_) => jsonBody(200, debtJson(person: 'Lee', version: 2));
 
@@ -331,6 +331,7 @@ void main() {
         expect(lastRequest().path, '/api/v1/debts/$_id/');
         expect(lastRequest().headers['If-Match'], '"1"');
         expect(lastRequest().data, {
+          'direction': 'lent',
           'person': 'Lee',
           'amount': '100.00',
           'start_date': '2026-10-01',
@@ -340,6 +341,20 @@ void main() {
         expect(updated.version, 2);
       },
     );
+
+    test('sends a changed direction', () async {
+      answer = (_) =>
+          jsonBody(200, debtJson(direction: 'borrowed', version: 2));
+
+      final updated = await build().update(
+        _id,
+        _draft(direction: DebtDirection.borrowed),
+        version: 1,
+      );
+
+      expect((lastRequest().data as Map)['direction'], 'borrowed');
+      expect(updated.direction, DebtDirection.borrowed);
+    });
 
     test('takes the due day away by sending null', () async {
       answer = (_) => jsonBody(200, debtJson(dueDate: null, version: 2));

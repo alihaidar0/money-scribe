@@ -146,11 +146,14 @@ void main() {
       },
     );
 
-    test('keeps the direction, which cannot be changed', () async {
+    test('changes the direction and keeps the repayments', () async {
       // `lee()` is a borrowed debt; Sam's was lent.
       final saved = await repository.update('sam', samAsLee(), version: 1);
 
-      expect(saved.direction, DebtDirection.lent);
+      expect(saved.direction, DebtDirection.borrowed);
+      expect(saved.repayments, hasLength(1));
+      expect(saved.version, 2);
+      expect((await repository.debt('sam'))?.direction, DebtDirection.borrowed);
     });
 
     test('saving what is already there does not move the version', () async {

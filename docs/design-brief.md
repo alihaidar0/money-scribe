@@ -104,8 +104,8 @@ Money borrowed from others and money lent to others.
 - Partial repayments, each with an amount and date; the remaining amount is shown.
 - States: open, overdue (past the due date) and settled. The server works them out in the
   person's day.
-- The direction and the currency cannot be changed once a debt exists: the edit screen shows
-  them as fixed. A repayment cannot be dated before the debt starts.
+- The currency cannot be changed once a debt exists: the edit screen shows it as fixed. The
+  direction can be corrected there, and the repayments stay. A repayment cannot be dated before the debt starts.
 - The totals (owed to the person, owed by the person) are added up per currency: the default
   currency is shown, with a notice when debts in another currency exist.
 - Sample: lent 10,000 to *Sam*, repaid 4,000, remaining 6,000, due at the end of the

@@ -32,7 +32,7 @@ class DebtImportRowRequest {
   /// The line in the file: a positive whole number, unique in the call.
   final int row;
 
-  /// `lent` is money the person gave, `borrowed` money the person received. Fixed for good.
+  /// `lent` is money the person gave, `borrowed` money the person received. Can be corrected later.
   ///
   /// * `lent` - Lent.
   /// * `borrowed` - Borrowed.

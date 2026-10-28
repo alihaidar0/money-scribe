@@ -103,10 +103,10 @@ class FakeDebtsRepository implements DebtsRepository {
     if (lastRepayment != null && draft.startDate.isAfter(lastRepayment)) {
       throw const DebtRefusedException(DebtRefusal.startAfterRepayment);
     }
-    // The direction and the currency are fixed, whatever the draft says.
+    // The currency is fixed; the direction can be corrected.
     final debt = Debt(
       id: id,
-      direction: old.direction,
+      direction: draft.direction,
       person: draft.person,
       amount: draft.amount,
       startDate: draft.startDate,

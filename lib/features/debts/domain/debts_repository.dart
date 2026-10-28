@@ -25,8 +25,8 @@ abstract interface class DebtsRepository {
   Future<Debt> add(DebtDraft draft);
 
   /// Replaces what the debt [id] is made of at [version], keeping its
-  /// repayments, and returns it. The direction and the currency of a debt
-  /// cannot be changed.
+  /// repayments, and returns it. The direction can be corrected; the currency
+  /// of a debt cannot be changed.
   Future<Debt> update(String id, DebtDraft draft, {required int version});
 
   /// Deletes the debt [id] at [version] with its repayments. Deleting one that

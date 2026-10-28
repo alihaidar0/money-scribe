@@ -70,7 +70,7 @@ abstract class DebtsClient {
 
   /// Change a debt.
   ///
-  /// Changes any of `person`, `amount`, `start_date`, `due_date`, `note`; fields not sent keep their value. `{"due_date": null}` clears the due date and `"note": ""` the note; `note: null` is `400`. The `direction` and the `currency` cannot be changed: sending them, even the stored value, is `400` `read_only`, like every derived field and any unknown field. The `amount` cannot go below what was repaid (`400` `amount_below_repaid`) and the `start_date` cannot go past a repayment (`400` `start_after_repayment`). Send `If-Match` with the `version`: a stale one is `412` and changes nothing.
+  /// Changes any of `direction`, `person`, `amount`, `start_date`, `due_date`, `note`; fields not sent keep their value. Flipping the `direction` (a debt added as `lent` instead of `borrowed`, or the reverse) keeps the repayments, the amount and the dates, and the status does not depend on it. `{"due_date": null}` clears the due date and `"note": ""` the note; `note: null` is `400`. The `currency` cannot be changed: sending it, even the stored value, is `400` `read_only`, like every derived field and any unknown field. The `amount` cannot go below what was repaid (`400` `amount_below_repaid`) and the `start_date` cannot go past a repayment (`400` `start_after_repayment`). Send `If-Match` with the `version`: a stale one is `412` and changes nothing.
   ///
   /// [ifMatch] - The `version` of the record the edit was made from, as a quoted string: `"3"` (`*` matches any record). If the stored version is another one nothing changes and the answer is `412` `precondition_failed`. Without the header the last write wins.
   @PATCH('/api/v1/debts/{id}/')

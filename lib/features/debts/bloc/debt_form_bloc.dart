@@ -13,8 +13,8 @@ part 'debt_form_state.dart';
 
 /// The Add debt and Edit debt form. Without an id it starts a new debt that
 /// begins today, in the default currency of the account; with one it loads
-/// that debt to be changed. The direction and the currency of a debt cannot be
-/// changed after it is added.
+/// that debt to be changed. The currency of a debt cannot be changed after it
+/// is added; its direction can, to correct a debt added the wrong way round.
 class DebtFormBloc extends Bloc<DebtFormEvent, DebtFormState> {
   new({required this._repository, required DateTime Function() now, String? id})
     : _today = _day(now()),

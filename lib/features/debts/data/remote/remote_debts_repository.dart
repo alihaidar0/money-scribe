@@ -134,11 +134,13 @@ class RemoteDebtsRepository implements DebtsRepository {
     required int version,
   }) async {
     final wire = await callApi(
-      // The direction and the currency are not sent: they cannot be changed.
+      // The currency is not sent: it cannot be changed. The direction can, to
+      // correct a debt that was added the wrong way round.
       () => _clearing.debtUpdate(
         id: id,
         ifMatch: WriteSafetyHeaders.ifMatch(version),
         body: api.PatchedDebtUpdateRequest(
+          direction: DebtsWire.directionToWire(draft.direction),
           person: ApiText.clean(draft.person),
           amount: draft.amount.toDecimalString(),
           startDate: draft.startDate,

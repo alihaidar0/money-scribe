@@ -120,8 +120,9 @@ These come with the hardening issue and hold for every signed-in call.
 
 - **Debts** (`/api/v1/debts/`): `id`, `direction` (`lent`, `borrowed`), `person` (1 to 50), `amount`,
   `currency`, `start_date`, `due_date` (or `null`), `note` (0 to 100), and the read-only `repaid`, `remaining`,
-  `status` (`open`, `overdue`, `settled`) and `repayments[]`, then `version`. `direction` and `currency` are
-  fixed after creation (`400 read_only`): the edit screen shows them as fixed. `PATCH {"due_date": null}`
+  `status` (`open`, `overdue`, `settled`) and `repayments[]`, then `version`. `currency` is
+  fixed after creation (`400 read_only`); `direction` can be corrected with a `PATCH` at the current `version`
+  (the repayments, the amount and the dates stay). `PATCH {"due_date": null}`
   clears the due date and `{"note": ""}` the note. At most 500 debts.
 - **Status** is counted in the person's day, from the time zone in the settings; the app does not send `today`
   and shows the status the server sent (a status it does not know is worked out on the device).
@@ -145,7 +146,7 @@ These come with the hardening issue and hold for every signed-in call.
   (`404 not_found`) counts as done. An `exceeds_remaining` shows the `remaining` of the answer and reads the
   debt again.
 - **A new debt** is in the default currency of the settings, which is also the currency of the totals; the
-  direction and the currency are fixed afterwards. The start-day picker of a debt with repayments stops at its
+  currency is fixed afterwards; the direction can be corrected. The start-day picker of a debt with repayments stops at its
   last repayment, and the picker of a repayment starts at the day the debt starts.
 - **The due day** is taken away with `{"due_date": null}`, so that one request goes through a copy of the HTTP
   client that keeps `null` fields (see `docs/architecture.md`).
