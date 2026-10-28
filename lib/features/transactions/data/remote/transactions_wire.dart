@@ -1,8 +1,11 @@
 import 'package:money_scribe/core/api/export.dart' as api;
 import 'package:money_scribe/core/categories/category_icon.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
@@ -128,7 +131,38 @@ abstract final class TransactionsWire {
       categoryId: wire.categoryId,
       accountId: wire.accountId,
       note: wire.note,
+      part: part(wire.partValue, wire.partMonth),
       version: wire.version,
+    );
+  }
+
+  /// The payment an income joins, or `null` for an expense. A part without
+  /// its month, or the reverse, breaks the contract.
+  static PayPart? part(api.PartEnum? wirePart, String? wireMonth) {
+    if (wirePart == null && wireMonth == null) return null;
+    final month = YearMonth.tryParse(wireMonth);
+    return switch (wirePart) {
+      api.PartEnum.first when month != null => PayPart(
+        month,
+        PeriodScope.firstPart,
+      ),
+      api.PartEnum.second when month != null => PayPart(
+        month,
+        PeriodScope.secondPart,
+      ),
+      _ => throw const ServerException(),
+    };
+  }
+
+  /// The part to send for a draft: both fields, or none for the part nearest
+  /// to the day.
+  static (api.PartEnum?, String?) partToWire(PayPart? part) {
+    if (part == null) return (null, null);
+    return (
+      part.part == PeriodScope.firstPart
+          ? api.PartEnum.first
+          : api.PartEnum.second,
+      part.month.param,
     );
   }
 

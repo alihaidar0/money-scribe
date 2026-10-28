@@ -18,6 +18,8 @@
   "overviewDebtMovements": "حركة الديون",
   "partMonth": "الشهر",
   "periodRangeLabel": "{from} – {to}",
+  "countsTowardLabel": "يُحتسب ضمن",
+  "countsTowardAutomatic": "تلقائي · {part}",
   "partFirst": "الجزء 1",
   "partSecond": "الجزء 2",
   "previousMonth": "الشهر السابق",

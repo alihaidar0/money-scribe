@@ -373,7 +373,7 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Pay days: the second always before the first, and one helper that cuts a month into parts and dates
 - [x] Transactions: the parts follow the pay days, and each part shows the days it covers
 - [x] Overview and Reports: the part cards show their days, and the days of the chosen period show under the Month / Part choice
-- [ ] Income: choose the part it counts toward, and show the part it joined
+- [x] Income: choose the part it counts toward, and show the part it joined
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 

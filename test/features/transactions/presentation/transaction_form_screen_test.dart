@@ -290,6 +290,69 @@ void main() {
     });
   });
 
+  group('the payment an income counts toward', () {
+    testWidgets('an income in two payments chooses between three', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      expect(find.text('Counts toward'), findsNothing, reason: 'an expense');
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsOneWidget);
+      // Today, the 11th, is nearest to the pay day of the 5th.
+      expect(find.text('Automatic · Part 2'), findsOneWidget);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+      expect(find.text('Part 1 · 20 Oct – 4 Nov'), findsOneWidget);
+    });
+
+    testWidgets('an income shows the payment instead of the part of the day', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      // One chip, not the caption under the day as well.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsOneWidget);
+    });
+
+    testWidgets('one payment has no choice', (tester) async {
+      await openAddForm(tester);
+
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsNothing);
+    });
+
+    testWidgets('choosing a payment selects it, and Automatic goes back', (
+      tester,
+    ) async {
+      await openAddForm(tester, settings: twoPayments);
+      await tester.tap(find.text('Income'));
+      await tester.pumpAndSettle();
+
+      ChoiceChip chip(String label) =>
+          tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label));
+      expect(chip('Automatic · Part 2').selected, isTrue);
+
+      await tester.tap(find.text('Part 1 · 20 Oct – 4 Nov'));
+      await tester.pumpAndSettle();
+
+      expect(chip('Part 1 · 20 Oct – 4 Nov').selected, isTrue);
+      expect(chip('Automatic · Part 2').selected, isFalse);
+
+      await tester.tap(find.text('Automatic · Part 2'));
+      await tester.pumpAndSettle();
+
+      expect(chip('Automatic · Part 2').selected, isTrue);
+    });
+  });
+
   group('the account (TX-6)', () {
     testWidgets('the row opens the sheet with the accounts', (tester) async {
       await openAddForm(tester);

@@ -531,6 +531,32 @@ void main() {
       expect(find.text('Weekly shopping'), findsOneWidget);
     });
 
+    testWidgets('the detail of an income shows the payment it joined', (
+      tester,
+    ) async {
+      await openTransactions(tester, size: wide, settings: twoPayments);
+
+      // The row is at the bottom of the list.
+      await tester.ensureVisible(find.text('Scholarship'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scholarship'));
+      await tester.pumpAndSettle();
+
+      // The 1st of October is nearest to the pay day of the 5th.
+      expect(find.text('Counts toward'), findsOneWidget);
+      // The detail has it, and so may the header of that part in the list.
+      expect(find.text('Part 2 · 5 Oct – 19 Oct'), findsWidgets);
+    });
+
+    testWidgets('the detail of an expense shows no payment', (tester) async {
+      await openTransactions(tester, size: wide, settings: twoPayments);
+
+      await tester.tap(find.text('Groceries'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Counts toward'), findsNothing);
+    });
+
     testWidgets('the detail has the date, the account and the note', (
       tester,
     ) async {

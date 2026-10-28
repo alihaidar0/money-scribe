@@ -194,4 +194,107 @@ void main() {
       expect(period.contains(DateTime(2026, 11, 5)), isFalse);
     });
   });
+
+  group('pay events', () {
+    PayPart part(int year, int month, PeriodScope scope) =>
+        PayPart(YearMonth(year, month), scope);
+
+    test('the first part is paid on the first pay day of its month', () {
+      expect(
+        twice.payDayOf(part(2026, 10, PeriodScope.firstPart)),
+        DateTime(2026, 10, 20),
+      );
+    });
+
+    test('the second part is paid on the second pay day of the next month', () {
+      expect(
+        twice.payDayOf(part(2026, 10, PeriodScope.secondPart)),
+        DateTime(2026, 11, 5),
+      );
+      expect(
+        twice.payDayOf(part(2026, 12, PeriodScope.secondPart)),
+        DateTime(2027, 1, 5),
+      );
+    });
+
+    test('the part of a date has its month', () {
+      expect(
+        twice.partOfDate(DateTime(2026, 11, 13)),
+        part(2026, 10, PeriodScope.secondPart),
+      );
+      expect(once.partOfDate(DateTime(2026, 11, 13)), isNull);
+    });
+
+    test('the payments around a date are the last and the next', () {
+      expect(twice.payEventsAround(DateTime(2026, 10, 13)), [
+        part(2026, 9, PeriodScope.secondPart),
+        part(2026, 10, PeriodScope.firstPart),
+      ]);
+      expect(twice.payEventsAround(DateTime(2026, 10, 25)), [
+        part(2026, 10, PeriodScope.firstPart),
+        part(2026, 10, PeriodScope.secondPart),
+      ]);
+      expect(twice.payEventsAround(DateTime(2026, 10, 2)), [
+        part(2026, 9, PeriodScope.firstPart),
+        part(2026, 9, PeriodScope.secondPart),
+      ]);
+    });
+
+    test('a pay day is paid on that day, so it is the last payment', () {
+      expect(twice.payEventsAround(DateTime(2026, 10, 20)), [
+        part(2026, 10, PeriodScope.firstPart),
+        part(2026, 10, PeriodScope.secondPart),
+      ]);
+      expect(
+        twice.payEventsAround(DateTime(2026, 10, 5)).first,
+        part(2026, 9, PeriodScope.secondPart),
+      );
+    });
+
+    test('goes over the turn of the year', () {
+      expect(twice.payEventsAround(DateTime(2027, 1, 2)), [
+        part(2026, 12, PeriodScope.firstPart),
+        part(2026, 12, PeriodScope.secondPart),
+      ]);
+      expect(twice.payEventsAround(DateTime(2026, 12, 25)), [
+        part(2026, 12, PeriodScope.firstPart),
+        part(2026, 12, PeriodScope.secondPart),
+      ]);
+    });
+
+    test('a month paid once has no payments around a date', () {
+      expect(once.payEventsAround(DateTime(2026, 10, 13)), isEmpty);
+      expect(once.nearestPayEvent(DateTime(2026, 10, 13)), isNull);
+    });
+
+    test('the nearest payment is the one whose pay day is closest', () {
+      // The 13th: 8 days after the 5th, 7 days before the 20th.
+      expect(
+        twice.nearestPayEvent(DateTime(2026, 10, 13)),
+        part(2026, 10, PeriodScope.firstPart),
+      );
+      // The 11th: 6 days after the 5th, 9 before the 20th.
+      expect(
+        twice.nearestPayEvent(DateTime(2026, 10, 11)),
+        part(2026, 9, PeriodScope.secondPart),
+      );
+    });
+
+    test('a tie goes to the later pay day', () {
+      // With the pay days 20 and 10 the 15th is 5 days from both.
+      final cycle = PayCycle.twoPayments(firstPayDay: 20, secondPayDay: 10);
+
+      expect(
+        cycle.nearestPayEvent(DateTime(2026, 10, 15)),
+        part(2026, 10, PeriodScope.firstPart),
+      );
+    });
+
+    test('a pay day is nearest to itself', () {
+      expect(
+        twice.nearestPayEvent(DateTime(2026, 10, 20)),
+        part(2026, 10, PeriodScope.firstPart),
+      );
+    });
+  });
 }

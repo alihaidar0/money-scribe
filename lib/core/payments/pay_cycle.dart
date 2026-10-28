@@ -23,6 +23,19 @@ final class PayPeriod extends Equatable {
   List<Object> get props => [start, end];
 }
 
+/// One part of one month paid in two payments, such as the second part of
+/// October. [part] is [PeriodScope.firstPart] or [PeriodScope.secondPart].
+final class PayPart extends Equatable {
+  const new(this.month, this.part)
+    : assert(part != PeriodScope.month, 'A part is the first or the second');
+
+  final YearMonth month;
+  final PeriodScope part;
+
+  @override
+  List<Object> get props => [month, part];
+}
+
 /// How a month is cut by the pay days: the one rule that tells which part a
 /// date belongs to and which days a part covers. It follows the server, which
 /// cuts the same way on every read.
@@ -130,6 +143,60 @@ final class PayCycle extends Equatable {
       ),
     };
   }
+
+  /// The part [date] belongs to, or `null` for a month paid once.
+  PayPart? partOfDate(DateTime date) {
+    if (!hasParts) return null;
+    return PayPart(monthOf(date), partOf(date));
+  }
+
+  /// The days [part] covers.
+  PayPeriod rangeOfPart(PayPart part) => rangeOf(part.month, part.part);
+
+  /// The day [part] is paid: the first pay day of its month for the first
+  /// part, the second pay day of the next month for the second. A month paid
+  /// once has no parts, so the day is the first of the month.
+  DateTime payDayOf(PayPart part) {
+    final days = _days;
+    if (days == null) return part.month.firstDay;
+    if (part.part == PeriodScope.firstPart) {
+      return DateTime(part.month.year, part.month.month, days.first);
+    }
+    final next = part.month.next;
+    return DateTime(next.year, next.month, days.second);
+  }
+
+  /// The two payments around [date]: the last one paid on or before it, then
+  /// the next one. Empty for a month paid once.
+  List<PayPart> payEventsAround(DateTime date) {
+    if (!hasParts) return const [];
+    final day = _utcDay(date);
+    final month = YearMonth.fromDate(date);
+    final events = <PayPart>[
+      for (final m in [month.previous, month, month.next])
+        for (final part in [PeriodScope.firstPart, PeriodScope.secondPart])
+          PayPart(m, part),
+    ]..sort((a, b) => payDayOf(a).compareTo(payDayOf(b)));
+    final next = events.indexWhere((e) => _utcDay(payDayOf(e)).isAfter(day));
+    return [events[next - 1], events[next]];
+  }
+
+  /// The payment whose pay day is nearest to [date], either side of it, the
+  /// later one when both are as far: the part an income joins when none is
+  /// chosen. `null` for a month paid once.
+  PayPart? nearestPayEvent(DateTime date) {
+    final around = payEventsAround(date);
+    if (around.isEmpty) return null;
+    final day = _utcDay(date);
+    final before = day.difference(_utcDay(payDayOf(around[0]))).inDays;
+    final after = _utcDay(payDayOf(around[1])).difference(day).inDays;
+    return before < after ? around[0] : around[1];
+  }
+
+  /// [date] as a calendar day in UTC, so a difference of days is not moved by
+  /// a change of the clock.
+  static DateTime _utcDay(DateTime date) =>
+      DateTime.utc(date.year, date.month, date.day);
 
   @override
   List<Object?> get props => [_days];

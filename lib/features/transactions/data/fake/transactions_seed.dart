@@ -1,6 +1,9 @@
 import 'package:money_scribe/core/categories/category_icon.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/domain/account.dart';
 import 'package:money_scribe/features/transactions/domain/transaction.dart';
 import 'package:money_scribe/features/transactions/domain/transaction_category.dart';
@@ -80,6 +83,9 @@ abstract final class TransactionsSeed {
         date: DateTime(2026, 10),
         categoryId: 'scholarship',
         accountId: 'card',
+        // The 1st is 4 days from the pay day of the 5th and 11 from the 20th
+        // before it.
+        part: const PayPart(YearMonth(2026, 9), PeriodScope.secondPart),
       ),
       Transaction(
         id: 'seed-groceries',

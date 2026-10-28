@@ -66,6 +66,7 @@ final class TransactionFormValues extends Equatable {
     this.categoryId,
     this.accountId,
     this.note = '',
+    this.part,
   });
 
   final TransactionKind kind;
@@ -77,6 +78,10 @@ final class TransactionFormValues extends Equatable {
   final String? accountId;
   final String note;
 
+  /// The payment of a month paid in two payments an income joins, when the
+  /// person chose it; `null` for the nearest one.
+  final PayPart? part;
+
   TransactionFormValues copyWith({
     TransactionKind? kind,
     String? amountText,
@@ -86,6 +91,8 @@ final class TransactionFormValues extends Equatable {
     String? accountId,
     bool clearAccount = false,
     String? note,
+    PayPart? part,
+    bool clearPart = false,
   }) {
     return TransactionFormValues(
       kind: kind ?? this.kind,
@@ -94,6 +101,7 @@ final class TransactionFormValues extends Equatable {
       categoryId: clearCategory ? null : categoryId ?? this.categoryId,
       accountId: clearAccount ? null : accountId ?? this.accountId,
       note: note ?? this.note,
+      part: clearPart ? null : part ?? this.part,
     );
   }
 
@@ -105,6 +113,7 @@ final class TransactionFormValues extends Equatable {
     categoryId,
     accountId,
     note,
+    part,
   ];
 }
 
@@ -189,8 +198,14 @@ final class TransactionFormState extends Equatable {
       categoryId: values.categoryId,
       accountId: values.accountId,
       note: values.note,
+      // A part is chosen only for a month paid in two payments.
+      part: twoPayments ? values.part : null,
     );
   }
+
+  /// Whether the Counts toward choice is shown: an income in a month paid in
+  /// two payments.
+  bool get choosesPart => twoPayments && values.kind == TransactionKind.income;
 
   /// Whether the transaction can be saved: it is complete and, when changing
   /// one, something was edited.

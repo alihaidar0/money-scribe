@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:money_scribe/core/l10n/l10n.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/core/routing/app_routes.dart';
 import 'package:money_scribe/core/routing/leave_screen.dart';
 import 'package:money_scribe/core/time/clock.dart';
@@ -304,7 +306,9 @@ class _FormState extends State<_Form> {
                 lastDate: DateTime(2099, 12, 31),
                 onChanged: (date) => bloc.add(TransactionDateChosen(date)),
               ),
-              if (state.twoPayments)
+              // The part the money is spent from. An income joins a payment
+              // instead, which it can choose below.
+              if (state.twoPayments && values.kind == TransactionKind.expense)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 16, top: 4),
                   child: Text(
@@ -322,6 +326,16 @@ class _FormState extends State<_Form> {
                     ),
                   ),
                 ),
+              if (state.choosesPart) ...[
+                const SizedBox(height: 16),
+                _CountsToward(
+                  cycle: state.cycle,
+                  date: values.date,
+                  selected: values.part,
+                  today: today,
+                  onChosen: (part) => bloc.add(TransactionPartChosen(part)),
+                ),
+              ],
               const SizedBox(height: 16),
               Semantics(
                 header: true,
@@ -373,6 +387,74 @@ class _FormState extends State<_Form> {
 }
 
 /// The row "Card ⌄" that opens the account sheet.
+/// The payment an income counts toward: the nearest one, or one of the two
+/// around its day.
+class _CountsToward extends StatelessWidget {
+  const new({
+    required this.cycle,
+    required this.date,
+    required this.selected,
+    required this.today,
+    required this.onChosen,
+  });
+
+  final PayCycle cycle;
+  final DateTime date;
+  final PayPart? selected;
+  final DateTime today;
+  final ValueChanged<PayPart?> onChosen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.countsTowardLabel,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: Text(
+                l10n.countsTowardAutomatic(
+                  part: switch (cycle.nearestPayEvent(date)?.part) {
+                    PeriodScope.secondPart => l10n.partSecond,
+                    _ => l10n.partFirst,
+                  },
+                ),
+              ),
+              selected: selected == null,
+              onSelected: (_) => onChosen(null),
+            ),
+            for (final part in cycle.payEventsAround(date))
+              ChoiceChip(
+                label: Text(
+                  partDatesLabel(
+                    context,
+                    part: part.part,
+                    range: cycle.rangeOfPart(part),
+                    today: today,
+                  ),
+                ),
+                selected: selected == part,
+                onSelected: (_) => onChosen(part),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _AccountRow extends StatelessWidget {
   const new({required this.name, required this.icon, required this.onTap});
 

@@ -47,6 +47,17 @@ final class TransactionDateChosen extends TransactionFormEvent {
   List<Object?> get props => [date];
 }
 
+/// The user chose the payment an income counts toward, or `null` for the
+/// nearest one.
+final class TransactionPartChosen extends TransactionFormEvent {
+  const new(this.part);
+
+  final PayPart? part;
+
+  @override
+  List<Object?> get props => [part];
+}
+
 /// The user chose a category.
 final class TransactionCategoryChosen extends TransactionFormEvent {
   const new(this.categoryId);

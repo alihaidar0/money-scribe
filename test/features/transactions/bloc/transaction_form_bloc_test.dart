@@ -1,10 +1,13 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_scribe/core/dates/year_month.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/payments/pay_cycle.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
+import 'package:money_scribe/core/payments/period_scope.dart';
 import 'package:money_scribe/features/transactions/bloc/transaction_form_bloc.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_accounts_repository.dart';
 import 'package:money_scribe/features/transactions/data/fake/fake_categories_repository.dart';
@@ -512,6 +515,176 @@ void main() {
       verify: (bloc) =>
           expect(bloc.state.status, TransactionFormStatus.failure),
       errors: () => [isA<ServerException>()],
+    );
+  });
+
+  group('the payment an income counts toward', () {
+    const twoPayments = DemoSettings(paymentMode: PaymentMode.twoPayments);
+    // The first payment on the 20th, the second on the 5th of the next month.
+    const nearest = PayPart(YearMonth(2026, 9), PeriodScope.secondPart);
+    const later = PayPart(YearMonth(2026, 10), PeriodScope.firstPart);
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'is chosen for an income in a month paid twice only',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        expect(bloc.state.choosesPart, isFalse, reason: 'an expense');
+        bloc.add(const TransactionKindSelected(TransactionKind.income));
+      },
+      verify: (bloc) => expect(bloc.state.choosesPart, isTrue),
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'is not chosen for one payment',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc.add(const TransactionKindSelected(TransactionKind.income));
+      },
+      verify: (bloc) => expect(bloc.state.choosesPart, isFalse),
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a chosen payment goes into the draft, and the automatic one clears it',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionAmountChanged('1200.50'))
+          ..add(const TransactionCategoryChosen('scholarship'))
+          ..add(const TransactionPartChosen(later));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft?.part, later);
+
+        bloc.add(const TransactionPartChosen(null));
+      },
+      verify: (bloc) {
+        expect(bloc.state.values.part, isNull);
+        expect(bloc.state.draft?.part, isNull);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a payment that is not around a new day is dropped',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionPartChosen(later))
+          ..add(TransactionDateChosen(DateTime(2026, 12, 25)));
+      },
+      verify: (bloc) => expect(bloc.state.values.part, isNull),
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'a payment around the new day stays',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionPartChosen(later))
+          ..add(TransactionDateChosen(DateTime(2026, 10, 15)));
+      },
+      verify: (bloc) => expect(bloc.state.values.part, later),
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'turning to an expense drops the choice',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionPartChosen(later))
+          ..add(const TransactionKindSelected(TransactionKind.expense));
+      },
+      verify: (bloc) => expect(bloc.state.values.part, isNull),
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'one payment never sends a chosen payment',
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionAmountChanged('1200.50'))
+          ..add(const TransactionCategoryChosen('scholarship'))
+          ..add(const TransactionPartChosen(later));
+      },
+      verify: (bloc) {
+        expect(bloc.state.draft, isNotNull);
+        expect(bloc.state.draft?.part, isNull);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'saving keeps the chosen payment',
+      setUp: () => demo.update(twoPayments),
+      build: build,
+      act: (bloc) async {
+        await start(bloc);
+        bloc
+          ..add(const TransactionKindSelected(TransactionKind.income))
+          ..add(const TransactionAmountChanged('500'))
+          ..add(const TransactionCategoryChosen('scholarship'))
+          ..add(const TransactionPartChosen(later))
+          ..add(const TransactionSaveRequested());
+        await bloc.stream.firstWhere(
+          (s) => s.saveStatus == TransactionFormSaveStatus.saved,
+        );
+      },
+      verify: (bloc) async {
+        final saved = (await transactions.transactions(
+          const TransactionFilter(),
+        )).items.firstWhere((item) => item.id.startsWith('added-'));
+        expect(saved.part, later);
+      },
+    );
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'an income that joined the nearest payment loads as automatic',
+      setUp: () => demo.update(twoPayments),
+      build: () => build(id: 'seed-scholarship'),
+      act: start,
+      verify: (bloc) => expect(bloc.state.values.part, isNull),
+    );
+
+    late String chosenId;
+
+    blocTest<TransactionFormBloc, TransactionFormState>(
+      'an income that joined another payment loads as chosen',
+      setUp: () async {
+        demo.update(twoPayments);
+        // The 11th is nearest to the pay day of the 5th, not the 20th.
+        final added = await transactions.add(
+          TransactionDraft(
+            amount: const Money(50000, Currency.rub),
+            kind: TransactionKind.income,
+            date: DateTime(2026, 10, 11),
+            categoryId: 'scholarship',
+            accountId: 'card',
+            part: later,
+          ),
+        );
+        chosenId = added.id;
+      },
+      build: () => build(id: chosenId),
+      act: start,
+      verify: (bloc) {
+        expect(nearest, isNot(later));
+        expect(bloc.state.values.part, later);
+        expect(bloc.state.isEdited, isFalse);
+      },
     );
   });
 }
