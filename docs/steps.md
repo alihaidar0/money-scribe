@@ -225,6 +225,7 @@ Every screen of the design is built with fake data, checked on the emulator, and
 - [x] ST-12d End this session
 - [x] ST-12e Sign out of all other devices
 - [x] ST-13 Security activity
+- [ ] Language: a row with the flag of the current language that opens a sheet with a card for each language
 
 ### H. Loading, empty, error and no connection
 

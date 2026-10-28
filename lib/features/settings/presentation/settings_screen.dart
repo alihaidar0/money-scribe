@@ -26,6 +26,8 @@ import 'package:money_scribe/features/settings/presentation/widgets/csv_export_p
 import 'package:money_scribe/features/settings/presentation/widgets/csv_export_sheet.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_names.dart';
 import 'package:money_scribe/features/settings/presentation/widgets/currency_sheet.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_flag.dart';
+import 'package:money_scribe/features/settings/presentation/widgets/language_sheet.dart';
 
 /// ST-1: the Settings: the account, how the salary is paid, the currency, the
 /// theme and the language, the notifications, the data (categories, accounts,
@@ -405,8 +407,8 @@ class _ThemeRow extends StatelessWidget {
   }
 }
 
-/// The language as a segmented control, like the theme; the choice applies at
-/// once.
+/// The language: the flag and the name of the current one, which open the
+/// sheet that lists them all. The choice applies at once.
 class _LanguageRow extends StatelessWidget {
   const new();
 
@@ -417,38 +419,16 @@ class _LanguageRow extends StatelessWidget {
       (bloc) => bloc.state.language,
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.languageSectionTitle,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 8),
-          PillSegmentedButton<AppLanguage>(
-            segments: [
-              ButtonSegment(
-                value: AppLanguage.system,
-                label: Text(l10n.languageSystemShort),
-              ),
-              ButtonSegment(
-                value: AppLanguage.english,
-                label: Text(l10n.languageEnglish),
-              ),
-              ButtonSegment(
-                value: AppLanguage.arabic,
-                label: Text(l10n.languageArabic),
-              ),
-            ],
-            selected: {selected},
-            onSelectionChanged: (selection) => context.read<LanguageBloc>().add(
-              LanguageSelected(selection.first),
-            ),
-          ),
-        ],
-      ),
+    return ListTile(
+      leading: LanguageFlag(language: selected),
+      title: Text(l10n.languageSectionTitle),
+      subtitle: Text(languageName(l10n, selected)),
+      trailing: const _Chevron(),
+      onTap: () async {
+        final bloc = context.read<LanguageBloc>();
+        final language = await showLanguageSheet(context, selected: selected);
+        if (language != null) bloc.add(LanguageSelected(language));
+      },
     );
   }
 }
