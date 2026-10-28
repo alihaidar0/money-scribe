@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_scribe/core/dates/year_month.dart';
@@ -5,6 +7,7 @@ import 'package:money_scribe/core/debts/debt_enums.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/features/overview/data/remote/remote_overview_repository.dart';
 
 import '../../../support/fake_http_adapter.dart';
@@ -214,5 +217,23 @@ void main() {
 
   test('has no pushed changes', () async {
     expect(await build().changes.isEmpty, isTrue);
+  });
+
+  test('tells that this device saved something, to reload silently', () async {
+    final saves = StreamController<void>();
+    addTearDown(saves.close);
+    final repository = RemoteOverviewRepository.create(
+      dio: transactionsTestDio(server),
+      defaultCurrency: () async => Currency.usd,
+      changes: saves.stream,
+    );
+    final changes = <DataChange>[];
+    final subscription = repository.changes.listen(changes.add);
+    addTearDown(subscription.cancel);
+
+    saves.add(null);
+    await pumpEventQueue();
+
+    expect(changes, [DataChange.saved]);
   });
 }

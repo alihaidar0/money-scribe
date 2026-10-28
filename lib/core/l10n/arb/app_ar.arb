@@ -271,7 +271,7 @@
   "fixedItemAmountLabel": "المبلغ",
   "fixedItemIncome": "دخل",
   "fixedItemExpense": "مصروف",
-  "fixedItemAppliesTo": "ينطبق على",
+  "fixedItemDayLabel": "يوم الشهر",
   "deleteFixedItemTitle": "حذف البند الثابت؟",
   "deleteFixedItemMessage": "ستتم إزالة {name} من بنودك الثابتة. لا يمكن التراجع عن هذا.",
   "editFixedItemTooltip": "تعديل {name}",

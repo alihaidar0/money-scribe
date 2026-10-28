@@ -14,6 +14,7 @@ import 'package:money_scribe/core/widgets/debt_badges.dart';
 import 'package:money_scribe/core/widgets/debt_summary_row.dart';
 import 'package:money_scribe/core/widgets/failure_snack_bar.dart';
 import 'package:money_scribe/core/widgets/pill_segmented_button.dart';
+import 'package:money_scribe/core/widgets/pull_to_refresh.dart';
 import 'package:money_scribe/core/widgets/skeleton.dart';
 import 'package:money_scribe/core/widgets/state_view.dart';
 import 'package:money_scribe/core/widgets/top_level_screen.dart';
@@ -199,42 +200,48 @@ class _ListPane extends StatelessWidget {
     final shown = state.shown;
     final selectedId = wide ? state.selected?.id : null;
 
-    return ListView(
-      // Room under the last card for the button.
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      children: [
-        DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
-        if (state.hasOtherCurrencies)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: CurrencyNotice(context.l10n.debtsOtherCurrenciesNotice),
-          ),
-        const SizedBox(height: 16),
-        const _FilterSwitch(),
-        const SizedBox(height: 16),
-        if (shown.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Text(
-              context.l10n.noDebtsOfKind,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else
-          for (final debt in shown)
+    return PullToRefresh(
+      onRefresh: (done) =>
+          context.read<DebtsBloc>().add(DebtsRefreshed(done: done)),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Room under the last card for the button.
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+        children: [
+          DebtSummaryRow(owedToYou: state.owedToYou, youOwe: state.youOwe),
+          if (state.hasOtherCurrencies)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _DebtCard(
-                debt: debt,
-                today: state.today,
-                selected: debt.id == selectedId,
-                onTap: wide
-                    ? () => context.read<DebtsBloc>().add(DebtSelected(debt.id))
-                    : () => _openDebt(context, debt.id),
-              ),
+              padding: const EdgeInsets.only(top: 8),
+              child: CurrencyNotice(context.l10n.debtsOtherCurrenciesNotice),
             ),
-      ],
+          const SizedBox(height: 16),
+          const _FilterSwitch(),
+          const SizedBox(height: 16),
+          if (shown.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text(
+                context.l10n.noDebtsOfKind,
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            for (final debt in shown)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _DebtCard(
+                  debt: debt,
+                  today: state.today,
+                  selected: debt.id == selectedId,
+                  onTap: wide
+                      ? () =>
+                            context.read<DebtsBloc>().add(DebtSelected(debt.id))
+                      : () => _openDebt(context, debt.id),
+                ),
+              ),
+        ],
+      ),
     );
   }
 }

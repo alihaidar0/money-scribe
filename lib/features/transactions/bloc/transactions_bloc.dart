@@ -123,8 +123,12 @@ class TransactionsBloc extends Bloc<TransactionsEvent, TransactionsState> {
   Future<void> _onRefreshed(
     TransactionsRefreshed event,
     Emitter<TransactionsState> emit,
-  ) {
-    return _loadScreen(emit, showLoading: false);
+  ) async {
+    try {
+      await _loadScreen(emit, showLoading: false);
+    } finally {
+      event.done?.complete();
+    }
   }
 
   Future<void> _onSearched(

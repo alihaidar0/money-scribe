@@ -25,7 +25,10 @@ final class DebtsDataChanged extends DebtsEvent {
 /// The user came back from a screen that may have changed a debt: load them
 /// again without showing the loading state.
 final class DebtsRefreshed extends DebtsEvent {
-  const new();
+  const new({this.done});
+
+  /// Completed when the load is done, to end a pull-to-refresh spinner.
+  final Completer<void>? done;
 }
 
 /// The user chose which debts to list.

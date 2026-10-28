@@ -5,6 +5,7 @@ import 'package:money_scribe/core/demo/demo_settings.dart';
 import 'package:money_scribe/core/errors/data_exception.dart';
 import 'package:money_scribe/core/money/currency.dart';
 import 'package:money_scribe/core/money/money.dart';
+import 'package:money_scribe/core/network/data_change.dart';
 import 'package:money_scribe/core/payments/payment_mode.dart';
 import 'package:money_scribe/features/reports/data/fake/fake_reports_repository.dart';
 import 'package:money_scribe/features/salary/data/fake/fake_salary_repository.dart';
@@ -181,13 +182,13 @@ void main() {
   });
 
   test('tells when the data changes', () async {
-    final changes = <void>[];
+    final changes = <DataChange>[];
     final subscription = repository.changes.listen(changes.add);
     addTearDown(subscription.cancel);
 
     demo.update(const DemoSettings(paymentMode: PaymentMode.twoPayments));
     await Future<void>.delayed(Duration.zero);
 
-    expect(changes, hasLength(1));
+    expect(changes, [DataChange.replaced]);
   });
 }

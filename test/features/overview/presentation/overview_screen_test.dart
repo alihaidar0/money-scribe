@@ -351,6 +351,32 @@ void main() {
       expect(_text('60,650.00 ₽'), findsOneWidget);
     });
 
+    testWidgets('forcing Loading from the demo panel shows the blocks', (
+      tester,
+    ) async {
+      await _pumpOverview(tester);
+
+      _demo.update(const DemoSettings(scenario: DemoScenario.loading));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(SkeletonBox), findsWidgets);
+
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('forcing Error from the demo panel shows the error', (
+      tester,
+    ) async {
+      await _pumpOverview(tester);
+
+      _demo.update(const DemoSettings(scenario: DemoScenario.error));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
     testWidgets('no connection offers Try again', (tester) async {
       await _pumpOverview(
         tester,

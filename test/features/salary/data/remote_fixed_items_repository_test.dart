@@ -54,6 +54,7 @@ void main() {
               amount: '30000.00',
               kind: 'expense',
               part: 'second',
+              day: 20,
               version: 3,
             ),
           ],
@@ -77,6 +78,7 @@ void main() {
           amount: Money(3000000, Currency.rub),
           kind: FixedItemKind.expense,
           part: FixedItemPart.second,
+          day: 20,
           version: 3,
         ),
       ]);
@@ -113,6 +115,25 @@ void main() {
       });
       expect(item.id, _id);
       expect(item.amount, _scholarship.amount);
+    });
+
+    test('sends the day of a dated item and reads it back', () async {
+      answer = (_) => jsonBody(201, fixedItemJson(part: 'second', day: 31));
+
+      final item = await build().add(
+        _october,
+        const FixedItemDraft(
+          name: 'Scholarship',
+          amount: Money(500000, Currency.rub),
+          kind: FixedItemKind.income,
+          part: FixedItemPart.second,
+          day: 31,
+        ),
+      );
+
+      expect(lastRequest().data, containsPair('day', 31));
+      expect(lastRequest().data, containsPair('part', 'second'));
+      expect(item.day, 31);
     });
 
     test('a retry after a lost answer sends the same key', () async {
@@ -188,6 +209,7 @@ void main() {
           amount: Money(600000, Currency.rub),
           kind: FixedItemKind.income,
           part: FixedItemPart.second,
+          day: 20,
         ),
         version: 1,
       );
@@ -201,9 +223,25 @@ void main() {
         'kind': 'income',
         'currency': 'RUB',
         'part': 'second',
+        'day': 20,
       });
       expect(item.version, 2);
       expect(item.name, 'Grant');
+    });
+
+    test('an item with no day leaves the day the server holds alone', () async {
+      answer = (_) => jsonBody(200, fixedItemJson(version: 2, day: 20));
+
+      final item = await build().update(
+        _october,
+        _id,
+        _scholarship,
+        version: 1,
+      );
+
+      // A missing field is kept by the server; the body never carries null.
+      expect(lastRequest().data, isNot(contains('day')));
+      expect(item.day, 20);
     });
 
     test('an item changed meanwhile elsewhere is a stale record', () {

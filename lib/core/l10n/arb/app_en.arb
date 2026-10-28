@@ -1233,9 +1233,9 @@
   "@fixedItemExpense": {
     "description": "Segment of a fixed item that takes from the month, such as the rent."
   },
-  "fixedItemAppliesTo": "Applies to",
-  "@fixedItemAppliesTo": {
-    "description": "Label of the choice of the part of the month a fixed item belongs to."
+  "fixedItemDayLabel": "Day of the month",
+  "@fixedItemDayLabel": {
+    "description": "Label of the stepper for the day of the month a fixed item falls on; under it is the part of the month that day belongs to."
   },
   "deleteFixedItemTitle": "Delete fixed item?",
   "@deleteFixedItemTitle": {
