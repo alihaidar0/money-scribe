@@ -1196,6 +1196,18 @@ void main() {
       expect(changes, [false]);
     });
 
+    test('is signed out here before the server is asked', () async {
+      bool? signedInWhenAsked;
+      routes['/api/v1/auth/sign-out/'] = (_) {
+        signedInWhenAsked = auth.isSignedIn;
+        return jsonBody(204);
+      };
+
+      await auth.signOut();
+
+      expect(signedInWhenAsked, isFalse);
+    });
+
     for (final entry in {
       'an already ended session (401)': () =>
           jsonBody(401, errorBody('token_invalid')),

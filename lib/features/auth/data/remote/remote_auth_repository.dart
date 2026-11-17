@@ -50,6 +50,10 @@ class RemoteAuthRepository implements AuthRepository {
 
   final Clock _clock;
 
+  /// How long the sign-out waits for the server once the person is signed out
+  /// here, whatever the long timeouts of the HTTP client.
+  static const _signOutTimeout = Duration(seconds: 10);
+
   final _signedInChanges = StreamController<bool>.broadcast(sync: true);
 
   bool _isSignedIn = false;
@@ -288,21 +292,23 @@ class RemoteAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     final tokens = await _tokens.read();
-    if (tokens != null) {
-      try {
-        // The refresh token in the body ends the session even when the access
-        // token has run out, and an ended session answers 204: no refresh
-        // first. No access token is sent.
-        await _plain.authSignOut(
-          body: SignOutRequest(refreshToken: tokens.refreshToken),
-        );
-      } on Object {
-        // Whatever the answer (or none), the person is signed out here: the
-        // session on the server ends by itself in time.
-      }
-    }
+    // Signed out here first: the tokens must not outlive the tap on "Sign out"
+    // because a slow or lost connection holds up the server's answer, or the
+    // app is closed while it waits.
     await _tokens.clear();
     _setSignedIn(value: false);
+    if (tokens == null) return;
+    try {
+      // The refresh token in the body ends the session even when the access
+      // token has run out, and an ended session answers 204: no refresh
+      // first. No access token is sent.
+      await _plain
+          .authSignOut(body: SignOutRequest(refreshToken: tokens.refreshToken))
+          .timeout(_signOutTimeout);
+    } on Object {
+      // Whatever the answer (or none), the person is signed out here: the
+      // session on the server ends by itself in time.
+    }
   }
 
   @override

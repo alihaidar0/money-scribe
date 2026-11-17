@@ -420,7 +420,8 @@ All paths are under `/api/v1/auth/`.
   network, so the app opens on the right screen. The server is then asked about the session once, in the
   background (the profile): a session it ended signs the person out, a lost connection keeps them
   signed in.
-- **Sign out** clears the tokens on the device even if the call fails. The app sends the refresh token
+- **Sign out** clears the tokens on the device first, then tells the server and waits at most ten
+  seconds for it, so a slow connection never keeps the person signed in. The app sends the refresh token
   in the body: then the only possible `401` is `token_invalid`, and a session that has already ended
   answers `204`, so no refresh is needed first. Sent with the access token alone, an already ended
   session answers `401 session_signed_out` (or another `session_*` code); the app treats that as

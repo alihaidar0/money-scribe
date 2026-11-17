@@ -68,6 +68,8 @@ with **events everywhere**: even a simple feature has event and state classes (n
   `build`.
 - **Observing.** `AppBlocObserver` logs the type of each event and error in debug builds,
   never their contents, because they can hold personal or financial data.
+  `installGlobalErrorHandlers` (`app/`) sends the errors nobody caught to the log by type only, for the
+  same reason; a debug run keeps Flutter's full report.
 
 ## Testing
 
@@ -204,7 +206,10 @@ contract, which only a feature's `data/` imports.
   hardware, so a build without a server address uses `FakeDeviceKeyRepository`, driven by the demo panel.
 - **`TokenStore`** keeps the session tokens in the platform's secure storage (`core/storage/`), as
   one value. A value that cannot be read is no session. The Android manifest turns automatic backup
-  off, so a restored copy of the tokens never meets a Keystore that cannot decrypt it.
+  off and its data extraction rules exclude every file from the cloud backup and the phone-to-phone
+  transfer, so a restored copy of the tokens never meets a Keystore that cannot decrypt it. On iOS the
+  Keychain items are kept for this device only (`deviceOnlySecureStorage`), so an encrypted backup
+  restored on another phone carries no session.
 - **`core/device/`** describes the device for the server (a random UUID kept in the secure storage,
   the model name, the system and app versions) and reads the time zone as an IANA name. The plugins
   are used in one place each, behind small interfaces.
@@ -229,7 +234,8 @@ salted PBKDF2 hash in the secure storage (`SecureAppLockRepository`, `PinHasher`
 the pause they started (`PinLockoutPolicy`: none for four, then 30 s, 1 min, 5 min, 15 min, 15 min, and the
 tenth wrong PIN in a row signs the person out) and the timeout; `BiometricAuthenticator` is the fingerprint
 through the system (`local_auth`). `AppLockGate` (`app/app_lock_gate.dart`) watches the app move to the
-background (`hidden` and `paused`, never `inactive`) and locks it after the timeout; it implements the
+background (`hidden` and `paused`, never `inactive`) and locks it after the timeout, counted by the longer
+of the date and time of the phone and a monotonic clock, so setting the clock back does not shorten it; it implements the
 domain interface `AppLockSession`, so the screens only report "unlocked". The router sends every screen of a
 locked app to the lock screen with a `from` address and goes back to it (`AppRoutes.returnTo` accepts only
 a screen of the app). The lock belongs to the account that made it (`AppLockRepository.boundAccount`,

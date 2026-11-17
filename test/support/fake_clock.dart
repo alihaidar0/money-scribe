@@ -9,3 +9,11 @@ class FixedClock implements Clock {
   @override
   DateTime now() => time;
 }
+
+/// A monotonic clock that stands still until the test moves it.
+class FixedMonotonicClock implements MonotonicClock {
+  Duration time = Duration.zero;
+
+  @override
+  Duration elapsed() => time;
+}

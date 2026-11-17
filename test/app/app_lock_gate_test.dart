@@ -13,6 +13,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FixedClock clock;
+  late FixedMonotonicClock steady;
   late FakeAuthRepository auth;
   late InstantAppLockRepository repository;
   late AppLockGate gate;
@@ -22,6 +23,7 @@ void main() {
       auth: auth,
       repository: repository,
       clock: clock,
+      monotonic: steady,
       locked: locked,
     );
     addTearDown(gate.dispose);
@@ -30,6 +32,7 @@ void main() {
 
   setUp(() {
     clock = FixedClock(DateTime(2026, 10, 23, 9));
+    steady = FixedMonotonicClock();
     auth = FakeAuthRepository(
       demo: DemoController(latency: Duration.zero),
       signedIn: true,
@@ -144,6 +147,44 @@ void main() {
 
       // 40 + 25 seconds away, not 25.
       expect(gate.isLocked, isTrue);
+    });
+
+    test('a date and time set back during the stay locks the app', () async {
+      await leave(gate);
+
+      // Two minutes away by the steady clock, and the phone's date and time
+      // set back five minutes to hide it.
+      steady.time += const Duration(minutes: 2);
+      returnAfter(const Duration(minutes: -5));
+
+      expect(gate.isLocked, isTrue);
+    });
+
+    test('the steady clock counts when the date falls short', () async {
+      await leave(gate);
+
+      steady.time += const Duration(minutes: 2);
+      returnAfter(const Duration(seconds: 10));
+
+      expect(gate.isLocked, isTrue);
+    });
+
+    test('the date counts when the steady clock stood still', () async {
+      await leave(gate);
+
+      // The phone slept: the steady clock did not move, the wall clock did.
+      returnAfter(const Duration(minutes: 2));
+
+      expect(gate.isLocked, isTrue);
+    });
+
+    test('a short stay by both clocks does not lock it', () async {
+      await leave(gate);
+
+      steady.time += const Duration(seconds: 20);
+      returnAfter(const Duration(seconds: 25));
+
+      expect(gate.isLocked, isFalse);
     });
 
     test('a coming back with no leaving before it changes nothing', () {

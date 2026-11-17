@@ -29,6 +29,13 @@ void main() {
     expect(await store.read('two'), '2');
   });
 
+  test('keeps iOS Keychain items on this phone, out of a backup', () {
+    expect(
+      deviceOnlySecureStorage.iOptions.accessibility,
+      KeychainAccessibility.unlocked_this_device,
+    );
+  });
+
   test('reads a value it cannot decrypt as no value', () async {
     final store = PlatformSecureValueStore(_BrokenStorage());
 
