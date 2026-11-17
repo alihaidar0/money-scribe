@@ -377,4 +377,33 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
 
+## 8. Security audit follow-ups
+
+From the security and quality audit of 2026-10-26, refreshed on 2026-11-17. The findings that were applied are ticked; the others stay here, unticked, so they are not forgotten.
+
+Applied:
+
+- [x] The app lock counts the time away on a clock that cannot be set back
+- [x] Sign-out clears the tokens on the device first, then tells the server (at most ten seconds)
+- [x] No backup or phone-to-phone transfer of app data on Android 12 and later
+- [x] iOS Keychain items stay on the device they were made on
+- [x] Uncaught errors are logged by type only, and Bloc events only in debug builds
+- [x] Toolchain moved to Flutter 3.47.8 and Dart 3.13.7
+
+Waiting:
+
+- [ ] Sign-in names the field at fault (accepted for now); revisit it with the backend threat model, one generic failure being the alternative
+- [ ] iOS: cover the app-switcher snapshot of the financial screens, in production only (with the iOS flavors)
+- [ ] App lock: bind the fingerprint unlock to a key, or document the lock as a privacy screen
+- [ ] Web: refuse a server address until a web security design exists, then serve a Content Security Policy
+- [ ] On-device integration tests for sign-in, app lock and sign-out, run on the emulator
+- [ ] Android: turn on built-in Kotlin and the new Gradle DSL once the Firebase plugins support them
+- [ ] A local production release build fails without its signing key (the release pull request test build keeps the debug key)
+- [ ] Optional: typed results for the parallel loads in the Blocs, with the error handling kept
+- [ ] `build_runner` to the latest version, and the OSV and licence check of the packages added since the audit
+- [ ] Backend audit and a TLS scan of the staging and production hosts
+- [ ] Google Cloud: restrict each project's Android API key to the app's package name and signing certificate
+- [ ] iOS build review on a Mac: privacy manifest, Xcode and iOS SDK requirements, Keychain after reinstall
+- [ ] Decide on certificate pinning once the production host is final
+
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
