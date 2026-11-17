@@ -48,7 +48,7 @@ Done once, in its own pull request, when the backend has published its first rel
 
    ```bash
    flutter pub add dio:5.11.1 retrofit:4.10.0 json_annotation:4.12.0
-   flutter pub add --dev build_runner:2.16.1 json_serializable:6.15.2 retrofit_generator:10.3.2 swagger_parser:1.45.0
+   flutter pub add --dev build_runner:2.16.1 json_serializable:6.15.2 retrofit_generator:10.3.3 swagger_parser:1.45.0
    ```
 
 2. **Name the backend repository:**

@@ -69,7 +69,7 @@ To do, in this order, one step at a time:
 - [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
 - [x] Merge the environments pull request; check the first staging build and the "Staging" draft release
 - [x] Dependencies updated to the latest versions that resolve with Flutter 3.47.7 (Firebase 5.1.0 and 17.0.1, `go_router` 18.1.1, the code generators); the 13 packages held back by the SDK move with the Flutter update below
-- [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
+- [x] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
 - [x] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
