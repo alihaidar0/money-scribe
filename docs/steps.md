@@ -69,7 +69,7 @@ To do, in this order, one step at a time:
 - [x] Untick "Allow administrators to bypass configured protection rules" on the `staging` environment
 - [x] Merge the environments pull request; check the first staging build and the "Staging" draft release
 - [x] Dependencies updated to the latest versions that resolve with Flutter 3.47.7 (Firebase 5.1.0 and 17.0.1, `go_router` 18.1.1, the code generators); the 13 packages held back by the SDK move with the Flutter update below
-- [ ] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
+- [x] Toolchain update, as its own pull request: a dev image with the latest stable Flutter, pin it, refresh the lock file
 - [x] Create the upload signing key and back it up
 - [x] Create the `production` GitHub environment, restricted to `main`, and untick "Allow administrators to bypass configured protection rules"
 - [x] Add the four production secrets (same names as staging, with the upload key's values) and the variable `ANDROID_CERT_SHA256`
@@ -376,5 +376,34 @@ Money data step (agreed with the backend, backend issues #63 to #69; summary in 
 - [x] Income: choose the part it counts toward, and show the part it joined
 - [ ] Privacy policy and store forms: transactions and third-party names, sessions with the network cut to /24 or /48, the security activity, the export email
 - [ ] Pin each merged contract, generate the client on a scratch copy first, and check on staging before the screens switch to the server
+
+## 8. Security audit follow-ups
+
+From the security and quality audit of 2026-10-26, refreshed on 2026-11-17. The findings that were applied are ticked; the others stay here, unticked, so they are not forgotten.
+
+Applied:
+
+- [x] The app lock counts the time away on a clock that cannot be set back
+- [x] Sign-out clears the tokens on the device first, then tells the server (at most ten seconds)
+- [x] No backup or phone-to-phone transfer of app data on Android 12 and later
+- [x] iOS Keychain items stay on the device they were made on
+- [x] Uncaught errors are logged by type only, and Bloc events only in debug builds
+- [x] Toolchain moved to Flutter 3.47.8 and Dart 3.13.7
+
+Waiting:
+
+- [ ] Sign-in names the field at fault (accepted for now); revisit it with the backend threat model, one generic failure being the alternative
+- [ ] iOS: cover the app-switcher snapshot of the financial screens, in production only (with the iOS flavors)
+- [ ] App lock: bind the fingerprint unlock to a key, or document the lock as a privacy screen
+- [ ] Web: refuse a server address until a web security design exists, then serve a Content Security Policy
+- [ ] On-device integration tests for sign-in, app lock and sign-out, run on the emulator
+- [ ] Android: turn on built-in Kotlin and the new Gradle DSL once the Firebase plugins support them
+- [ ] A local production release build fails without its signing key (the release pull request test build keeps the debug key)
+- [ ] Optional: typed results for the parallel loads in the Blocs, with the error handling kept
+- [ ] `build_runner` to the latest version, and the OSV and licence check of the packages added since the audit
+- [ ] Backend audit and a TLS scan of the staging and production hosts
+- [ ] Google Cloud: restrict each project's Android API key to the app's package name and signing certificate
+- [ ] iOS build review on a Mac: privacy manifest, Xcode and iOS SDK requirements, Keychain after reinstall
+- [ ] Decide on certificate pinning once the production host is final
 
 How each step is worked on (branches, commits, checks) is described in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

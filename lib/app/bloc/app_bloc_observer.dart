@@ -4,14 +4,18 @@ import 'package:flutter/foundation.dart';
 /// Watches every Bloc of the app.
 ///
 /// It logs type names only, never the contents of an event or a state: those
-/// can hold personal or financial data, which must never reach a log.
+/// can hold personal or financial data, which must never reach a log. Events
+/// are logged in debug runs only: in a release build they would write one line
+/// to the device log for everything the person does.
 class AppBlocObserver extends BlocObserver {
   const new();
 
   @override
   void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
     super.onEvent(bloc, event);
-    debugPrint('${bloc.runtimeType} received ${event.runtimeType}');
+    if (kDebugMode) {
+      debugPrint('${bloc.runtimeType} received ${event.runtimeType}');
+    }
   }
 
   @override

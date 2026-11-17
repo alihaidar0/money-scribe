@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_scribe/app/app.dart';
 import 'package:money_scribe/app/bloc/app_bloc_observer.dart';
+import 'package:money_scribe/app/global_error_handlers.dart';
 import 'package:money_scribe/core/challenge/challenge_view_factory.dart';
 import 'package:money_scribe/core/challenge/turnstile_challenge_view_factory.dart';
 import 'package:money_scribe/core/demo/demo_settings.dart';
@@ -67,6 +68,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installGlobalErrorHandlers();
   Bloc.observer = const AppBlocObserver();
   final preferences = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
