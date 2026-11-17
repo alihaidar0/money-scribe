@@ -15,9 +15,21 @@ abstract interface class SecureValueStore {
   Future<void> delete(String key);
 }
 
+/// The secure storage the app uses.
+///
+/// An iOS Keychain item is kept only while the phone is unlocked and only on
+/// this phone: the plugin's default lets it travel in an encrypted backup to
+/// another phone, and a session token that travelled would still be signed in
+/// there. (iOS has no release yet, so no earlier item needs to be moved.)
+const deviceOnlySecureStorage = FlutterSecureStorage(
+  iOptions: IOSOptions(
+    accessibility: KeychainAccessibility.unlocked_this_device,
+  ),
+);
+
 /// The real secure storage.
 class PlatformSecureValueStore implements SecureValueStore {
-  const new([this._storage = const FlutterSecureStorage()]);
+  const new([this._storage = deviceOnlySecureStorage]);
 
   final FlutterSecureStorage _storage;
 

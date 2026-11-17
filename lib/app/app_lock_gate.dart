@@ -29,6 +29,7 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
     required this._auth,
     required this._repository,
     this._clock = const SystemClock(),
+    this._monotonic = const SystemMonotonicClock(),
     this._locked = false,
   }) {
     _signedIn = _auth.signedInChanges.listen(_onSignedInChanged);
@@ -37,14 +38,17 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
   final AuthRepository _auth;
   final AppLockRepository _repository;
   final Clock _clock;
+  final MonotonicClock _monotonic;
 
   final _changes = StreamController<bool>.broadcast(sync: true);
   late final StreamSubscription<bool> _signedIn;
 
   bool _locked;
 
-  /// When the app left the screen, while it is away.
+  /// When the app left the screen, while it is away: by the date and time of
+  /// the phone, and by a clock the person cannot set.
   DateTime? _leftAt;
+  Duration? _leftSteady;
 
   /// What the lock needed the last time the app left the screen.
   bool _enabled = false;
@@ -61,7 +65,7 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
 
   @override
   void unlock() {
-    _leftAt = null;
+    _forgetLeaving();
     _setLocked(value: false);
   }
 
@@ -79,7 +83,10 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
 
   void _onLeft() {
     // `hidden` comes first and `paused` after it: the first one counts.
-    _leftAt ??= _clock.now();
+    if (_leftAt == null) {
+      _leftAt = _clock.now();
+      _leftSteady = _monotonic.elapsed();
+    }
     unawaited(_readSettings());
   }
 
@@ -98,9 +105,23 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
 
   void _onReturned() {
     final left = _leftAt;
+    final leftSteady = _leftSteady;
+    _forgetLeaving();
+    if (left == null || leftSteady == null) return;
+    final byWatch = _clock.now().difference(left);
+    final bySteadyClock = _monotonic.elapsed() - leftSteady;
+    // The date and time of the phone can be set back to shorten the stay, and
+    // the steady clock can stand still while the phone sleeps. So a clock set
+    // back locks, and otherwise the longer of the two counts.
+    final away = byWatch.isNegative
+        ? _timeout.duration
+        : (byWatch > bySteadyClock ? byWatch : bySteadyClock);
+    if (_isDue(away)) _setLocked(value: true);
+  }
+
+  void _forgetLeaving() {
     _leftAt = null;
-    if (left == null) return;
-    if (_isDue(_clock.now().difference(left))) _setLocked(value: true);
+    _leftSteady = null;
   }
 
   /// Whether the time away, [away], is long enough to lock the app.
@@ -109,7 +130,7 @@ class AppLockGate with WidgetsBindingObserver implements AppLockSession {
   }
 
   void _onSignedInChanged(bool isSignedIn) {
-    _leftAt = null;
+    _forgetLeaving();
     if (!isSignedIn) {
       // Nobody is signed in, so there is nothing to lock; the lock itself is
       // kept for the next sign-in.
