@@ -3,7 +3,7 @@ services:
     # Frozen to an exact build (tag and digest) by scripts/pin-image.sh, so the
     # toolchain only changes on purpose: through a Dependabot pull request or
     # by running the script again.
-    image: alihaidar199527/flutter-devcontainer:flutter-3.47.8.1@sha256:384e9a025779c6ba571950bdd0ef2a50eb9d02c516f21e54e92175bc6b391f57
+    image: alihaidar199527/flutter-devcontainer:flutter-3.47.9.1@sha256:afc8b0d2873356a76519e75ae89c68cf296e3331bd6fd68b7239dea2ddf1d0d6
     # Reaps zombie processes (adb, Gradle daemons, dart) so they do not pile up.
     init: true
     entrypoint: ["/workspace/scripts/entrypoint.dev.sh"]
